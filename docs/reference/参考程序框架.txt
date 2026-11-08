@@ -1,0 +1,44 @@
+以下是上一轮组合建议中各项目的仓库链接。需要先说明一点：Azalea（中兴通讯的智算评测框架）目前没有公开的 GitHub 仓库。公开信息显示它在2025年底才在开源大会首次亮相，定位是“开放型算力基础设施开源评测框架”，但搜索不到其代码仓库或开源许可证信息。因此，这个组合的“骨架层”可能需要用其他方案替代，或者关注中兴后续是否正式开源。
+
+🔗 各组件项目链接
+OCP Diag（服务器硬件诊断）
+
+核心框架与规范：https://github.com/opencomputeproject/ocp-diag-core
+
+Python API（最常用）：https://github.com/opencomputeproject/ocp-diag-python，也可通过 pip install ocptv 安装。
+
+Ondatra（交换机控制面/协议验证）
+
+主仓库：https://github.com/openconfig/ondatra
+
+它支持对真实设备和容器化网络设备进行测试，通过 Binding 接口适配你的交换机。
+
+KNE（Kubernetes 网络仿真，配合 Ondatra 使用）
+
+主仓库：https://github.com/openconfig/kne
+
+用于在没有真实硬件时，在 Kubernetes 中构建容器化的网络拓扑，对 Ondatra 测试进行预验证。
+
+dperf（网卡/交换机数据面压测）
+
+主仓库：https://github.com/baidu/dperf
+
+百度开源的 DPDK 用户态压测工具，用于验证网卡和交换端口能否达到线速（如 100Gbps/200Gbps），而不是实际只有几十 Gbps。
+
+AI-NetBench（GPU 集群/RDMA 网络性能基准）
+
+仓库：https://github.com/deepaksatna/ai-network-benchmark
+
+基于 NCCL 的 GPU 集合通信基准套件，用于测量 AllReduce、All-to-All 等操作的带宽与效率，定位 NVLink/RDMA 网络的瓶颈。注意这是一个个人维护的仓库，名称是 ai-network-benchmark，与“AI-NetBench”的叫法略有差异。
+
+Jumpstarter（本地硬件在环编排与执行）
+
+主仓库：https://github.com/jumpstarter-dev/jumpstarter
+
+官网：https://jumpstarter.dev
+
+用云原生方式统一管理本地、虚拟和远程硬件，适合作为上述测试任务的调度入口，并与 CI/CD 对接。
+
+💡 关于 Azalea 的替代思路
+如果 Azalea 短期无法获取，上一轮对话中提到的 ClusterBench 可以作为“集群性能骨架”的备选（测试对象包含服务器和交换机，支持 C/S 架构本地部署），但它在智算/RDMA 维度的针对性较弱。更务实的做法是：用 OCP Diag 做硬件就绪检查，用 AI-NetBench + dperf 分别覆盖智算网络和基础 TCP 网络的数据面性能，用 Ondatra 覆盖交换机控制面，由 Jumpstarter 统一编排——这本身就已经构成一个可运行的最小闭环，只是缺少一个像 Azalea 那样把“集群级基础检查 + 性能 + 模型验证”打包好的上层框架。
+
