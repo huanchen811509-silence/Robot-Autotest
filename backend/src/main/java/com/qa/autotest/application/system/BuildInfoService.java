@@ -1,5 +1,7 @@
 package com.qa.autotest.application.system;
 
+import com.qa.autotest.application.ai.AiBundledAgent;
+import com.qa.autotest.application.ai.AiCliAdapter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -59,7 +61,8 @@ public class BuildInfoService {
     public Map<String, Object> info() {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("app", "robot-autotest");
-        result.put("version", prop("app.version", "unknown"));
+        result.put("version", version());
+        result.put("versionSource", versionSource());
         result.put("gitCommit", prop("git.commit", "unknown"));
         result.put("buildTime", prop("build.time", "unknown"));
         result.put("source", fromBuild ? "build" : "runtime");
@@ -69,6 +72,41 @@ public class BuildInfoService {
         result.put("license", "Apache-2.0（见仓库 LICENSE / NOTICE）");
         result.put("dependencies", dependencies());
         return result;
+    }
+
+    /**
+     * 版本号：**运行期可覆盖**，不必重建 jar。
+     *
+     * <p>发布时 `scripts/gen_build_info.py` 读仓库根 `VERSION` 写进产物；运维若只换了
+     * 一份构建产物（或灰度时想在不重建的前提下改口径），设 `APP_VERSION` 环境变量、
+     * 重启服务即可生效。关于页把来源一并显示，避免「到底是哪个值」说不清。
+     */
+    String version() {
+        String env = runtimeVersion();
+        return env != null ? env : prop("app.version", "unknown");
+    }
+
+    /** env / file / pom / runtime：与 `gen_build_info.py` 的取值链一一对应。 */
+    String versionSource() {
+        if (runtimeVersion() != null) {
+            return "env";
+        }
+        String declared = build.getProperty("app.version.source", "").trim();
+        if (!declared.isEmpty()) {
+            return declared;
+        }
+        return fromBuild ? "build" : "runtime";
+    }
+
+    private static String runtimeVersion() {
+        String value = System.getenv("APP_VERSION");
+        if (value == null) {
+            value = System.getProperty("APP_VERSION");
+        }
+        if (value == null) {
+            value = System.getenv("PLATFORM_VERSION");
+        }
+        return value == null || value.isBlank() ? null : value.trim();
     }
 
     /** 自检四项：DB / 执行器 / 内核 / AI CLI。探测失败不算服务不可用，只如实标状态。 */
@@ -82,9 +120,18 @@ public class BuildInfoService {
         }
         checks.put("executor", onPath("robot") ? "OK" : "NOT_INSTALLED");
         checks.put("kernel", onPath("pytest") || onPath("robot") ? "OK" : "NOT_INSTALLED");
-        checks.put("aiCli", onPath("claude", "codex", "gemini", "aider")
-                ? "OK" : "NOT_INSTALLED");
+        checks.put("aiCli", anyAiCli() ? "OK" : "NOT_INSTALLED");
         return checks;
+    }
+
+    /** AI CLI 自检必须覆盖全部候选（含内置兜底），只查老四条会漏报可用状态。 */
+    private static boolean anyAiCli() {
+        for (String name : AiCliAdapter.CANDIDATES) {
+            if (onPath(name)) {
+                return true;
+            }
+        }
+        return AiBundledAgent.available();
     }
 
     private List<Map<String, String>> dependencies() {

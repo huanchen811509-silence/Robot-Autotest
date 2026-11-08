@@ -28,24 +28,34 @@ public class AiPanelService {
     private final AuditService audit;
     private final AiFeatureGate gate;
     private final AiSessionRepository repository;
+    /** 设置页保存的端点 / 凭据 / 模型；为 null 表示未装配（测试替身场景） */
+    private final AiAssistantConfigService assistantConfigs;
     private final Map<Long, Boolean> openSessions = new ConcurrentHashMap<>();
     private final Map<Long, ProcessHandle> sessionHandles = new ConcurrentHashMap<>();
 
     @Autowired
     public AiPanelService(AiCliProbe probe, ContextPacker packer, AiProcessManager processes,
-                           AuditService audit, AiFeatureGate gate, AiSessionRepository repository) {
+                           AuditService audit, AiFeatureGate gate, AiSessionRepository repository,
+                           AiAssistantConfigService assistantConfigs) {
         this.probe = probe;
         this.packer = packer;
         this.processes = processes;
         this.audit = audit;
         this.gate = gate;
         this.repository = repository;
+        this.assistantConfigs = assistantConfigs;
+    }
+
+    /** 兼容既有装配（不含设置页配置）：不注入端点 / 凭据 / 模型，行为与 v2.4 一致。 */
+    public AiPanelService(AiCliProbe probe, ContextPacker packer, AiProcessManager processes,
+                           AuditService audit, AiFeatureGate gate, AiSessionRepository repository) {
+        this(probe, packer, processes, audit, gate, repository, null);
     }
 
     /** 兼容 AiPanelTest.java:32 的四参构造：不接闸门 / 数据库 / 子进程。 */
     public AiPanelService(AiCliProbe probe, ContextPacker packer, AiProcessManager processes,
                            AuditService audit) {
-        this(probe, packer, processes, audit, AiFeatureGate.permissive(), null);
+        this(probe, packer, processes, audit, AiFeatureGate.permissive(), null, null);
     }
 
     /** FR-AI-07：ai.enabled=false 时所有动作明确禁用。state 只报告不抛，供前端隐藏入口。 */
@@ -216,7 +226,12 @@ public class AiPanelService {
         if (!probe.available()) {
             return AiProcessResult.notExecuted(probe.primaryCli(), "CLI 不可用，已降级");
         }
-        AiProcessResult result = processes.execute(probe.primaryCli(), prompt);
+        // v2.5：把设置页保存的端点 / 凭据 / 模型真正注入子进程（FR-AI-11）
+        String cli = probe.primaryCli();
+        AiProcessResult result = assistantConfigs == null
+                ? processes.execute(cli, prompt)
+                : processes.execute(cli, prompt, assistantConfigs.envFor(cli),
+                        assistantConfigs.modelArgs(cli));
         if (result.handle() != null) {
             sessionHandles.put(sessionId, result.handle());
         }

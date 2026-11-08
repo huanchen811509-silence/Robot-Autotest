@@ -1,0 +1,1 @@
+{"code":0,"codeName":"OK","message":"OK","data":{"ok":true,"reason":"OK","elapsedMs":1617,"exitCode":0,"stdout":"已连通","stderr":"","appliedEnv":["OPENAI_BASE_URL","OPENAI_API_KEY","ARK_API_KEY"],"appliedArgs":["--model","ark/deepseek-v4-flash"]},"success":true}

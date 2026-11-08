@@ -30,10 +30,11 @@ check() {
 # 2026-11-08 续：V11_10 / V11_11 / V11_13 只增列与索引，V11_12 加 1 张
 # （execution_selection），故 69 → 70。V11_10..13 顺延落号是因为 V11_9 已应用，
 # Flyway 未开 out-of-order，插回 11.5 会被拒。
+# 2026-11-08 再续：V11_14 加 1 张（ai_assistant_config，AI 助手端点与凭据），故 70 → 71。
 # V11_2 首版曾建 TRIGGER，因 binlog + 无 SUPER 权限被实测推翻（Error 1419），
 # 已改为纯建表 + 应用层不可变约束，见该迁移文件头修订说明。
 # 此处期望值随迁移演进而更新，不是「表越多越好」的口径。
-check "业务表数 = 70" "70" \
+check "业务表数 = 71" "71" \
     "SELECT COUNT(*) FROM information_schema.tables
      WHERE table_schema='$DB_NAME' AND table_name<>'flyway_schema_history';"
 

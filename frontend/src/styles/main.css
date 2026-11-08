@@ -893,6 +893,11 @@ textarea:focus-visible {
   overflow-y: auto;
 }
 
+/*
+ * 窄轨（rail）只有两种来源：用户显式折叠、或视口窄到放不下 200px 侧栏。
+ * 两者必须**同时**改宽度与文字显隐——v2.3 之前只改宽度不藏文字，
+ * 文字被 .app-side 的 overflow 裁掉，看起来就是「菜单只剩图标没有文字」。
+ */
 .app-shell.side-collapsed .app-side { padding: 16px 8px; }
 .app-shell.side-collapsed .app-side .app-brand,
 .app-shell.side-collapsed .app-side .app-nav-item span { display: none; }
@@ -907,13 +912,6 @@ textarea:focus-visible {
 }
 
 @media (max-width: 999px) {
-  .app-shell,
-  .app-shell.has-drawer,
-  .app-shell.side-collapsed,
-  .app-shell.side-collapsed.has-drawer {
-    grid-template-columns: 56px minmax(0, 1fr);
-  }
-
   .ai-drawer {
     position: fixed;
     right: 0;
@@ -925,10 +923,54 @@ textarea:focus-visible {
   }
 }
 
+/* 窄屏窄轨：断点用 760px（复用既有档位）。999px 时 200px 侧栏还放得下，
+   提前收成 56px 只会白白把文字裁掉。进窄轨就同步藏文字并保留 title 提示。 */
 @media (max-width: 760px) {
-  .app-header, .app-header-right { flex-wrap: wrap; gap: 8px; }
+  .app-shell,
+  .app-shell.has-drawer,
+  .app-shell.side-collapsed,
+  .app-shell.side-collapsed.has-drawer {
+    grid-template-columns: 56px minmax(0, 1fr);
+  }
+
+  .app-side { padding: 16px 8px; }
+  .app-side .app-brand,
+  .app-side .app-nav-item span { display: none; }
+  .app-side-head { justify-content: center; }
+  .app-side-toggle { margin: 0 auto; }
+
+  .app-header,
+  .app-header-right { gap: 8px; }
 }
 
+/*
+ * 顶栏换行而不是溢出：账户段在最右，一旦总宽超过顶栏宽度，
+ * 不换行就会被推到视口外——按钮「看得见位置却点不到」，表现为「退出失效」。
+ * 这里允许整段换行，并让可变宽的三项（标题 / 项目名 / 用户名）自己收缩。
+ */
+.app-header,
+.app-header-right {
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+
+.app-header-right {
+  flex: 1 1 auto;
+  min-width: 0;
+  justify-content: flex-end;
+}
+
+.app-header-title {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .app-header, .app-header-right { gap: 8px; }
+}
 *:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;

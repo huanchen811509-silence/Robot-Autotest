@@ -11,6 +11,7 @@
 from __future__ import annotations
 
 import json
+import os
 import pathlib
 import subprocess
 import xml.etree.ElementTree as ET
@@ -63,8 +64,27 @@ def npm_entries() -> list[str]:
     return result
 
 
+def resolve_version(pom_version: str) -> tuple[str, str]:
+    """版本号的单一来源，优先级：环境变量 > 仓库 VERSION 文件 > pom。
+
+    为什么不再直接用 pom：pom 里的 `0.1.0-SNAPSHOT` 是工程版本，不随发布变，
+    关于页就会永远显示它——「版本不更新」的根因就在这。`VERSION` 文件是发布口径
+    的唯一真源，改一行就改版本，不用动 pom、不用改代码。
+    """
+    env = os.environ.get("APP_VERSION", "").strip()
+    if env:
+        return env, "env"
+    version_file = ROOT / "VERSION"
+    if version_file.is_file():
+        text = version_file.read_text(encoding="utf-8").strip().splitlines()
+        if text and text[0].strip():
+            return text[0].strip(), "file"
+    return pom_version, "pom"
+
+
 def main() -> int:
-    version, deps = pom_entries()
+    pom_version, deps = pom_entries()
+    version, version_source = resolve_version(pom_version)
     deps.extend(npm_entries())
     # 去重保序，避免同名依赖在前后端各出现一次
     seen: set[str] = set()
@@ -77,6 +97,7 @@ def main() -> int:
     lines = [
         "# 由 scripts/gen_build_info.py 生成，勿手改、勿入库",
         f"app.version={version}",
+        f"app.version.source={version_source}",
         f"git.commit={git_short_sha()}",
         f"build.time={build_time}",
         "entry.port=8001",
@@ -86,7 +107,7 @@ def main() -> int:
     ]
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    print(f"[build-info] {OUT.relative_to(ROOT)} · version={version} "
+    print(f"[build-info] {OUT.relative_to(ROOT)} · version={version} ({version_source}) "
           f"commit={git_short_sha()} deps={len(unique)}")
     return 0
 

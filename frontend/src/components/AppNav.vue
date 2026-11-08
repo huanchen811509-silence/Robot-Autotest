@@ -79,6 +79,7 @@ const activeKey = computed(() => activeGroupKey(route))
         :to="leafTarget(node)"
         class="app-nav-item"
         :class="{ active: isActive(node) }"
+        :title="t(node.labelKey)"
         :aria-current="isActive(node) ? 'page' : undefined"
       >
         <AppIcon :name="node.icon" :size="16" />
@@ -91,6 +92,7 @@ const activeKey = computed(() => activeGroupKey(route))
           class="app-nav-item app-nav-group-head"
           :class="{ 'has-active': node.key === activeKey || isActive(node) }"
           :aria-expanded="isExpanded(node)"
+          :title="t(node.labelKey)"
           @click="toggleGroup(node)"
         >
           <AppIcon :name="node.icon" :size="16" />
@@ -115,6 +117,7 @@ const activeKey = computed(() => activeGroupKey(route))
               :to="leafTarget(child)"
               class="app-nav-item app-nav-sub"
               :class="{ active: isActive(child) }"
+              :title="t(child.labelKey)"
               :aria-current="isActive(child) ? 'page' : undefined"
             >
               <AppIcon :name="child.icon" :size="16" />

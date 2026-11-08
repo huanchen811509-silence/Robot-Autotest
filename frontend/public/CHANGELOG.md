@@ -8,7 +8,40 @@
 > `<!-- current -->` 是给解析器用的语言无关标识（Markdown 渲染时不可见）。
 > 因此代码里不需要硬编码中文，界面显示文案一律走 i18n 语言包 `changelog.*`。
 
-## v2.0-platform（2026-11-06） <!-- current -->
+## v2.5-ai-config（2026-11-08） <!-- current -->
+
+### 新增 <!-- added -->
+- 设置 · AI 助手页：7 条候选（hermes / dsh / claude / codex / gemini / aider / pi）逐个展示安装态、
+  端点 URL、模型、凭据，支持「保存 / 清除密钥 / 测试连接」，测试结果回显耗时、退出码、注入的变量名与输出片段
+- `ai_assistant_config` 表（V11_14）与 `V11_15` 补审计四列：每个 CLI 一行，凭据只存 AES-256-GCM 密文
+- 端点与模型可配置且**真生效**：`AiAssistantConfigService.envFor()` / `modelArgs()` 注入到子进程环境与 argv，
+  不再只能改代码或改 systemd
+- 版本动态化：仓库根 `VERSION` 为版本号唯一真源，`scripts/gen_build_info.py` 产出 `version` + `versionSource`，
+  后端支持 `APP_VERSION` / `PLATFORM_VERSION` 运行期覆盖（重启即生效）
+- 关于页 30s 自动刷新（页面可见时才刷）+ 手动刷新 + 版本来源标识（env / file / pom / runtime）
+- 设置导航新增「AI 助手」入口，能力键 `ai:config`，仅管理员可见
+
+### 变更 <!-- changed -->
+- 一级菜单改名：`用例` → `测试用例`，`资产` → `测试资产`（中英文案同步）
+- 侧栏窄轨断点从 999px 收到 760px，并在窄轨下**同步隐藏文字**（此前只压宽度，文字被 overflow 裁掉）
+- 侧栏折叠态加一次性迁移键 `robot.layout.side.v23`：v2.3 遗留的 `collapsed=true` 自动归位为展开
+- 顶栏改 `flex-wrap: wrap`，账户区不再被推出视口
+- `scripts/db-audit.sh` 期望业务表数 70 → 71，并注明 V11_14 的来源
+- `BuildInfoService` 自检的 `aiCli` 改为按完整候选清单（含内置 pi）判定，不再只查老四条
+
+### 修复 <!-- fixed -->
+- **退出按钮失效**：`auth.logout()` 先 await 服务端撤销再本地清理，后端慢或挂住时表现为「点了没反应」。
+  改为 `performLogout()` 先本地清（token 立即移除）再异步撤销，服务端失败不再阻塞跳转
+- **菜单只有图标没有文字**：三重根因（折叠态遗留 / 窄屏只改宽度 / 顶栏溢出）分别修掉，并在导航项补 `title`
+- 顶栏账户区「看得见位置却点不到」：`flex-wrap: nowrap` 下溢出的那一段既不可见也不可点
+- `ai_assistant_config` 缺 `created_at` / `created_by` 且 `updated_at` 为 `DATETIME(0)`，撞 db-audit 两条硬判据
+- `AiProcessManager` 不关子进程 stdin，长驻 CLI 读 stdin 时挂住（假 CLI 不读 stdin 所以此前一直没暴露）
+
+### 破坏性变更 <!-- breaking -->
+- 无。V11_14 只加表、V11_15 只给新表补列与提精度，旧代码与既有接口不受影响；
+  旧配置读不到时按「未配置」处理，`base_url` / `model` / 密钥全为空即沿用 CLI 自带配置
+
+## v2.0-platform（2026-11-06）
 
 ### 新增 <!-- added -->
 - 统一入口 `:8001`：静态托管 + SPA 深链接回退 + `/api`·`/ws` 反代 + 缓存策略

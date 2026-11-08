@@ -72,14 +72,53 @@ public class AiProcessManager {
 
     /** 真实起子进程；开关未开或启动失败时返回 executed=false，不抛、不阻断主功能。 */
     public AiProcessResult execute(String cli, String prompt) {
+        return execute(cli, prompt, Map.of(), List.of(), false);
+    }
+
+    /**
+     * 带「助手配置」的调用：端点 / 凭据按环境变量注入，模型按参数追加
+     * （v2.5 / FR-AI-11：设置页保存的 URL、Key、模型必须真的作用到子进程，
+     * 否则页面上的配置只是摆设）。
+     *
+     * @param env       要注入的环境变量，空表示不改动继承来的环境
+     * @param extraArgs 追加到 argv 末尾的参数，空表示不追加
+     */
+    public AiProcessResult execute(String cli, String prompt, Map<String, String> env,
+                                   List<String> extraArgs) {
+        return execute(cli, prompt, env, extraArgs, false);
+    }
+
+    /**
+     * 管理员在设置页点「测试连接」时走这里：**跳过** {@code FEATURE_AI_REAL_CLI} 闸门。
+     *
+     * <p>闸门的作用是「没人明确要求时不要起子进程」。管理员点击测试本身就是明确要求，
+     * 且该动作会写审计（谁在什么时候测了哪个 CLI）。除这条路径外，任何自动流程仍受闸门约束。
+     */
+    public AiProcessResult executeAdminTest(String cli, String prompt, Map<String, String> env,
+                                            List<String> extraArgs) {
+        return execute(cli, prompt, env, extraArgs, true);
+    }
+
+    private AiProcessResult execute(String cli, String prompt, Map<String, String> env,
+                                    List<String> extraArgs, boolean bypassGate) {
         String name = cli == null || cli.isBlank() ? "claude" : cli;
-        if (!AiFeatureGate.realCliFeatureEnabled()) {
+        if (!bypassGate && !AiFeatureGate.realCliFeatureEnabled()) {
             return AiProcessResult.notExecuted(name, "FEATURE_AI_REAL_CLI 未开启，不起子进程");
         }
-        List<String> argv = AiCliAdapter.command(name, prompt);
+        List<String> argv = new ArrayList<>(AiCliAdapter.command(name, prompt));
+        if (extraArgs != null && !extraArgs.isEmpty()) {
+            for (String arg : extraArgs) {
+                if (arg != null && !arg.isBlank()) {
+                    argv.add(arg);
+                }
+            }
+        }
         ProcessBuilder builder = new ProcessBuilder(argv);
         builder.redirectErrorStream(false);
         forwardFixtureControls(builder);
+        if (env != null && !env.isEmpty()) {
+            builder.environment().putAll(env);
+        }
 
         long start = System.nanoTime();
         final Process process;

@@ -250,6 +250,16 @@ export const NAVIGATION: NavNode[] = [
         capability: 'settings:read',
       },
       {
+        // v2.5：AI 助手配置。用独立能力键 `ai:config`（四角色里只有 admin 持有），
+        // 不使用 adminOnly：那个旧口径在能力过滤里等价于「要求 audit:read」，
+        // 语义是审计入口专用，拿来管 AI 配置会让人以为「看审计的人也能改密钥」。
+        key: 'settings-ai',
+        labelKey: 'menu.aiAssistants',
+        icon: 'sparkles',
+        path: '/settings/ai',
+        capability: 'ai:config',
+      },
+      {
         key: 'settings-users',
         labelKey: 'menu.adminUsers',
         icon: 'users',
@@ -382,7 +392,7 @@ export type NavRole = 'admin' | 'pm' | 'engineer' | 'viewer'
 
 /** 四角色能力集：与后端角色口径一致，前端只做入口显隐。 */
 export const ROLE_CAPABILITIES: Record<NavRole, string[]> = {
-  admin: ['execution:read', 'audit:read', 'settings:read', 'user:write', 'case:write'],
+  admin: ['execution:read', 'audit:read', 'settings:read', 'user:write', 'case:write', 'ai:config'],
   pm: ['execution:read', 'settings:read', 'case:write'],
   engineer: ['execution:read', 'case:write'],
   viewer: [],

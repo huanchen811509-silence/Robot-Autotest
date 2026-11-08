@@ -5,11 +5,8 @@
 
 面向 GPU、智能网卡与基础设施的一体化自动化测试平台：把「设备台账 → 用例编写 → 并发执行 → 报告交付 → 定时/CI 自动化」收在同一个系统里，并用 metadata 门禁保证每一份对外报告都能追溯。
 
-> 当前阶段（2026-11-07）：**v3.0.1 平台化 W1–W5 全部落库**，门禁 **18 步** `FAILS=0`。
-> W2 分布式分片（DB 租约 + fencing）、W3 故障转移（心跳判死 / LOST 重派 / 主控重启恢复）、
-> W4 容量与可观测（`/api/metrics`、run 时间线、性能基线进门禁、备份恢复演练）、
-> W5 覆盖扩量（示例用例入库、计划编排冲突检测、跨 run 失败聚类）均已交付，
-> 证据在 `docs/evidence/v2.2/`、`v2.2.1/`、`v3.0/`、`v3.0.1/`。
+> 当前阶段（2026-11-08）：**版本号动态化**（唯一真源是仓库根 `VERSION`，也可用 `APP_VERSION` 环境变量在运行期覆盖，见「关于」页）。
+> v3.0.1 平台化 W1–W5 全部落库；v2.2 体验与可观测、v2.3 界面与主题、v2.4 CLI 多 agent、v2.5 AI 助手配置已开发并自测。
 > 130 个任务包：**已完成 124 / 待验 0 / 待现场 6 / 未开始 0 / 进行中 0**。
 > 余下 6 个 `待现场` 缺的是**外部条件**（GitHub runner、真实 pabot 子进程树与日志样本、真机 DUT），不是代码。
 > **G4 / G5 / G7 / G8 门禁尚未判过，不得对外称「已发版」**。
@@ -33,8 +30,9 @@
 | 资产版本与差异 | 用例/用例集版本标识与引用方检测；资产差异对比与同步 / 分叉（v2.1） |
 | 组授权 | 用户组、组-项目角色授权与项目模板；有效角色取「直接授权 ∪ 组授权」的最高值，按 `(用户, 项目)` 缓存并在授权变更时失效；一层测试场景编排（不做 DAG） |
 | AI 辅助面板 | 可拖拽抽屉：只探测本地 CLI **不代调模型**；打包上下文复用对外脱敏逻辑；发起执行需二次确认；全动作落审计、可一键终止进程树；无 CLI 时降级为 L1 静态建议并标注 `DEGRADED` |
+| AI 助手配置 | **7 个候选**（`hermes → dsh → claude → codex → gemini → aider → pi`，`pi` 为随包内置的兜底 agent）；设置页逐个展示安装状态，可配 **API 端点 / 密钥 / 模型**并「测试连接」；密钥 AES-256-GCM 加密入库、接口只回掩码、明文永不回显；保存的配置**真的注入子进程**（环境变量 + 模型参数），不接受注入的 CLI 明确标注「仅记录」 |
 | 体验与主题 | 中文 / English 双语切换、亮暗主题 + 强调色、表格密度两档；**主题 / 强调色 / 密度按用户跟随（服务端偏好，登出回默认，换账号互不串）**；登录页支持记住账号名 / 记住密码并自动登录（自动登录失败即清密码防锁号）；首帧主题不闪，暗色对比度经门禁实测；1280 视口无横向滚动 |
-| 导航与入口 | 6 域菜单 IA（工作台 / 资产 / 用例 / 执行 / 报告 / 管理）、能力驱动过滤、命令面板 `Ctrl/Cmd+K`、项目选择器常驻顶栏、统一入口 `:8001`（静态托管 + 深链接回退 + `/api`·`/ws` 反代） |
+| 导航与入口 | **7 组菜单 IA**（工作台 / 测试用例 / 测试资产 / 执行与报告 / 环境与拓扑 / 维护与恢复 / 系统设置）、能力驱动过滤（含管理员专属 `ai:config`）、命令面板 `Ctrl/Cmd+K`、项目选择器常驻顶栏、窄屏自动收窄轨并保留 `title` 提示、统一入口 `:8001`（静态托管 + 深链接回退 + `/api`·`/ws` 反代） |
 | 自动化 | 执行计划（cron + 时区固定）、依赖 DAG（环检测 / 前置失败阻断）、CI 触发（幂等 + 限流 + 状态回写）；计划编排冲突检测与批量启停（W5） |
 | 可观测性 | `GET /api/metrics`（在线率 / 队列深度 / 失败率 / 重派次数）与告警阈值；run 时间线（入队 → 租约 → 分片完成/失败/丢失 → 终态，带 `fencingToken` / `attempt`）；节点页健康条；5 条只读 GET 性能基线进门禁，劣化超阈值即红；`scripts/backup-drill.sh` 备份恢复演练（W4） |
 | 安全与治理 | 登录与令牌、RBAC 权限矩阵、项目级租户隔离、审计日志（只增不改、脱敏）、产物保留策略 |
@@ -51,7 +49,7 @@
 ## 技术架构
 
 - **后端**：Spring Boot 3 + Java 21，分层 `api / application / domain / infrastructure / common`，ArchUnit 约束依赖方向。
-- **数据库**：MySQL 8.0，Flyway 版本化迁移（当前 **38 个迁移至 `V10_2`，67 张业务表**），手写 down 脚本；dev / it 双库（`robot_dev` / `robot_it`）。每张表须带「代理主键 `id` + 审计四列」，`scripts/db-audit.sh` 可单独体检，且已纳入提交门禁。
+- **数据库**：MySQL 8.0，Flyway 版本化迁移（当前 **49 个迁移至 `V11_15`，71 张业务表**），手写 down 脚本；dev / it 双库（`robot_dev` / `robot_it`）。每张表须带「代理主键 `id` + 审计四列」，`scripts/db-audit.sh` 可单独体检，且已纳入提交门禁。
 - **前端**：Vue 3 + Vite + TypeScript + Pinia + vue-i18n + naive-ui，Vitest 单测；主题走「localStorage + 服务端偏好（按用户）+ `data-theme/data-accent/data-density`」三层，naive-ui 主题由语义 token 单向派生。
 - **编辑器**：独立子包 `packages/editor`（CodeMirror 6），有自己的 vitest 工程与 dist 产物，**构建先于前端**。
 - **测试内核**：Robot Framework 7.5（pabot 并发、robotdashboard 看板）+ pytest（`pytest-json-report` / `junitxml`），经 `ExecutionKernel` SPI 接入。
@@ -84,7 +82,7 @@ cd frontend && npm ci && npm run dev
 门禁与集成测试（在仓库根目录）：
 
 ```bash
-bash scripts/gates.sh       # 一键全量门禁（18 步：字体子集 / 前端测试与构建 / 后端测试 / 各类 lint / 库审计 / 浏览器回归 / 性能基线 / 结构自检）
+bash scripts/gates.sh       # 一键全量门禁（19 步：字体子集 / 前端测试与构建 / 后端测试 / 各类 lint / 库审计 / 浏览器回归 / 性能基线 / 结构自检 / 证据完整性）
 bash scripts/lint.sh        # 单跑静态检查：密钥扫描 + eslint + 后端编译 + 颜色/对比度/i18n/token/体积/WBS 一致性等
 bash artifacts/run_it.sh    # 集成测试，连 robot_it 库（内部读取 ~/.config/robot-autotest/env）
 bash scripts/db-audit.sh    # 库结构体检：表数、审计四列、主键、时间列精度、字符集
@@ -116,6 +114,8 @@ docs/             设计、计划、版本、证据文档
 |---|---|
 | [docs/plan/WBS-STATUS.md](docs/plan/WBS-STATUS.md) | **进度唯一真源**：130 个任务包的五态、证据与阻塞 |
 | [docs/release/README.md](docs/release/README.md) | 版本地图与每版交付口径 |
+| [VERSION](VERSION) | **版本号唯一真源**：发版只改这一行；`scripts/gen_build_info.py` 在打包时写进产物，「关于」页展示并标注来源 |
+| [docs/release/v2.5-ai-config/](docs/release/v2.5-ai-config/) | v2.5 AI 助手配置（PRD / DEV-PLAN / TEST-PLAN 指针） |
 | [docs/release/v2.1-platform/](docs/release/v2.1-platform/) | v2.1 的 PRD / 开发计划（DEV-PLAN）/ 测试计划（TEST-PLAN） |
 | [docs/evidence/v2.1/](docs/evidence/v2.1/) | v2.1 各包验收证据（真实 HTTP 链路脚本、run.log、截图，可复跑） |
 | [docs/plan/W5-总结报告-20261107.md](docs/plan/W5-总结报告-20261107.md) | W5（v3.0.1）总结：做了什么、为什么做、验收读数、已知边界 |

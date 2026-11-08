@@ -150,6 +150,26 @@ describe('默认展开策略（FR-UI-07）', () => {
   })
 })
 
+describe('菜单文字（v2.3.1 修复）', () => {
+  it('每个导航项都渲染非空文字，且 title 与文字一致（窄轨下靠 title 才认得出）', async () => {
+    const root = await mountNav()
+    const items = [...root.querySelectorAll<HTMLElement>('.app-nav-item')]
+    expect(items.length).toBeGreaterThan(0)
+    for (const item of items) {
+      const span = item.querySelector('span')
+      expect(span).not.toBeNull()
+      const text = span!.textContent?.trim() ?? ''
+      expect(text.length).toBeGreaterThan(0)
+      expect(item.getAttribute('title')).toBe(text)
+    }
+  })
+
+  it('一级菜单用完整名称：测试用例 / 测试资产（不是「用例」「资产」）', () => {
+    expect(i18n.global.t('menu.cases')).toBe('测试用例')
+    expect(i18n.global.t('menu.assets')).toBe('测试资产')
+  })
+})
+
 describe('合并组的分区线（FR-UI-29）', () => {
   it('4 项两个 section 之间恰好 1 条分隔线，且是纯装饰（aria-hidden）', async () => {
     routeRef.path = '/plans'

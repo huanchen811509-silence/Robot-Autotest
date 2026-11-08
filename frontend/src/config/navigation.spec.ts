@@ -24,6 +24,7 @@ import {
   roleFromCodes,
   visibleNav,
   visibleNavByCapabilities,
+  capabilitiesForRole,
   type NavGroup,
   type NavLeaf,
   type NavNode,
@@ -64,15 +65,27 @@ describe('权限过滤', () => {
     const settings = visibleNav(false).find((node) => node.key === 'settings') as NavGroup
     expect(settings).toBeTruthy()
     expect(settings.children.map((child) => child.key)).toEqual([
-      'settings-platform', 'settings-users', 'settings-about', 'settings-changelog',
+      'settings-platform', 'settings-ai', 'settings-users', 'settings-about', 'settings-changelog',
     ])
   })
 
   it('管理员能看到系统设置分组下的全部子项（含审计）', () => {
     const settings = visibleNav(true).find((node) => node.key === 'settings') as NavGroup
     expect(settings.children.map((child) => child.key)).toEqual([
-      'settings-platform', 'settings-users', 'settings-audit', 'settings-about', 'settings-changelog',
+      'settings-platform', 'settings-ai', 'settings-users', 'settings-audit', 'settings-about',
+      'settings-changelog',
     ])
+  })
+
+  it('AI 助手配置是管理员专属能力（ai:config），PM 与工程师都看不到', () => {
+    const keysOf = (role: Parameters<typeof capabilitiesForRole>[0]) =>
+      visibleNavByCapabilities(capabilitiesForRole(role)).flatMap((node) =>
+        isGroup(node) ? node.children.map((child) => child.key) : [node.key],
+      )
+    expect(keysOf('admin')).toContain('settings-ai')
+    expect(keysOf('pm')).not.toContain('settings-ai')
+    expect(keysOf('engineer')).not.toContain('settings-ai')
+    expect(keysOf('viewer')).not.toContain('settings-ai')
   })
 
   it('过滤后子项归零的分组整组去掉，不留空折叠组', () => {

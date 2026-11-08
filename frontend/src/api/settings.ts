@@ -10,6 +10,8 @@ export interface BuildDependency {
 export interface BuildInfo {
   app: string
   version: string
+  /** env / file / pom / build / runtime：版本号到底是哪儿来的，页面要写清楚 */
+  versionSource?: string
   gitCommit: string
   buildTime: string
   source: 'build' | 'runtime' | string

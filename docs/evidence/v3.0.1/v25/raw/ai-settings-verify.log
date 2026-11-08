@@ -1,0 +1,37 @@
+# v2.5 AI 助手配置与版本动态化：真实 HTTP 验收
+# 时间：2026-11-08 12:02:38 CST　执行：学徒　入口：http://127.0.0.1:8081（后端直连）
+
+## 0. 登录取证：token 长度 43（不回显内容）
+
+## 1. GET /api/ai/assistants（管理员）
+条目数 = 7
+| key | 已安装 | 可注入 | 已存密钥 | 掩码 | 模型 |
+|---|---|---|---|---|---|
+| hermes | True | False | False | — | — |
+| dsh | True | True | False | — | — |
+| claude | False | True | False | — | — |
+| codex | True | True | False | — | — |
+| gemini | False | True | False | — | — |
+| aider | False | True | False | — | — |
+| pi | True | True | True | ****93b8 | ark/deepseek-v4-flash |
+掩码格式异常项 = 无
+
+## 2. 版本动态化：GET /api/system/build-info
+version = 3.0.1
+versionSource = file
+gitCommit = e4d5587
+buildTime = 2026-11-08T03:59:44Z
+source = build
+
+## 3. 越权判据：engineer 取配置
+engineer GET /api/ai/assistants -> HTTP 403（期望 403）
+
+## 4. 密钥不落明文：库内密文抽查（只看长度与前缀）
+pi	100	jIAkn4
+
+## 5. 配置真的生效（pi：ARK coding 端点 + provider 限定模型）
+ok=True elapsedMs=1617 exit=0
+appliedEnv= ['OPENAI_BASE_URL', 'OPENAI_API_KEY', 'ARK_API_KEY']
+appliedArgs= ['--model', 'ark/deepseek-v4-flash']
+stdout= 已连通
+stderr= 

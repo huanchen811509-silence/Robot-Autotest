@@ -30,6 +30,7 @@ import ConfirmModal from '@/components/ConfirmModal.vue'
 import CommandPalette from '@/components/CommandPalette.vue'
 import AiPanelDrawer from '@/components/AiPanelDrawer.vue'
 import { useAiDrawer } from '@/composables/useAiDrawer'
+import { performLogout } from '@/composables/useLogout'
 import {
   capabilitiesForRole,
   roleFromCodes,
@@ -93,14 +94,7 @@ watch(
 )
 
 async function logout(): Promise<void> {
-  await auth.logout()
-  // 外观回默认：偏好按用户走（服务端 user_preference），本地键是全局单值——
-  // 不重置的话，下一个登录用户在服务端偏好到达前会先看到上一个用户的选择
-  // （换主题色时服务端没存过的用户则会一直看错）。
-  theme.setMode('system')
-  accent.setAccent('blue')
-  density.setDensity('comfortable')
-  await router.replace('/login')
+  await performLogout(router)
 }
 
 onMounted(() => window.addEventListener('keydown', onGlobalKeydown))

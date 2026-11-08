@@ -137,6 +137,13 @@ const router = createRouter({
       meta: { capability: 'settings:read' },
     },
     {
+      // v2.5 / FR-AI-10..13：AI 助手逐个配置端点 / 密钥 / 模型。仅管理员（后端 403 兜底）。
+      path: '/settings/ai',
+      name: 'settings-ai',
+      component: () => import('@/views/AiAssistantsView.vue'),
+      meta: { capability: 'ai:config' },
+    },
+    {
       // 执行节点（NODX-01，v2.1）：平台级资源，入口在设置页工具栏。
       path: '/nodes',
       name: 'nodes',
