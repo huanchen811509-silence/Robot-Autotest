@@ -1,0 +1,17 @@
+{
+  "deletions": {
+    "AST05-B": {
+      "status": 200,
+      "message": "OK"
+    },
+    "qa-e2e-orch02": {
+      "status": 200,
+      "message": "OK"
+    },
+    "qa-e2e-platform-fixture": {
+      "status": 200,
+      "message": "OK"
+    }
+  },
+  "stillPresent": []
+}
