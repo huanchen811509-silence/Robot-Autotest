@@ -1,0 +1,18 @@
+{
+  "schema": "v3.0.1-test-baseline/1",
+  "capturedAt": "2026-11-08",
+  "capturedFrom": "docs/evidence/gates/logs/02-frontend_test.log / 05-backend_test.log / 11-editor_test.log（2026-11-08 02:38–02:40 全门禁当轮真实日志）",
+  "source": "本版起点读数：frontend=Tests 325 passed (325)；backend=Tests run: 1016, Failures: 0, Errors: 0, Skipped: 0 + BUILD SUCCESS；editor=Tests 219 passed (219)。以上均取自 capturedFrom 指向的当轮日志，非外推值。",
+  "rule": "只增不减：三处当前 tests 必须 >= 各自 baseline.tests，且 failures/errors 必须均为 0；baseline.tests 不得低于 floor（防止偷偷调低基线来放过倒退）。floor 固定为本版起点读数，永不随日志上涨而上调。",
+  "note": "本版开工前的日志读数即起点值。后续并行工作包会令日志读数上涨（backend 1048 / frontend 330 / editor 219），但基线固定取起点值、不随之上调；判据始终是 tests >= 起点值。日志缺失或解析不出一律报错判红，不静默 PASS。",
+  "floor": {
+    "frontend": 325,
+    "backend": 1016,
+    "editor": 219
+  },
+  "baseline": {
+    "frontend": { "tests": 325, "failures": 0, "errors": 0 },
+    "backend":  { "tests": 1016, "failures": 0, "errors": 0 },
+    "editor":   { "tests": 219, "failures": 0, "errors": 0 }
+  }
+}

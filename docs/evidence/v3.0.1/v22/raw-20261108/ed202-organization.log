@@ -1,0 +1,16 @@
+快照: /home/evergreen/robot-autotest/fixtures/ed202/ED202测试用例_V0.4.xlsx
+快照 SHA-256: 9b897b77564eb6d9cb6843fa350b1cd085e61d613a1b047e8ce5ceaa36316e39
+实测 sheet 数: 7
+[sheet] 测试用例看板: 表头 r15 编号列=0 一级分类列=1 二级分类列=2 明细行=730 唯一用例编号=730 一级分类数=32 二级分类数=284
+[sheet] Import详细测试流程: 表头 r3 编号列=0 一级分类列=1 二级分类列=2 明细行=414 唯一用例编号=414 一级分类数=9 二级分类数=116
+[sheet] XCCL详细测试流程: 表头 r1 编号列=0 一级分类列=1 二级分类列=2 明细行=61 唯一用例编号=61 一级分类数=1 二级分类数=5
+[sheet] AI参数网_详细测试流程: 表头 r1 编号列=0 一级分类列=1 二级分类列=2 明细行=67 唯一用例编号=67 一级分类数=8 二级分类数=51
+[sheet] 存储_详细测试流程: 表头 r1 编号列=0 一级分类列=1 二级分类列=2 明细行=86 唯一用例编号=86 一级分类数=10 二级分类数=67
+[sheet] HCI详细测试流程: 表头 r1 编号列=0 一级分类列=1 二级分类列=2 明细行=102 唯一用例编号=102 一级分类数=7 二级分类数=46
+[sheet] UECGSE适配: 表头 r1 编号列=1 一级分类列=0 二级分类列=None 明细行=83 唯一用例编号=83 一级分类数=7 二级分类数=0
+[totals] dashboard(主口径=5 流程 sheet 编号并集)=730 adapter(适配集)=83 uniqueTotal(7 sheet 并集)=813
+[totals] 看板实测唯一编号=730 (汇总页，应等于主口径)
+[totals] dashboard + adapter = 813
+[output] docs/plan/ED202一级分类-场景对照表-20261108.md 数据行=39
+[output] docs/evidence/v3.0.1/v22/SCEN-04/ed202-organization.json
+[check] caseSets=7 scenarios=39 sum(scenario.caseCount)=813 dashboard+adapter=813 uniqueTotal=813

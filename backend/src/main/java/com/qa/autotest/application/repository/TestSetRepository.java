@@ -21,6 +21,9 @@ public interface TestSetRepository {
 
     long insert(TestSet testSet, Long operatorId);
 
+    /** 三态创建（SCEN-02）：显式写入 kind / design_id，其余 NOT NULL 列照旧。 */
+    long insertWithKind(TestSet testSet, Long operatorId, String kind, Long designId);
+
     void update(long projectId, long id, String name, String description, Long operatorId);
 
     void delete(long projectId, long id);

@@ -118,6 +118,31 @@ public class RunExecutionService {
     }
 
     /**
+     * SCEN-03：按场景登记一次执行，落库一个带全新 RUN_ID 的 run 并返回。
+     *
+     * <p>最小改动：复用既有 {@code RunService.create} 建 run（RUN_ID 由 RunIdGenerator 生成，
+     * 同秒也有单调序列保证唯一），不派发 pabot、不重写执行引擎。
+     * {@code runRequestId} 留空，故连续两次调用各生成独立 RUN_ID；
+     * 套件路径仅为占位标记（本端点不派发执行），场景到用例集的解析留待后续包。
+     */
+    public RunRecord executeScenario(long projectId, long scenarioId) {
+        RunService.CreateRunCommand cmd = new RunService.CreateRunCommand(
+                projectId,
+                null,
+                List.of("scenario/" + scenarioId),
+                1,
+                null,
+                List.of(),
+                null,
+                0,
+                props.getRunTimeoutSeconds(),
+                null,
+                List.of(),
+                0);
+        return runs.create(cmd);
+    }
+
+    /**
      * 执行一条已创建的 run（PLN-01 计划调度用）。
      *
      * <p>调度器先把 run 以 trigger_type='schedule' + plan_id 落库（短事务提交），
@@ -412,5 +437,22 @@ public class RunExecutionService {
         } catch (Exception ignored) {
             // 产物登记失败不影响主流程；日志文件仍在磁盘上。
         }
+    }
+
+    /**
+     * EVID-01：冻结计划 SHA 的「同一规则」入口。
+     * 服务端与请求方都用 {@link FrozenPlanService#computePlanSha256} 复算 / 校验 freezeSha256，
+     * 规则本体只在 FrozenPlanService 定义一次，避免两处漂移。
+     */
+    public static String computePlanSha256(long projectId, Long sourceSelectionId,
+                                           List<String> suitePaths, int roundNo,
+                                           String payloadJson) {
+        return FrozenPlanService.computePlanSha256(projectId, sourceSelectionId,
+                suitePaths, roundNo, payloadJson);
+    }
+
+    /** EVID-01：未知 / 异常状态 RUN_ID 的只读找回，只查询、不新增 run、不重发命令。 */
+    public RunRecord recoverUnknownRun(long projectId, String runId) {
+        return runs.findForRunner(projectId, runId);
     }
 }

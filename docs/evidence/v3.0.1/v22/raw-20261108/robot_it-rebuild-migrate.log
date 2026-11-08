@@ -1,0 +1,78 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] -------------------< com.qa:robot-autotest-backend >--------------------
+[INFO] Building robot-autotest-backend 0.1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- flyway:10.10.0:migrate (default-cli) @ robot-autotest-backend ---
+[INFO] Database: jdbc:mariadb://127.0.0.1/robot_it (MySQL 8.0)
+[WARNING] Error: 1142-42000: SELECT command denied to user 'robot'@'localhost' for table 'user_variables_by_thread'
+[INFO] Schema history table `robot_it`.`flyway_schema_history` does not exist yet
+[INFO] Successfully validated 47 migrations (execution time 00:00.062s)
+[INFO] Creating Schema History table `robot_it`.`flyway_schema_history` ...
+[INFO] Current version of schema `robot_it`: << Empty Schema >>
+[INFO] Migrating schema `robot_it` to version "1 - baseline"
+[INFO] Migrating schema `robot_it` to version "2.1 - iam fields"
+[INFO] Migrating schema `robot_it` to version "2.2 - asset fields"
+[INFO] Migrating schema `robot_it` to version "2.3 - case fields"
+[INFO] Migrating schema `robot_it` to version "2.4 - audit indexes"
+[INFO] Migrating schema `robot_it` to version "2.5 - editor keywords"
+[INFO] Migrating schema `robot_it` to version "4.1 - lease"
+[INFO] Migrating schema `robot_it` to version "4.2 - run artifact"
+[INFO] Migrating schema `robot_it` to version "4.3 - failure class"
+[INFO] Migrating schema `robot_it` to version "5.1 - report fields"
+[WARNING] DB: Integer display width is deprecated and will be removed in a future release. (SQL State:  - Error Code: 1681)
+[INFO] Migrating schema `robot_it` to version "5.3 - report log"
+[INFO] Migrating schema `robot_it` to version "5.4 - artifact pin"
+[INFO] Migrating schema `robot_it` to version "5.5 - export columns"
+[INFO] Migrating schema `robot_it` to version "6.1 - execution plan"
+[INFO] Migrating schema `robot_it` to version "6.2 - plan dependency"
+[INFO] Migrating schema `robot_it` to version "6.3 - ci trigger"
+[INFO] Migrating schema `robot_it` to version "7.1 - audit summary"
+[INFO] Migrating schema `robot_it` to version "7.2 - user preference"
+[INFO] Migrating schema `robot_it` to version "7.3 - asset pool"
+[INFO] Migrating schema `robot_it` to version "7.4 - run device scope"
+[INFO] Migrating schema `robot_it` to version "7.5 - case safety level"
+[INFO] Migrating schema `robot_it` to version "7.6 - run metadata"
+[INFO] Migrating schema `robot_it` to version "7.7 - project owner backfill"
+[INFO] Migrating schema `robot_it` to version "7.8 - domain tag backfill"
+[INFO] Migrating schema `robot_it` to version "8.1 - test report"
+[INFO] Migrating schema `robot_it` to version "8.2 - import sandbox"
+[INFO] Migrating schema `robot_it` to version "8.3 - group auth"
+[WARNING] DB: Integer display width is deprecated and will be removed in a future release. (SQL State:  - Error Code: 1681)
+[INFO] Migrating schema `robot_it` to version "8.4 - ai panel"
+[WARNING] DB: Integer display width is deprecated and will be removed in a future release. (SQL State:  - Error Code: 1681)
+[WARNING] DB: Integer display width is deprecated and will be removed in a future release. (SQL State:  - Error Code: 1681)
+[WARNING] DB: Integer display width is deprecated and will be removed in a future release. (SQL State:  - Error Code: 1681)
+[INFO] Migrating schema `robot_it` to version "8.5 - audit columns align"
+[INFO] Migrating schema `robot_it` to version "8.6 - audit columns rest"
+[INFO] Migrating schema `robot_it` to version "9.1 - plan group"
+[INFO] Migrating schema `robot_it` to version "9.2 - report template"
+[WARNING] DB: Integer display width is deprecated and will be removed in a future release. (SQL State:  - Error Code: 1681)
+[INFO] Migrating schema `robot_it` to version "9.3 - case source version"
+[INFO] Migrating schema `robot_it` to version "9.4 - execution node"
+[WARNING] DB: Integer display width is deprecated and will be removed in a future release. (SQL State:  - Error Code: 1681)
+[WARNING] DB: Integer display width is deprecated and will be removed in a future release. (SQL State:  - Error Code: 1681)
+[INFO] Migrating schema `robot_it` to version "9.5 - node agent"
+[INFO] Migrating schema `robot_it` to version "9.6 - execution shard"
+[INFO] Migrating schema `robot_it` to version "10.1 - audit keyset"
+[INFO] Migrating schema `robot_it` to version "10.2 - case key strip run root"
+[INFO] Migrating schema `robot_it` to version "11.1 - import batch sheet"
+[INFO] Migrating schema `robot_it` to version "11.2 - case requirement version"
+[INFO] Migrating schema `robot_it` to version "11.3 - test case ed202 fields"
+[INFO] Migrating schema `robot_it` to version "11.4 - test case step ed202"
+[INFO] Migrating schema `robot_it` to version "11.9 - ai runtime"
+[WARNING] DB: Integer display width is deprecated and will be removed in a future release. (SQL State:  - Error Code: 1681)
+[INFO] Migrating schema `robot_it` to version "11.10 - test set kind"
+[INFO] Migrating schema `robot_it` to version "11.11 - test scenario order"
+[INFO] Migrating schema `robot_it` to version "11.12 - execution selection"
+[INFO] Migrating schema `robot_it` to version "11.13 - run frozen round"
+[INFO] Successfully applied 47 migrations to schema `robot_it`, now at version v11.13 (execution time 00:09.797s)
+[WARNING] Error: 1142-42000: SELECT command denied to user 'robot'@'localhost' for table 'user_variables_by_thread'
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  14.775 s
+[INFO] Finished at: 2026-11-08T08:22:44+08:00
+[INFO] ------------------------------------------------------------------------

@@ -11,6 +11,15 @@ import java.util.Optional;
 /** 用例台账仓储。 */
 public interface TestCaseRepository {
 
+    /** EDIM-01/02：导入行的扩展字段（一次 UPDATE 写入 test_case 新增列）。 */
+    record ImportMetadata(String categoryL2, String sourcePriority, String caseClass,
+                          String testCategory, String ed202Coverage, String sourceSheet) {
+    }
+
+    /** EDIM-03：导入步骤（stepNo/action/expectation；sourceRow 为该用例源表行号，整批步骤共用）。 */
+    record ImportedStep(int stepNo, String action, String expectation) {
+    }
+
     PageResult<TestCase> page(long projectId, String keyword, String domain, String priority,
                               String reviewStatus, String capability, String safetyLevel,
                               int page, int size);
@@ -29,6 +38,13 @@ public interface TestCaseRepository {
 
     /** 全量替换步骤（导入与编辑共用）。 */
     void replaceSteps(long testCaseId, List<TestCaseStep> steps, Long operatorId);
+
+    /** EDIM-01/02：commit 插入用例后，写 ED202 扩展字段（六列全空时不发 SQL）。 */
+    void writeImportMetadata(long testCaseId, ImportMetadata meta, Long operatorId);
+
+    /** EDIM-03：commit 插入用例后，把「测试步骤」拆出的步骤写进 test_case_step。 */
+    void insertImportedSteps(long testCaseId, List<ImportedStep> steps, int sourceRow,
+                             Long operatorId);
 
     void updateReview(long projectId, long id, String reviewStatus, String comment,
                       Long reviewedBy, Instant reviewedAt);

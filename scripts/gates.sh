@@ -9,8 +9,11 @@
 #   16 四格式字段一致性（v2.1 TPLX-03，依赖 05 产物）
 #   17 只读接口性能基线（W4/v3.0：P95 劣化 >10% 且 >30ms 即红）
 #   18 结构自检（原第 17 步，编号顺延）
+#   19 证据完整性（v2.2 CLOS-02：output.xml metadata 六必填 + 三处单测基线只增不减
+#      + AI 契约机检（AI-06：零 prompt 文件开关 / 零硬编码凭据 / 零 L4-L5 自动提交））
 #
-# 结构自检：若步骤 13 / 14 / 17 被删除，脚本末尾的 check_structure 必须变红（`--selfcheck` 会实证 13/14）。
+# 本脚本共 19 步：01–17 为 run 步，18 为末尾 structure_selfcheck 内联块，19 为证据完整性 run 步。
+# 结构自检：若步骤 13 / 14 / 17 / 19 被删除，脚本末尾的 check_structure 必须变红（`--selfcheck` 会实证 13/14）。
 #
 # 用法：
 #   bash scripts/gates.sh              # 全量门禁，0 = 全 PASS
@@ -49,6 +52,7 @@ check_structure() {
   grep -qE '^run 13 browser_regression ' "$file" || { echo "STRUCT_FAIL 缺少步骤 13 browser_regression"; bad=1; }
   grep -qE '^run 14 report_sensitive ' "$file" || { echo "STRUCT_FAIL 缺少步骤 14 report_sensitive"; bad=1; }
   grep -qE '^run 17 perf_baseline ' "$file" || { echo "STRUCT_FAIL 缺少步骤 17 perf_baseline"; bad=1; }
+  grep -qE '^run 19 evidence_integrity ' "$file" || { echo "STRUCT_FAIL 缺少步骤 19 evidence_integrity"; bad=1; }
   return "$bad"
 }
 
@@ -67,6 +71,7 @@ if [ "${1:-}" = "--selfcheck" ]; then
   tmp="$(mktemp -d)"
   sed '/^run 13 /d' "$SELF" > "$tmp/no13.sh"
   sed '/^run 14 /d' "$SELF" > "$tmp/no14.sh"
+  sed '/^run 19 /d' "$SELF" > "$tmp/no19.sh"
   if check_structure "$tmp/no13.sh"; then
     echo 'SELFCHECK 删步骤 13 FAIL（删了仍然绿）'; FAILS=$((FAILS + 1))
   else
@@ -76,6 +81,11 @@ if [ "${1:-}" = "--selfcheck" ]; then
     echo 'SELFCHECK 删步骤 14 FAIL（删了仍然绿）'; FAILS=$((FAILS + 1))
   else
     echo 'SELFCHECK 删步骤 14 PASS（删了变红）'
+  fi
+  if check_structure "$tmp/no19.sh"; then
+    echo 'SELFCHECK 删步骤 19 FAIL（删了仍然绿）'; FAILS=$((FAILS + 1))
+  else
+    echo 'SELFCHECK 删步骤 19 PASS（删了变红）'
   fi
   rm -rf "$tmp"
   printf '\nSELFCHECK_RESULT FAILS=%s\n' "$FAILS"
@@ -101,9 +111,13 @@ run 12 db_audit        "DB_NAME=robot_dev bash scripts/db-audit.sh"
 # 该步同时在 1440 断言内容区利用率 ≥ 78%、1280 断言无整页横滚、并收集 JS 异常。
 # B8：再挑一个真实 finished run（有 test_result 且有 DUT）深检报告页的「对比 / 趋势」，
 # 没有可用 run 时退回路由巡检（不判红），避免空库里门禁假红。
+# 选样必须同时取出 project_id 并让浏览器会话绑定到它：报告详情/树/趋势/对比一律按
+# projectId 取数，而复用的 Chrome profile 里可能残留上一次夹具的 current_project_id。
+# 只传 RUN_ID 会命中「运行不存在」——页面根本没加载出趋势/对比，三项深检假红（2026-11-08 实测）。
 # 需要 Chrome 9222 与 :8001（缺任一项就会 FAIL，属预期：门禁必须看得见真实页面）。
-run 13 browser_regression "rid=\$(MYSQL_PWD=\"\$DB_PASSWORD\" mysql -h\"\$DB_HOST\" -P\"\$DB_PORT\" -u\"\$DB_USERNAME\" \"\$DB_NAME\" -N -B -e \"select r.run_id from run r join test_result t on t.run_id=r.id where r.project_id=29 and r.run_status='finished' and r.dut is not null group by r.id order by r.id desc limit 1\" 2>/dev/null); \
-  if [ -n \"\$rid\" ]; then echo \"[13] 对比/趋势深检 run=\$rid\"; REGRESS_REPORT_RUN=\"\$rid\" REGRESS_SHOT_DIR=docs/evidence/gates/browser node scripts/browser-regression.mjs; \
+run 13 browser_regression "sample=\$(MYSQL_PWD=\"\$DB_PASSWORD\" mysql -h\"\$DB_HOST\" -P\"\$DB_PORT\" -u\"\$DB_USERNAME\" \"\$DB_NAME\" -N -B -e \"select r.run_id, r.project_id from run r join test_result t on t.run_id=r.id join project_member pm on pm.project_id=r.project_id and pm.user_id=(select id from app_user where username='qa-e2e-admin') where r.run_status='finished' and r.dut is not null group by r.id, r.run_id, r.project_id order by r.id desc limit 1\" 2>/dev/null); \
+  read -r rid pid <<< \"\$sample\"; \
+  if [ -n \"\$rid\" ] && [ -n \"\$pid\" ]; then echo \"[13] 对比/趋势深检 run=\$rid project=\$pid\"; REGRESS_REPORT_RUN=\"\$rid\" REGRESS_REPORT_PROJECT=\"\$pid\" REGRESS_SHOT_DIR=docs/evidence/gates/browser node scripts/browser-regression.mjs; \
   else echo '[13] 无可用 run，跳过对比/趋势深检'; node scripts/browser-regression.mjs; fi"
 # 报告敏感扫描（B4 第 14 步）。优先扫 EXTERNAL 导出样本；无样本时至少跑判据自校验，
 # 不让「没有样本」变成「没有判据」。EXTERNAL 只做内部扫描，不代表获准对外发送。
@@ -129,13 +143,22 @@ run 16 report_consistency "python3 tools/check_report_consistency.py \
 # 依赖 :8001 可用（与 13 同源）；报告数据为空时会明确报错，不会静默放行。
 run 17 perf_baseline "python3 tools/perf_baseline.py"
 
-# 结构自检放在最后：步骤 13 / 14 / 17 被删掉时，本检查是唯一会红的环节。
+# 结构自检：步骤 13 / 14 / 17 / 19 被删掉时，本检查是唯一会红的环节。
+# 它放在 18 位；19 是后加的纯只读证据完整性复核，不覆盖任何既有步骤编号。
 if check_structure "$SELF"; then
   printf '  PASS  18 structure_selfcheck\n'
 else
   printf '  FAIL  18 structure_selfcheck\n'
   FAILS=$((FAILS + 1))
 fi
+
+# 证据完整性（v2.2 CLOS-02，第 19 步）。排在 18 之后：先结构自检，再跑纯标准库检查器。
+# 三台检查器都带负向实证：当前版本 0 份 output.xml 时靠判据自校验兜底，绝不静默放行；
+# 三处单测基线只增不减（floor 防下调），日志缺失 / 解析失败一律报错判红。
+# 第三台 check_ai_contract.py 是 AI-06 的契约机检（零 prompt 文件开关、零硬编码凭据、
+# 零 L4-L5 自动提交、假 CLI 夹具齐全）：它此前只在证据 README 里「独立执行」，
+# 没进门禁就等于没有——2026-11-08 补接，避免 AI 契约回退无人发现。
+run 19 evidence_integrity "python3 tools/check_output_metadata.py && python3 tools/check_test_baseline.py && python3 tools/check_ai_contract.py"
 
 printf '\nGATES_RESULT FAILS=%s\n' "$FAILS"
 exit "$FAILS"

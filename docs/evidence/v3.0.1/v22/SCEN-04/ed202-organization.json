@@ -1,0 +1,1246 @@
+{
+  "project": {
+    "name": "ED202-COMMON",
+    "snapshot": "fixtures/ed202/ED202测试用例_V0.4.xlsx",
+    "snapshotSha256": "9b897b77564eb6d9cb6843fa350b1cd085e61d613a1b047e8ce5ceaa36316e39",
+    "id": 77,
+    "code": "ED202-COMMON",
+    "db": "robot_dev.test_project"
+  },
+  "caseSets": [
+    {
+      "sheet": "测试用例看板",
+      "caseCount": 730,
+      "headerRow": 15,
+      "codeColumn": 0,
+      "primaryColumn": 1,
+      "secondaryColumn": 2,
+      "primaryCategoryCount": 32,
+      "secondaryCategoryCount": 284,
+      "setId": 32,
+      "setCode": "ED202-CS-DASHBOARD",
+      "dbItemCount": 730
+    },
+    {
+      "sheet": "Import详细测试流程",
+      "caseCount": 414,
+      "headerRow": 3,
+      "codeColumn": 0,
+      "primaryColumn": 1,
+      "secondaryColumn": 2,
+      "primaryCategoryCount": 9,
+      "secondaryCategoryCount": 116,
+      "setId": 33,
+      "setCode": "ED202-CS-IMPORT",
+      "dbItemCount": 414
+    },
+    {
+      "sheet": "XCCL详细测试流程",
+      "caseCount": 61,
+      "headerRow": 1,
+      "codeColumn": 0,
+      "primaryColumn": 1,
+      "secondaryColumn": 2,
+      "primaryCategoryCount": 1,
+      "secondaryCategoryCount": 5,
+      "setId": 34,
+      "setCode": "ED202-CS-XCCL",
+      "dbItemCount": 61
+    },
+    {
+      "sheet": "AI参数网_详细测试流程",
+      "caseCount": 67,
+      "headerRow": 1,
+      "codeColumn": 0,
+      "primaryColumn": 1,
+      "secondaryColumn": 2,
+      "primaryCategoryCount": 8,
+      "secondaryCategoryCount": 51,
+      "setId": 35,
+      "setCode": "ED202-CS-AIPARAM",
+      "dbItemCount": 67
+    },
+    {
+      "sheet": "存储_详细测试流程",
+      "caseCount": 86,
+      "headerRow": 1,
+      "codeColumn": 0,
+      "primaryColumn": 1,
+      "secondaryColumn": 2,
+      "primaryCategoryCount": 10,
+      "secondaryCategoryCount": 67,
+      "setId": 36,
+      "setCode": "ED202-CS-STORAGE",
+      "dbItemCount": 86
+    },
+    {
+      "sheet": "HCI详细测试流程",
+      "caseCount": 102,
+      "headerRow": 1,
+      "codeColumn": 0,
+      "primaryColumn": 1,
+      "secondaryColumn": 2,
+      "primaryCategoryCount": 7,
+      "secondaryCategoryCount": 46,
+      "setId": 37,
+      "setCode": "ED202-CS-HCI",
+      "dbItemCount": 102
+    },
+    {
+      "sheet": "UECGSE适配",
+      "caseCount": 83,
+      "headerRow": 1,
+      "codeColumn": 1,
+      "primaryColumn": 0,
+      "secondaryColumn": null,
+      "primaryCategoryCount": 7,
+      "secondaryCategoryCount": 0,
+      "setId": 38,
+      "setCode": "ED202-CS-UECGSE",
+      "dbItemCount": 83
+    }
+  ],
+  "scenarios": [
+    {
+      "name": "AI应用业务联动场景",
+      "primaryCategory": "AI应用业务联动",
+      "sources": [
+        {
+          "sheet": "AI参数网_详细测试流程",
+          "caseCount": 7
+        }
+      ],
+      "sourceSheets": [
+        "AI参数网_详细测试流程"
+      ],
+      "caseCount": 7,
+      "secondaryCategories": [
+        "推理负载对照",
+        "训练任务端到端"
+      ],
+      "mergedFrom": "单一明细来源 sheet，无需合并",
+      "scenarioId": 5,
+      "caseSetIds": [
+        35
+      ]
+    },
+    {
+      "name": "AI训练与推理存储场景",
+      "primaryCategory": "AI训练与推理存储",
+      "sources": [
+        {
+          "sheet": "存储_详细测试流程",
+          "caseCount": 14
+        }
+      ],
+      "sourceSheets": [
+        "存储_详细测试流程"
+      ],
+      "caseCount": 14,
+      "secondaryCategories": [
+        "并行文件系统与RDMA",
+        "推理与RAG检索",
+        "模型检查点保存与恢复",
+        "训练数据加载"
+      ],
+      "mergedFrom": "单一明细来源 sheet，无需合并",
+      "scenarioId": 6,
+      "caseSetIds": [
+        36
+      ]
+    },
+    {
+      "name": "CCL通信测试场景",
+      "primaryCategory": "CCL通信测试",
+      "sources": [
+        {
+          "sheet": "XCCL详细测试流程",
+          "caseCount": 61
+        }
+      ],
+      "sourceSheets": [
+        "XCCL详细测试流程"
+      ],
+      "caseCount": 61,
+      "secondaryCategories": [
+        "CCL兼容性",
+        "CCL可靠性",
+        "CCL稳定性",
+        "集合通信功能",
+        "集合通信性能"
+      ],
+      "mergedFrom": "单一明细来源 sheet，无需合并",
+      "scenarioId": 7,
+      "caseSetIds": [
+        34
+      ]
+    },
+    {
+      "name": "GPU Direct Storage场景",
+      "primaryCategory": "GPU Direct Storage",
+      "sources": [
+        {
+          "sheet": "存储_详细测试流程",
+          "caseCount": 11
+        }
+      ],
+      "sourceSheets": [
+        "存储_详细测试流程"
+      ],
+      "caseCount": 11,
+      "secondaryCategories": [
+        "GDS Batch API",
+        "GDS业务与文件系统协同",
+        "GDS基础与数据路径",
+        "GDS性能与块大小",
+        "GDS故障恢复",
+        "GDS数据完整性",
+        "GDS缓存策略",
+        "多GPU并发GDS"
+      ],
+      "mergedFrom": "单一明细来源 sheet，无需合并",
+      "scenarioId": 8,
+      "caseSetIds": [
+        36
+      ]
+    },
+    {
+      "name": "GSE测试场景",
+      "primaryCategory": "GSE测试",
+      "sources": [
+        {
+          "sheet": "UECGSE适配",
+          "caseCount": 31
+        }
+      ],
+      "sourceSheets": [
+        "UECGSE适配"
+      ],
+      "caseCount": 31,
+      "secondaryCategories": [],
+      "mergedFrom": "单一明细来源 sheet，无需合并",
+      "scenarioId": 9,
+      "caseSetIds": [
+        38
+      ]
+    },
+    {
+      "name": "NCCL集合通信场景",
+      "primaryCategory": "NCCL集合通信",
+      "sources": [
+        {
+          "sheet": "AI参数网_详细测试流程",
+          "caseCount": 10
+        }
+      ],
+      "sourceSheets": [
+        "AI参数网_详细测试流程"
+      ],
+      "caseCount": 10,
+      "secondaryCategories": [
+        "GDR性能对比",
+        "双轨NCCL",
+        "多节点扩展",
+        "集合通信原语"
+      ],
+      "mergedFrom": "单一明细来源 sheet，无需合并",
+      "scenarioId": 10,
+      "caseSetIds": [
+        35
+      ]
+    },
+    {
+      "name": "RDMA与用户态存储场景",
+      "primaryCategory": "RDMA与用户态存储",
+      "sources": [
+        {
+          "sheet": "存储_详细测试流程",
+          "caseCount": 11
+        }
+      ],
+      "sourceSheets": [
+        "存储_详细测试流程"
+      ],
+      "caseCount": 11,
+      "secondaryCategories": [
+        "NFS over RDMA",
+        "NVMe-oF RDMA接入",
+        "SMB Direct接入",
+        "SPDK Initiator",
+        "SPDK RDMA Target",
+        "SPDK TCP Target",
+        "iSER协议接入",
+        "io_uring存储引擎",
+        "存储卸载能力",
+        "用户态与内核态对比",
+        "用户态设备直通"
+      ],
+      "mergedFrom": "单一明细来源 sheet，无需合并",
+      "scenarioId": 11,
+      "caseSetIds": [
+        36
+      ]
+    },
+    {
+      "name": "RDMA功能测试场景",
+      "primaryCategory": "RDMA功能测试",
+      "sources": [
+        {
+          "sheet": "Import详细测试流程",
+          "caseCount": 28
+        }
+      ],
+      "sourceSheets": [
+        "Import详细测试流程"
+      ],
+      "caseCount": 28,
+      "secondaryCategories": [
+        "GPUDirect RDMA",
+        "QoS/DCB",
+        "RDMA 功能",
+        "RDMA功能",
+        "互操作",
+        "硬件与标识"
+      ],
+      "mergedFrom": "单一明细来源 sheet，无需合并",
+      "scenarioId": 12,
+      "caseSetIds": [
+        33
+      ]
+    },
+    {
+      "name": "RDMA协议与资源场景",
+      "primaryCategory": "RDMA协议与资源",
+      "sources": [
+        {
+          "sheet": "AI参数网_详细测试流程",
+          "caseCount": 14
+        }
+      ],
+      "sourceSheets": [
+        "AI参数网_详细测试流程"
+      ],
+      "caseCount": 14,
+      "secondaryCategories": [
+        "CQ深度65536",
+        "DMA-BUF GDR",
+        "GDR与CPU绕行比较",
+        "MR注册能力",
+        "QP容量8192",
+        "RDMA CM",
+        "RDMA MTU",
+        "RDMA原子操作",
+        "READ单向传输",
+        "RoCE协议栈监测",
+        "SEND收发",
+        "WRITE单向传输",
+        "多QP并发",
+        "小报文RDMA时延"
+      ],
+      "mergedFrom": "单一明细来源 sheet，无需合并",
+      "scenarioId": 13,
+      "caseSetIds": [
+        35
+      ]
+    },
+    {
+      "name": "UEC测试场景",
+      "primaryCategory": "UEC测试",
+      "sources": [
+        {
+          "sheet": "UECGSE适配",
+          "caseCount": 18
+        }
+      ],
+      "sourceSheets": [
+        "UECGSE适配"
+      ],
+      "caseCount": 18,
+      "secondaryCategories": [],
+      "mergedFrom": "单一明细来源 sheet，无需合并",
+      "scenarioId": 14,
+      "caseSetIds": [
+        38
+      ]
+    },
+    {
+      "name": "云业务性能测试场景",
+      "primaryCategory": "云业务性能测试",
+      "sources": [
+        {
+          "sheet": "HCI详细测试流程",
+          "caseCount": 24
+        }
+      ],
+      "sourceSheets": [
+        "HCI详细测试流程"
+      ],
+      "caseCount": 24,
+      "secondaryCategories": [
+        "ACL/QoS策略下业务性能",
+        "IPv6时延与丢包",
+        "Kubernetes VF Pod网络性能",
+        "OVS TC硬件卸载VM性能",
+        "OVS-DPDK硬件卸载VM性能",
+        "Overlay隧道业务性能",
+        "PF直通VM TCP/UDP性能",
+        "RoCE/IP混合业务性能",
+        "SR-IOV VF VM TCP/UDP性能",
+        "vDPA VM TCP/UDP性能",
+        "virtio软件转发性能对照",
+        "多租户聚合与干扰性能"
+      ],
+      "mergedFrom": "单一明细来源 sheet，无需合并",
+      "scenarioId": 15,
+      "caseSetIds": [
+        37
+      ]
+    },
+    {
+      "name": "云平台接入测试场景",
+      "primaryCategory": "云平台接入测试",
+      "sources": [
+        {
+          "sheet": "HCI详细测试流程",
+          "caseCount": 12
+        }
+      ],
+      "sourceSheets": [
+        "HCI详细测试流程"
+      ],
+      "caseCount": 12,
+      "secondaryCategories": [
+        "Guest RDMA设备识别与业务验证",
+        "Guest网卡卸载协同",
+        "Kubernetes RDMA资源与网络接入",
+        "LACP成员故障与恢复",
+        "PF直通与虚拟机接入",
+        "SR-IOV VF分配与虚拟机接入",
+        "vDPA硬件后端接入",
+        "virtio/vhost软件网络接入",
+        "多网络虚拟机接入"
+      ],
+      "mergedFrom": "单一明细来源 sheet，无需合并",
+      "scenarioId": 16,
+      "caseSetIds": [
+        37
+      ]
+    },
+    {
+      "name": "云租户策略测试场景",
+      "primaryCategory": "云租户策略测试",
+      "sources": [
+        {
+          "sheet": "HCI详细测试流程",
+          "caseCount": 11
+        }
+      ],
+      "sourceSheets": [
+        "HCI详细测试流程"
+      ],
+      "caseCount": 11,
+      "secondaryCategories": [
+        "ACL访问控制与规则更新",
+        "QoS分类标记与限速",
+        "RDMA设备可见性隔离",
+        "VF源地址与VLAN安全",
+        "VLAN与二层租户隔离"
+      ],
+      "mergedFrom": "单一明细来源 sheet，无需合并",
+      "scenarioId": 17,
+      "caseSetIds": [
+        37
+      ]
+    },
+    {
+      "name": "云网络与卸载测试场景",
+      "primaryCategory": "云网络与卸载测试",
+      "sources": [
+        {
+          "sheet": "HCI详细测试流程",
+          "caseCount": 32
+        }
+      ],
+      "sourceSheets": [
+        "HCI详细测试流程"
+      ],
+      "caseCount": 32,
+      "secondaryCategories": [
+        "Kubernetes VF代表口硬件卸载",
+        "OVS TC硬件转发与卸载",
+        "OVS-DPDK转发与vhost-user协同",
+        "Overlay隧道承载与硬件卸载",
+        "云网络统计与丢包定位",
+        "流表匹配与多表流水线",
+        "状态表与关联转发资源",
+        "软件回退与混合路径共存"
+      ],
+      "mergedFrom": "单一明细来源 sheet，无需合并",
+      "scenarioId": 18,
+      "caseSetIds": [
+        37
+      ]
+    },
+    {
+      "name": "云资源生命周期测试场景",
+      "primaryCategory": "云资源生命周期测试",
+      "sources": [
+        {
+          "sheet": "HCI详细测试流程",
+          "caseCount": 8
+        }
+      ],
+      "sourceSheets": [
+        "HCI详细测试流程"
+      ],
+      "caseCount": 8,
+      "secondaryCategories": [
+        "PF/VF资源共存与归属",
+        "云资源重建与网络恢复",
+        "流表生命周期"
+      ],
+      "mergedFrom": "单一明细来源 sheet，无需合并",
+      "scenarioId": 19,
+      "caseSetIds": [
+        37
+      ]
+    },
+    {
+      "name": "以太网功能测试场景",
+      "primaryCategory": "以太网功能测试",
+      "sources": [
+        {
+          "sheet": "Import详细测试流程",
+          "caseCount": 138
+        }
+      ],
+      "sourceSheets": [
+        "Import详细测试流程"
+      ],
+      "caseCount": 138,
+      "secondaryCategories": [
+        "Bond绑定",
+        "Checksum卸载",
+        "DPDK用户态驱动",
+        "GRO卸载",
+        "GSO卸载",
+        "IPv6功能",
+        "L2NIC网络功能",
+        "LLDP协议",
+        "LRO卸载",
+        "MTU收发包",
+        "QinQ标签",
+        "QoS/DCB",
+        "RSS接收侧队列",
+        "SCTP CRC卸载",
+        "TSO卸载",
+        "TSS发送侧队列",
+        "UFO卸载",
+        "VLAN功能",
+        "VXLAN功能",
+        "中断聚合",
+        "以太网功能",
+        "光模块DDM监控",
+        "光模块兼容性",
+        "可管理性",
+        "多队列",
+        "异型号网卡兼容性",
+        "收发Ring配置",
+        "文件传输",
+        "混杂模式",
+        "物理链路",
+        "硬件卸载",
+        "网口逻辑状态",
+        "速率与双工自协商",
+        "速率与链路协商"
+      ],
+      "mergedFrom": "单一明细来源 sheet，无需合并",
+      "scenarioId": 20,
+      "caseSetIds": [
+        33
+      ]
+    },
+    {
+      "name": "兼容适配与虚拟化场景",
+      "primaryCategory": "兼容适配与虚拟化",
+      "sources": [
+        {
+          "sheet": "存储_详细测试流程",
+          "caseCount": 6
+        }
+      ],
+      "sourceSheets": [
+        "存储_详细测试流程"
+      ],
+      "caseCount": 6,
+      "secondaryCategories": [
+        "CPU平台兼容性",
+        "Kubernetes容器存储",
+        "SR-IOV存储直通",
+        "存储与交换机互通",
+        "操作系统兼容性",
+        "虚拟化存储接入"
+      ],
+      "mergedFrom": "单一明细来源 sheet，无需合并",
+      "scenarioId": 21,
+      "caseSetIds": [
+        36
+      ]
+    },
+    {
+      "name": "压力与边界场景",
+      "primaryCategory": "压力与边界",
+      "sources": [
+        {
+          "sheet": "存储_详细测试流程",
+          "caseCount": 6
+        }
+      ],
+      "sourceSheets": [
+        "存储_详细测试流程"
+      ],
+      "caseCount": 6,
+      "secondaryCategories": [
+        "VLAN/MTU边界",
+        "中断与CPU迁移",
+        "内存资源压力",
+        "大IO边界",
+        "小IO与非对齐",
+        "队列和连接耗尽"
+      ],
+      "mergedFrom": "单一明细来源 sheet，无需合并",
+      "scenarioId": 22,
+      "caseSetIds": [
+        36
+      ]
+    },
+    {
+      "name": "压力测试场景",
+      "primaryCategory": "压力测试",
+      "sources": [
+        {
+          "sheet": "Import详细测试流程",
+          "caseCount": 10
+        }
+      ],
+      "sourceSheets": [
+        "Import详细测试流程"
+      ],
+      "caseCount": 10,
+      "secondaryCategories": [
+        "Bond压力",
+        "RoCE压力",
+        "可靠性",
+        "物理网口压力"
+      ],
+      "mergedFrom": "单一明细来源 sheet，无需合并",
+      "scenarioId": 23,
+      "caseSetIds": [
+        33
+      ]
+    },
+    {
+      "name": "参数网络性能场景",
+      "primaryCategory": "参数网络性能",
+      "sources": [
+        {
+          "sheet": "AI参数网_详细测试流程",
+          "caseCount": 11
+        }
+      ],
+      "sourceSheets": [
+        "AI参数网_详细测试流程"
+      ],
+      "caseCount": 11,
+      "secondaryCategories": [
+        "NUMA拓扑敏感性",
+        "双轨独立性能",
+        "双轨聚合压力",
+        "基础吞吐",
+        "尾延迟",
+        "报文尺寸矩阵"
+      ],
+      "mergedFrom": "单一明细来源 sheet，无需合并",
+      "scenarioId": 24,
+      "caseSetIds": [
+        35
+      ]
+    },
+    {
+      "name": "基础管理测试场景",
+      "primaryCategory": "基础管理测试",
+      "sources": [
+        {
+          "sheet": "Import详细测试流程",
+          "caseCount": 84
+        }
+      ],
+      "sourceSheets": [
+        "Import详细测试流程"
+      ],
+      "caseCount": 84,
+      "secondaryCategories": [
+        "BMC/BIOS识别",
+        "DKMS驱动重建",
+        "IOMMU配置",
+        "IPMI带外采集",
+        "Legacy Option ROM配置",
+        "PCIe 接口",
+        "PCIe设备信息",
+        "PXE启动",
+        "Redfish网卡识别",
+        "SNMP带外采集",
+        "UEFI HII配置",
+        "iPXE启动",
+        "tunicadm工具功能测试",
+        "厂商健康",
+        "可管理性",
+        "可靠性",
+        "固件管理",
+        "固件组件",
+        "安全",
+        "工作模式",
+        "硬件与标识",
+        "系统与网卡管理",
+        "系统网卡信息",
+        "网卡定位灯",
+        "网卡日志导出",
+        "网卡状态指示灯",
+        "网卡监控指标",
+        "网络唤醒",
+        "计数器语义",
+        "驱动与固件",
+        "驱动管理",
+        "驱动自检"
+      ],
+      "mergedFrom": "单一明细来源 sheet，无需合并",
+      "scenarioId": 25,
+      "caseSetIds": [
+        33
+      ]
+    },
+    {
+      "name": "基础组网与链路场景",
+      "primaryCategory": "基础组网与链路",
+      "sources": [
+        {
+          "sheet": "AI参数网_详细测试流程",
+          "caseCount": 8
+        }
+      ],
+      "sourceSheets": [
+        "AI参数网_详细测试流程"
+      ],
+      "caseCount": 8,
+      "secondaryCategories": [
+        "MTU与巨帧",
+        "PCIe通道与NUMA",
+        "RoCEv2 GID核查",
+        "双轨端点识别",
+        "双轨隔离与路由",
+        "故障诊断计数",
+        "物理链路速率",
+        "设备资产识别"
+      ],
+      "mergedFrom": "单一明细来源 sheet，无需合并",
+      "scenarioId": 26,
+      "caseSetIds": [
+        35
+      ]
+    },
+    {
+      "name": "多协议模式管理测试场景",
+      "primaryCategory": "多协议模式管理测试",
+      "sources": [
+        {
+          "sheet": "UECGSE适配",
+          "caseCount": 3
+        }
+      ],
+      "sourceSheets": [
+        "UECGSE适配"
+      ],
+      "caseCount": 3,
+      "secondaryCategories": [],
+      "mergedFrom": "单一明细来源 sheet，无需合并",
+      "scenarioId": 27,
+      "caseSetIds": [
+        38
+      ]
+    },
+    {
+      "name": "大规模训练和推理场景测试场景",
+      "primaryCategory": "大规模训练和推理场景测试",
+      "sources": [
+        {
+          "sheet": "UECGSE适配",
+          "caseCount": 13
+        }
+      ],
+      "sourceSheets": [
+        "UECGSE适配"
+      ],
+      "caseCount": 13,
+      "secondaryCategories": [],
+      "mergedFrom": "单一明细来源 sheet，无需合并",
+      "scenarioId": 28,
+      "caseSetIds": [
+        38
+      ]
+    },
+    {
+      "name": "存储协议与基础网络场景",
+      "primaryCategory": "存储协议与基础网络",
+      "sources": [
+        {
+          "sheet": "存储_详细测试流程",
+          "caseCount": 4
+        }
+      ],
+      "sourceSheets": [
+        "存储_详细测试流程"
+      ],
+      "caseCount": 4,
+      "secondaryCategories": [
+        "MTU与巨帧",
+        "NFS/SMB文件协议",
+        "NVMe-oF TCP接入",
+        "iSCSI协议接入"
+      ],
+      "mergedFrom": "单一明细来源 sheet，无需合并",
+      "scenarioId": 29,
+      "caseSetIds": [
+        36
+      ]
+    },
+    {
+      "name": "存储性能与效率场景",
+      "primaryCategory": "存储性能与效率",
+      "sources": [
+        {
+          "sheet": "存储_详细测试流程",
+          "caseCount": 13
+        }
+      ],
+      "sourceSheets": [
+        "存储_详细测试流程"
+      ],
+      "caseCount": 13,
+      "secondaryCategories": [
+        "CPU资源开销",
+        "RDMA带宽与时延",
+        "混合读写性能",
+        "端到端与尾时延",
+        "队列深度与并发",
+        "随机读写IOPS",
+        "顺序读写吞吐"
+      ],
+      "mergedFrom": "单一明细来源 sheet，无需合并",
+      "scenarioId": 30,
+      "caseSetIds": [
+        36
+      ]
+    },
+    {
+      "name": "存储测试-KV Cache加速场景",
+      "primaryCategory": "存储测试-KV Cache加速",
+      "sources": [
+        {
+          "sheet": "UECGSE适配",
+          "caseCount": 6
+        }
+      ],
+      "sourceSheets": [
+        "UECGSE适配"
+      ],
+      "caseCount": 6,
+      "secondaryCategories": [],
+      "mergedFrom": "单一明细来源 sheet，无需合并",
+      "scenarioId": 31,
+      "caseSetIds": [
+        38
+      ]
+    },
+    {
+      "name": "存储测试-NVMe-oF卸载场景",
+      "primaryCategory": "存储测试-NVMe-oF卸载",
+      "sources": [
+        {
+          "sheet": "UECGSE适配",
+          "caseCount": 6
+        }
+      ],
+      "sourceSheets": [
+        "UECGSE适配"
+      ],
+      "caseCount": 6,
+      "secondaryCategories": [],
+      "mergedFrom": "单一明细来源 sheet，无需合并",
+      "scenarioId": 32,
+      "caseSetIds": [
+        38
+      ]
+    },
+    {
+      "name": "存储测试-数据加密场景",
+      "primaryCategory": "存储测试-数据加密",
+      "sources": [
+        {
+          "sheet": "UECGSE适配",
+          "caseCount": 6
+        }
+      ],
+      "sourceSheets": [
+        "UECGSE适配"
+      ],
+      "caseCount": 6,
+      "secondaryCategories": [],
+      "mergedFrom": "单一明细来源 sheet，无需合并",
+      "scenarioId": 33,
+      "caseSetIds": [
+        38
+      ]
+    },
+    {
+      "name": "安全功能测试场景",
+      "primaryCategory": "安全功能测试",
+      "sources": [
+        {
+          "sheet": "HCI详细测试流程",
+          "caseCount": 11
+        }
+      ],
+      "sourceSheets": [
+        "HCI详细测试流程"
+      ],
+      "caseCount": 11,
+      "secondaryCategories": [
+        "IPsec功能与策略",
+        "IPsec硬件卸载",
+        "RDMA内存访问保护",
+        "VFIO/IOMMU设备隔离",
+        "固件安全启动与更新保护",
+        "管理权限与访问控制"
+      ],
+      "mergedFrom": "单一明细来源 sheet，无需合并",
+      "scenarioId": 34,
+      "caseSetIds": [
+        37
+      ]
+    },
+    {
+      "name": "性能测试场景",
+      "primaryCategory": "性能测试",
+      "sources": [
+        {
+          "sheet": "Import详细测试流程",
+          "caseCount": 69
+        }
+      ],
+      "sourceSheets": [
+        "Import详细测试流程"
+      ],
+      "caseCount": 69,
+      "secondaryCategories": [
+        "GPU/AI",
+        "RDMA 功能",
+        "RDMA 性能",
+        "RoCE单口单向性能",
+        "RoCE单口双向性能",
+        "RoCE多口单向性能",
+        "RoCE多口双向性能",
+        "以太网性能",
+        "参考基线",
+        "双机双卡并行性能",
+        "性能专项",
+        "物理单口TCP时延",
+        "物理单口UDP时延",
+        "物理单口单向性能",
+        "物理单口双向性能",
+        "物理多口单向性能",
+        "物理多口双向性能",
+        "硬件卸载"
+      ],
+      "mergedFrom": "单一明细来源 sheet，无需合并",
+      "scenarioId": 35,
+      "caseSetIds": [
+        33
+      ]
+    },
+    {
+      "name": "数据完整性场景",
+      "primaryCategory": "数据完整性",
+      "sources": [
+        {
+          "sheet": "存储_详细测试流程",
+          "caseCount": 5
+        }
+      ],
+      "sourceSheets": [
+        "存储_详细测试流程"
+      ],
+      "caseCount": 5,
+      "secondaryCategories": [
+        "大文件校验",
+        "文件系统完整性",
+        "端到端数据校验",
+        "跨重启数据一致性",
+        "随机读写校验"
+      ],
+      "mergedFrom": "单一明细来源 sheet，无需合并",
+      "scenarioId": 36,
+      "caseSetIds": [
+        36
+      ]
+    },
+    {
+      "name": "无损网络与拥塞控制场景",
+      "primaryCategory": "无损网络与拥塞控制",
+      "sources": [
+        {
+          "sheet": "AI参数网_详细测试流程",
+          "caseCount": 10
+        }
+      ],
+      "sourceSheets": [
+        "AI参数网_详细测试流程"
+      ],
+      "caseCount": 10,
+      "secondaryCategories": [
+        "CNP与DCQCN",
+        "DSCP/UP/TC映射",
+        "ECN标记",
+        "PFC/ECN协同",
+        "PFC优先级",
+        "PFC异常压力",
+        "PFC隔离",
+        "QoS调度与带宽",
+        "QoS配置恢复",
+        "多对一拥塞"
+      ],
+      "mergedFrom": "单一明细来源 sheet，无需合并",
+      "scenarioId": 37,
+      "caseSetIds": [
+        35
+      ]
+    },
+    {
+      "name": "混流与业务隔离场景",
+      "primaryCategory": "混流与业务隔离",
+      "sources": [
+        {
+          "sheet": "AI参数网_详细测试流程",
+          "caseCount": 3
+        },
+        {
+          "sheet": "存储_详细测试流程",
+          "caseCount": 4
+        }
+      ],
+      "sourceSheets": [
+        "AI参数网_详细测试流程",
+        "存储_详细测试流程"
+      ],
+      "caseCount": 7,
+      "secondaryCategories": [
+        "NCCL与存储混流",
+        "TCP+RoCE混跑",
+        "多训练作业公平性",
+        "异业务优先级",
+        "检查点与推理隔离",
+        "混流比例档位",
+        "训练与检查点并发"
+      ],
+      "mergedFrom": "跨 sheet 同名一级分类合并：AI参数网_详细测试流程、存储_详细测试流程；按分类名去重，各明细来源计数分列，场景合计 7",
+      "scenarioId": 38,
+      "caseSetIds": [
+        35,
+        36
+      ]
+    },
+    {
+      "name": "混流测试场景",
+      "primaryCategory": "混流测试",
+      "sources": [
+        {
+          "sheet": "Import详细测试流程",
+          "caseCount": 14
+        }
+      ],
+      "sourceSheets": [
+        "Import详细测试流程"
+      ],
+      "caseCount": 14,
+      "secondaryCategories": [
+        "VF Bond TCP/RDMA混流",
+        "VF TCP/RDMA混流",
+        "存储网络",
+        "物理Bond TCP/RDMA混流",
+        "物理口TCP/RDMA混流"
+      ],
+      "mergedFrom": "单一明细来源 sheet，无需合并",
+      "scenarioId": 39,
+      "caseSetIds": [
+        33
+      ]
+    },
+    {
+      "name": "硬件与认证测试场景",
+      "primaryCategory": "硬件与认证测试",
+      "sources": [
+        {
+          "sheet": "Import详细测试流程",
+          "caseCount": 14
+        }
+      ],
+      "sourceSheets": [
+        "Import详细测试流程"
+      ],
+      "caseCount": 14,
+      "secondaryCategories": [
+        "EMC电磁兼容",
+        "REL可靠性",
+        "SIV信号可视化",
+        "SI信号完整性",
+        "Thermal热测试",
+        "散热验证",
+        "环境与功耗",
+        "结构检验"
+      ],
+      "mergedFrom": "单一明细来源 sheet，无需合并",
+      "scenarioId": 40,
+      "caseSetIds": [
+        33
+      ]
+    },
+    {
+      "name": "稳定性与故障恢复场景",
+      "primaryCategory": "稳定性与故障恢复",
+      "sources": [
+        {
+          "sheet": "AI参数网_详细测试流程",
+          "caseCount": 4
+        },
+        {
+          "sheet": "存储_详细测试流程",
+          "caseCount": 12
+        }
+      ],
+      "sourceSheets": [
+        "AI参数网_详细测试流程",
+        "存储_详细测试流程"
+      ],
+      "caseCount": 16,
+      "secondaryCategories": [
+        "24小时压力",
+        "丢包与容错",
+        "乱序重复包容错",
+        "交换机与路径故障",
+        "单轨链路故障",
+        "多路径与链路切换",
+        "拥塞与无损控制",
+        "检查点故障恢复",
+        "短时稳定运行",
+        "节点重启与数据恢复",
+        "训练链路故障恢复",
+        "训练长时间完整性",
+        "重启恢复",
+        "链路抖动与恢复",
+        "长时间稳定性",
+        "驱动重载恢复"
+      ],
+      "mergedFrom": "跨 sheet 同名一级分类合并：AI参数网_详细测试流程、存储_详细测试流程；按分类名去重，各明细来源计数分列，场景合计 16",
+      "scenarioId": 41,
+      "caseSetIds": [
+        35,
+        36
+      ]
+    },
+    {
+      "name": "稳定性测试场景",
+      "primaryCategory": "稳定性测试",
+      "sources": [
+        {
+          "sheet": "Import详细测试流程",
+          "caseCount": 22
+        },
+        {
+          "sheet": "HCI详细测试流程",
+          "caseCount": 4
+        }
+      ],
+      "sourceSheets": [
+        "Import详细测试流程",
+        "HCI详细测试流程"
+      ],
+      "caseCount": 26,
+      "secondaryCategories": [
+        "RDMA持续负载稳定性",
+        "RDMA收发稳定性",
+        "SR-IOV VF持续负载",
+        "VF虚机RDMA稳定性",
+        "VF虚机TCP稳定性",
+        "VF虚机UDP稳定性",
+        "virtio软件网络持续负载",
+        "可靠性",
+        "物理口TCP稳定性",
+        "物理口UDP稳定性",
+        "物理链路",
+        "配置恢复",
+        "重启与电源循环",
+        "链路稳定性"
+      ],
+      "mergedFrom": "跨 sheet 同名一级分类合并：Import详细测试流程、HCI详细测试流程；按分类名去重，各明细来源计数分列，场景合计 26",
+      "scenarioId": 42,
+      "caseSetIds": [
+        33,
+        37
+      ]
+    },
+    {
+      "name": "虚拟化与容器测试场景",
+      "primaryCategory": "虚拟化与容器测试",
+      "sources": [
+        {
+          "sheet": "Import详细测试流程",
+          "caseCount": 35
+        }
+      ],
+      "sourceSheets": [
+        "Import详细测试流程"
+      ],
+      "caseCount": 35,
+      "secondaryCategories": [
+        "Overlay 卸载",
+        "PF/VF共存",
+        "SR-IOV",
+        "SR-IOV虚拟化",
+        "容器与 K8s",
+        "容器网络"
+      ],
+      "mergedFrom": "单一明细来源 sheet，无需合并",
+      "scenarioId": 43,
+      "caseSetIds": [
+        33
+      ]
+    }
+  ],
+  "totals": {
+    "dashboard": 730,
+    "adapter": 83,
+    "uniqueTotal": 813
+  },
+  "seed": {
+    "tool": "tools/seed_ed202_organization.py",
+    "endpoints": [
+      "POST /api/projects",
+      "POST /api/projects/{pid}/cases/import/preview",
+      "POST /api/projects/{pid}/cases/import/commit",
+      "POST /api/projects/{pid}/case-sets",
+      "POST /api/scenarios",
+      "POST /api/scenarios/{id}/execute"
+    ],
+    "projectId": 77,
+    "projectCode": "ED202-COMMON"
+  }
+}

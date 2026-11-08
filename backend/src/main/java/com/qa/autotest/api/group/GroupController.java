@@ -1,5 +1,6 @@
 package com.qa.autotest.api.group;
 
+import com.qa.autotest.application.execution.RunExecutionService;
 import com.qa.autotest.application.group.EffectiveRoleResolver;
 import com.qa.autotest.application.group.GroupService;
 import com.qa.autotest.application.group.ScenarioService;
@@ -8,9 +9,12 @@ import com.qa.autotest.application.iam.AccessControlService;
 import com.qa.autotest.common.ApiResponse;
 import com.qa.autotest.common.BusinessException;
 import com.qa.autotest.common.ErrorCode;
+import com.qa.autotest.common.tenant.TenantContext;
+import com.qa.autotest.domain.execution.RunRecord;
 import java.util.List;
 import java.util.Map;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,15 +31,18 @@ public class GroupController {
     private final SuperAdminViewService adminView;
     private final EffectiveRoleResolver resolver;
     private final AccessControlService access;
+    /** SCEN-03：复用既有执行域的 run 创建链路，不重写执行引擎。 */
+    private final RunExecutionService executions;
 
     public GroupController(GroupService groups, ScenarioService scenarios,
                            SuperAdminViewService adminView, EffectiveRoleResolver resolver,
-                           AccessControlService access) {
+                           AccessControlService access, RunExecutionService executions) {
         this.groups = groups;
         this.scenarios = scenarios;
         this.adminView = adminView;
         this.resolver = resolver;
         this.access = access;
+        this.executions = executions;
     }
 
     @GetMapping("/groups")
@@ -95,6 +102,32 @@ public class GroupController {
     @GetMapping("/admin/overview")
     public ApiResponse<?> overview() {
         return ApiResponse.ok(adminView.overview());
+    }
+
+    /**
+     * SCEN-03：按场景触发一次执行（补齐 404）。
+     *
+     * <p>最小改动：只经既有 {@code RunExecutionService.executeScenario} 落库一个独立 run，
+     * 返回含 runId 的 ApiResponse；不派发 pabot、不重写执行引擎（完整编排仍在既有链路）。
+     * runRequestId 留空，每次调用 RunService 生成新 UUID，故连续两次触发得到 2 个独立 RUN_ID。
+     */
+    @PostMapping("/scenarios/{id}/execute")
+    public ApiResponse<?> executeScenario(@PathVariable long id,
+                                          @RequestParam(required = false) Long projectId) {
+        Long bound = TenantContext.projectId();
+        long pid = projectId != null && projectId > 0
+                ? projectId
+                : (bound == null ? 0L : bound);
+        if (pid <= 0) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                    "无法确定项目：请用 ?projectId= 指定，或绑定 X-Project-Id 头");
+        }
+        RunRecord created = executions.executeScenario(pid, id);
+        return ApiResponse.ok(Map.<String, Object>of(
+                "runId", created.runId(),
+                "scenarioId", id,
+                "projectId", pid,
+                "state", created.state().name()));
     }
 
     public record GroupRequest(String name, String description) {

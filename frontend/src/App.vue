@@ -10,6 +10,7 @@ import { useAccent } from '@/composables/useAccent'
 import { useDensity } from '@/composables/useDensity'
 import { useNaiveTheme } from '@/composables/naiveTheme'
 import { preferenceApi } from '@/api/preferences'
+import { aiPanelApi } from '@/api/aiPanel'
 import AppIcon from '@/components/AppIcon.vue'
 import AppLogo from '@/components/AppLogo.vue'
 import AboutDialog from '@/components/AboutDialog.vue'
@@ -70,6 +71,8 @@ const nav = computed<NavNode[]>(() =>
 
 // NAV-04：命令面板全局快捷键。打印页/登录页不响应，避免无头打印被快捷键干扰。
 const paletteOpen = ref(false)
+// FR-AI-07：顶栏入口与抽屉按 /api/ai/state 的 enabled 显隐。
+const aiEnabled = ref(false)
 function onGlobalKeydown(event: KeyboardEvent): void {
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
     if (isStandalone.value) return
@@ -198,6 +201,24 @@ watch(
   },
 )
 
+// FR-AI-07：state 是发现端点，ai.enabled=false 时也返回 enabled=false，据此隐藏入口。
+watch(
+  () => auth.projectId,
+  async (pid) => {
+    if (!pid) {
+      aiEnabled.value = false
+      return
+    }
+    try {
+      const s = await aiPanelApi.state(pid)
+      aiEnabled.value = s.enabled === true
+    } catch {
+      aiEnabled.value = false
+    }
+  },
+  { immediate: true },
+)
+
 onMounted(async () => {
   if (!auth.authenticated) return
   try {
@@ -293,6 +314,7 @@ onMounted(async () => {
             <AppIcon :name="sideCollapsed ? 'chevronRight' : 'chevronDown'" :size="16" />
           </button>
           <button
+            v-if="aiEnabled"
             class="btn btn-ghost"
             type="button"
             :aria-label="t('aiPanel.toggle')"
@@ -365,7 +387,7 @@ onMounted(async () => {
       <AboutDialog v-model:open="aboutOpen" />
       <ConfirmModal />
       <CommandPalette v-model:open="paletteOpen" />
-      <AiPanelDrawer v-model:open="aiOpen" :width="aiWidth" @update:width="setAiWidth" :project-id="auth.projectId ?? 0" />
+      <AiPanelDrawer v-if="aiEnabled" v-model:open="aiOpen" :width="aiWidth" @update:width="setAiWidth" :project-id="auth.projectId ?? 0" />
     </div>
   </NConfigProvider>
 </template>

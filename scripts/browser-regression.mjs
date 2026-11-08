@@ -35,6 +35,8 @@ const SELFCHECK = process.argv.includes('--selfcheck')
  * 给一个真实 runId 才跑；不给自己跳过（不判红），避免无数据的环境被误杀。
  */
 const REPORT_RUN = process.env.REGRESS_REPORT_RUN ?? ''
+/** 该 run 所属项目：报告接口一律按 projectId 取数，必须显式绑定，不能沿用 profile 残留值。 */
+const REPORT_PROJECT = process.env.REGRESS_REPORT_PROJECT ?? ''
 const SHOT_DIR = process.env.REGRESS_SHOT_DIR ?? ''
 
 function envValue(key) {
@@ -159,6 +161,14 @@ async function goto(session, url, width, height = 900) {
 async function reportDeepCheck(session, exceptions) {
   const run = REPORT_RUN
   exceptions.length = 0
+  // 报告详情/树/趋势/对比全按 auth.projectId 取数；auth 从 localStorage 的
+  // current_project_id 初始化。CDP profile 是复用的，上一次夹具可能留下别的项目号，
+  // 那样页面会显示「运行不存在: <runId>」，趋势/对比三项随之假红。
+  // 显式绑定后由 goto() 触发整页重载，Pinia store 才会读到新值。
+  if (REPORT_PROJECT) {
+    await session.evaluate(`localStorage.setItem('current_project_id', ${JSON.stringify(REPORT_PROJECT)})`)
+    console.log(`[report] 会话绑定 projectId=${REPORT_PROJECT}`)
+  }
   await goto(session, `${APP}/reports/${encodeURIComponent(run)}`, 1440)
   for (let i = 0; i < 20; i += 1) {
     if (await session.evaluate(`document.body.innerText.includes('趋势')`)) break
@@ -170,6 +180,13 @@ async function reportDeepCheck(session, exceptions) {
   check('report-main', m.hasMain, `content=${m.content}px`)
   check('report-no-hscroll', m.scrollWidth <= m.viewport + 1,
     `scrollWidth=${m.scrollWidth} viewport=${m.viewport}`)
+  // 显式断言「报告实体确实加载了」：只判趋势/对比会把 404 空页误读成渲染缺陷。
+  const notFound = await session.evaluate(`(() => {
+    const text = document.body.innerText
+    return text.includes('运行不存在') || text.includes('报告不存在')
+  })()`)
+  check('report-no-not-found', !notFound,
+    notFound ? '报告页是 NOT_FOUND 错误态（检查 run 与 projectId 是否匹配）' : 'detail/tree 已加载')
 
   const trend = await session.evaluate(`(() => {
     const text = document.body.innerText

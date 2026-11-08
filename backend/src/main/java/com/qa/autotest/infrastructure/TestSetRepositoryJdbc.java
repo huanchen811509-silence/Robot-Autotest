@@ -120,6 +120,31 @@ public class TestSetRepositoryJdbc implements TestSetRepository {
     }
 
     @Override
+    public long insertWithKind(TestSet testSet, Long operatorId, String kind, Long designId) {
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbc.update(connection -> {
+            PreparedStatement ps = connection.prepareStatement("""
+                    INSERT INTO test_set
+                      (project_id, set_code, name, description, owner_id, set_status,
+                       kind, design_id, created_by, updated_by)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """, Statement.RETURN_GENERATED_KEYS);
+            ps.setLong(1, testSet.projectId());
+            ps.setString(2, testSet.setCode());
+            ps.setString(3, testSet.name());
+            ps.setString(4, testSet.description());
+            ps.setObject(5, testSet.ownerId(), java.sql.Types.BIGINT);
+            ps.setString(6, testSet.setStatus() == null ? "active" : testSet.setStatus());
+            ps.setString(7, kind);
+            ps.setObject(8, designId, java.sql.Types.BIGINT);
+            ps.setObject(9, operatorId, java.sql.Types.BIGINT);
+            ps.setObject(10, operatorId, java.sql.Types.BIGINT);
+            return ps;
+        }, keyHolder);
+        return keyHolder.getKey() == null ? 0 : keyHolder.getKey().longValue();
+    }
+
+    @Override
     public void update(long projectId, long id, String name, String description, Long operatorId) {
         String sql = """
                 UPDATE test_set SET name = ?, description = ?, updated_by = ?

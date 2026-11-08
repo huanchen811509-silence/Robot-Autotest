@@ -25,8 +25,15 @@ check() {
 # v2.1 的 V9_1 加 2 张（plan_group / plan_group_item），V9_2 再加 2 张
 # （report_template / report_template_field），V9_3 加 1 张（asset_version），
 # V9_4 加 1 张（execution_node），V9_6 加 1 张（execution_shard），实测 67。
+# v2.2 / 2026-11-08：V11_1 加 1 张（import_batch_sheet），V11_2 加 1 张
+# （case_requirement_version），实测 69；V11_3 / V11_4 / V11_9 只增列与索引，不加表。
+# 2026-11-08 续：V11_10 / V11_11 / V11_13 只增列与索引，V11_12 加 1 张
+# （execution_selection），故 69 → 70。V11_10..13 顺延落号是因为 V11_9 已应用，
+# Flyway 未开 out-of-order，插回 11.5 会被拒。
+# V11_2 首版曾建 TRIGGER，因 binlog + 无 SUPER 权限被实测推翻（Error 1419），
+# 已改为纯建表 + 应用层不可变约束，见该迁移文件头修订说明。
 # 此处期望值随迁移演进而更新，不是「表越多越好」的口径。
-check "业务表数 = 67" "67" \
+check "业务表数 = 70" "70" \
     "SELECT COUNT(*) FROM information_schema.tables
      WHERE table_schema='$DB_NAME' AND table_name<>'flyway_schema_history';"
 

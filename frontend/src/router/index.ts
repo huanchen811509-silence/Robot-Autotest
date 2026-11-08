@@ -166,6 +166,69 @@ const router = createRouter({
       name: 'kernels',
       component: () => import('@/views/KernelsView.vue'),
     },
+    // ===== v2.2 / M2 只读页与看板（MENU-02 / MENU-03 / MENU-04 / MENU-05）=====
+    {
+      // MENU-03：测试总表看板，挂在「用例」组下。
+      path: '/cases/board',
+      name: 'case-board',
+      component: () => import('@/views/CaseBoardView.vue'),
+    },
+    {
+      path: '/environment/overview',
+      name: 'environment-overview',
+      component: () => import('@/views/environment/EnvironmentOverviewView.vue'),
+    },
+    {
+      path: '/environment/collect',
+      name: 'environment-collect',
+      component: () => import('@/views/environment/EnvironmentCollectView.vue'),
+    },
+    {
+      path: '/environment/topology',
+      name: 'environment-topology',
+      component: () => import('@/views/environment/TopologySnapshotView.vue'),
+    },
+    {
+      path: '/environment/prepare',
+      name: 'environment-prepare',
+      component: () => import('@/views/environment/EnvironmentPrepareView.vue'),
+    },
+    {
+      path: '/environment/analysis',
+      name: 'environment-analysis',
+      component: () => import('@/views/environment/CollectionAnalysisView.vue'),
+    },
+    {
+      path: '/maintenance/principles',
+      name: 'maintenance-principles',
+      component: () => import('@/views/maintenance/ExecutionPrinciplesView.vue'),
+    },
+    {
+      path: '/maintenance/records',
+      name: 'maintenance-records',
+      component: () => import('@/views/maintenance/RecoveryRecordsView.vue'),
+    },
+    {
+      path: '/maintenance/recover',
+      name: 'maintenance-recover',
+      component: () => import('@/views/maintenance/ReadOnlyRecoverView.vue'),
+    },
+    {
+      // MENU-05：性能基线 3 个只读页，独立路由（不新增一级菜单）。
+      path: '/baselines/iperf',
+      name: 'baseline-iperf',
+      component: () => import('@/views/baselines/IperfBaselineView.vue'),
+    },
+    {
+      path: '/baselines/perftest',
+      name: 'baseline-perftest',
+      component: () => import('@/views/baselines/PerftestBaselineView.vue'),
+    },
+    {
+      path: '/baselines/ccl',
+      name: 'baseline-ccl',
+      component: () => import('@/views/baselines/CclBaselineView.vue'),
+    },
     {
       path: '/:pathMatch(.*)*',
       name: 'not-found',

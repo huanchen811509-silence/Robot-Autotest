@@ -15,12 +15,20 @@ import com.qa.autotest.domain.iam.PermissionAction;
 import com.qa.autotest.domain.iam.PermissionResource;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /** 用例集（CAS-02）：一条用例可进多个集合，集合内顺序可调。 */
 @Service
 public class TestSetService {
+
+    /** 用例集三态（SCEN-02 / V11_10）：只允许这三个值，非法值在应用层收口。 */
+    public static final String KIND_CASE_SET = "case_set";
+    public static final String KIND_SCENARIO = "scenario";
+    public static final String KIND_EXECUTION_SELECTION = "execution_selection";
+    public static final Set<String> ALLOWED_KINDS =
+            Set.of(KIND_CASE_SET, KIND_SCENARIO, KIND_EXECUTION_SELECTION);
 
     private final TestSetRepository sets;
     private final TestCaseRepository cases;
@@ -58,7 +66,24 @@ public class TestSetService {
         return sets.items(projectId, id);
     }
 
+    /** 三态白名单收口（SCEN-02）：非法 kind 明确报 INVALID_ARGUMENT。 */
+    public void validateKind(String kind) {
+        if (kind == null || !ALLOWED_KINDS.contains(kind)) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                    "INVALID_ARGUMENT(40001)：非法用例集三态 kind=" + kind
+                            + "；允许 case_set / scenario / execution_selection");
+        }
+    }
+
+    /** 保留原 4 参创建，默认三态为 case_set、无来源设计。 */
     public TestSet create(long projectId, String setCode, String name, String description) {
+        return create(projectId, setCode, name, description, KIND_CASE_SET, null);
+    }
+
+    /** 三态创建：kind 走白名单，design_id 指向来源设计，SQL 显式写入两列。 */
+    public TestSet create(long projectId, String setCode, String name, String description,
+                          String kind, Long designId) {
+        validateKind(kind);
         access.bindProject(projectId);
         access.require(PermissionResource.CASE, PermissionAction.CREATE);
         if (setCode == null || setCode.isBlank()) {
@@ -67,8 +92,9 @@ public class TestSetService {
         if (sets.codeExists(projectId, setCode, null)) {
             throw new BusinessException(ErrorCode.CONFLICT, "用例集编号已存在：" + setCode);
         }
-        long id = sets.insert(new TestSet(null, projectId, setCode.trim(), name, description,
-                TenantContext.requireUserId(), "draft", 0), TenantContext.userId());
+        long id = sets.insertWithKind(new TestSet(null, projectId, setCode.trim(), name,
+                description, TenantContext.requireUserId(), "draft", 0),
+                TenantContext.userId(), kind, designId);
         audit.record("set.create", "test_set", String.valueOf(id), "code=" + setCode);
         return get(projectId, id);
     }

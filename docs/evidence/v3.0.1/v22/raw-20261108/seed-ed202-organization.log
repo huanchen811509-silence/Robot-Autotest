@@ -1,0 +1,283 @@
+# SCEN-04 · ED202 公共用例库落库原始输出（2026-11-08）
+# 命令：cd /home/evergreen/robot-autotest && python3 tools/seed_ed202_organization.py
+# 入口：http://127.0.0.1:8001（curl 一律 --noproxy '*'）  库：robot_dev
+# 只读快照：fixtures/ed202/ED202测试用例_V0.4.xlsx
+#            SHA-256 9b897b77564eb6d9cb6843fa350b1cd085e61d613a1b047e8ce5ceaa36316e39（脚本内校验，不符即中止）
+# 说明：本文件是「脚本 stdout 原文」+「SQL 只读实测」+「部署读数」拼接，各节标题标明来源。
+
+===== 0. 项目创建（HTTP）与幂等 =====
+# 项目由脚本经 POST /api/projects 创建（非 JDBC 塞表）；audit_log 有 project:create 记录，
+# 该记录由 ProjectService.create 写入，是「走的是应用链路」的直接证据：
+$ select id, actor_id, action, resource_type, resource_id, summary, occurred_at from audit_log
+  where action='project:create' and resource_id='77';
+1705729	17	project:create	project	77	after={code=ED202-COMMON; name=ED202 公共用例库; owner=17}; created=true	2026-11-08 08:41:26.547
+# 同参数重放（code 是唯一键，重放应 409；证明项目确由 HTTP 创建，未用 JDBC 塞 project 表）：
+$ curl -s -o - -w 'status=%{http_code}' -X POST -H 'Content-Type: application/json' \
+      -d '{"code":"ED202-COMMON","name":"ED202 公共用例库",...}' http://127.0.0.1:8001/api/projects
+status=409
+{"code":40900,"codeName":"CONFLICT","message":"项目编码已存在：ED202-COMMON","data":null,"success":false}
+$ curl -s -o - -w 'status=%{http_code}' -H 'Authorization: Bearer <token>' http://127.0.0.1:8001/api/projects/77
+status=200
+{"id": 77, "code": "ED202-COMMON", "name": "ED202 公共用例库", "enabled": true}
+
+===== 1. 首次执行（真实落库） =====
+== seed_ed202_organization == base=http://127.0.0.1:8001 user=qa-e2e-admin 开始 2026-11-08 08:41:55
+[snapshot] fixtures/ed202/ED202测试用例_V0.4.xlsx
+[snapshot] SHA-256=9b897b77564eb6d9cb6843fa350b1cd085e61d613a1b047e8ce5ceaa36316e39
+[auth] 登录成功 user=qa-e2e-admin
+[project] 复用已存在项目 id=77 code=ED202-COMMON name=ED202 公共用例库
+[sheet] 测试用例看板: 表头 r15 明细行=730 唯一编号=730
+[sheet] Import详细测试流程: 表头 r3 明细行=414 唯一编号=414
+[sheet] XCCL详细测试流程: 表头 r1 明细行=61 唯一编号=61
+[sheet] AI参数网_详细测试流程: 表头 r1 明细行=67 唯一编号=67
+[sheet] 存储_详细测试流程: 表头 r1 明细行=86 唯一编号=86
+[sheet] HCI详细测试流程: 表头 r1 明细行=102 唯一编号=102
+[sheet] HCI详细测试流程: 表头错位：第 5 列为「优先级」但取值是测试类型（功能/性能/稳定性），真实优先级在「测试类型」列，按第 6 列取值
+[sheet] UECGSE适配: 表头 r1 明细行=83 唯一编号=83
+[totals] dashboard=730 adapter=83 uniqueTotal=813 dashboard==detailUnion=True
+[import:Import详细测试流程] 生成件 414 行 / 87872 字节；preview totalRows=414 validRows=414 errors=0
+[import:Import详细测试流程] commit imported=414 skipped=0
+[import:XCCL详细测试流程] 生成件 61 行 / 6484 字节；preview totalRows=61 validRows=61 errors=0
+[import:XCCL详细测试流程] commit imported=61 skipped=0
+[import:AI参数网_详细测试流程] 生成件 67 行 / 16302 字节；preview totalRows=67 validRows=67 errors=0
+[import:AI参数网_详细测试流程] commit imported=67 skipped=0
+[import:存储_详细测试流程] 生成件 86 行 / 13695 字节；preview totalRows=86 validRows=86 errors=0
+[import:存储_详细测试流程] commit imported=86 skipped=0
+[import:HCI详细测试流程] 生成件 102 行 / 16517 字节；preview totalRows=102 validRows=102 errors=0
+[import:HCI详细测试流程] commit imported=102 skipped=0
+[import:UECGSE适配] 生成件 83 行 / 14895 字节；preview totalRows=83 validRows=83 errors=0
+[import:UECGSE适配] commit imported=83 skipped=0
+[import] 合计 imported=813 preview validRows=813
+[cases] 项目内用例总数=813（期望 813）
+    [set 32] 已补 200/730 条
+    [set 32] 已补 400/730 条
+    [set 32] 已补 600/730 条
+[case-set] ED202-CS-DASHBOARD id=32 name=测试用例看板 created 条目 0→730（期望 730，本次补 730）PASS
+    [set 33] 已补 200/414 条
+    [set 33] 已补 400/414 条
+[case-set] ED202-CS-IMPORT id=33 name=Import详细测试流程 created 条目 0→414（期望 414，本次补 414）PASS
+[case-set] ED202-CS-XCCL id=34 name=XCCL详细测试流程 created 条目 0→61（期望 61，本次补 61）PASS
+[case-set] ED202-CS-AIPARAM id=35 name=AI参数网_详细测试流程 created 条目 0→67（期望 67，本次补 67）PASS
+[case-set] ED202-CS-STORAGE id=36 name=存储_详细测试流程 created 条目 0→86（期望 86，本次补 86）PASS
+[case-set] ED202-CS-HCI id=37 name=HCI详细测试流程 created 条目 0→102（期望 102，本次补 102）PASS
+[case-set] ED202-CS-UECGSE id=38 name=UECGSE适配 created 条目 0→83（期望 83，本次补 83）PASS
+    [steps] 已补 100 条（跳过 0）
+    [steps] 已补 200 条（跳过 0）
+    [steps] 已补 300 条（跳过 0）
+    [steps] 已补 400 条（跳过 0）
+    [steps] 已补 500 条（跳过 0）
+    [steps] 已补 600 条（跳过 0）
+    [steps] 已补 700 条（跳过 0）
+    [steps] 已补 800 条（跳过 0）
+[steps] 目标 813 条用例：本次补写 813、已有跳过 0、无步骤文本 0
+[scenarios] 由 xlsx 口径算出 39 个场景
+[scenarios] 目标 39 个：新建 39、复用 0
+[scenarios] 库内 test_scenario=39 行；step_order 为 0 的 39 行（POST /api/scenarios 无 stepOrder 入参，顺序锚点由服务端默认值 0 落库）
+[execute] 目标场景 CCL通信测试场景 id=7 caseSetIds=[34]
+[execute] 第 1 次失败 HTTP 404：{"code":40400,"codeName":"NOT_FOUND","message":"路径不存在：api/scenarios/7/execute","data":null,"success":false}
+[execute] 第 2 次失败 HTTP 404：{"code":40400,"codeName":"NOT_FOUND","message":"路径不存在：api/scenarios/7/execute","data":null,"success":false}
+[json] 已回填 docs/evidence/v3.0.1/v22/SCEN-04/ed202-organization.json：projectId=77、7 个用例集 setId、39 个 scenarioId；totals 保持不变 {'dashboard': 730, 'adapter': 83, 'uniqueTotal': 813}
+== 汇总 ==
+  project id=77 code=ED202-COMMON action=reused
+  import Import详细测试流程: preview totalRows=414 validRows=414 imported=414 skipped=0 errors=0
+  import XCCL详细测试流程: preview totalRows=61 validRows=61 imported=61 skipped=0 errors=0
+  import AI参数网_详细测试流程: preview totalRows=67 validRows=67 imported=67 skipped=0 errors=0
+  import 存储_详细测试流程: preview totalRows=86 validRows=86 imported=86 skipped=0 errors=0
+  import HCI详细测试流程: preview totalRows=102 validRows=102 imported=102 skipped=0 errors=0
+  import UECGSE适配: preview totalRows=83 validRows=83 imported=83 skipped=0 errors=0
+  case-set ED202-CS-DASHBOARD id=32 items=730/730
+  case-set ED202-CS-IMPORT id=33 items=414/414
+  case-set ED202-CS-XCCL id=34 items=61/61
+  case-set ED202-CS-AIPARAM id=35 items=67/67
+  case-set ED202-CS-STORAGE id=36 items=86/86
+  case-set ED202-CS-HCI id=37 items=102/102
+  case-set ED202-CS-UECGSE id=38 items=83/83
+  test_case(项目内)=813 test_scenario=39 steps filled=813
+  runIds=[] executeErrors=['HTTP 404: {"code":40400,"codeName":"NOT_FOUND","message":"路径不存在：api/scenarios/7/execute","data":null,"success":false}', 'HTTP 404: {"code":40400,"codeName":"NOT_FOUND","message":"路径不存在：api/scenarios/7/execute","data":null,"success":false}']
+SEED_RESULT PASS (cases=813/813, sets=7/7, scenarios=39/39)
+
+===== 2. 幂等复跑（第二次执行，--skip-execute） =====
+== seed_ed202_organization == base=http://127.0.0.1:8001 user=qa-e2e-admin 开始 2026-11-08 08:44:36
+[snapshot] fixtures/ed202/ED202测试用例_V0.4.xlsx
+[snapshot] SHA-256=9b897b77564eb6d9cb6843fa350b1cd085e61d613a1b047e8ce5ceaa36316e39
+[auth] 登录成功 user=qa-e2e-admin
+[project] 复用已存在项目 id=77 code=ED202-COMMON name=ED202 公共用例库
+[sheet] 测试用例看板: 表头 r15 明细行=730 唯一编号=730
+[sheet] Import详细测试流程: 表头 r3 明细行=414 唯一编号=414
+[sheet] XCCL详细测试流程: 表头 r1 明细行=61 唯一编号=61
+[sheet] AI参数网_详细测试流程: 表头 r1 明细行=67 唯一编号=67
+[sheet] 存储_详细测试流程: 表头 r1 明细行=86 唯一编号=86
+[sheet] HCI详细测试流程: 表头 r1 明细行=102 唯一编号=102
+[sheet] HCI详细测试流程: 表头错位：第 5 列为「优先级」但取值是测试类型（功能/性能/稳定性），真实优先级在「测试类型」列，按第 6 列取值
+[sheet] UECGSE适配: 表头 r1 明细行=83 唯一编号=83
+[totals] dashboard=730 adapter=83 uniqueTotal=813 dashboard==detailUnion=True
+[import:Import详细测试流程] 生成件 414 行 / 87872 字节；preview totalRows=414 validRows=0 errors=414
+    preview error r2 caseCode: 编号已存在于项目：IM-FUN-001
+    preview error r3 caseCode: 编号已存在于项目：IM-FUN-002
+    preview error r4 caseCode: 编号已存在于项目：IM-FUN-003
+    preview error r5 caseCode: 编号已存在于项目：IM-FUN-004
+    preview error r6 caseCode: 编号已存在于项目：IM-FUN-005
+[import:Import详细测试流程] 无可导入行（全部已存在或全部校验失败），跳过 commit
+[import:XCCL详细测试流程] 生成件 61 行 / 6484 字节；preview totalRows=61 validRows=0 errors=61
+    preview error r2 caseCode: 编号已存在于项目：XCCL-FUN-001
+    preview error r3 caseCode: 编号已存在于项目：XCCL-FUN-002
+    preview error r4 caseCode: 编号已存在于项目：XCCL-FUN-003
+    preview error r5 caseCode: 编号已存在于项目：XCCL-FUN-004
+    preview error r6 caseCode: 编号已存在于项目：XCCL-FUN-005
+[import:XCCL详细测试流程] 无可导入行（全部已存在或全部校验失败），跳过 commit
+[import:AI参数网_详细测试流程] 生成件 67 行 / 16302 字节；preview totalRows=67 validRows=0 errors=67
+    preview error r2 caseCode: 编号已存在于项目：AI-BAS-001
+    preview error r3 caseCode: 编号已存在于项目：AI-BAS-002
+    preview error r4 caseCode: 编号已存在于项目：AI-BAS-003
+    preview error r5 caseCode: 编号已存在于项目：AI-BAS-004
+    preview error r6 caseCode: 编号已存在于项目：AI-BAS-005
+[import:AI参数网_详细测试流程] 无可导入行（全部已存在或全部校验失败），跳过 commit
+[import:存储_详细测试流程] 生成件 86 行 / 13695 字节；preview totalRows=86 validRows=0 errors=86
+    preview error r2 caseCode: 编号已存在于项目：ST-BAS-001
+    preview error r3 caseCode: 编号已存在于项目：ST-BAS-002
+    preview error r4 caseCode: 编号已存在于项目：ST-BAS-003
+    preview error r5 caseCode: 编号已存在于项目：ST-BAS-004
+    preview error r6 caseCode: 编号已存在于项目：ST-RDM-001
+[import:存储_详细测试流程] 无可导入行（全部已存在或全部校验失败），跳过 commit
+[import:HCI详细测试流程] 生成件 102 行 / 16517 字节；preview totalRows=102 validRows=0 errors=102
+    preview error r2 caseCode: 编号已存在于项目：HCI-FUN-001
+    preview error r3 caseCode: 编号已存在于项目：HCI-FUN-002
+    preview error r4 caseCode: 编号已存在于项目：HCI-FUN-003
+    preview error r5 caseCode: 编号已存在于项目：HCI-FUN-004
+    preview error r6 caseCode: 编号已存在于项目：HCI-FUN-005
+[import:HCI详细测试流程] 无可导入行（全部已存在或全部校验失败），跳过 commit
+[import:UECGSE适配] 生成件 83 行 / 14895 字节；preview totalRows=83 validRows=0 errors=83
+    preview error r2 caseCode: 编号已存在于项目：UEC-001
+    preview error r3 caseCode: 编号已存在于项目：UEC-002
+    preview error r4 caseCode: 编号已存在于项目：UEC-003
+    preview error r5 caseCode: 编号已存在于项目：UEC-004
+    preview error r6 caseCode: 编号已存在于项目：UEC-005
+[import:UECGSE适配] 无可导入行（全部已存在或全部校验失败），跳过 commit
+[import] 合计 imported=0 preview validRows=0
+[cases] 项目内用例总数=813（期望 813）
+[case-set] ED202-CS-DASHBOARD id=32 name=测试用例看板 reused 条目 730→730（期望 730，本次补 0）PASS
+[case-set] ED202-CS-IMPORT id=33 name=Import详细测试流程 reused 条目 414→414（期望 414，本次补 0）PASS
+[case-set] ED202-CS-XCCL id=34 name=XCCL详细测试流程 reused 条目 61→61（期望 61，本次补 0）PASS
+[case-set] ED202-CS-AIPARAM id=35 name=AI参数网_详细测试流程 reused 条目 67→67（期望 67，本次补 0）PASS
+[case-set] ED202-CS-STORAGE id=36 name=存储_详细测试流程 reused 条目 86→86（期望 86，本次补 0）PASS
+[case-set] ED202-CS-HCI id=37 name=HCI详细测试流程 reused 条目 102→102（期望 102，本次补 0）PASS
+[case-set] ED202-CS-UECGSE id=38 name=UECGSE适配 reused 条目 83→83（期望 83，本次补 0）PASS
+[steps] 目标 813 条用例：本次补写 0、已有跳过 813、无步骤文本 0
+[scenarios] 由 xlsx 口径算出 39 个场景
+[scenarios] 目标 39 个：新建 0、复用 39
+[scenarios] 库内 test_scenario=39 行；step_order 为 0 的 39 行（POST /api/scenarios 无 stepOrder 入参，顺序锚点由服务端默认值 0 落库）
+[execute] 目标场景 CCL通信测试场景 id=7 caseSetIds=[34]
+[execute] 已按 --skip-execute 跳过场景执行
+[json] 已回填 docs/evidence/v3.0.1/v22/SCEN-04/ed202-organization.json：projectId=77、7 个用例集 setId、39 个 scenarioId；totals 保持不变 {'dashboard': 730, 'adapter': 83, 'uniqueTotal': 813}
+== 汇总 ==
+  project id=77 code=ED202-COMMON action=reused
+  import Import详细测试流程: preview totalRows=414 validRows=0 imported=0 skipped=0 errors=414
+  import XCCL详细测试流程: preview totalRows=61 validRows=0 imported=0 skipped=0 errors=61
+  import AI参数网_详细测试流程: preview totalRows=67 validRows=0 imported=0 skipped=0 errors=67
+  import 存储_详细测试流程: preview totalRows=86 validRows=0 imported=0 skipped=0 errors=86
+  import HCI详细测试流程: preview totalRows=102 validRows=0 imported=0 skipped=0 errors=102
+  import UECGSE适配: preview totalRows=83 validRows=0 imported=0 skipped=0 errors=83
+  case-set ED202-CS-DASHBOARD id=32 items=730/730
+  case-set ED202-CS-IMPORT id=33 items=414/414
+  case-set ED202-CS-XCCL id=34 items=61/61
+  case-set ED202-CS-AIPARAM id=35 items=67/67
+  case-set ED202-CS-STORAGE id=36 items=86/86
+  case-set ED202-CS-HCI id=37 items=102/102
+  case-set ED202-CS-UECGSE id=38 items=83/83
+  test_case(项目内)=813 test_scenario=39 steps filled=0
+  runIds=[] executeErrors=[]
+SEED_RESULT PASS (cases=813/813, sets=7/7, scenarios=39/39)
+
+===== 3. 部署读数：运行中的服务落后于源码 =====
+$ ls -l backend/target/robot-autotest-backend-0.1.0-SNAPSHOT.jar backend/src/main/java/com/qa/autotest/api/group/GroupController.java
+-rw-r--r-- 1 evergreen evergreen     6149 Nov  8 01:14 backend/src/main/java/com/qa/autotest/api/group/GroupController.java
+-rw-r--r-- 1 evergreen evergreen 49446216 Nov  7 21:22 backend/target/robot-autotest-backend-0.1.0-SNAPSHOT.jar
+
+$ javap -p -classpath <运行中 jar>/BOOT-INF/classes com.qa.autotest.api.group.GroupController  # 只留 public 方法
+public class com.qa.autotest.api.group.GroupController {
+public com.qa.autotest.api.group.GroupController(com.qa.autotest.application.group.GroupService, com.qa.autotest.application.group.ScenarioService, com.qa.autotest.application.group.SuperAdminViewService, com.qa.autotest.application.group.EffectiveRoleResolver, com.qa.autotest.application.iam.AccessControlService);
+public com.qa.autotest.common.ApiResponse<?> groups();
+public com.qa.autotest.common.ApiResponse<java.lang.Long> createGroup(com.qa.autotest.api.group.GroupController$GroupRequest);
+public com.qa.autotest.common.ApiResponse<?> addMember(com.qa.autotest.api.group.GroupController$MemberRequest);
+public com.qa.autotest.common.ApiResponse<?> grant(com.qa.autotest.api.group.GroupController$GrantRequest);
+public com.qa.autotest.common.ApiResponse<?> effective(long, long);
+public com.qa.autotest.common.ApiResponse<java.lang.Long> createScenario(com.qa.autotest.api.group.GroupController$ScenarioRequest);
+public com.qa.autotest.common.ApiResponse<?> scenarios(long);
+public com.qa.autotest.common.ApiResponse<?> overview();
+
+# 结论：运行中的 jar 内 GroupController 只有 createScenario / scenarios，没有 executeScenario；
+#       源码 backend/src/main/java/com/qa/autotest/api/group/GroupController.java:114 有
+#       @PostMapping("/scenarios/{id}/execute")。jar mtime 2026-11-07 21:22、源码 mtime 2026-11-08 01:14，
+#       服务未随源码重建，故该路由 404（本会话硬约束为「不重启应用」，未重建未重启）。
+
+$ curl -s -o - -w 'status=%{http_code}' -X POST -H 'Authorization: Bearer <token>' \
+      'http://127.0.0.1:8001/api/scenarios/7/execute?projectId=77'
+status=404
+{"code":40400,"codeName":"NOT_FOUND","message":"路径不存在：api/scenarios/7/execute","data":null,"success":false}
+===== 4. 数据库实测（SQL 只读） =====
+-- project（code=ED202-COMMON）
+77	ED202-COMMON	ED202 公共用例库	1
+-- test_case 总数（期望 813）
+813
+-- 分账：适配集 83（按 case_code 前缀）vs 主口径 730
+83	730
+-- 适配集前缀明细（UEC / GSE / ROCE / MODE / STO- / SCALE）
+STO	18
+UEC	18
+ROCE	17
+GSE	14
+SCALE	13
+MODE	3
+-- test_case_step 行数 / 覆盖用例数
+3078	813
+-- test_case.source / source_sheet（旧版导入不写 source_sheet；PUT 补步骤后 source 归一一为 manual）
+manual	<NULL>	813
+-- test_set 7 行（kind 应为 case_set）
+32	ED202-CS-DASHBOARD	测试用例看板	case_set
+33	ED202-CS-IMPORT	Import详细测试流程	case_set
+34	ED202-CS-XCCL	XCCL详细测试流程	case_set
+35	ED202-CS-AIPARAM	AI参数网_详细测试流程	case_set
+36	ED202-CS-STORAGE	存储_详细测试流程	case_set
+37	ED202-CS-HCI	HCI详细测试流程	case_set
+38	ED202-CS-UECGSE	UECGSE适配	case_set
+-- test_set_item 各集条目数（期望 730/414/61/67/86/102/83）
+32	ED202-CS-DASHBOARD	730
+33	ED202-CS-IMPORT	414
+34	ED202-CS-XCCL	61
+35	ED202-CS-AIPARAM	67
+36	ED202-CS-STORAGE	86
+37	ED202-CS-HCI	102
+38	ED202-CS-UECGSE	83
+-- test_scenario 行数 / step_order min,max / 嵌套父场景数（期望 39 / 0,0 / 0）
+39	0	0	0
+-- test_scenario 前 5 行（case_set_ids / step_order）
+5	AI应用业务联动场景	35	0
+6	AI训练与推理存储场景	36	0
+7	CCL通信测试场景	34	0
+8	GPU Direct Storage场景	36	0
+9	GSE测试场景	38	0
+-- 场景绑定的用例集个数合计（39 个场景共 42 个绑定，3 个跨 sheet 合并场景各 2 个）
+42
+-- run 污染检查（期望 0）
+0
+-- test_case.priority 分布（HCI 页错位列已按真实优先级列入库）
+P0	416
+P1	224
+P2	169
+P3	4
+-- test_case.safety_level 分布（快照无安全级列，按 ADR-0013 落 LX）
+LX	813
+-- audit_log 导入记录（每一 sheet 一次 case.import，共 6 条，project_id=77）
+1705732	case.import	test_case	77	imported=414	2026-11-08 08:41:57.826
+1705733	case.import	test_case	77	imported=61	2026-11-08 08:41:58.192
+1705734	case.import	test_case	77	imported=67	2026-11-08 08:41:58.452
+1705735	case.import	test_case	77	imported=86	2026-11-08 08:41:58.752
+1705736	case.import	test_case	77	imported=102	2026-11-08 08:41:59.065
+1705737	case.import	test_case	77	imported=83	2026-11-08 08:41:59.381
+-- audit_log 项目创建记录（project:create，ProjectService.create 内写入）
+1705729	project:create	project	77	2026-11-08 08:41:26.547
+
+===== 5. run 清理结果 =====
+$ select count(*) from run where project_id=77;
+0
+# 两次 execute 均 404，未创建任何 run，故无可清理对象；run 表 project_id=77 计数为 0。

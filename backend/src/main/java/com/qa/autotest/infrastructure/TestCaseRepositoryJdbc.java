@@ -196,6 +196,42 @@ public class TestCaseRepositoryJdbc implements TestCaseRepository {
     }
 
     @Override
+    public void writeImportMetadata(long testCaseId, ImportMetadata meta, Long operatorId) {
+        if (meta == null || (isBlank(meta.categoryL2()) && isBlank(meta.sourcePriority())
+                && isBlank(meta.caseClass()) && isBlank(meta.testCategory())
+                && isBlank(meta.ed202Coverage()) && isBlank(meta.sourceSheet()))) {
+            return;
+        }
+        jdbc.update("""
+                UPDATE test_case SET category_l2 = ?, source_priority = ?, case_class = ?,
+                       test_category = ?, ed202_coverage = ?, source_sheet = ?, updated_by = ?
+                 WHERE id = ?
+                """, meta.categoryL2(), meta.sourcePriority(), meta.caseClass(),
+                meta.testCategory(), meta.ed202Coverage(), meta.sourceSheet(),
+                operatorId, testCaseId);
+    }
+
+    @Override
+    public void insertImportedSteps(long testCaseId, List<ImportedStep> steps, int sourceRow,
+                                    Long operatorId) {
+        if (steps == null || steps.isEmpty()) {
+            return;
+        }
+        for (ImportedStep step : steps) {
+            jdbc.update("""
+                    INSERT INTO test_case_step
+                      (test_case_id, step_no, action, expectation, source_row, created_by, updated_by)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """, testCaseId, step.stepNo(), step.action(), step.expectation(),
+                    sourceRow, operatorId, operatorId);
+        }
+    }
+
+    private static boolean isBlank(String value) {
+        return value == null || value.isBlank();
+    }
+
+    @Override
     public void updateReview(long projectId, long id, String reviewStatus, String comment,
                              Long reviewedBy, Instant reviewedAt) {
         String sql = """

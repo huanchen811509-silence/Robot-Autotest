@@ -9,6 +9,9 @@ import { describe, expect, it } from 'vitest'
 import router from '@/router'
 import {
   NAVIGATION,
+  BUSINESS_DOMAIN_LABELS,
+  hasBusinessDomainAsTopLevel,
+  secondLevelEntries,
   activeGroupKey,
   filterNav,
   isGroup,
@@ -22,6 +25,7 @@ import {
   visibleNavByCapabilities,
   type NavGroup,
   type NavLeaf,
+  type NavNode,
 } from '@/config/navigation'
 
 function leaves(): NavLeaf[] {
@@ -91,10 +95,11 @@ describe('权限过滤', () => {
 })
 
 describe('v2.0 六域 IA 与能力驱动过滤（NAV-01 / FR-v2.0-07、08）', () => {
-  it('一级恰好 6 域，层级不超过 2', () => {
-    expect(NAVIGATION).toHaveLength(6)
+  it('v2.2 / MENU-01：一级恰好 8 组，层级不超过 2', () => {
+    expect(NAVIGATION).toHaveLength(8)
     expect(NAVIGATION.map((node) => node.key)).toEqual([
       'overview', 'assets', 'cases', 'runs', 'reports', 'settings',
+      'environment', 'maintenance',
     ])
     for (const node of NAVIGATION) {
       if (isGroup(node)) {
@@ -181,5 +186,46 @@ describe('选中判定', () => {
     expect(isGroupActive(groups().find((g) => g.key === 'runs')!, route)).toBe(true)
     expect(activeGroupKey(route)).toBe('runs')
     expect(isNodeActive(NAVIGATION[0], route)).toBe(false)
+  })
+})
+
+/* --------------------------------------------------------------------------
+ * v2.2 / MENU-01（FR-v2.2-01、06）：8 组 IA + 业务域不建一级菜单
+ * -------------------------------------------------------------------------- */
+describe('v2.2 / MENU-01 八组菜单与业务域隔离', () => {
+  it('一级分组数 = 8', () => {
+    expect(NAVIGATION).toHaveLength(8)
+  })
+
+  it('8 个一级项各至少 1 个二级入口（叶子自身即一个可导航入口）', () => {
+    expect(NAVIGATION).toHaveLength(8)
+    for (const node of NAVIGATION) {
+      expect(secondLevelEntries(node).length, `一级项 ${node.key} 无二级入口`)
+        .toBeGreaterThanOrEqual(1)
+    }
+  })
+
+  it('6 个业务能力域名不出现在任何一级项（key / labelKey 字面量）', () => {
+    expect(hasBusinessDomainAsTopLevel(NAVIGATION)).toBe(false)
+    for (const domain of BUSINESS_DOMAIN_LABELS) {
+      const hit = NAVIGATION.find((node) =>
+        `${node.key} ${node.labelKey}`.toLowerCase().includes(domain.toLowerCase()),
+      )
+      expect(hit, `业务域 ${domain} 不应作为一级项`).toBeUndefined()
+    }
+  })
+
+  it('反例：含「RDMA」一级项的假配置，机检应判失败', () => {
+    const fakeLeaf: NavLeaf = {
+      key: 'fake-rdma-domain',
+      labelKey: 'RDMA',
+      icon: 'boxes',
+      path: '/rdma',
+    }
+    const fake: NavNode[] = [...NAVIGATION, fakeLeaf]
+    expect(fake).toHaveLength(NAVIGATION.length + 1)
+    expect(hasBusinessDomainAsTopLevel(fake)).toBe(true)
+    // 同一谓词对真实配置判通过，证明它确实在区分两种配置，而非恒真 / 恒假
+    expect(hasBusinessDomainAsTopLevel(NAVIGATION)).toBe(false)
   })
 })

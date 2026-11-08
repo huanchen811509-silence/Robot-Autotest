@@ -1,0 +1,11 @@
+{
+  "inputPlaceholder": "aiPanel.inputPlaceholder",
+  "send": "aiPanel.send",
+  "historyEmpty": "aiPanel.historyEmpty",
+  "loading": "aiPanel.loading",
+  "error": "aiPanel.error",
+  "degraded": "aiPanel.degraded",
+  "disabled": "aiPanel.disabled",
+  "roleUser": "aiPanel.roleUser",
+  "roleAi": "aiPanel.roleAi"
+}

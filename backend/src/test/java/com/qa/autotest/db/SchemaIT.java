@@ -31,9 +31,13 @@ class SchemaIT {
      * 业务表总数。v0.1 设计为 38 张；v1.0 扩到 47 张（末位 run_metadata，V7_6）；
      * v2.0 的 V8_1..V8_4 再增 13 张（报告三表 / 导入两表 / 组授权五表 / AI 三表），
      * 实测 60（2026-11-06）。V8_5 只补列不加表，故仍为 60。
+     * v2.1 V9_1/V9_2 各 +2、V9_3/V9_4/V9_6 各 +1 → 67；
+     * v2.2 V11_1/V11_2 各 +1 → 69，V11_12（execution_selection）+1 → 70。
+     * 2026-11-08 与 scripts/db-audit.sh 对齐为 70；此前 60 是 v2.0 的历史读数，
+     * 本类 @Tag("it") 默认被 surefire 跳过，所以漂移一直没被发现。
      * 这个值随迁移演进更新，不是「越多越好」。
      */
-    private static final int EXPECTED_TABLES = 60;
+    private static final int EXPECTED_TABLES = 70;
 
     /**
      * append-only 表：按设计只增不改，没有「更新人/更新时间」这回事。

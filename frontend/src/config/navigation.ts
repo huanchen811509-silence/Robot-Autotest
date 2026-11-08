@@ -13,6 +13,7 @@
  * 3. **权限有两层**：这里按能力过滤只决定「给不给入口」，越权一律由后端 403 兜底；
  *    路由上的 `meta.capability` 会把直达无权限路由的访客送去 403 页。
  */
+import zhCN from '@/locales/zh-CN'
 import type { IconName } from '@/components/iconMap'
 
 /** 叶子节点：一个可点击的页面入口。 */
@@ -102,6 +103,13 @@ export const NAVIGATION: NavNode[] = [
         icon: 'cases',
         path: '/cases/sets',
       },
+      {
+        // MENU-03：测试总表看板（历史 / 当前双计数），挂在「用例」组下。
+        key: 'cases-board',
+        labelKey: 'menu.casesBoard',
+        icon: 'reports',
+        path: '/cases/board',
+      },
     ],
   },
   {
@@ -178,6 +186,32 @@ export const NAVIGATION: NavNode[] = [
         icon: 'reports',
         path: '/changelog',
       },
+    ],
+  },
+  {
+    // v2.2 / MENU-01 + MENU-02：环境与拓扑（5 个只读二级页）。
+    // 6 个业务能力域不建一级菜单，降为用例 domain_tag 筛选标签；
+    // 中文文案直接作 labelKey —— vue-i18n 缺键时 t() 回退到 key 本身（已实测）。
+    key: 'environment',
+    labelKey: 'menu.environment',
+    icon: 'system',
+    children: [
+      { key: 'environment-overview', labelKey: 'menu.envOverview', icon: 'dashboard', path: '/environment/overview' },
+      { key: 'environment-collect', labelKey: 'menu.envCollect', icon: 'database', path: '/environment/collect' },
+      { key: 'environment-topology', labelKey: 'menu.envTopology', icon: 'link', path: '/environment/topology' },
+      { key: 'environment-prepare', labelKey: 'menu.envPrepare', icon: 'sliders', path: '/environment/prepare' },
+      { key: 'environment-analysis', labelKey: 'menu.envAnalysis', icon: 'reports', path: '/environment/analysis' },
+    ],
+  },
+  {
+    // v2.2 / MENU-01 + MENU-04：维护与恢复（3 个只读二级页）。
+    key: 'maintenance',
+    labelKey: 'menu.maintenance',
+    icon: 'audit',
+    children: [
+      { key: 'maintenance-principles', labelKey: 'menu.mntPrinciples', icon: 'info', path: '/maintenance/principles' },
+      { key: 'maintenance-records', labelKey: 'menu.mntRecords', icon: 'database', path: '/maintenance/records' },
+      { key: 'maintenance-recover', labelKey: 'menu.mntRecover', icon: 'search', path: '/maintenance/recover' },
     ],
   },
 ]
@@ -331,4 +365,42 @@ export function leafTarget(leaf: NavLeaf): { path: string; query?: Record<string
 /** 全部叶子（含分组内），命令面板与路由守卫共用。 */
 export function allNavLeaves(): NavLeaf[] {
   return NAVIGATION.flatMap((node) => (isGroup(node) ? node.children : [node]))
+}
+
+/* --------------------------------------------------------------------------
+ * v2.2 / MENU-01（FR-v2.2-01、06）：8 组 IA 与业务域隔离机检
+ * -------------------------------------------------------------------------- */
+
+/**
+ * demo 的 6 组业务能力域：只作用例 domain_tag / capability 筛选标签，不建一级菜单。
+ * 供导航机检与用例库筛选共用（唯一真源）。
+ */
+export const BUSINESS_DOMAIN_LABELS = [
+  zhCN.businessDomains.ethernet,
+  zhCN.businessDomains.rdma,
+  zhCN.businessDomains.qos,
+  zhCN.businessDomains.virtualization,
+  zhCN.businessDomains.offload,
+  zhCN.businessDomains.gpuStorage,
+] as const
+
+/**
+ * 机检谓词：true = 一级项里混入了业务能力域名（应判失败）。
+ * 只查一级项 key / labelKey 的字面量，不下钻 children，也不依赖 i18n 渲染结果
+ *（vue-i18n 缺键时 t() 回退到 key 本身，故中文 labelKey 就是显示文案）。
+ */
+export function hasBusinessDomainAsTopLevel(
+  nodes: NavNode[],
+  domains: readonly string[] = BUSINESS_DOMAIN_LABELS,
+): boolean {
+  return nodes.some((node) =>
+    domains.some((domain) =>
+      `${node.key} ${node.labelKey}`.toLowerCase().includes(domain.toLowerCase()),
+    ),
+  )
+}
+
+/** 一级项的二级入口：分组 = children；叶子 = 自身（单页模块本身就是一个可导航入口）。 */
+export function secondLevelEntries(node: NavNode): NavLeaf[] {
+  return isGroup(node) ? node.children : [node]
 }

@@ -131,8 +131,11 @@ def first_text(value, *keys):
 def discover_fixture(token: str) -> tuple[str, str]:
     """找一条有真实用例数据的 run，并从套件树里取第一个 caseKey（趋势接口需要）。
 
-    报告按 run 倒序返回，最新的可能是空套件（例如冒烟夹具），因此最多扫 10 条，
-    取第一个套件树里带非空 caseKey 的 run。
+    报告按 run 倒序返回，最新的可能是空套件（E2E / 冒烟夹具每跑一次都会新增一条，
+    单测套件本身也会造 run）。因此不能只扫前 N 条固定上限——2026-11-08 实测：
+    项目 29 前 12 条全无 caseKey，第一条带 caseKey 的排在第 13 位，固定「前 10 条」
+    会让门禁假红。这里改为按列表顺序全量扫描（上限由 PERF_SCAN_LIMIT 控制，
+    默认 50 = 列表页 size），并打印扫描条数与被选中位置，便于事后核对。
     """
     status, payload, _ = request(
         f"/api/reports?projectId={PROJECT_ID}&page=1&size=50", token)
@@ -141,7 +144,8 @@ def discover_fixture(token: str) -> tuple[str, str]:
     if not items:
         fail("报告列表为空：性能基线需要至少 1 条已入库报告（先跑一次用例）")
 
-    for item in items[:10]:
+    limit = min(int(os.environ.get("PERF_SCAN_LIMIT", "50")), len(items))
+    for index, item in enumerate(items[:limit], start=1):
         run_id = first_text(item, "runId", "run_id")
         if not run_id:
             continue
@@ -149,8 +153,11 @@ def discover_fixture(token: str) -> tuple[str, str]:
         tree = ((payload or {}).get("data") or {})
         case_key = _first_case_key(tree)
         if case_key:
+            print(f"PERF_FIXTURE run={run_id} caseKey={case_key} "
+                  f"扫到第 {index}/{limit} 条命中（列表共 {len(items)} 条）")
             return str(run_id), case_key
-    fail("前 10 条报告的套件树里都没有非空 caseKey（趋势场景无从取样）")
+    fail(f"扫描上限内（{limit} 条，列表共 {len(items)} 条）报告的套件树都没有非空 "
+         f"caseKey（趋势场景无从取样）：需要一条带用例键的真实 run")
 
 
 def _first_case_key(node) -> str | None:

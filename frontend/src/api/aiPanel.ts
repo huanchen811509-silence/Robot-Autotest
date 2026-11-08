@@ -11,6 +11,10 @@ export interface AiPanelState {
   encoding: string
   contextMaxChars: number
   executeRequiresConfirmation: boolean
+  /** FR-AI-07：false 时前端隐藏顶栏入口与抽屉。 */
+  enabled?: boolean
+  realCliEnabled?: boolean
+  cliPathInjected?: boolean
 }
 
 export interface AiActionResult {
@@ -18,6 +22,28 @@ export interface AiActionResult {
   level: string
   degraded: boolean
   summary: string
+  audited: boolean
+  /** FR-AI-01：模型 stdout 等真实回显随响应体返回。 */
+  stdout?: string
+  stderr?: string
+  exitCode?: number
+  durationMs?: number
+  cli?: string
+  timedOut?: boolean
+}
+
+/** FR-AI-05：POST /api/ai/chat 的返回体。 */
+export interface AiChatResponse {
+  sessionId: number
+  answer: string
+  stdout: string
+  stderr: string
+  exitCode: number
+  durationMs: number
+  degraded: boolean
+  mode: string
+  cli: string
+  timedOut: boolean
   audited: boolean
 }
 
@@ -43,4 +69,9 @@ export const aiPanelApi = {
   terminate: (projectId: number, sessionId: number) =>
     request<AiActionResult>(
       `/ai/terminate?projectId=${projectId}&sessionId=${sessionId}`, { method: 'POST' }),
+  /** FR-AI-05：prompt 为累积的多轮会话文本，由后端统一经 ContextPacker 脱敏。 */
+  chat: (projectId: number, sessionId: number, prompt: string) =>
+    request<AiChatResponse>('/ai/chat', {
+      method: 'POST', body: JSON.stringify({ projectId, sessionId, prompt }),
+    }),
 }
