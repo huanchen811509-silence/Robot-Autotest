@@ -119,7 +119,7 @@ docs/             设计、计划、版本、证据文档
 | [docs/release/v2.1-platform/](docs/release/v2.1-platform/) | v2.1 的 PRD / 开发计划（DEV-PLAN）/ 测试计划（TEST-PLAN） |
 | [docs/evidence/v2.1/](docs/evidence/v2.1/) | v2.1 各包验收证据（真实 HTTP 链路脚本、run.log、截图，可复跑） |
 | [docs/plan/W5-总结报告-20261107.md](docs/plan/W5-总结报告-20261107.md) | W5（v3.0.1）总结：做了什么、为什么做、验收读数、已知边界 |
-| [docs/plan/交接文档-v3.0.1-20261107.md](docs/plan/交接文档-v3.0.1-20261107.md) | 最新交接文档：总体读数、本轮新增、未决欠账、环境运维、接手第一小时 |
+| [docs/plan/交接文档-v3.0.1-20261108.md](docs/plan/交接文档-v3.0.1-20261108.md) | 最新交接文档：总体读数、本轮 7 包、三个缺陷根因、未决欠账、环境运维、接手第一小时（旧版 `-20261107` 留作历史参考） |
 | [docs/plan/最终交付报告-W0-W5-20261107.md](docs/plan/最终交付报告-W0-W5-20261107.md) | W0–W5 最终交付报告：六波清单、验收读数、修掉的真实缺陷、风险 |
 | [docs/evidence/v3.0.1/](docs/evidence/v3.0.1/) | W5 验收证据（示例用例播种、冲突接口 JSON、跨轮聚类、浏览器截图） |
 | [docs/process/版本开发流程.md](docs/process/版本开发流程.md) | 七道版本流程与准入门槛 |
