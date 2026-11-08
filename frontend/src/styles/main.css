@@ -868,12 +868,14 @@ textarea:focus-visible {
   grid-template-columns: 56px minmax(0, 1fr);
 }
 
+/* v2.6 / FR-AI-14：第三列宽度由 --ai-drawer-w 驱动（拖拽时只改这个变量）。
+   缺省 420px 与 AI_DRAWER_DEFAULT 对齐；上限 760 由 JS 钳制，CSS 不重复判。 */
 .app-shell.has-drawer {
-  grid-template-columns: 200px minmax(0, 1fr) 340px;
+  grid-template-columns: 200px minmax(0, 1fr) var(--ai-drawer-w, 420px);
 }
 
 .app-shell.side-collapsed.has-drawer {
-  grid-template-columns: 56px minmax(0, 1fr) 340px;
+  grid-template-columns: 56px minmax(0, 1fr) var(--ai-drawer-w, 420px);
 }
 
 .app-side {
@@ -906,7 +908,8 @@ textarea:focus-visible {
   grid-area: 2 / 3 / 3 / 4;   /* 与工作区同一行：顶端对齐工作区，不占顶栏 */
   min-width: 0;
   height: 100%;
-  overflow-y: auto;
+  /* v2.6：滚动交给内部的对话区（要让它撑满剩余高度），外壳自己不再滚 */
+  overflow: hidden;
   border-left: 1px solid var(--w7-border);
   background: var(--w7-surface);
 }
@@ -917,7 +920,8 @@ textarea:focus-visible {
     right: 0;
     top: 0;
     z-index: var(--z-overlay);
-    width: 340px;
+    /* 悬浮态同样跟随拖拽宽度，但绝不超出视口 */
+    width: var(--ai-drawer-w, 420px);
     max-width: 100%;
     box-shadow: var(--shadow);
   }

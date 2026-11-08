@@ -45,6 +45,37 @@ export interface AiChatResponse {
   cli: string
   timedOut: boolean
   audited: boolean
+  /** v2.6：本次请求「想要」的 agent（空串表示没指定） */
+  requestedCli?: string
+  /** v2.6：所选 agent 已不可用 → 后端回落到首选，前端据此提示，不静默 */
+  cliFallback?: boolean
+  /** v2.6：本次请求指定的模型（空串表示用已保存/默认） */
+  model?: string
+}
+
+/** v2.6 / FR-AI-14：抽屉里可选的 agent（不含端点与密钥）。 */
+export interface AiAgentItem {
+  key: string
+  name: string
+  models: string[]
+  defaultModel: string
+  modelFlag: string | null
+  injectable: boolean
+  configured: boolean
+}
+
+export interface AiAgentsResponse {
+  defaultKey: string
+  realCliEnabled: boolean
+  items: AiAgentItem[]
+}
+
+export interface AiChatRequest {
+  projectId: number
+  sessionId: number
+  prompt: string
+  cli?: string
+  model?: string
 }
 
 /** 面板状态 -> 是否允许发起执行（二次确认另算），纯逻辑便于单测。 */
@@ -73,5 +104,15 @@ export const aiPanelApi = {
   chat: (projectId: number, sessionId: number, prompt: string) =>
     request<AiChatResponse>('/ai/chat', {
       method: 'POST', body: JSON.stringify({ projectId, sessionId, prompt }),
+    }),
+  /**
+   * v2.6 / FR-AI-14：可选 agent 清单 + 带 agent/模型覆盖的对话。
+   * 覆盖字段留空（undefined）时后端按「首选 agent + 已保存模型」处理，与老行为一致。
+   */
+  agents: (projectId: number) =>
+    request<AiAgentsResponse>(`/ai/agents?projectId=${projectId}`),
+  chatWith: (payload: AiChatRequest) =>
+    request<AiChatResponse>('/ai/chat', {
+      method: 'POST', body: JSON.stringify(payload),
     }),
 }

@@ -63,13 +63,25 @@ public class AiPanelController {
         return ApiResponse.ok(panel.terminate(sessionId, panel.handleFor(sessionId)));
     }
 
-    /** FR-AI-05：多轮对话；返回模型回答 + sessionId。 */
+    /**
+     * FR-AI-14：工作助手可选的 agent 清单。
+     *
+     * <p>**不做管理员校验**——抽屉是所有能访问项目的人都能开的面板；这里只返回
+     * 「哪几个助手能跑、各自能选哪些模型」，不含端点、不含密钥（连掩码都不给）。
+     */
+    @GetMapping("/agents")
+    public ApiResponse<Map<String, Object>> agents(@RequestParam long projectId) {
+        access.requireProjectAccess(projectId);
+        return ApiResponse.ok(panel.agents());
+    }
+
+    /** FR-AI-05 / FR-AI-14：多轮对话；cli 与 model 为可选覆盖，留空即用首选与已保存配置。 */
     @PostMapping("/chat")
     public ApiResponse<Map<String, Object>> chat(@RequestBody ChatRequest request) {
         access.requireProjectAccess(request.projectId());
         panel.requireEnabled();
         return ApiResponse.ok(panel.chat(request.projectId(), request.sessionId(),
-                request.prompt()));
+                request.prompt(), request.cli(), request.model()));
     }
 
     public record SuggestRequest(long projectId, long sessionId, Map<String, String> context) {
@@ -78,6 +90,8 @@ public class AiPanelController {
     public record ExecuteRequest(long projectId, long sessionId, String target, Boolean confirmed) {
     }
 
-    public record ChatRequest(long projectId, long sessionId, String prompt) {
+    /** cli / model 缺省为 null：Jackson 对记录型缺字段按 null 绑定，老调用方无需改动。 */
+    public record ChatRequest(long projectId, long sessionId, String prompt, String cli,
+                              String model) {
     }
 }

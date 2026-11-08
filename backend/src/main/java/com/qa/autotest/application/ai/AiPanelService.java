@@ -6,6 +6,7 @@ import com.qa.autotest.common.BusinessException;
 import com.qa.autotest.common.ErrorCode;
 import com.qa.autotest.domain.ai.AiActionResult;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -190,19 +191,46 @@ public class AiPanelService {
         return result;
     }
 
+    /**
+     * 工作助手可选的 agent 清单（v2.6 / FR-AI-14）。
+     *
+     * <p>不含端点与密钥：抽屉是**所有能访问项目的人**都能开的面板，不是设置页。
+     * 未装配配置服务时返回空列表，前端据此只显示「默认」一项，不假装有选择。
+     */
+    public Map<String, Object> agents() {
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("defaultKey", probe.primaryCli());
+        out.put("realCliEnabled", AiFeatureGate.realCliFeatureEnabled());
+        out.put("items", assistantConfigs == null ? List.of() : assistantConfigs.agents());
+        return out;
+    }
+
     /** FR-AI-05：多轮对话；前端把累积会话作为 prompt 传入，服务侧统一经 ContextPacker 脱敏。 */
     public Map<String, Object> chat(long projectId, long sessionId, String prompt) {
+        return chat(projectId, sessionId, prompt, null, null);
+    }
+
+    /**
+     * FR-AI-14：带 agent / 模型覆盖的多轮对话。
+     *
+     * <p>选中的 agent 若已被卸载或在设置页被关掉，**回落到首选而不是报 400**——
+     * 本地偏好是上一轮存下的，机器状态可能已经变了；报错会让抽屉彻底不可用，
+     * 回落只在响应里标 {@code cliFallback=true} 说明「你要的不是这个」。
+     */
+    public Map<String, Object> chat(long projectId, long sessionId, String prompt,
+                                     String cli, String model) {
         requireEnabled();
         long sid = sessionId > 0 ? sessionId : open(projectId, 0L);
         Map<String, String> context = new LinkedHashMap<>();
         context.put("conversation", prompt == null ? "" : prompt);
         String packed = packer.pack(context, ContextPacker.DEFAULT_MAX_CHARS);
-        AiProcessResult pr = invoke(sid, "请回答用户问题：\n" + packed);
+        AiProcessResult pr = invoke(sid, "请回答用户问题：\n" + packed, cli, model);
         boolean degraded = !probe.available() || !pr.executed() || pr.stdout().isBlank();
         String answer = pr.stdout().isBlank()
                 ? "CLI 不可用，已显式降级（" + pr.reason() + "）"
                 : pr.stdout();
 
+        String requested = cli == null ? "" : cli.trim();
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("sessionId", sid);
         out.put("answer", answer);
@@ -213,25 +241,49 @@ public class AiPanelService {
         out.put("degraded", degraded);
         out.put("mode", degraded ? "DEGRADED" : "NORMAL");
         out.put("cli", pr.cli());
+        out.put("requestedCli", requested);
+        out.put("cliFallback", !requested.isEmpty() && !requested.equals(pr.cli()));
+        out.put("model", model == null ? "" : model.trim());
         out.put("timedOut", pr.timedOut());
         out.put("audited", true);
         recordAction(sid, new AiActionResult("CHAT", degraded ? "L1" : "L2", degraded,
                 firstLine(answer, 240), true), false);
         audit.record("AI_CHAT", "ai_action", String.valueOf(sid),
-                "mode=" + out.get("mode") + "; cli=" + pr.cli());
+                "mode=" + out.get("mode") + "; cli=" + pr.cli()
+                        + "; model=" + (model == null || model.isBlank() ? "default" : model.trim()));
         return out;
     }
 
+    /** 选中的 agent 现在能不能真跑：实时探测命中 + 特性开关打开 + 未被管理员关掉。 */
+    private boolean cliAvailable(String cli) {
+        if (cli == null || cli.isBlank()) {
+            return false;
+        }
+        Map<String, Object> probed = probe.probe();
+        if (!Boolean.TRUE.equals(probed.get("realCliEnabled"))
+                || !Boolean.TRUE.equals(probed.get(cli))) {
+            return false;
+        }
+        return assistantConfigs == null || assistantConfigs.usable(cli);
+    }
+
     private AiProcessResult invoke(long sessionId, String prompt) {
+        return invoke(sessionId, prompt, null, null);
+    }
+
+    private AiProcessResult invoke(long sessionId, String prompt, String cliOverride,
+                                    String modelOverride) {
         if (!probe.available()) {
             return AiProcessResult.notExecuted(probe.primaryCli(), "CLI 不可用，已降级");
         }
         // v2.5：把设置页保存的端点 / 凭据 / 模型真正注入子进程（FR-AI-11）
-        String cli = probe.primaryCli();
+        // v2.6：允许抽屉按次覆盖 agent 与模型（FR-AI-14），覆盖值同样走注入路径
+        String requested = cliOverride == null ? "" : cliOverride.trim();
+        String cli = requested.isEmpty() || !cliAvailable(requested) ? probe.primaryCli() : requested;
         AiProcessResult result = assistantConfigs == null
                 ? processes.execute(cli, prompt)
                 : processes.execute(cli, prompt, assistantConfigs.envFor(cli),
-                        assistantConfigs.modelArgs(cli));
+                        assistantConfigs.modelArgsFor(cli, modelOverride));
         if (result.handle() != null) {
             sessionHandles.put(sessionId, result.handle());
         }

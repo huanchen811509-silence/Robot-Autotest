@@ -1,0 +1,22 @@
+{
+  "code": 0,
+  "codeName": "OK",
+  "message": "OK",
+  "data": {
+    "sessionId": 25,
+    "answer": "已连通\n",
+    "stdout": "已连通\n",
+    "stderr": "",
+    "exitCode": 0,
+    "durationMs": 6633,
+    "degraded": false,
+    "mode": "NORMAL",
+    "cli": "hermes",
+    "requestedCli": "claude",
+    "cliFallback": true,
+    "model": "claude-sonnet-4-5",
+    "timedOut": false,
+    "audited": true
+  },
+  "success": true
+}

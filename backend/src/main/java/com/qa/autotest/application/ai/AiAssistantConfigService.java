@@ -142,6 +142,70 @@ public class AiAssistantConfigService {
         return out;
     }
 
+    /**
+     * 工作助手（抽屉）可选 agent 清单。
+     *
+     * <p>与 {@link #list()} 的差别是**受众不同**：设置页给管理员看全部 7 条（含未安装的、
+     * 含端点与掩码）；抽屉给所有能访问项目的人用，所以只列**本机真能跑**的，
+     * 且**不返回端点、不返回密钥、连掩码都不给**——罗列凭据形态本身就是攻击面。
+     *
+     * <p>被管理员在设置页关掉的（{@code enabled=false}）不出现：那是明确的「别用它」。
+     */
+    public List<Map<String, Object>> agents() {
+        Map<String, AiAssistantConfigRepository.Row> rows = repository.findAll();
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (AiAssistantCatalog.Entry entry : AiAssistantCatalog.ENTRIES) {
+            if (!installed(entry.key())) {
+                continue;
+            }
+            AiAssistantConfigRepository.Row row = rows.get(entry.key());
+            if (row != null && !row.enabled()) {
+                continue;
+            }
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("key", entry.key());
+            item.put("name", entry.name());
+            item.put("models", entry.models());
+            item.put("defaultModel", row == null ? "" : nullToEmpty(row.model()));
+            item.put("modelFlag", entry.modelFlag());
+            item.put("injectable", entry.injectable());
+            item.put("configured", row != null && (
+                    (row.baseUrl() != null && !row.baseUrl().isBlank())
+                    || (row.model() != null && !row.model().isBlank())
+                    || (row.apiKeyEnc() != null && !row.apiKeyEnc().isBlank())));
+            result.add(item);
+        }
+        return result;
+    }
+
+    /** 某个 agent 现在能不能真跑：装得上 + 没被管理员关掉。 */
+    public boolean usable(String key) {
+        AiAssistantCatalog.Entry entry = AiAssistantCatalog.find(key);
+        if (entry == null || !installed(entry.key())) {
+            return false;
+        }
+        AiAssistantConfigRepository.Row row = repository.findAll().get(entry.key());
+        return row == null || row.enabled();
+    }
+
+    /**
+     * 指定模型的注入参数（{@code --model xxx}）。
+     *
+     * <p>{@code model} 为空时回落到设置页保存的模型；两者都空则返回空列表，
+     * 保证「没选模型」发出去的 argv **严格等于**该 CLI 的原始模板。
+     */
+    public List<String> modelArgsFor(String key, String model) {
+        AiAssistantCatalog.Entry entry = AiAssistantCatalog.find(key);
+        if (entry == null || entry.modelFlag() == null) {
+            return List.of();
+        }
+        String chosen = blankToNull(model);
+        if (chosen == null) {
+            return modelArgs(key);
+        }
+        return List.of(entry.modelFlag(), chosen);
+    }
+
     /** 供真实调用注入：只有配置存在且该 CLI 接受注入时才产出非空 map。 */
     public Map<String, String> envFor(String key) {
         AiAssistantCatalog.Entry entry = AiAssistantCatalog.find(key);

@@ -1,0 +1,55 @@
+{
+  "status": 200,
+  "data": {
+    "defaultKey": "hermes",
+    "realCliEnabled": true,
+    "items": [
+      {
+        "key": "hermes",
+        "name": "Hermes Agent",
+        "models": [],
+        "defaultModel": "",
+        "modelFlag": null,
+        "injectable": false,
+        "configured": false
+      },
+      {
+        "key": "dsh",
+        "name": "DeepSeek Harness",
+        "models": [
+          "deepseek-chat",
+          "deepseek-reasoner"
+        ],
+        "defaultModel": "",
+        "modelFlag": "--model",
+        "injectable": true,
+        "configured": false
+      },
+      {
+        "key": "codex",
+        "name": "Codex CLI",
+        "models": [
+          "gpt-5",
+          "gpt-5-codex",
+          "deepseek-v4-flash"
+        ],
+        "defaultModel": "",
+        "modelFlag": "--model",
+        "injectable": true,
+        "configured": false
+      },
+      {
+        "key": "pi",
+        "name": "pi coding agent（内置兜底）",
+        "models": [
+          "deepseek-v4-flash",
+          "gpt-4.1"
+        ],
+        "defaultModel": "ark/deepseek-v4-flash",
+        "modelFlag": "--model",
+        "injectable": true,
+        "configured": true
+      }
+    ]
+  }
+}

@@ -120,6 +120,71 @@ class AiAssistantConfigServiceTest {
                 .hasMessageContaining("未知的 AI 助手");
     }
 
+    // ---------- v2.6 / FR-AI-14：工作助手的 agent 与模型选择 ----------
+
+    @Test
+    void agentsListNeverExposesEndpointsOrCredentials() {
+        service.save("pi", "https://ark.example/v3", "ark/deepseek-v4-flash",
+                "sk-should-never-leak", false, true, 9L);
+
+        // 抽屉是普通用户能开的面板：清单里连掩码都不许出现，更不许出现端点与密文
+        for (Map<String, Object> item : service.agents()) {
+            assertThat(item).containsKeys("key", "name", "models", "defaultModel");
+            assertThat(item).doesNotContainKeys("baseUrl", "apiKeyEnc", "keyMasked",
+                    "hasKey", "hint");
+            assertThat(item.values().toString()).doesNotContain("sk-should-never-leak");
+            assertThat(item.values().toString()).doesNotContain("ark.example");
+        }
+    }
+
+    @Test
+    void agentsListOnlyContainsCatalogKeys() {
+        for (Map<String, Object> item : service.agents()) {
+            assertThat(AiAssistantCatalog.find(String.valueOf(item.get("key")))).isNotNull();
+        }
+    }
+
+    @Test
+    void modelArgsForPrefersPerCallOverrideAndFallsBackToSavedModel() {
+        service.save("codex", "", "gpt-5", "sk-codex1", false, true, 9L);
+
+        // 抽屉里临时选了别的模型：以本次选择为准
+        assertThat(service.modelArgsFor("codex", "gpt-5-codex"))
+                .containsExactly("--model", "gpt-5-codex");
+        // 本次没选：回落到设置页保存的
+        assertThat(service.modelArgsFor("codex", null)).containsExactly("--model", "gpt-5");
+        assertThat(service.modelArgsFor("codex", "  ")).containsExactly("--model", "gpt-5");
+        // 不接受模型参数的 CLI：一律空，不许拼出半条 argv
+        assertThat(service.modelArgsFor("hermes", "any")).isEmpty();
+    }
+
+    @Test
+    void modelArgsForReturnsEmptyWhenNeitherCallNorSavedModelExists() {
+        assertThat(service.modelArgsFor("gemini", null)).isEmpty();
+        assertThat(service.modelArgsFor("gemini", "gemini-2.5-pro"))
+                .containsExactly("--model", "gemini-2.5-pro");
+    }
+
+    @Test
+    void unknownAssistantIsNeverUsable() {
+        assertThat(service.usable("nope")).isFalse();
+        assertThat(service.usable(null)).isFalse();
+    }
+
+    @Test
+    void disabledAssistantDropsOutOfTheAgentsList() {
+        // 先确认某条在清单里（装没装取决于本机，先按实际结果取一个）
+        List<Map<String, Object>> before = service.agents();
+        if (before.isEmpty()) {
+            return; // 本机一个 CLI 都没有：此断言无从谈起，不算失败
+        }
+        String key = String.valueOf(before.get(0).get("key"));
+        service.save(key, "", "", null, false, false, 9L);
+
+        assertThat(service.agents()).noneMatch(item -> key.equals(item.get("key")));
+        assertThat(service.usable(key)).isFalse();
+    }
+
     private Map<String, Object> find(String key) {
         for (Map<String, Object> item : service.list()) {
             if (key.equals(item.get("key"))) {

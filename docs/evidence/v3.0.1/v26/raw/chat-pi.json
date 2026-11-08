@@ -1,0 +1,22 @@
+{
+  "code": 0,
+  "codeName": "OK",
+  "message": "OK",
+  "data": {
+    "sessionId": 24,
+    "answer": "已连通\n",
+    "stdout": "已连通\n",
+    "stderr": "",
+    "exitCode": 0,
+    "durationMs": 2025,
+    "degraded": false,
+    "mode": "NORMAL",
+    "cli": "pi",
+    "requestedCli": "pi",
+    "cliFallback": false,
+    "model": "ark/deepseek-v4-flash",
+    "timedOut": false,
+    "audited": true
+  },
+  "success": true
+}

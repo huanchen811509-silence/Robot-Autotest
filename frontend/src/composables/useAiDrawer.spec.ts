@@ -44,3 +44,57 @@ describe('侧栏折叠态迁移', () => {
     expect(localStorage.getItem(SIDE_KEY)).toBeNull()
   })
 })
+
+/**
+ * v2.6 / FR-AI-14：抽屉宽度 + agent/模型偏好。
+ *
+ * 宽度是**唯一真源**：拖拽、档位按钮、方向键、恢复偏好四条路径都过 clampWidth，
+ * 所以这里只要锁住 clampWidth 与 setWidth，其余路径不会漏出边界。
+ */
+describe('抽屉宽度与偏好', () => {
+  it('clampWidth 把任意输入收进 340–760，非法值回落默认 420', async () => {
+    const mod = await import('@/composables/useAiDrawer')
+
+    expect(mod.clampWidth(100)).toBe(340)
+    expect(mod.clampWidth(340)).toBe(340)
+    expect(mod.clampWidth(500)).toBe(500)
+    expect(mod.clampWidth(760)).toBe(760)
+    expect(mod.clampWidth(9999)).toBe(760)
+    expect(mod.clampWidth(Number.NaN)).toBe(420)
+    expect(mod.clampWidth(420.6)).toBe(421)
+  })
+
+  it('存量偏好越界时读成边界值，不把 280 这种老值带进新布局', async () => {
+    localStorage.setItem('robot.ai.drawer.width', '280')
+
+    const mod = await import('@/composables/useAiDrawer')
+
+    expect(mod.useAiDrawer().width.value).toBe(mod.AI_DRAWER_MIN)
+  })
+
+  it('setWidth 钳制后写回 localStorage', async () => {
+    const mod = await import('@/composables/useAiDrawer')
+    const drawer = mod.useAiDrawer()
+
+    drawer.setWidth(5000)
+    expect(drawer.width.value).toBe(mod.AI_DRAWER_MAX)
+    expect(localStorage.getItem('robot.ai.drawer.width')).toBe(String(mod.AI_DRAWER_MAX))
+
+    drawer.setWidth(10)
+    expect(drawer.width.value).toBe(mod.AI_DRAWER_MIN)
+  })
+
+  it('换 agent 会清掉模型：上一家的模型名换一家多半不存在', async () => {
+    const mod = await import('@/composables/useAiDrawer')
+    const drawer = mod.useAiDrawer()
+
+    drawer.setAgent('pi')
+    drawer.setModel('ark/deepseek-v4-flash')
+    expect(localStorage.getItem('robot.ai.drawer.model')).toBe('ark/deepseek-v4-flash')
+
+    drawer.setAgent('codex')
+    expect(drawer.agent.value).toBe('codex')
+    expect(drawer.model.value).toBe('')
+    expect(localStorage.getItem('robot.ai.drawer.model')).toBe('')
+  })
+})

@@ -154,7 +154,14 @@ onMounted(async () => {
   <NConfigProvider abstract :theme-overrides="overrides">
     <RouterView v-if="isStandalone" />
 
-    <div v-else class="app-shell" :class="{ 'has-drawer': aiOpen, 'side-collapsed': sideCollapsed }">
+    <!-- v2.6 / FR-AI-14：抽屉宽度由 CSS 变量驱动。改宽度只改这一个变量，
+         不再像 v2.5 之前那样「状态改了、grid 里还硬编码 340px」，导致调宽按钮只改数字不改布局。 -->
+    <div
+      v-else
+      class="app-shell"
+      :class="{ 'has-drawer': aiOpen, 'side-collapsed': sideCollapsed }"
+      :style="{ '--ai-drawer-w': `${aiWidth}px` }"
+    >
       <aside class="app-side">
         <!-- v2.3 / FR-UI-18：折叠按钮从顶栏移到侧栏头部——它是外壳控制，不是页面动作。
              折叠后品牌区隐藏，按钮居中保留（否则侧栏折叠后无法展开，只能清缓存）。 -->

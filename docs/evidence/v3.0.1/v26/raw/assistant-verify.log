@@ -1,0 +1,25 @@
+# v2.6 工作助手：宽度 / Agent / 模型 / 大对话框
+# 真实 HTTP 验收，入口 http://127.0.0.1:8081
+
+## 0. 登录取证：token 长度 43（不回显内容）
+
+## 1. 选取项目 projectId=77（共 8 个可见）
+
+## 2. GET /api/ai/agents -> HTTP 200
+defaultKey=hermes  realCliEnabled=True  条目数=4
+| key | name | 可注入 | 已配置 | 默认模型 | 可选模型数 |
+|---|---|---|---|---|---|
+| hermes | Hermes Agent | False | False | — | 0 |
+| dsh | DeepSeek Harness | True | False | — | 2 |
+| codex | Codex CLI | True | False | — | 3 |
+| pi | pi coding agent（内置兜底） | True | True | ark/deepseek-v4-flash | 2 |
+
+泄漏端点/密钥字段的条目 = 无
+
+## 3. POST /api/ai/chat（cli=pi, model=ark/deepseek-v4-flash）-> HTTP 200
+cli=pi  requestedCli=pi  cliFallback=False
+model=ark/deepseek-v4-flash  degraded=False  durationMs=2025  exitCode=0
+answer=已连通
+
+## 4. POST /api/ai/chat（选未安装的 claude）-> HTTP 200
+cli=hermes  requestedCli=claude  cliFallback=True（期望 True：回落到可用 agent 并明示）

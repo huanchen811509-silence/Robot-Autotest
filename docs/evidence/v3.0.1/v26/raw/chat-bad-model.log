@@ -1,0 +1,7 @@
+## 5. 负向：模型改成不存在的 id（cli=pi, model=ark/definitely-not-a-model）
+HTTP 200  degraded=True  exitCode=1  durationMs=624
+answer=CLI 不可用，已显式降级（CLI 退出码=1）
+stderr=Warning: Model "definitely-not-a-model" not found for provider "ark". Using custom model id.
+ark API error (404): {"code":"UnsupportedModel","message":"The requested model does not support the coding plan feature. Please refer to the documentation at https://www.volcengine.com/docs/82379/1925114 to 
+
+判读：模型名被真的传给 CLI 才会报错；若只存库不注入，这里会照常成功 → 反证注入链路有效。
