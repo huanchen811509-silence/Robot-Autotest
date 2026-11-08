@@ -19,11 +19,30 @@ import { useTheme } from '@/composables/useTheme'
 import { useAccent } from '@/composables/useAccent'
 import { useDensity } from '@/composables/useDensity'
 
+/**
+ * 「退出意图」标记（v2.6.1 修复）：退出登录时落 sessionStorage，登录页据此**跳过自动登录**。
+ *
+ * 为什么必须有它：「记住密码（自动登录）」把凭据明文存 localStorage（LoginView 有意取舍），
+ * 而登录页挂载时发现存有凭据且未认证就会自动提交一次。退出只清令牌、不清这份凭据——
+ * 于是点退出 → 跳登录页 → 自动登录立刻把人用旧账号登回去，表现就是「点了退出还在登录状态」。
+ *
+ * 为什么用 sessionStorage 而不是 localStorage：
+ *   - 只应影响「刚刚点过退出的这个标签页这一次」，随标签页消亡，不跨标签页、不跨会话；
+ *   - 登录页挂载时消费（删除），一次性生效——手动登录成功后凭据按勾选重新落盘，自动登录自然恢复；
+ *   - 401 被动过期跳登录页**不走退出路径**，自动登录照常，保住它原本「token 过期免打字」的价值。
+ */
+export const LOGOUT_INTENT_KEY = 'login_logout_intent'
+
 export async function performLogout(router: Router): Promise<void> {
   const auth = useAuthStore()
 
   // 1. 本地清干净：令牌、用户、项目、续期定时器
   auth.clear()
+
+  // 1.5 落退出意图：登录页据此跳过自动登录（退出后常要换账号，不该被自动登回）
+  try {
+    sessionStorage.setItem(LOGOUT_INTENT_KEY, '1')
+  } catch { /* 存储不可用时跳过，退出本身不受影响 */ }
 
   // 2. 服务端撤销：不阻塞退出。失败只可能是令牌已失效，本地已经登出，无需回滚。
   void authApi.logout().catch(() => undefined)

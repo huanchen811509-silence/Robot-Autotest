@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { NButton, NCheckbox, NInput } from 'naive-ui'
 import { useAuthStore } from '@/stores/auth'
+import { LOGOUT_INTENT_KEY } from '@/composables/useLogout'
 import AppLogo from '@/components/AppLogo.vue'
 import ErrorLineView from '@/components/ErrorLine.vue'
 import FormField from '@/components/FormField.vue'
@@ -28,6 +29,10 @@ const password = ref('')
  * 自动登录失败即清掉记住的密码：口令失效后留着它只会反复 401，平台的锁定策略是
  * 连续 5 次锁 15 分钟，放任自动重试会把人锁在门外（本次 admin 被锁同因）。账号名
  * 记忆保留——它无凭据语义。
+ *
+ * 例外（v2.6.1）：**刚点过退出**（sessionStorage 退出意图标记）时不自动登录也不预填
+ * 密码——退出的语义是结束本次会话（可能要换账号），不该被自动登回旧账号。
+ * 401 被动过期不走退出路径，自动登录照常。见 `useLogout.ts` 的 LOGOUT_INTENT_KEY。
  */
 const REMEMBER_USER_KEY = 'login_remember_username'
 const SAVED_CREDENTIALS_KEY = 'login_saved_credentials'
@@ -111,6 +116,13 @@ onMounted(() => {
   if (savedUser) {
     username.value = savedUser
     rememberUsername.value = true
+  }
+  // 刚点过退出（本标签页一次性标记）：**不自动登录、也不预填密码**——退出后常要换账号，
+  // 预填旧账号密码 + 新用户名会撞 401，还可能去撞「连续 5 次锁 15 分钟」。账号名记忆保留：
+  // 它无凭据语义。标记消费即失效，手动登录成功后凭据按勾选重新落盘，自动登录自然恢复。
+  if (sessionStorage.getItem(LOGOUT_INTENT_KEY)) {
+    sessionStorage.removeItem(LOGOUT_INTENT_KEY)
+    return
   }
   const saved = savedCredentials()
   if (saved) {

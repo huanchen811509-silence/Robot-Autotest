@@ -14,6 +14,7 @@
 | V26-03 | 后端 agent 清单接口（非管理员）+ 按次覆盖 | `AiAssistantConfigService`、`AiPanelService`、`AiPanelController` | `mvn -Dtest=AiAssistantConfigServiceTest,AiChatRequestBindingTest test` | 完成 |
 | V26-04 | 抽屉下拉 + 回落明示 + 偏好持久化 | `AiPanelDrawer.vue`、`useAiDrawer.ts`、`api/aiPanel.ts`、locales | 同上 + 真实 HTTP | 完成 |
 | V26-05 | 输入输出放大 + 文档回写 | `AiPanelDrawer.vue`、`docs/release/v2.6-assistant-ux/` | `bash scripts/gates.sh` | 完成 |
+| V26-06 | 退出意图标记：退出后不被记住的密码自动登回（v1.2 补） | `useLogout.ts`、`LoginView.vue`、两份 spec | `npx vitest run src/views/LoginView.spec.ts src/composables/useLogout.spec.ts` | 完成 |
 
 ## 2. 实施顺序（为什么是这个顺序）
 

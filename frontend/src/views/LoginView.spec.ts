@@ -11,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createApp, nextTick, type App } from 'vue'
 import { createPinia, setActivePinia } from 'pinia'
 import { i18n } from '@/locales'
+import { LOGOUT_INTENT_KEY } from '@/composables/useLogout'
 import LoginView from '@/views/LoginView.vue'
 
 const authState = vi.hoisted(() => ({
@@ -85,6 +86,7 @@ beforeEach(() => {
   authState.authenticated = false
   vi.clearAllMocks()
   localStorage.clear()
+  sessionStorage.clear()
   pushState.replaced = []
   pinia = createPinia()
   setActivePinia(pinia)
@@ -230,5 +232,43 @@ describe('LoginView 记住账号名与自动登录', () => {
     await flush()
 
     expect(authState.login).not.toHaveBeenCalled()
+  })
+
+  it('刚点过退出（退出意图标记）：不自动登录、不预填密码；账号名预填保留', async () => {
+    localStorage.setItem('login_remember_username', 'evergreen')
+    localStorage.setItem(
+      'login_saved_credentials',
+      JSON.stringify({ username: 'evergreen', password: 'secret' }),
+    )
+    sessionStorage.setItem(LOGOUT_INTENT_KEY, '1')
+    const root = await mountView()
+    await flush()
+
+    // 不被自动登回：这是 v2.6.1 修复的现场（点退出 → 秒回登录态）
+    expect(authState.login).not.toHaveBeenCalled()
+    expect(pushState.replaced).toEqual([])
+    // 密码不预填（退出后可能换账号，旧密码 + 新用户名会撞 401 甚至触发锁定）
+    const inputs = [...root.querySelectorAll<HTMLInputElement>('input')]
+    expect(inputs[1]!.value).toBe('')
+    // 账号名记忆无凭据语义，保留预填
+    expect(inputs[0]!.value).toBe('evergreen')
+  })
+
+  it('退出意图标记一次性消费：标记消掉后自动登录恢复原行为', async () => {
+    localStorage.setItem(
+      'login_saved_credentials',
+      JSON.stringify({ username: 'evergreen', password: 'secret' }),
+    )
+    sessionStorage.setItem(LOGOUT_INTENT_KEY, '1')
+    await mountView()
+    await flush()
+    expect(authState.login).not.toHaveBeenCalled()
+    expect(sessionStorage.getItem(LOGOUT_INTENT_KEY)).toBeNull()
+
+    // 消费掉之后再进登录页（同一标签页）：自动登录照常——401 过期场景不受影响
+    await mountView()
+    await flush()
+    expect(authState.login).toHaveBeenCalledWith('evergreen', 'secret')
+    expect(pushState.replaced).toEqual(['/reports'])
   })
 })

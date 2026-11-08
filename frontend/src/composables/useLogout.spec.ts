@@ -12,7 +12,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import type { Router } from 'vue-router'
 import { authApi } from '@/api/iam'
 import { useAuthStore } from '@/stores/auth'
-import { performLogout } from '@/composables/useLogout'
+import { LOGOUT_INTENT_KEY, performLogout } from '@/composables/useLogout'
 
 vi.mock('@/api/iam', () => ({
   authApi: { logout: vi.fn() },
@@ -33,6 +33,7 @@ function fakeRouter(): { router: Router; replaced: string[] } {
 
 beforeEach(() => {
   localStorage.clear()
+  sessionStorage.clear()
   setActivePinia(createPinia())
   logoutMock.mockReset()
   logoutMock.mockResolvedValue(undefined)
@@ -78,5 +79,14 @@ describe('退出登录（FR-UI-17 修复）', () => {
 
     expect(tokenWhenRevoked).toBeNull()
     expect(logoutMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('退出时落「退出意图」标记：登录页据此跳过自动登录（不被记住的密码登回）', async () => {
+    const { router, replaced } = fakeRouter()
+
+    await performLogout(router)
+
+    expect(sessionStorage.getItem(LOGOUT_INTENT_KEY)).toBe('1')
+    expect(replaced).toEqual(['/login'])
   })
 })

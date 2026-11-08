@@ -1,7 +1,7 @@
 # v2.6 工作助手体验 · ⑤ TEST-PLAN
 
 **文档编号** RA-REL-2026-026-T ｜ **版本** v2.6-assistant-ux ｜ **批次** B14（待落号） ｜ **门禁** G13（未判）
-**日期** 2026-11-08 ｜ **状态** 16 条 TC 已执行（14 PASS / 2 NOT-RUN），失败 0
+**日期** 2026-11-08 ｜ **状态** 19 条 TC 已执行（17 PASS / 2 NOT-RUN），失败 0
 
 > 原则：能机检的不靠人眼；能真链路的不用单测代替。
 > 拿不到证据判据**记 NOT-RUN**，不写「应该没问题」。
@@ -28,6 +28,9 @@
 | TC-v2.6-14 | FR-v2.6-05 | 选未安装的 claude → `cliFallback=true` + `cli=hermes`，前端显示提示 | 真实 HTTP + vitest |
 | TC-v2.6-15 | FR-v2.6-04 | 输入是 textarea；Enter 发送、Shift+Enter 不发；中文组合期不误发 | vitest DOM + 事件 |
 | TC-v2.6-16 | FR-v2.6-04 | 历史区无硬编码 `max-height`，由弹性布局撑满 | 代码审阅 + vitest 类名断言 |
+| TC-v2.6-17 | FR-v2.6-06 | `performLogout` 落一次性退出意图标记（sessionStorage） | vitest |
+| TC-v2.6-18 | FR-v2.6-06 | 带标记挂载登录页：不自动提交、不预填密码、账号名预填保留 | vitest + sessionStorage |
+| TC-v2.6-19 | FR-v2.6-06 | 标记挂载时消费（一次性）：再进登录页自动登录恢复原行为 | vitest |
 
 ## 2. 负向用例
 
@@ -49,6 +52,7 @@
 | TC-v2.6-14 | `docs/evidence/v3.0.1/v26/raw/chat-fallback.json` |
 | TC-v2.6-13（N-v2.6-03） | `docs/evidence/v3.0.1/v26/raw/chat-bad-model.log` |
 | TC-v2.6-01..06 / 11 / 12 / 15 / 16 | 仓库内 vitest，见 ⑥ §2 |
+| TC-v2.6-17 / 18 / 19 | 仓库内 vitest（`LoginView.spec` 12 + `useLogout.spec` 4） |
 | TC-v2.6-09（单测侧） | `AiAssistantConfigServiceTest.agentsListNeverExposesEndpointsOrCredentials` |
 
 ## 4. 放行口径
@@ -68,3 +72,4 @@
 |---|---|---|---|
 | v1.0 | 2026-11-08 | 首版：16 条 TC + 5 条负向 | 大师本轮 3 条指令 |
 | v1.1 | 2026-11-08 | ⑦ 回写：TC-07 由「浏览器取证」改为「代码 + 机检」，像素部分记 NOT-RUN | 同上 |
+| v1.2 | 2026-11-08 | 补 TC-v2.6-17..19（FR-v2.6-06 退出不自动登回），总 19 条 | 大师追加指令 |
