@@ -89,6 +89,7 @@ public class AiProcessManager {
             return AiProcessResult.notExecuted(name, "启动子进程失败: " + ex.getMessage());
         }
         ProcessHandle handle = process.toHandle();
+        closeChildStdin(process);
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ByteArrayOutputStream err = new ByteArrayOutputStream();
         Thread outReader = new Thread(() -> copy(process.getInputStream(), out), "ai-cli-stdout");
@@ -121,6 +122,23 @@ public class AiProcessManager {
                 out.toString(StandardCharsets.UTF_8),
                 err.toString(StandardCharsets.UTF_8),
                 exitCode, durationMs, handle, reason);
+    }
+
+    /**
+     * 立刻关闭子进程的标准输入，给它一个 EOF。
+     *
+     * <p>非交互 CLI 仍可能读 stdin（真实 codex 会先打印
+     * {@code Reading additional input from stdin...} 再等）。父进程不关 stdin 时，
+     * 子进程会一直阻塞到超时——2026-11-08 实测：同一个 codex 直连 14s 成功，
+     * 走本类 60s 超时降级，stderr 只有那一行。关闭后行为与 shell 里
+     * {@code < /dev/null} 一致，回归见 {@code AiProcessManagerStdinTest}。
+     */
+    private static void closeChildStdin(Process process) {
+        try {
+            process.getOutputStream().close();
+        } catch (IOException ignored) {
+            // 子进程可能已退出并关闭管道；此时已无等待可言，忽略
+        }
     }
 
     /** 一键终止：先后代再自身，复用 W3 的进程树语义。null / 已死进程直接跳过。 */

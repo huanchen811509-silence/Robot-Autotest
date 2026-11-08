@@ -1,0 +1,38 @@
+# 子进程 stdin 缺陷：修复前后红/绿对照
+# 时间：2026-11-08 10:51:10 CST
+# 判据：backend/src/test/java/com/qa/autotest/application/ai/AiProcessManagerStdinTest.java
+# 夹具：fixtures/ai/stdin-eof-probe.sh（读 stdin 到 EOF，父进程不关就阻塞到超时）
+
+## A. 摘掉修复（还原成修前行为）
+- 命中 1 处并替换为注释
+
+### A.1 定向跑（预期 FAIL）
+```text
+[ERROR] Tests run: 1, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 11.08 s <<< FAILURE! -- in com.qa.autotest.application.ai.AiProcessManagerStdinTest
+[ERROR] com.qa.autotest.application.ai.AiProcessManagerStdinTest.closesChildStdinSoNonInteractiveCliDoesNotBlock -- Time elapsed: 11.02 s <<< FAILURE!
+Expecting value to be false but was true
+	at com.qa.autotest.application.ai.AiProcessManagerStdinTest.closesChildStdinSoNonInteractiveCliDoesNotBlock(AiProcessManagerStdinTest.java:57)
+[ERROR] Failures: 
+[ERROR]   AiProcessManagerStdinTest.closesChildStdinSoNonInteractiveCliDoesNotBlock:57 [子进程阻塞在 stdin 上说明父进程没有关闭它的标准输入] 
+Expecting value to be false but was true
+[ERROR] Tests run: 1, Failures: 1, Errors: 0, Skipped: 0
+mvn rc=1
+```
+
+## B. 还原修复
+- 已从备份恢复（不用 git checkout）
+
+### B.1 定向跑（预期 PASS）
+```text
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.337 s -- in com.qa.autotest.application.ai.AiProcessManagerStdinTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+mvn rc=0
+```
+
+## C. 结论
+```text
+修前：timedOut=true（子进程阻塞在 stdin，60s 超时后显式降级）
+修后：timedOut=false，exitCode=0，stdout=STDIN_EOF_OK
+修复方式：AiProcessManager 起进程后立即 process.getOutputStream().close()，给子进程 EOF
+```

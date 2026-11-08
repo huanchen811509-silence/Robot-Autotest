@@ -1,0 +1,68 @@
+# G-授权真实 CLI 可用性探测
+# 时间：2026-11-08 10:43:29 CST
+# 执行人：学徒
+
+## 1. 候选 CLI 清单（与 AiCliAdapter.CANDIDATES 一致）
+```
+claude -> /mnt/c/Users/everg/AppData/Roaming/npm/claude
+codex -> /home/evergreen/.local/bin/codex
+gemini -> 未安装
+aider -> 未安装
+```
+
+## 2. claude 版本（exe 本身可起）
+```
+2.1.267 (Claude Code)
+```
+
+## 3. claude shim 实际 exec 的目标
+```
+exec "$basedir/node_modules/@anthropic-ai/claude-code/bin/claude.exe"   "$@"
+```
+说明：shim 直接 exec 原生 claude.exe（Windows 二进制），不是 node 脚本。
+
+## 4. 真实调用 claude -p 的结果
+```text
+命令：claude -p "请只回复两个字：已连通" --output-format json  （stdin 已重定向 /dev/null）
+结果：进程未产出任何 stdout/stderr 即被终止。
+
+执行环境安全策略输出（由运行沙箱直接返回，无法由 shell 捕获，逐字抄录）：
+  PROGRAM BLOCKED BY SECURITY POLICY - The sandbox prevented a program on the configured Program Blacklist from starting:
+    - reg.exe (C:\WINDOWS\System32\reg.exe)
+  This block cannot be approved or bypassed from the current command. Do NOT retry this program,
+  launch it through another shell or script, or attempt an equivalent workaround.
+```
+结论：2.1.267 (Claude Code) 可用但真实推理调用不可用——claude.exe 启动会话时会查询注册表（reg.exe），
+命中本机「程序黑名单」。按提示**未重试、未换壳、未做等价绕过**。
+
+## 5. codex 候选
+```
+codex --version:
+file:///mnt/c/Users/everg/AppData/Roaming/npm/node_modules/@openai/codex/bin/codex.js:105
+  throw new Error(
+```
+原因：codex 的 npm shim 是 node 脚本（exec node ...），WSL 内没有 Linux 版 node
+（which node 无输出；PATH 里只有 Windows 侧 node.exe，Linux exec 不补 .exe）。
+
+## 6. gemini / aider
+两者均未安装（见 §1）。
+
+## 7. 结论
+```text
+授权：已获（大师 2026-11-08「全部授权」）
+执行：不可行——四条候选 CLI 全部在本机不可运行
+  claude : 真实调用被 reg.exe 程序黑名单阻断（不可绕过）
+  codex  : 缺 Linux node，shim 无法 exec
+  gemini : 未安装
+  aider  : 未安装
+TC-AI-11 状态：BLOCKED（环境），不再是 BLOCKED（授权）
+```
+
+解除条件（两条，缺一不可）：
+1. 授权 —— 已满足（2026-11-08）；
+2. 环境 —— 在「安全中心 → 命令安全 → 程序黑名单」放行 reg.exe，或在不受该策略约束的机器上执行。
+
+## 8. 附：脚本执行方式说明
+本脚本在 WSL 文件系统内以 bash <file> 方式执行，外部 CLI 的 stdin 一律重定向 /dev/null。
+原因：以 bash -s 从 stdin 喂脚本时，被调起的 CLI 子进程会继承并读空 stdin，把剩余脚本文本吞掉
+（本轮首两次探测即因此中断，只打出 claude --version 就没了）。
