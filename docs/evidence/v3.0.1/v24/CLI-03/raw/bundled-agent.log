@@ -1,0 +1,36 @@
+==================================================================
+# v2.4 CLI-03：内置 pi agent 安装与启动器校验
+# 时间：2026-11-08 11:31:20 CST  执行人：学徒
+==================================================================
+
+## 1. 幂等校验（--check，不联网）
+```text
+[pi-agent] 已安装：/home/evergreen/.local/share/robot-autotest/agents/pi/node_modules/.bin/pi
+[pi-agent] 启动器：/home/evergreen/.local/share/robot-autotest/agents/pi/bin/pi
+[pi-agent] 版本：1.5.0
+rc=0
+```
+
+## 2. 安装目录
+```text
+total 72
+drwxr-xr-x  2 evergreen evergreen  4096 Nov  8 11:27 bin
+drwxr-xr-x 82 evergreen evergreen  4096 Nov  8 11:18 node_modules
+-rw-r--r--  1 evergreen evergreen 58826 Nov  8 11:18 package-lock.json
+-rw-r--r--  1 evergreen evergreen   156 Nov  8 11:18 package.json
+
+启动器 bin/pi：
+-rwxr-xr-x 1 evergreen evergreen 520 Nov  8 11:27 /home/evergreen/.local/share/robot-autotest/agents/pi/bin/pi
+
+体积：158M
+```
+
+## 3. 收窄 PATH 下 wrapper 与裸 bin 的对照
+
+```text
+# PATH=/usr/local/bin:/usr/bin:/bin（不含 node）
+wrapper  : 1.5.0
+  rc=0
+raw npm  : /usr/bin/env: 'node': No such file or directory
+  rc=127  （127 = /usr/bin/env: node not found → 这正是需要 wrapper 的原因）
+```

@@ -1,6 +1,7 @@
 package com.qa.autotest.application.ai;
 
 import com.qa.autotest.application.kernel.EnvironmentProbe;
+import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,13 +25,17 @@ public class AiCliProbe {
         Map<String, Object> result = new LinkedHashMap<>();
         boolean anyOnPath = false;
         for (String name : CANDIDATES) {
-            boolean found = EnvironmentProbe.onPath(name);
+            boolean found = EnvironmentProbe.onPath(name) || bundled(name);
             result.put(name, found);
             anyOnPath |= found;
         }
         boolean injected = AiCliAdapter.hasConfiguredExecutable();
         boolean realCli = AiFeatureGate.realCliFeatureEnabled();
         boolean anyAvailable = (anyOnPath || injected) && realCli;
+        // 内置兜底 agent（FR-AI-10）：单独上报，便于排障区分「PATH 上装的」与「软件包自带的」
+        result.put("bundledAgent", AiBundledAgent.available());
+        result.put("bundledAgentPath", AiBundledAgent.piExecutable()
+                .map(Path::toString).orElse(null));
         result.put("anyOnPath", anyOnPath || injected);
         result.put("realCliEnabled", realCli);
         result.put("cliPathInjected", injected);
@@ -39,6 +44,11 @@ public class AiCliProbe {
         result.put("mode", anyAvailable ? "NORMAL" : "DEGRADED");
         result.put("nonInteractiveOnly", true);
         return result;
+    }
+
+    /** 内置副本只对 pi 生效，其余候选一律按 PATH 判定。 */
+    private static boolean bundled(String name) {
+        return "pi".equals(name) && AiBundledAgent.available();
     }
 
     public boolean available() {

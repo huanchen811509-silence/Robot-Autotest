@@ -1,14 +1,37 @@
-# C6 / W6 本机 AI CLI 配置档（探测结果以 docs/evidence/v1.0/w2-w7-preconditions/cli-probe.log 为准）
-version: 1
+# C6 / W6 本机 AI CLI 配置档
+# 历史探测：docs/evidence/v1.0/w2-w7-preconditions/cli-probe.log
+# 2026-11-08 增补（FR-AI-09 / FR-AI-10）：新增 hermes / dsh / pi 三条，实测见
+# docs/evidence/v3.0.1/v23/G-AUTH/README.md 与 docs/evidence/v3.0.1/v24/CLI-02/
+version: 2
 candidates:
-  - claude
-  - codex
-  - gemini
-  - aider
+  - hermes        # Hermes Agent：hermes -z '<text>'；实测 rc=0
+  - dsh           # DeepSeek Harness：dsh headless '<text>'；需 DeepSeek 官方 API key
+  - claude        # claude -p '<text>' --output-format text
+  - codex         # codex exec --skip-git-repo-check '<text>'
+  - gemini        # gemini -p '<text>' --output-format text
+  - aider         # aider --message '<text>' --no-auto-commits
+  - pi            # 内置兜底：pi -p '<text>'；随包安装，见 tools/ai/ensure-pi-agent.sh
 probe:
   args: ["--version"]
   timeout_seconds: 8
   interactive: false
+  # 探测只判「可执行文件在不在」，不代表能推理：
+  # claude 在本机 --version 通过但真实调用被 reg.exe 程序黑名单阻断（2026-11-08）。
+  distinguishes_runnable: false
+bundled_agent:
+  name: pi
+  package: "@earendil-works/pi-coding-agent"
+  version: "1.5.0"
+  license: MIT
+  install_dir: "~/.local/share/robot-autotest/agents/pi"
+  bin: "node_modules/.bin/pi"
+  installer: "tools/ai/ensure-pi-agent.sh"
+  override_env: AI_BUNDLED_AGENT_DIR
+credentials:
+  hermes: "由 hermes 自身配置管理（~/.hermes），后端不读取、不落库"
+  dsh: "需 DEEPSEEK_API_KEY（DeepSeek 官方端点；ARK key 不可用，实测 401）"
+  pi: "需在 ~/.pi/agent/models.json 配 provider，或用 PI/OPENAI 系列环境变量"
+  note: "凭据一律由用户自己的 CLI 配置持有，后端从不代填、从不打印"
 levels:
   L1: "静态建议：只打包脱敏上下文，不调用模型"
   L2: "解释与分类：需要可用 CLI，且必须二次确认"

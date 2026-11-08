@@ -1,0 +1,37 @@
+==================================================================
+# v2.4 CLI-02：后端真实链路（hermes 优先 + 内置 pi 兜底）
+# 时间：2026-11-08 11:29:56 CST  执行人：学徒
+==================================================================
+
+## 0. 临时开启 FEATURE_AI_REAL_CLI
+
+## 场景 A：默认 PATH（~/.local/bin 可见）
+  candidates: {'hermes': True, 'dsh': True, 'claude': False, 'codex': True, 'gemini': False, 'aider': False, 'pi': True, 'bundledAgent': True, 'anyOnPath': True, 'realCliEnabled': True, 'cliPathInjected': False, 'anyAvailable': True, 'nonInteractiveOnly': True, 'enabled': True, 'executeRequiresConfirmation': True}
+  bundledAgent: True | path: /home/evergreen/.local/share/robot-autotest/agents/pi/bin/pi
+  mode: NORMAL maxLevel: L3
+  --- POST /api/ai/chat ---
+  耗时 5162 ms
+  cli = hermes
+  answer = 已连通 
+  degraded = False
+  exitCode = 0
+  durationMs = 4858
+
+## 场景 B：PATH 收窄为 /usr/local/bin:/usr/bin:/bin（只有内置 pi 可用）
+  已注入 ARK_API_KEY（长度 46，文件 600，用后删除）
+  candidates: {'hermes': False, 'dsh': False, 'claude': False, 'codex': False, 'gemini': False, 'aider': False, 'pi': True, 'bundledAgent': True, 'anyOnPath': True, 'realCliEnabled': True, 'cliPathInjected': False, 'anyAvailable': True, 'nonInteractiveOnly': True, 'enabled': True, 'executeRequiresConfirmation': True}
+  bundledAgent: True | path: /home/evergreen/.local/share/robot-autotest/agents/pi/bin/pi
+  mode: NORMAL maxLevel: L3
+  --- POST /api/ai/chat ---
+  耗时 2318 ms
+  cli = pi
+  answer = 已连通 
+  degraded = False
+  exitCode = 0
+  durationMs = 1697
+
+## 结束 11:30:22
+
+## 回滚
+  drop-in 残留：3 个
+  ai.env 残留：no

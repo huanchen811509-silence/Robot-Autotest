@@ -1,0 +1,60 @@
+==================================================================
+# v2.4 CLI-01：新增三条候选 CLI 的可用性矩阵
+# 时间：2026-11-08 11:31:19 CST  执行人：学徒
+# 说明：'真实调用'列是本轮实际执行过的一次非交互提示，不是推测。
+==================================================================
+
+| CLI | 路径 | 版本 | 非交互模板 | 真实调用 | 结论 |
+|---|---|---|---|---|---|
+| hermes | `/home/evergreen/.local/bin/hermes` | Hermes Agent v0.21.5+2446.g9fc7f17 (20 | `hermes -z <text>` | rc=0，输出「已连通」，9270ms | **可用** |
+| dsh | `/home/evergreen/.local/bin/dsh` | 0.2.2-alpha.2 | `dsh headless <text>` | rc=1，2847ms，MISSING_CREDENTIAL: llm-deepseek: no API key for provider route "deepseek-official"; store DEEPSEEK_API_KEY th | **链路通、缺凭据** |
+| pi（内置） | `/home/evergreen/.local/share/robot-autotest/agents/pi/bin/pi` | 1.5.0 | `pi -p <text>` | rc=0，输出「已连通」，1826ms（PATH 不含 node） | **可用（兜底成立）** |
+
+## 1. 逐条原始输出
+
+### hermes（Hermes Agent）
+```text
+$ hermes -z '只回复两个字：已连通'
+rc=0  duration_ms=9270
+stdout: 已连通
+stderr: （空）
+```
+
+### dsh（DeepSeek Harness）
+```text
+$ dsh headless '只回复两个字：已连通'
+rc=1  duration_ms=2847
+关键错误行：MISSING_CREDENTIAL: llm-deepseek: no API key for provider route "deepseek-official"; store DEEPSEEK_API_KEY th
+--- stderr 尾 6 行 ---
+$ node --import tsx/esm apps/cli/src/bin.ts headless '只回复两个字：已连通'
+dsh: MISSING_CREDENTIAL: llm-deepseek: no API key for provider route "deepseek-official"; store DEEPSEEK_API_KEY through the credentials service (the web Models page writes it), or export DEEPSEEK_API_KEY in the launching environment
+```
+
+dsh 的失败点是**凭据**，不是集成：进程起得来、模板正确、能给出结构化错误。
+它要求 DeepSeek 官方端点（api.deepseek.com）的 key；用本机 ARK key 会被判 401，
+已在 2026-11-08 实测确认，未做任何绕过。
+
+### pi（内置兜底，wrapper + ARK provider）
+```text
+$ env -i HOME=$HOME PATH=/usr/local/bin:/usr/bin:/bin ARK_API_KEY=<redacted> \
+      ~/.local/share/robot-autotest/agents/pi/bin/pi -p '只回复两个字：已连通' \
+      --provider ark --model deepseek-v4-flash
+rc=0  duration_ms=1826
+stdout: 已连通
+```
+
+**为什么特意用 env -i 缩 PATH**：pi 的 npm bin 是 `#!/usr/bin/env node`，
+只认 PATH 上的 node。2026-11-08 实缺陷：后端 PATH 收窄后内置 pi 被判 `exitCode=127`，
+兜底直接失效。现在 wrapper（`bin/pi`）自己解析 node，同一条 PATH 下照常工作。
+
+## 2. 其余候选现状（同一时刻探测）
+
+```text
+claude  -> /mnt/c/Users/everg/AppData/Roaming/npm/claude
+codex   -> /home/evergreen/.local/bin/codex
+gemini  -> 未安装
+aider   -> 未安装
+```
+
+claude 的 `--version` 可用，但真实推理被本机 `reg.exe` 程序黑名单阻断；
+详见 `docs/evidence/v3.0.1/v23/G-AUTH/README.md`，本轮未重试、未绕过。
