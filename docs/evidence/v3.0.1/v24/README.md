@@ -84,5 +84,10 @@ cd backend && mvn -o -B test -Dtest="Ai*Test"
 ## 8. 安全与凭据
 
 - 所有日志中 key 一律 `<redacted>` 或只记长度，未出现明文。
-- 临时 `ai.env`（600）在脚本退出时删除；`ai.enabled` 还原；drop-in 只删本批新建的 `ai-real.conf`。
+- 临时 `ai.env`（600）在脚本退出时删除；drop-in 只删本批新建的 `ai-real.conf`。
 - 未替用户写入任何 DeepSeek / ARK 凭据到仓库或数据库。
+
+**一处回滚遗漏（如实记）**：`cli_chain.sh` 的 `cleanup` 只删了 drop-in 与 `ai.env`，
+**没有把 `ai.enabled` 还原**，跑完仍是 `true`。事后于 11:38 通过
+`PUT /api/system/settings {"ai.enabled":"false"}` 还原（http=200，复查 `ai.enabled = false`）。
+下次复用该脚本时必须把 `set_enabled false` 补进 `cleanup`，否则会留下「AI 助手默认开启」。
