@@ -197,7 +197,7 @@ class AuditAspectTest {
     @Test
     @DisplayName("project:create / project:delete 记录 owner 与前值")
     void projectCreateAndDelete() {
-        projectService.create("audit-proj", "审计项目", null, null);
+        projectService.create("audit-proj", "审计项目", null, null, null);
         projectService.delete(ALPHA);
         assertEquals(2, auditRepo.entries.size());
         assertEquals("project:create", auditRepo.entries.get(0).action());

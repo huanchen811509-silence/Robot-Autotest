@@ -43,6 +43,7 @@ const cards: ProjectCard[] = [
     deviceCount: 0,
     memberCount: 2,
     myRole: 'admin',
+    testKernel: 'robot',
   },
   {
     id: 2,
@@ -60,6 +61,7 @@ const cards: ProjectCard[] = [
     deviceCount: 1,
     memberCount: 1,
     myRole: null,
+    testKernel: 'robot',
   },
   {
     id: 3,
@@ -77,6 +79,7 @@ const cards: ProjectCard[] = [
     deviceCount: 0,
     memberCount: 0,
     myRole: 'viewer',
+    testKernel: 'pytest',
   },
 ]
 

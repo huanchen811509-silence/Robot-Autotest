@@ -32,5 +32,6 @@ public record ProjectCard(
         Instant lastRunAt,
         long deviceCount,
         long memberCount,
-        String myRole) {
+        String myRole,
+        String testKernel) {
 }

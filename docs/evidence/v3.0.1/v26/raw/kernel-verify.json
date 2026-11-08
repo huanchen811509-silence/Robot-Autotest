@@ -1,0 +1,22 @@
+{
+  "cards_testKernel": {
+    "kernel-verify-2675445": "robot",
+    "ED202-COMMON": "robot",
+    "a8-report-20261107144236": "robot",
+    "a8-report-20261107142938": "robot",
+    "qa-e2e-platform-fixture": "robot",
+    "qa-e2e-orch02": "robot",
+    "qa-e2e-fixture": "robot",
+    "AST05-B": "robot",
+    "demo": "robot"
+  },
+  "created": {
+    "id": 79,
+    "code": "kernel-verify-2675511",
+    "testKernel": "pytest"
+  },
+  "updated_testKernel": "robot",
+  "invalid_kernel_status": 400,
+  "agents_count": 4,
+  "cleanup_status": 200
+}

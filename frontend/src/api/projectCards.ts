@@ -26,6 +26,8 @@ export interface ProjectCard {
   deviceCount: number
   memberCount: number
   myRole: string | null
+  /** 测试内核：robot（Robot Framework，默认）| pytest。缺省按 robot 显示。 */
+  testKernel?: string | null
 }
 
 export const projectCardsApi = {

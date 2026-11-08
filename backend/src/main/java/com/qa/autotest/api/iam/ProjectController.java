@@ -20,11 +20,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class ProjectController {
 
     public record CreateProjectRequest(String code, String name, String description,
-                                       String visibility) {
+                                       String visibility, String testKernel) {
     }
 
     public record UpdateProjectRequest(String name, String description, Boolean enabled,
-                                       Long ownerId, String visibility) {
+                                       Long ownerId, String visibility, String testKernel) {
     }
 
     public record MemberRequest(Long userId, String roleCode) {
@@ -52,7 +52,7 @@ public class ProjectController {
     @PostMapping
     public ApiResponse<Project> create(@RequestBody CreateProjectRequest request) {
         return ApiResponse.ok(projects.create(request.code(), request.name(),
-                request.description(), request.visibility()));
+                request.description(), request.visibility(), request.testKernel()));
     }
 
     @PutMapping("/{projectId}")
@@ -60,7 +60,7 @@ public class ProjectController {
                                        @RequestBody UpdateProjectRequest request) {
         return ApiResponse.ok(projects.update(projectId, request.name(), request.description(),
                 request.enabled() == null || request.enabled(), request.ownerId(),
-                request.visibility()));
+                request.visibility(), request.testKernel()));
     }
 
     @DeleteMapping("/{projectId}")

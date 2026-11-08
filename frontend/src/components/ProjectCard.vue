@@ -56,6 +56,14 @@ const visibilityLabel = computed(() => {
   return props.card.visibility || t('workbench.noData')
 })
 
+/** 测试内核徽章：robot 是默认值（存量项目后端给 robot），未知值原样显示。 */
+const kernelLabel = computed(() => {
+  const kernel = (props.card.testKernel ?? 'robot').toLowerCase()
+  if (kernel === 'robot') return t('workbench.kernelRobot')
+  if (kernel === 'pytest') return t('workbench.kernelPytest')
+  return props.card.testKernel || t('workbench.noData')
+})
+
 function enter(): void {
   auth.setProject(props.card.id)
   void router.push('/overview')
@@ -82,6 +90,10 @@ function setCurrent(): void {
         <span v-if="current" class="badge badge--accent">{{ t('workbench.current') }}</span>
         <span class="badge" :class="card.enabled ? 'badge--ok' : 'badge--muted'">
           {{ card.enabled ? t('workbench.enabled') : t('workbench.disabled') }}
+        </span>
+        <!-- 测试内核：一眼看出这个项目跑的是 RF 还是 pytest -->
+        <span class="badge badge--muted" :title="t('workbench.kernel')" data-testid="card-kernel">
+          {{ kernelLabel }}
         </span>
       </div>
     </header>

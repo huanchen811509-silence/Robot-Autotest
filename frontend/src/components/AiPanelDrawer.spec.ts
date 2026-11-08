@@ -246,12 +246,26 @@ describe('AiPanelDrawer v2.6 宽度可调', () => {
     expect(widths).toEqual([520, 480, 340, AI_DRAWER_MAX])
   })
 
-  it('档位按钮按 340→420→520→760 循环，超出上限不再增长', async () => {
+  it('宽度预设陈列：四个档位全部渲染，点击即 emit 对应宽度', async () => {
     const { root, widths } = await mount(340)
-    const button = root.querySelector<HTMLButtonElement>('[data-testid="ai-width"]')!
-    button.click()
+    const presets = [...root.querySelectorAll<HTMLButtonElement>('[data-testid="ai-width-preset"]')]
+    // 文案是「px · 档位名」，档位名走 i18n——断言只盯 px 与格式，不钉死语言
+    const labels = presets.map((b) => b.textContent!.trim())
+    expect(labels.map((l) => l.split(' · ')[0])).toEqual(['340', '420', '520', '760'])
+    expect(labels.every((l) => l.split(' · ').length === 2 && l.split(' · ')[1]!.length > 0))
+      .toBe(true)
+
+    presets[2]!.click()
     await nextTick()
-    expect(widths).toEqual([420])
+    expect(widths).toEqual([520])
+  })
+
+  it('当前档高亮（aria-pressed），其余档不亮', async () => {
+    const { root } = await mount(420)
+    const presets = [...root.querySelectorAll<HTMLButtonElement>('[data-testid="ai-width-preset"]')]
+    const pressed = presets.map((b) => b.getAttribute('aria-pressed'))
+    expect(pressed).toEqual(['false', 'true', 'false', 'false'])
+    expect(presets[1]!.className).toContain('ai-width-preset--active')
   })
 })
 

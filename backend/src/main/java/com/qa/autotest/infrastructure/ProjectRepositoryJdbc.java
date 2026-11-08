@@ -21,10 +21,10 @@ public class ProjectRepositoryJdbc implements ProjectRepository {
             rs.getLong("id"), rs.getString("code"), rs.getString("name"),
             rs.getString("description"), rs.getInt("status") == 1,
             rs.getObject("owner_id") == null ? null : rs.getLong("owner_id"),
-            rs.getString("visibility"));
+            rs.getString("visibility"), rs.getString("test_kernel"));
 
     private static final String SELECT =
-            "SELECT id, code, name, description, status, owner_id, visibility FROM project";
+            "SELECT id, code, name, description, status, owner_id, visibility, test_kernel FROM project";
 
     private final JdbcTemplate jdbc;
 
@@ -64,7 +64,8 @@ public class ProjectRepositoryJdbc implements ProjectRepository {
     @Override
     public List<Project> findByMember(long userId) {
         return jdbc.query("""
-                SELECT p.id, p.code, p.name, p.description, p.status, p.owner_id, p.visibility
+                SELECT p.id, p.code, p.name, p.description, p.status, p.owner_id, p.visibility,
+                       p.test_kernel
                   FROM project p JOIN project_member m ON m.project_id = p.id
                  WHERE m.user_id = ? ORDER BY p.id
                 """, MAPPER, userId);
@@ -75,8 +76,9 @@ public class ProjectRepositoryJdbc implements ProjectRepository {
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbc.update(connection -> {
             var ps = connection.prepareStatement("""
-                    INSERT INTO project (code, name, description, status, owner_id, visibility)
-                    VALUES (?, ?, ?, ?, ?, ?)
+                    INSERT INTO project (code, name, description, status, owner_id, visibility,
+                                         test_kernel)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
                     """, new String[]{"id"});
             ps.setString(1, project.code());
             ps.setString(2, project.name());
@@ -84,6 +86,7 @@ public class ProjectRepositoryJdbc implements ProjectRepository {
             ps.setInt(4, project.enabled() ? 1 : 0);
             ps.setObject(5, project.ownerId(), java.sql.Types.BIGINT);
             ps.setString(6, project.visibility() == null ? "private" : project.visibility());
+            ps.setString(7, project.testKernel() == null ? "robot" : project.testKernel());
             return ps;
         }, keyHolder);
         return keyHolder.getKey() == null ? 0 : keyHolder.getKey().longValue();
@@ -91,11 +94,12 @@ public class ProjectRepositoryJdbc implements ProjectRepository {
 
     @Override
     public void update(long id, String name, String description, boolean enabled, Long ownerId,
-                       String visibility, Long updatedBy) {
+                       String visibility, String testKernel, Long updatedBy) {
         jdbc.update("""
                 UPDATE project SET name = ?, description = ?, status = ?, owner_id = ?,
-                       visibility = ?, updated_by = ? WHERE id = ?
-                """, name, description, enabled ? 1 : 0, ownerId, visibility, updatedBy, id);
+                       visibility = ?, test_kernel = ?, updated_by = ? WHERE id = ?
+                """, name, description, enabled ? 1 : 0, ownerId, visibility,
+                testKernel == null ? "robot" : testKernel, updatedBy, id);
     }
 
     @Override

@@ -54,8 +54,13 @@ const defaultAgent = ref('')
 const fallbackNote = ref('')
 const resizing = ref(false)
 
-/** 宽度档位：无鼠标时的循环路径，与拖拽共用同一套钳制。 */
-const WIDTH_STEPS = [AI_DRAWER_MIN, 420, 520, AI_DRAWER_MAX]
+/** 宽度预设陈列：快速选择档位（拖拽与键盘保留，都过同一套钳制）。 */
+const WIDTH_PRESETS = [
+  { px: AI_DRAWER_MIN, label: 'aiPanel.presetNarrow' },
+  { px: 420, label: 'aiPanel.presetStandard' },
+  { px: 520, label: 'aiPanel.presetWide' },
+  { px: AI_DRAWER_MAX, label: 'aiPanel.presetMax' },
+] as const
 
 const canExecute = computed(() =>
   state.value ? canRequestExecution(state.value, confirmed.value) : false)
@@ -210,12 +215,6 @@ function onAgentChange(event: Event): void {
 
 function onModelChange(event: Event): void {
   setModel((event.target as HTMLSelectElement).value)
-}
-
-function cycleWidth(): void {
-  const index = WIDTH_STEPS.indexOf(props.width)
-  const next = WIDTH_STEPS[(index + 1) % WIDTH_STEPS.length] ?? WIDTH_STEPS[0]
-  emit('update:width', next)
 }
 
 /**
@@ -384,14 +383,22 @@ watch(prompt, () => nextTick(resizeInput))
       <button class="btn btn-ghost" type="button" :disabled="busy || !state" @click="act('terminate')">
         {{ t('aiPanel.terminate') }}
       </button>
+    </div>
+
+    <!-- 宽度预设陈列（v2.6.1 大师反馈「拖拽不直观」）：一排档位直接点，当前档高亮；
+         拖拽与键盘（±20 / Home / End）保留，三条路径共用同一套钳制与持久化。 -->
+    <div class="ai-width-presets" role="group" :aria-label="t('aiPanel.width')">
       <button
-        class="btn btn-ghost"
+        v-for="preset in WIDTH_PRESETS"
+        :key="preset.px"
+        class="btn btn-ghost ai-width-preset"
         type="button"
-        :title="t('aiPanel.resize')"
-        data-testid="ai-width"
-        @click="cycleWidth"
+        data-testid="ai-width-preset"
+        :class="{ 'ai-width-preset--active': width === preset.px }"
+        :aria-pressed="width === preset.px"
+        @click="emit('update:width', preset.px)"
       >
-        {{ t('aiPanel.width') }} {{ width }}
+        {{ preset.px }} · {{ t(preset.label) }}
       </button>
     </div>
 
@@ -512,6 +519,15 @@ watch(prompt, () => nextTick(resizeInput))
 
 .ai-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .ai-actions .ai-confirm { grid-column: 1 / -1; }
+
+/* 宽度预设陈列：四个档位一排，当前档实心高亮（aria-pressed 同步）。 */
+.ai-width-presets { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.ai-width-preset { padding: 4px 10px; font-size: 12px; }
+.ai-width-preset--active {
+  background: var(--accent);
+  color: var(--accent-contrast);
+  border-color: var(--accent);
+}
 .ai-confirm { display: flex; align-items: center; gap: 8px; font-size: 13px; }
 .ai-facts { margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px; }
 .ai-facts dt { color: var(--text-muted); }

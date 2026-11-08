@@ -73,6 +73,7 @@ beforeEach(() => {
       enabled: true,
       ownerId: null,
       visibility: null,
+      testKernel: 'robot',
     },
   ]
 })

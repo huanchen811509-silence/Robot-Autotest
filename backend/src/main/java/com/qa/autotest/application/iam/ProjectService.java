@@ -57,7 +57,8 @@ public class ProjectService {
 
     @Audited(action = "project:create", resource = "project")
     @Transactional
-    public Project create(String code, String name, String description, String visibility) {
+    public Project create(String code, String name, String description, String visibility,
+                          String testKernel) {
         access.require(PermissionResource.PROJECT, PermissionAction.CREATE);
         if (code == null || code.isBlank()) {
             throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "项目编码不能为空");
@@ -67,7 +68,8 @@ public class ProjectService {
         }
         long ownerId = TenantContext.requireUserId();
         long id = projects.insert(new Project(null, code.trim(), name, description, true,
-                ownerId, visibility == null || visibility.isBlank() ? "private" : visibility));
+                ownerId, visibility == null || visibility.isBlank() ? "private" : visibility,
+                normalizeKernel(testKernel)));
         projects.addMember(id, ownerId, RoleCode.ADMIN.code(), ownerId);
         audit.recordChange("project:create", "project", String.valueOf(id), null,
                 "code=" + code + "; name=" + name + "; owner=" + ownerId);
@@ -76,13 +78,27 @@ public class ProjectService {
     }
 
     public Project update(long projectId, String name, String description, boolean enabled,
-                          Long ownerId, String visibility) {
+                          Long ownerId, String visibility, String testKernel) {
         access.bindProject(projectId);
         access.require(PermissionResource.PROJECT, PermissionAction.UPDATE);
         projects.update(projectId, name, description, enabled, ownerId, visibility,
-                TenantContext.userId());
-        audit.record("project.update", "project", String.valueOf(projectId), "name=" + name);
+                normalizeKernel(testKernel), TenantContext.userId());
+        audit.record("project.update", "project", String.valueOf(projectId),
+                "name=" + name + "; kernel=" + normalizeKernel(testKernel));
         return get(projectId);
+    }
+
+    /** 测试内核归一：空值回 robot（RF 是平台主内核），其余只认 robot / pytest。 */
+    static String normalizeKernel(String testKernel) {
+        if (testKernel == null || testKernel.isBlank()) {
+            return "robot";
+        }
+        String value = testKernel.trim().toLowerCase(java.util.Locale.ROOT);
+        if (!"robot".equals(value) && !"pytest".equals(value)) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                    "不支持的测试内核：" + testKernel + "（仅 robot / pytest）");
+        }
+        return value;
     }
 
     @Audited(action = "project:delete", resource = "project")

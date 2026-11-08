@@ -38,6 +38,8 @@ export interface Project {
   enabled: boolean
   ownerId: number | null
   visibility: string | null
+  /** 测试内核：robot（Robot Framework，默认）| pytest。缺省按 robot 显示。 */
+  testKernel?: string | null
 }
 
 /** 项目成员；roleCode 是**项目内角色**（member_role），不是全局角色。 */
@@ -123,7 +125,8 @@ export const projectApi = {
   list() {
     return request<Project[]>('/projects')
   },
-  create(body: { code: string; name: string; description?: string; visibility?: string }) {
+  create(body: { code: string; name: string; description?: string; visibility?: string;
+                  testKernel?: string }) {
     return request<Project>('/projects', { method: 'POST', body: JSON.stringify(body) })
   },
   remove(id: number) {

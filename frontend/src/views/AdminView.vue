@@ -54,7 +54,7 @@ const userForm = reactive({
   roleId: null as number | null,
 })
 
-const projectForm = reactive({ code: '', name: '', description: '', visibility: 'private' })
+const projectForm = reactive({ code: '', name: '', description: '', visibility: 'private', testKernel: 'robot' })
 
 /** 项目内角色只有这四个值（与后端 RoleCode 同值）；与全局角色是两套口径。 */
 const PROJECT_ROLES = ['admin', 'pm', 'engineer', 'viewer']
@@ -79,6 +79,12 @@ const projectRoleOptions = computed(() =>
 
 const projectOptions = computed(() =>
   auth.projects.map((project) => ({ label: `${project.code} · ${project.name}`, value: project.id })))
+
+/** 测试内核选项：robot（Robot Framework，默认）/ pytest。 */
+const kernelOptions = computed(() => [
+  { label: t('workbench.kernelRobot'), value: 'robot' },
+  { label: t('workbench.kernelPytest'), value: 'pytest' },
+])
 
 /**
  * 候选人下拉保留「已停用」标注：把停用用户混进来又不标，是管理员最常见的误操作来源。
@@ -414,12 +420,14 @@ async function createProject(): Promise<void> {
       name: projectForm.name.trim(),
       description: projectForm.description,
       visibility: projectForm.visibility,
+      testKernel: projectForm.testKernel,
     })
     await auth.loadProjects()
     message.value = t('common.saved')
     projectForm.code = ''
     projectForm.name = ''
     projectForm.description = ''
+    projectForm.testKernel = 'robot'
     showProjectForm.value = false
   } catch (e) {
     error.value = localizeError(e)
@@ -605,6 +613,12 @@ async function removeMember(member: ProjectMember): Promise<void> {
         <NInput v-model:value="projectForm.code" style="width: 140px" :placeholder="t('admin.projectCode')" />
         <NInput v-model:value="projectForm.name" style="width: 180px" :placeholder="t('admin.projectName')" />
         <NInput v-model:value="projectForm.description" style="width: 220px" :placeholder="t('admin.description')" />
+        <NSelect
+          v-model:value="projectForm.testKernel"
+          style="width: 180px"
+          :options="kernelOptions"
+          :aria-label="t('admin.projectKernel')"
+        />
         <NButton type="primary" attr-type="submit">{{ t('common.save') }}</NButton>
       </form>
 

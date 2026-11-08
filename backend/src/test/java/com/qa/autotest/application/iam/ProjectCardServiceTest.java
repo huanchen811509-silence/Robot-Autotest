@@ -239,7 +239,7 @@ class ProjectCardServiceTest {
 
         @Override
         public void update(long id, String name, String description, boolean enabled, Long ownerId,
-                           String visibility, Long updatedBy) {
+                           String visibility, String testKernel, Long updatedBy) {
             throw new UnsupportedOperationException();
         }
 

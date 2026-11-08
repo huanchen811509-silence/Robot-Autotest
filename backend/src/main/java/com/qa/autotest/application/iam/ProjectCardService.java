@@ -95,7 +95,7 @@ public class ProjectCardService {
                     currentProjectId != null && currentProjectId.equals(project.id()),
                     aggregate.caseCount(), aggregate.runCount(), passRateBp(aggregate),
                     aggregate.lastRunAt(), aggregate.deviceCount(), aggregate.memberCount(),
-                    myRole(aggregate.memberRole(), admin)));
+                    myRole(aggregate.memberRole(), admin), project.testKernel()));
         }
         return result;
     }

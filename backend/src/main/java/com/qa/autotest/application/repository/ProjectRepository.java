@@ -21,7 +21,7 @@ public interface ProjectRepository {
     long insert(Project project);
 
     void update(long id, String name, String description, boolean enabled, Long ownerId,
-                String visibility, Long updatedBy);
+                String visibility, String testKernel, Long updatedBy);
 
     void delete(long id);
 

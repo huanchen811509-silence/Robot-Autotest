@@ -1,7 +1,7 @@
 # v2.6 工作助手体验 · ⑤ TEST-PLAN
 
 **文档编号** RA-REL-2026-026-T ｜ **版本** v2.6-assistant-ux ｜ **批次** B14（待落号） ｜ **门禁** G13（未判）
-**日期** 2026-11-08 ｜ **状态** 19 条 TC 已执行（17 PASS / 2 NOT-RUN），失败 0
+**日期** 2026-11-08 ｜ **状态** 24 条 TC 已执行（22 PASS / 2 NOT-RUN），失败 0
 
 > 原则：能机检的不靠人眼；能真链路的不用单测代替。
 > 拿不到证据判据**记 NOT-RUN**，不写「应该没问题」。
@@ -31,6 +31,11 @@
 | TC-v2.6-17 | FR-v2.6-06 | `performLogout` 落一次性退出意图标记（sessionStorage） | vitest |
 | TC-v2.6-18 | FR-v2.6-06 | 带标记挂载登录页：不自动提交、不预填密码、账号名预填保留 | vitest + sessionStorage |
 | TC-v2.6-19 | FR-v2.6-06 | 标记挂载时消费（一次性）：再进登录页自动登录恢复原行为 | vitest |
+| TC-v2.6-20 | FR-v2.6-07 | 4 个预设档全渲染（340/420/520/760），点击即 emit 对应宽度 | vitest |
+| TC-v2.6-21 | FR-v2.6-07 | 当前档 `aria-pressed=true` + active 类，其余不亮；拖拽/键盘用例不回归 | vitest |
+| TC-v2.6-22 | FR-v2.6-08 | 卡牌接口带 `testKernel`，存量项目全为 `robot`（迁移默认） | 真实 HTTP + Flyway |
+| TC-v2.6-23 | FR-v2.6-08 | 建 pytest 项目回读一致；改回 robot 一致；`junit` 判 400 | 真实 HTTP |
+| TC-v2.6-24 | FR-v2.6-08 | 内核归一单测：空值回 robot / 大小写不敏感 / 未知值拒；agents 回归 200 | mvn + 真实 HTTP |
 
 ## 2. 负向用例
 
@@ -53,6 +58,8 @@
 | TC-v2.6-13（N-v2.6-03） | `docs/evidence/v3.0.1/v26/raw/chat-bad-model.log` |
 | TC-v2.6-01..06 / 11 / 12 / 15 / 16 | 仓库内 vitest，见 ⑥ §2 |
 | TC-v2.6-17 / 18 / 19 | 仓库内 vitest（`LoginView.spec` 12 + `useLogout.spec` 4） |
+| TC-v2.6-22 / 23 / 24 | `docs/evidence/v3.0.1/v26/raw/kernel-verify.json`（复跑 `raw/verify_kernel.py`） |
+| TC-v2.6-20 / 21 / 24（单测侧） | `AiPanelDrawer.spec` 17、`ProjectServiceKernelTest` 4 |
 | TC-v2.6-09（单测侧） | `AiAssistantConfigServiceTest.agentsListNeverExposesEndpointsOrCredentials` |
 
 ## 4. 放行口径
@@ -73,3 +80,4 @@
 | v1.0 | 2026-11-08 | 首版：16 条 TC + 5 条负向 | 大师本轮 3 条指令 |
 | v1.1 | 2026-11-08 | ⑦ 回写：TC-07 由「浏览器取证」改为「代码 + 机检」，像素部分记 NOT-RUN | 同上 |
 | v1.2 | 2026-11-08 | 补 TC-v2.6-17..19（FR-v2.6-06 退出不自动登回），总 19 条 | 大师追加指令 |
+| v1.3 | 2026-11-08 | 补 TC-v2.6-20..24（宽度预设陈列 + 项目测试内核），总 24 条 | 大师追加指令 |
