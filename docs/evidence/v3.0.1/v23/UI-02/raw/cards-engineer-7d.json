@@ -1,0 +1,1 @@
+{"code":0,"codeName":"OK","message":"OK","data":[{"id":29,"code":"qa-e2e-fixture","name":"NODX-03 fixture","description":"HTTP 全链路验收夹具，勿手工改","enabled":true,"visibility":"private","ownerId":null,"isCurrent":true,"caseCount":5,"runCount":54,"passRateBp":7222,"lastRunAt":"2026-11-07T19:00:38.348Z","deviceCount":0,"memberCount":4,"myRole":"ENGINEER"}],"success":true}

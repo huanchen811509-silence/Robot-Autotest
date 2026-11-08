@@ -28,6 +28,20 @@ export interface NavLeaf {
   query?: Record<string, string>
   /** 除 path 外的额外前缀匹配（详情页/编辑器保持父项点亮） */
   alsoMatch?: string[]
+  /**
+   * 前缀匹配的排除项（v2.3 / FR-UI-26 配套）。
+   *
+   * `/reports` 按前缀会命中 `/reports/templates`，而模板页是另一个二级项；
+   * 不排除就会出现「点模板、报告列表也亮」。排除项同样按路径分段边界比较。
+   */
+  exclude?: string[]
+  /**
+   * 合并组内的子域分区（v2.3 / FR-UI-29）。
+   *
+   * 只影响渲染时是否画一条细分隔线，**不参与**选中判定与能力过滤——
+   * 单测里有一条专门断言「带/不带 section 时 isLeafActive 结果相同」。
+   */
+  section?: 'run' | 'report'
   /** 旧口径：仅管理员可见。保留给 v1.0 的审计入口，新增项一律用 capability。 */
   adminOnly?: boolean
   /** v2.0 能力键（`resource:action`）；不填 = 所有登录用户可见。 */
@@ -52,36 +66,92 @@ export function isGroup(node: NavNode): node is NavGroup {
 
 export const NAVIGATION: NavNode[] = [
   {
-    key: 'overview',
+    // v2.3 / FR-UI-02：工作台从叶子升级为分组。
+    // 落地面（`/workbench`）是跨项目总览；单项目看板（`/overview`）退为第二个子项。
+    // 顺带修掉 v1.0 的「同页两名」：侧栏叫工作台、页头叫总览，其实是两回事。
+    key: 'workbench',
     labelKey: 'menu.workspace',
     icon: 'dashboard',
-    path: '/overview',
-  },
-  {
-    key: 'assets',
-    labelKey: 'menu.assets',
-    icon: 'boxes',
     children: [
       {
-        key: 'assets-devices',
-        labelKey: 'assets.tabs.devices',
-        icon: 'device',
-        path: '/assets',
-        query: { tab: 'devices' },
+        key: 'workbench-overview',
+        labelKey: 'menu.workbenchOverview',
+        icon: 'boxes',
+        path: '/workbench',
       },
       {
-        key: 'assets-links',
-        labelKey: 'assets.tabs.links',
-        icon: 'link',
-        path: '/assets',
-        query: { tab: 'links' },
+        key: 'workbench-board',
+        labelKey: 'menu.overview',
+        icon: 'reports',
+        path: '/overview',
+      },
+    ],
+  },
+  {
+    // v2.3 / FR-UI-26：执行与报告合并为一个一级分组。
+    // 原「报告」是**叶子冒充分组**：列表/模板/详情/打印 4 个页面只立了 1 个叶子，
+    // 靠 alsoMatch 硬关联高亮；而且 `/test-reports` 一直没有任何菜单入口（孤儿页）。
+    // 合并后 6 项按 section 分「运行态 / 报告态」，渲染时只画 1 条细分隔线，不引三级层级。
+    key: 'execution',
+    labelKey: 'menu.execution',
+    icon: 'runs',
+    // FR-UI-27：**组级不设 capability**。原「报告」叶子本不需要 execution:read，
+    // 若给合并组加回该能力，viewer 会静默失去报告入口（合并前的 6 项可见性就会倒退）。
+    // 能力只设到子项：3 个运行态项要 execution:read，3 个报告态项不要。
+    children: [
+      {
+        key: 'execution-runs',
+        labelKey: 'menu.runsList',
+        icon: 'runs',
+        path: '/runs',
+        alsoMatch: ['/runs/failure-clusters'],
+        capability: 'execution:read',
+        section: 'run',
       },
       {
-        key: 'assets-credentials',
-        labelKey: 'assets.tabs.credentials',
-        icon: 'credential',
-        path: '/assets',
-        query: { tab: 'credentials' },
+        // FR-UI-04：独立词条，不再借用 `plans.title`（借用会让「计划」这种泛词跟着
+        // 计划页标题一起改，界面与导航互相拴住）。
+        key: 'execution-plans',
+        labelKey: 'menu.runsPlans',
+        icon: 'cases',
+        path: '/plans',
+        alsoMatch: ['/plans/groups', '/plans/graph'],
+        capability: 'execution:read',
+        section: 'run',
+      },
+      {
+        key: 'execution-nodes',
+        labelKey: 'menu.runsNodes',
+        icon: 'admin',
+        path: '/nodes',
+        capability: 'execution:read',
+        section: 'run',
+      },
+      {
+        // `exclude` 是必须的：`/reports` 按前缀会命中 `/reports/templates`，
+        // 不排除就会出现「点模板，报告列表也亮」。
+        key: 'execution-reports',
+        labelKey: 'menu.reports',
+        icon: 'reports',
+        path: '/reports',
+        exclude: ['/reports/templates'],
+        section: 'report',
+      },
+      {
+        key: 'execution-report-templates',
+        labelKey: 'menu.reportTemplates',
+        icon: 'copy',
+        path: '/reports/templates',
+        section: 'report',
+      },
+      {
+        // FR-UI-28：`/test-reports` 此前路由与视图都在，但导航树里没有任何一项指向它，
+        // 用户只能手输 URL。这里补上唯一入口。
+        key: 'execution-external-reports',
+        labelKey: 'menu.externalReports',
+        icon: 'external',
+        path: '/test-reports',
+        section: 'report',
       },
     ],
   },
@@ -113,45 +183,64 @@ export const NAVIGATION: NavNode[] = [
     ],
   },
   {
-    key: 'runs',
-    labelKey: 'menu.runs',
-    icon: 'runs',
-    capability: 'execution:read',
+    key: 'assets',
+    labelKey: 'menu.assets',
+    icon: 'boxes',
     children: [
       {
-        key: 'runs-list',
-        labelKey: 'menu.runsList',
-        icon: 'runs',
-        path: '/runs',
-        alsoMatch: ['/runs/failure-clusters'],
+        key: 'assets-devices',
+        labelKey: 'assets.tabs.devices',
+        icon: 'device',
+        path: '/assets',
+        query: { tab: 'devices' },
       },
       {
-        key: 'runs-plans',
-        labelKey: 'plans.title',
-        icon: 'cases',
-        path: '/plans',
-        alsoMatch: ['/plans/groups', '/plans/graph'],
+        key: 'assets-links',
+        labelKey: 'assets.tabs.links',
+        icon: 'link',
+        path: '/assets',
+        query: { tab: 'links' },
       },
       {
-        key: 'runs-nodes',
-        labelKey: 'menu.runsNodes',
-        icon: 'admin',
-        path: '/nodes',
+        key: 'assets-credentials',
+        labelKey: 'assets.tabs.credentials',
+        icon: 'credential',
+        path: '/assets',
+        query: { tab: 'credentials' },
       },
     ],
   },
   {
-    key: 'reports',
-    labelKey: 'menu.reports',
-    icon: 'reports',
-    path: '/reports',
-    alsoMatch: ['/reports', '/test-reports'],
+    // v2.2 / MENU-01 + MENU-02：环境与拓扑（5 个只读二级页）。
+    // 6 个业务能力域不建一级菜单，降为用例 domain_tag 筛选标签（FR-UI-30 仍成立）。
+    key: 'environment',
+    labelKey: 'menu.environment',
+    icon: 'system',
+    children: [
+      { key: 'environment-overview', labelKey: 'menu.envOverview', icon: 'dashboard', path: '/environment/overview' },
+      { key: 'environment-collect', labelKey: 'menu.envCollect', icon: 'database', path: '/environment/collect' },
+      { key: 'environment-topology', labelKey: 'menu.envTopology', icon: 'link', path: '/environment/topology' },
+      { key: 'environment-prepare', labelKey: 'menu.envPrepare', icon: 'sliders', path: '/environment/prepare' },
+      { key: 'environment-analysis', labelKey: 'menu.envAnalysis', icon: 'reports', path: '/environment/analysis' },
+    ],
   },
   {
+    // v2.2 / MENU-01 + MENU-04：维护与恢复（3 个只读二级页）。
+    key: 'maintenance',
+    labelKey: 'menu.maintenance',
+    icon: 'audit',
+    children: [
+      { key: 'maintenance-principles', labelKey: 'menu.mntPrinciples', icon: 'info', path: '/maintenance/principles' },
+      { key: 'maintenance-records', labelKey: 'menu.mntRecords', icon: 'database', path: '/maintenance/records' },
+      { key: 'maintenance-recover', labelKey: 'menu.mntRecover', icon: 'search', path: '/maintenance/recover' },
+    ],
+  },
+  {
+    // 「系统设置」独立成一级（v2.0 / W0.8）：平台配置 + 用户/审计 + 关于/版本迭代。
+    // 顺序上后置（v2.3 / FR-UI-01）：它是兜底域，不该排在日常闭环前面。
     key: 'settings',
     labelKey: 'menu.settings',
     icon: 'admin',
-    // 「系统设置」独立成一级（W0.8）：平台配置 + 用户/审计 + 关于/版本迭代。
     children: [
       {
         key: 'settings-platform',
@@ -186,32 +275,6 @@ export const NAVIGATION: NavNode[] = [
         icon: 'reports',
         path: '/changelog',
       },
-    ],
-  },
-  {
-    // v2.2 / MENU-01 + MENU-02：环境与拓扑（5 个只读二级页）。
-    // 6 个业务能力域不建一级菜单，降为用例 domain_tag 筛选标签；
-    // 中文文案直接作 labelKey —— vue-i18n 缺键时 t() 回退到 key 本身（已实测）。
-    key: 'environment',
-    labelKey: 'menu.environment',
-    icon: 'system',
-    children: [
-      { key: 'environment-overview', labelKey: 'menu.envOverview', icon: 'dashboard', path: '/environment/overview' },
-      { key: 'environment-collect', labelKey: 'menu.envCollect', icon: 'database', path: '/environment/collect' },
-      { key: 'environment-topology', labelKey: 'menu.envTopology', icon: 'link', path: '/environment/topology' },
-      { key: 'environment-prepare', labelKey: 'menu.envPrepare', icon: 'sliders', path: '/environment/prepare' },
-      { key: 'environment-analysis', labelKey: 'menu.envAnalysis', icon: 'reports', path: '/environment/analysis' },
-    ],
-  },
-  {
-    // v2.2 / MENU-01 + MENU-04：维护与恢复（3 个只读二级页）。
-    key: 'maintenance',
-    labelKey: 'menu.maintenance',
-    icon: 'audit',
-    children: [
-      { key: 'maintenance-principles', labelKey: 'menu.mntPrinciples', icon: 'info', path: '/maintenance/principles' },
-      { key: 'maintenance-records', labelKey: 'menu.mntRecords', icon: 'database', path: '/maintenance/records' },
-      { key: 'maintenance-recover', labelKey: 'menu.mntRecover', icon: 'search', path: '/maintenance/recover' },
     ],
   },
 ]
@@ -249,10 +312,25 @@ function queryMatches(leaf: NavLeaf, route: NavRouteLike): boolean {
  */
 export function isLeafActive(leaf: NavLeaf, route: NavRouteLike): boolean {
   const path = normalizePath(route.path)
-  if (hitsPrefix(path, leaf.path) && queryMatches(leaf, route)) {
+  const excluded = (leaf.exclude ?? []).some((prefix) => hitsPrefix(path, prefix))
+  if (!excluded && hitsPrefix(path, leaf.path) && queryMatches(leaf, route)) {
     return true
   }
   return (leaf.alsoMatch ?? []).some((prefix) => hitsPrefix(path, prefix))
+}
+
+/**
+ * 该子项之前是否要画一条分区细分隔线（v2.3 / FR-UI-29）。
+ *
+ * 判据是「与上一项的 `section` 不同且自身有 section」——`section` 只是渲染信息，
+ * 不参与选中判定与能力过滤（单测有一条专门锁这个不变量）。
+ */
+export function isSectionBreak(leaves: readonly NavLeaf[], index: number): boolean {
+  if (index <= 0) return false
+  const current = leaves[index]
+  const previous = leaves[index - 1]
+  if (!current || !previous) return false
+  return Boolean(current.section) && current.section !== previous.section
 }
 
 export function isGroupActive(group: NavGroup, route: NavRouteLike): boolean {
@@ -368,7 +446,8 @@ export function allNavLeaves(): NavLeaf[] {
 }
 
 /* --------------------------------------------------------------------------
- * v2.2 / MENU-01（FR-v2.2-01、06）：8 组 IA 与业务域隔离机检
+ * v2.2 / MENU-01（FR-v2.2-01、06）：业务域隔离机检
+ * v2.3 / FR-UI-01 把一级项从 8 组调成 7 组（执行 + 报告合并），这条隔离约束不变。
  * -------------------------------------------------------------------------- */
 
 /**

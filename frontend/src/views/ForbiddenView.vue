@@ -12,7 +12,7 @@ const router = useRouter()
     <strong class="code">403</strong>
     <h1>{{ t('forbidden.title') }}</h1>
     <p class="muted">{{ t('forbidden.hint') }}</p>
-    <button class="btn" type="button" @click="router.push('/overview')">
+    <button class="btn" type="button" @click="router.push('/workbench')">
       {{ t('forbidden.back') }}
     </button>
   </div>

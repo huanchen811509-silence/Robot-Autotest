@@ -1,0 +1,1438 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] -------------------< com.qa:robot-autotest-backend >--------------------
+[INFO] Building robot-autotest-backend 0.1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ robot-autotest-backend ---
+[INFO] argLine set to -javaagent:/home/evergreen/.m2/repository/org/jacoco/org.jacoco.agent/0.8.12/org.jacoco.agent-0.8.12-runtime.jar=destfile=/tmp/jacoco-robot-autotest.exec
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ robot-autotest-backend ---
+[INFO] Copying 5 resources from src/main/resources to target/classes
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ robot-autotest-backend ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ robot-autotest-backend ---
+[INFO] Copying 10 resources from src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ robot-autotest-backend ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.2.5:test (default-test) @ robot-autotest-backend ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.qa.autotest.api.PingControllerTest
+09:49:32.490 [main] INFO org.hibernate.validator.internal.util.Version -- HV000001: Hibernate Validator 8.0.1.Final
+09:49:33.543 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:33.543 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:33.548 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 4 ms
+09:49:33.804 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:33.805 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:33.805 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:33.842 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:33.842 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:33.842 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:33.845 [main] ERROR com.qa.autotest.api.GlobalExceptionHandler -- 未预期异常
+java.lang.IllegalStateException: boom
+	at com.qa.autotest.api.PingControllerTest$BoomController.unexpected(PingControllerTest.java:69)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:255)
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:188)
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:926)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:831)
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87)
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1089)
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979)
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014)
+	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:903)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:564)
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885)
+	at org.springframework.test.web.servlet.TestDispatcherServlet.service(TestDispatcherServlet.java:72)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658)
+	at org.springframework.mock.web.MockFilterChain$ServletFilterProxy.doFilter(MockFilterChain.java:165)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at org.springframework.test.web.servlet.MockMvc.perform(MockMvc.java:201)
+	at com.qa.autotest.api.PingControllerTest.未预期异常兜底(PingControllerTest.java:52)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:728)
+	at org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:60)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorChain.java:131)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:156)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:147)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:86)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(InterceptingExecutableInvoker.java:103)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:93)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorChain.java:106)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:64)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:45)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:37)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:92)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:86)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$7(TestMethodTestDescriptor.java:218)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:214)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:139)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:69)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:156)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:35)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:57)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:54)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:198)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:169)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:93)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:58)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:141)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:57)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:103)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:85)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.apache.maven.surefire.junitplatform.LazyLauncher.execute(LazyLauncher.java:56)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.execute(JUnitPlatformProvider.java:184)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invokeAllTests(JUnitPlatformProvider.java:148)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invoke(JUnitPlatformProvider.java:122)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.924 s -- in com.qa.autotest.api.PingControllerTest
+[INFO] Running com.qa.autotest.api.node.NodeShardEndpointTest
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+WARNING: A Java agent has been loaded dynamically (/home/evergreen/.m2/repository/net/bytebuddy/byte-buddy-agent/1.14.19/byte-buddy-agent-1.14.19.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+09:49:36.583 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:36.585 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:36.586 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+09:49:37.513 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:37.514 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:37.514 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:37.645 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:37.645 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:37.646 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+09:49:37.751 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:37.752 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:37.754 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:37.831 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:37.831 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:37.832 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.017 s -- in com.qa.autotest.api.node.NodeShardEndpointTest
+[INFO] Running com.qa.autotest.api.HealthControllerTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.694 s -- in com.qa.autotest.api.HealthControllerTest
+[INFO] Running com.qa.autotest.api.group.ScenarioExecuteIT
+09:49:39.039 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:39.039 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:39.040 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+09:49:39.098 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:39.099 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:39.099 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.534 s -- in com.qa.autotest.api.group.ScenarioExecuteIT
+[INFO] Running com.qa.autotest.api.metrics.MetricsControllerTest
+09:49:39.227 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:39.227 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:39.228 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.145 s -- in com.qa.autotest.api.metrics.MetricsControllerTest
+[INFO] Running com.qa.autotest.api.iam.AuthorizationBoundaryTest
+09:49:39.547 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:39.547 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:39.548 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+09:49:39.662 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:39.662 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:39.663 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+09:49:39.729 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:39.730 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:39.730 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:39.842 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:39.842 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:39.842 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:39.880 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:39.880 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:39.882 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+09:49:39.942 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:39.943 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:39.943 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:40.024 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:40.025 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:40.026 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:40.067 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:40.067 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:40.067 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:40.110 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:40.111 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:40.111 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:40.157 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:40.157 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:40.157 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:40.198 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:40.200 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:40.200 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:40.239 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:40.239 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:40.239 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:40.292 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:40.293 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:40.293 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:40.339 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:40.339 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:40.339 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:40.379 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:40.380 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:40.380 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:40.430 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:40.431 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:40.431 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:40.466 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:40.466 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:40.467 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:40.500 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:40.500 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:40.500 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:40.544 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:40.545 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:40.545 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:40.587 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:40.587 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:40.588 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:40.632 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:40.632 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:40.632 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:40.680 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:40.680 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:40.681 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+09:49:40.729 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:40.729 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:40.730 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:40.779 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:40.779 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:40.780 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+09:49:40.824 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:40.824 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:40.824 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:40.857 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:40.857 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:40.857 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:40.909 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:40.909 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:40.910 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:40.977 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:40.977 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:40.977 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:41.023 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:41.024 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:41.024 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:41.065 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:41.066 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:41.066 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:41.108 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:41.108 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:41.110 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:41.151 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:41.151 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:41.151 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:41.181 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:41.181 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:41.181 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:41.210 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:41.210 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:41.210 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:41.228 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:41.229 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:41.230 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:41.267 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:41.268 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:41.268 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:41.324 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:41.324 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:41.325 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:41.375 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:41.375 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:41.376 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+09:49:41.423 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:41.423 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:41.423 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:41.444 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:41.444 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:41.444 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+[INFO] Tests run: 40, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.139 s -- in com.qa.autotest.api.iam.AuthorizationBoundaryTest
+[INFO] Running com.qa.autotest.api.iam.AuthzMatrixTest
+09:49:41.882 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:41.882 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:41.883 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+09:49:41.989 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:41.989 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:41.989 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:42.276 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:42.276 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:42.276 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:42.308 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:42.308 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:42.308 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:42.349 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:42.350 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:42.350 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:42.397 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:42.397 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:42.397 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:42.446 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:42.446 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:42.446 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:42.471 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:42.471 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:42.472 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:42.509 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:42.509 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:42.509 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:42.548 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:42.549 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:42.549 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:42.589 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:42.590 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:42.590 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:42.616 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:42.616 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:42.616 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:42.649 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:42.649 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:42.650 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+09:49:42.668 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:42.669 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:42.670 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+09:49:42.694 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:42.694 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:42.694 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:42.725 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:42.725 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:42.725 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:42.747 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:42.747 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:42.747 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:42.768 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:42.768 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:42.768 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:42.801 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:42.801 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:42.801 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:42.828 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:42.828 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:42.829 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+09:49:42.857 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:42.857 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:42.857 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:42.896 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:42.896 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:42.896 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:42.921 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:42.921 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:42.921 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:42.935 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:42.935 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:42.935 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:42.957 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:42.957 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:42.958 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+09:49:42.978 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:42.979 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:42.979 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:42.993 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:42.993 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:42.993 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:43.005 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:43.005 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:43.005 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:43.018 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:43.018 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:43.018 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:43.034 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:43.034 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:43.035 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+09:49:43.064 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:43.064 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:43.064 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:43.087 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:43.087 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:43.088 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:43.109 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:43.109 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:43.109 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:43.128 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:43.130 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:43.133 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+09:49:43.167 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:43.168 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:43.168 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:43.184 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:43.184 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:43.184 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:43.203 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:43.204 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:43.204 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:43.224 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:43.224 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:43.224 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:43.244 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:43.244 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:43.244 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:43.258 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:43.258 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:43.258 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:43.279 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:43.279 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:43.279 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:43.298 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:43.298 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:43.298 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:43.315 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:43.316 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:43.316 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:43.333 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:43.333 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:43.333 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:43.354 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:43.354 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:43.354 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:43.375 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:43.375 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:43.376 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+09:49:43.395 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:43.395 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:43.396 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+09:49:43.414 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:43.414 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:43.414 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:43.449 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:43.449 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:43.449 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:43.479 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:43.479 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:43.479 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:43.498 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:43.498 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:43.498 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:43.515 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:43.515 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:43.515 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:43.543 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:43.543 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:43.543 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:43.561 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:43.561 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:43.561 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:43.578 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:43.578 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:43.579 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:43.597 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:43.597 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:43.597 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:43.621 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:43.621 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:43.621 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:43.654 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:43.654 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:43.654 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:43.687 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:43.687 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:43.687 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:43.713 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:43.713 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:43.713 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:43.734 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:43.734 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:43.735 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+09:49:43.753 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:43.754 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:43.754 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:43.780 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:43.781 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:43.781 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:43.799 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:43.800 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:43.800 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:43.830 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:43.831 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:43.831 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:43.849 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:43.849 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:43.850 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+09:49:43.865 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:43.865 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:43.865 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:43.882 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:43.882 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:43.882 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:43.909 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:43.909 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:43.909 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:43.928 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:43.929 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:43.929 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:43.950 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:43.950 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:43.950 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:43.965 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:43.965 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:43.965 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:43.980 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:43.980 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:43.980 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:43.996 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:43.996 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:43.996 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:44.026 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:44.026 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:44.026 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:44.042 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:44.042 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:44.043 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+09:49:44.077 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:44.082 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:44.082 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:44.099 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:44.099 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:44.099 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:44.115 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:44.115 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:44.115 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:44.131 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:44.131 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:44.131 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:44.150 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:44.150 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:44.150 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:44.168 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:44.168 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:44.169 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+09:49:44.178 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:44.178 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:44.178 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:44.188 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:44.188 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:44.188 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:44.199 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:44.199 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:44.199 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:44.213 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:44.213 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:44.213 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:44.226 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:44.226 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:44.227 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:44.250 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:44.251 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:44.251 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:44.266 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:44.266 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:44.266 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:44.280 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:44.280 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:44.281 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:44.296 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:44.296 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:44.296 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:44.316 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:44.316 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:44.316 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:44.339 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:44.339 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:44.339 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:44.356 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:44.356 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:44.356 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:44.373 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:44.373 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:44.373 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:44.393 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:44.393 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:44.394 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+09:49:44.413 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:44.413 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:44.413 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:44.426 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:44.427 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:44.427 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:44.441 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:44.441 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:44.441 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:44.453 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:44.453 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:44.454 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+09:49:44.468 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:44.468 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:44.468 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:44.480 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:44.480 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:44.481 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+09:49:44.492 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:44.492 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:44.492 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:44.502 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:44.502 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:44.502 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:44.515 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:44.515 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:44.516 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+09:49:44.527 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:44.527 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:44.527 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:44.546 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:44.546 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:44.547 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+09:49:44.566 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:44.566 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:44.566 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:44.587 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:44.587 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:44.588 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+09:49:44.612 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:44.612 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:44.613 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+09:49:44.628 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:44.628 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:44.628 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:44.643 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:44.644 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:44.645 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+09:49:44.660 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:44.660 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:44.660 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+[INFO] Tests run: 113, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.217 s -- in com.qa.autotest.api.iam.AuthzMatrixTest
+[INFO] Running com.qa.autotest.api.GlobalExceptionHandlerTest
+09:49:44.863 [main] ERROR com.qa.autotest.api.GlobalExceptionHandler -- 未预期异常
+java.lang.IllegalStateException: boom
+	at com.qa.autotest.api.GlobalExceptionHandlerTest.未预期异常仍是500(GlobalExceptionHandlerTest.java:55)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:728)
+	at org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:60)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorChain.java:131)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:156)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:147)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:86)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(InterceptingExecutableInvoker.java:103)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:93)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorChain.java:106)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:64)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:45)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:37)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:92)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:86)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$7(TestMethodTestDescriptor.java:218)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:214)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:139)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:69)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:156)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:35)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:57)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:54)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:198)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:169)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:93)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:58)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:141)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:57)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:103)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:85)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.apache.maven.surefire.junitplatform.LazyLauncher.execute(LazyLauncher.java:56)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.execute(JUnitPlatformProvider.java:184)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invokeAllTests(JUnitPlatformProvider.java:148)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invoke(JUnitPlatformProvider.java:122)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.196 s -- in com.qa.autotest.api.GlobalExceptionHandlerTest
+[INFO] Running com.qa.autotest.api.caseasset.PlatformCaseSetControllerTest
+09:49:44.980 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:44.980 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:44.980 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:44.996 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:44.996 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:44.997 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+09:49:45.008 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:45.008 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:45.008 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.147 s -- in com.qa.autotest.api.caseasset.PlatformCaseSetControllerTest
+[INFO] Running com.qa.autotest.api.caseasset.FileControllerTest
+09:49:45.105 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:45.105 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:45.105 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:45.130 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:45.131 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:45.131 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:45.148 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:45.148 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:45.149 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:45.161 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:45.161 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:45.161 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:45.174 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:45.175 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:45.175 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:45.195 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:45.195 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:45.195 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:45.206 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:45.207 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:45.207 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.199 s -- in com.qa.autotest.api.caseasset.FileControllerTest
+[INFO] Running com.qa.autotest.api.caseasset.TestSetControllerTest
+09:49:45.229 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:45.229 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:45.229 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:45.245 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:45.245 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:45.246 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+09:49:45.277 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:45.277 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:45.278 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+09:49:45.293 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:45.293 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:45.293 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.091 s -- in com.qa.autotest.api.caseasset.TestSetControllerTest
+[INFO] Running com.qa.autotest.api.report.ReportExportControllerTest
+09:49:45.473 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:45.473 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:45.473 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:45.485 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:45.485 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:45.485 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:45.513 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:45.513 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:45.513 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:45.531 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:45.531 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:45.532 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+09:49:45.554 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:45.555 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:45.555 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:45.565 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:45.565 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:45.565 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:45.650 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:45.650 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:45.651 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.354 s -- in com.qa.autotest.api.report.ReportExportControllerTest
+[INFO] Running com.qa.autotest.api.report.ReportControllerTest
+09:49:45.977 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:45.977 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:45.977 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:45.998 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:45.998 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:45.998 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:46.011 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:46.011 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:46.012 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+09:49:46.044 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:46.045 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:46.045 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:46.062 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:46.062 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:46.062 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:46.077 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:46.077 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:46.078 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+09:49:46.128 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:46.128 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:46.129 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+09:49:46.156 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:46.156 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:46.156 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.498 s -- in com.qa.autotest.api.report.ReportControllerTest
+[INFO] Running com.qa.autotest.api.report.ReportParseApiTest
+09:49:46.532 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:46.532 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:46.532 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:46.549 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:46.550 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:46.550 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:46.564 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:46.564 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:46.564 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+09:49:46.617 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+09:49:46.617 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+09:49:46.617 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.487 s -- in com.qa.autotest.api.report.ReportParseApiTest
+[INFO] Running com.qa.autotest.api.execution.RunLogWebSocketE2ETest
+09:49:46.756 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.qa.autotest.api.execution.RunLogWebSocketE2ETest]: RunLogWebSocketE2ETest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+09:49:47.150 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.qa.autotest.RobotAutotestApplication for test class com.qa.autotest.api.execution.RunLogWebSocketE2ETest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.3.5)
+
+2026-11-08T09:49:48.060+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.e.RunLogWebSocketE2ETest         : Starting RunLogWebSocketE2ETest using Java 21.0.12.1 with PID 2359547 (started by evergreen in /home/evergreen/robot-autotest/backend)
+2026-11-08T09:49:48.065+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.e.RunLogWebSocketE2ETest         : The following 1 profile is active: "test"
+2026-11-08T09:49:50.475+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 0 (http)
+2026-11-08T09:49:50.503+08:00  INFO 2359547 --- [robot-autotest] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-11-08T09:49:50.503+08:00  INFO 2359547 --- [robot-autotest] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.31]
+2026-11-08T09:49:50.573+08:00  INFO 2359547 --- [robot-autotest] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-11-08T09:49:50.574+08:00  INFO 2359547 --- [robot-autotest] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 2473 ms
+2026-11-08T09:49:50.898+08:00  INFO 2359547 --- [robot-autotest] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-11-08T09:49:51.143+08:00  INFO 2359547 --- [robot-autotest] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.mariadb.jdbc.Connection@3b5fb899
+2026-11-08T09:49:51.146+08:00  INFO 2359547 --- [robot-autotest] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-11-08T09:49:51.377+08:00  INFO 2359547 --- [robot-autotest] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:mariadb://127.0.0.1/robot_dev (MySQL 8.0)
+2026-11-08T09:49:51.392+08:00  WARN 2359547 --- [robot-autotest] [           main] o.m.jdbc.message.server.ErrorPacket      : Error: 1142-42000: SELECT command denied to user 'robot'@'localhost' for table 'user_variables_by_thread'
+2026-11-08T09:49:51.592+08:00  INFO 2359547 --- [robot-autotest] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 47 migrations (execution time 00:00.126s)
+2026-11-08T09:49:51.628+08:00  INFO 2359547 --- [robot-autotest] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema `robot_dev`: 11.13
+2026-11-08T09:49:51.635+08:00  INFO 2359547 --- [robot-autotest] [           main] o.f.core.internal.command.DbMigrate      : Schema `robot_dev` is up to date. No migration necessary.
+2026-11-08T09:49:54.132+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 46386 (http) with context path '/'
+2026-11-08T09:49:54.151+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.e.RunLogWebSocketE2ETest         : Started RunLogWebSocketE2ETest in 6.789 seconds (process running for 25.716)
+2026-11-08T09:49:54.491+08:00  INFO 2359547 --- [robot-autotest] [o-auto-1-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-11-08T09:49:54.492+08:00  INFO 2359547 --- [robot-autotest] [o-auto-1-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-11-08T09:49:54.494+08:00  INFO 2359547 --- [robot-autotest] [o-auto-1-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 2 ms
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 8.417 s -- in com.qa.autotest.api.execution.RunLogWebSocketE2ETest
+[INFO] Running com.qa.autotest.api.execution.ShardControllerTest
+2026-11-08T09:49:55.093+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-11-08T09:49:55.094+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-08T09:49:55.094+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-11-08T09:49:55.108+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-11-08T09:49:55.108+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-08T09:49:55.108+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-11-08T09:49:55.128+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-11-08T09:49:55.128+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-08T09:49:55.128+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-11-08T09:49:55.145+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-11-08T09:49:55.145+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-08T09:49:55.145+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.079 s -- in com.qa.autotest.api.execution.ShardControllerTest
+[INFO] Running com.qa.autotest.api.execution.LeaseControllerTest
+2026-11-08T09:49:56.550+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-11-08T09:49:56.550+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-08T09:49:56.550+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-11-08T09:49:56.570+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-11-08T09:49:56.570+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-08T09:49:56.571+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+2026-11-08T09:49:56.590+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-11-08T09:49:56.590+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-08T09:49:56.590+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.435 s -- in com.qa.autotest.api.execution.LeaseControllerTest
+[INFO] Running com.qa.autotest.api.execution.FailureClusterControllerTest
+2026-11-08T09:49:56.669+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-11-08T09:49:56.670+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-08T09:49:56.670+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-11-08T09:49:56.685+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-11-08T09:49:56.685+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-08T09:49:56.685+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.092 s -- in com.qa.autotest.api.execution.FailureClusterControllerTest
+[INFO] Running com.qa.autotest.api.execution.RunControllerTest
+2026-11-08T09:49:57.529+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-11-08T09:49:57.529+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-08T09:49:57.530+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+2026-11-08T09:49:57.561+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-11-08T09:49:57.561+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-08T09:49:57.561+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-11-08T09:49:57.631+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-11-08T09:49:57.631+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-08T09:49:57.631+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-11-08T09:49:57.663+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-11-08T09:49:57.663+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-08T09:49:57.663+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-11-08T09:49:57.703+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-11-08T09:49:57.703+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-08T09:49:57.703+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-11-08T09:49:57.725+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-11-08T09:49:57.725+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-08T09:49:57.725+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-11-08T09:49:57.755+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-11-08T09:49:57.755+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-08T09:49:57.756+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-11-08T09:49:57.780+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-11-08T09:49:57.781+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-08T09:49:57.781+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-11-08T09:49:57.814+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-11-08T09:49:57.814+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-08T09:49:57.814+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-11-08T09:49:57.849+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-11-08T09:49:57.850+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-08T09:49:57.850+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-11-08T09:49:57.887+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-11-08T09:49:57.887+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-08T09:49:57.888+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.209 s -- in com.qa.autotest.api.execution.RunControllerTest
+[INFO] Running com.qa.autotest.api.execution.RunTimelineControllerTest
+2026-11-08T09:49:57.994+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-11-08T09:49:57.994+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-08T09:49:57.994+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-11-08T09:49:58.012+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-11-08T09:49:58.013+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-08T09:49:58.013+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.116 s -- in com.qa.autotest.api.execution.RunTimelineControllerTest
+[INFO] Running com.qa.autotest.migration.MigrationFileTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.030 s -- in com.qa.autotest.migration.MigrationFileTest
+[INFO] Running com.qa.autotest.migration.DownScriptGuardTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.033 s -- in com.qa.autotest.migration.DownScriptGuardTest
+[INFO] Running com.qa.autotest.migration.V7BackfillTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in com.qa.autotest.migration.V7BackfillTest
+[INFO] Running com.qa.autotest.application.editor.EditorSaveServiceTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.036 s -- in com.qa.autotest.application.editor.EditorSaveServiceTest
+[INFO] Running com.qa.autotest.application.editor.EditorPermissionTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in com.qa.autotest.application.editor.EditorPermissionTest
+[INFO] Running com.qa.autotest.application.editor.LineDiffTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.010 s -- in com.qa.autotest.application.editor.LineDiffTest
+[INFO] Running com.qa.autotest.application.editor.EditorKeywordSanitizeTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 s -- in com.qa.autotest.application.editor.EditorKeywordSanitizeTest
+[INFO] Running com.qa.autotest.application.importing.PreflightServiceTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.030 s -- in com.qa.autotest.application.importing.PreflightServiceTest
+[INFO] Running com.qa.autotest.application.importing.ImportSandboxTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.015 s -- in com.qa.autotest.application.importing.ImportSandboxTest
+[INFO] Running com.qa.autotest.application.plan.PlanGraphTest
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.020 s -- in com.qa.autotest.application.plan.PlanGraphTest
+[INFO] Running com.qa.autotest.application.plan.PlanGroupServiceTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.026 s -- in com.qa.autotest.application.plan.PlanGroupServiceTest
+[INFO] Running com.qa.autotest.application.plan.PlanDependencyGraphTest
+2026-11-08T09:49:58.259+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.plan.PlanScheduleService         : 计划 1 运行 UP-2 结束于 FAILED，下游 1 个被标记 skipped_dependency
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.019 s -- in com.qa.autotest.application.plan.PlanDependencyGraphTest
+[INFO] Running com.qa.autotest.application.plan.CronNextFireTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.010 s -- in com.qa.autotest.application.plan.CronNextFireTest
+[INFO] Running com.qa.autotest.application.plan.PlanConflictServiceTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.175 s -- in com.qa.autotest.application.plan.PlanConflictServiceTest
+[INFO] Running com.qa.autotest.application.plan.PlanSchedulerTenantTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.103 s -- in com.qa.autotest.application.plan.PlanSchedulerTenantTest
+[INFO] Running com.qa.autotest.application.plan.PlanServiceBatchTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.350 s -- in com.qa.autotest.application.plan.PlanServiceBatchTest
+[INFO] Running com.qa.autotest.application.plan.PlanScheduleServiceTest
+2026-11-08T09:49:58.927+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.plan.PlanScheduleService         : 计划 7 触发 run RUN-1（触发点 2026-11-03T02:00:00Z）
+2026-11-08T09:49:58.933+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.plan.PlanScheduleService         : 计划 3 触发点 2026-11-03T02:00:00Z 因项目并发上限 2/2 被 defer
+2026-11-08T09:49:58.937+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.plan.PlanScheduleService         : 计划 1 触发 run RUN-1（触发点 2026-11-03T02:00:00Z）
+2026-11-08T09:49:58.942+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.plan.PlanScheduleService         : 计划 2 触发点 2026-11-03T02:00:00Z 因上一轮未结束被跳过
+2026-11-08T09:49:58.945+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.plan.PlanScheduleService         : 计划 4 触发 run RUN-1（触发点 2026-11-03T02:00:00Z）
+2026-11-08T09:49:58.948+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.plan.PlanScheduleService         : 计划 10 触发 run RUN-1（触发点 2026-11-03T02:00:00Z）
+2026-11-08T09:49:58.952+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.plan.PlanScheduleService         : 计划 8 触发 run RUN-1（触发点 2026-11-03T01:00:00Z）
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.031 s -- in com.qa.autotest.application.plan.PlanScheduleServiceTest
+[INFO] Running com.qa.autotest.application.system.SystemSettingServiceTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.028 s -- in com.qa.autotest.application.system.SystemSettingServiceTest
+[INFO] Running com.qa.autotest.application.system.DeployRecordServiceTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.034 s -- in com.qa.autotest.application.system.DeployRecordServiceTest
+[INFO] Running com.qa.autotest.application.system.BuildInfoServiceTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.522 s -- in com.qa.autotest.application.system.BuildInfoServiceTest
+[INFO] Running com.qa.autotest.application.node.NodeChannelTest
+2026-11-08T09:49:59.654+08:00  WARN 2359547 --- [robot-autotest] [           main] c.q.a.application.node.NodeChannel       : 节点出站网络失败（attempt=1）: http://127.0.0.1:1/node/run - null
+2026-11-08T09:49:59.655+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.application.node.NodeChannel       : 节点出站重试（第 1 次）: http://127.0.0.1:1/node/run
+2026-11-08T09:49:59.659+08:00  WARN 2359547 --- [robot-autotest] [           main] c.q.a.application.node.NodeChannel       : 节点出站网络失败（attempt=2）: http://127.0.0.1:1/node/run - null
+2026-11-08T09:49:59.670+08:00  WARN 2359547 --- [robot-autotest] [           main] c.q.a.application.node.NodeChannel       : 节点端点拒绝（HTTP 500）: http://127.0.0.1:44810/node/run
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.125 s -- in com.qa.autotest.application.node.NodeChannelTest
+[INFO] Running com.qa.autotest.application.node.ExecutionNodeServiceTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.035 s -- in com.qa.autotest.application.node.ExecutionNodeServiceTest
+[INFO] Running com.qa.autotest.application.node.NodeHeartbeatMonitorTest
+2026-11-08T09:49:59.711+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.node.NodeHeartbeatMonitor        : node-monitor: marked OFFLINE: 1
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in com.qa.autotest.application.node.NodeHeartbeatMonitorTest
+[INFO] Running com.qa.autotest.application.overview.OverviewServiceTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 s -- in com.qa.autotest.application.overview.OverviewServiceTest
+[INFO] Running com.qa.autotest.application.observability.RunTimelineServiceTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.141 s -- in com.qa.autotest.application.observability.RunTimelineServiceTest
+[INFO] Running com.qa.autotest.application.group.ScenarioServiceTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.007 s -- in com.qa.autotest.application.group.ScenarioServiceTest
+[INFO] Running com.qa.autotest.application.group.ScenarioSchemaTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in com.qa.autotest.application.group.ScenarioSchemaTest
+[INFO] Running com.qa.autotest.application.metrics.MetricsServiceTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.175 s -- in com.qa.autotest.application.metrics.MetricsServiceTest
+[INFO] Running com.qa.autotest.application.iam.ProjectCardServiceTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.029 s -- in com.qa.autotest.application.iam.ProjectCardServiceTest
+[INFO] Running com.qa.autotest.application.iam.AuditQueryTest
+2026-11-08T09:50:00.111+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-11-08T09:50:00.112+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-08T09:50:00.112+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-11-08T09:50:00.125+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-11-08T09:50:00.126+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-08T09:50:00.126+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-11-08T09:50:00.146+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-11-08T09:50:00.146+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-08T09:50:00.146+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-11-08T09:50:00.160+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-11-08T09:50:00.160+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-08T09:50:00.160+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-11-08T09:50:00.170+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-11-08T09:50:00.170+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-08T09:50:00.170+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-11-08T09:50:00.182+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-11-08T09:50:00.183+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-08T09:50:00.183+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-11-08T09:50:00.200+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-11-08T09:50:00.201+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-08T09:50:00.201+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-11-08T09:50:00.215+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-11-08T09:50:00.216+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-08T09:50:00.216+08:00  INFO 2359547 --- [robot-autotest] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.128 s -- in com.qa.autotest.application.iam.AuditQueryTest
+[INFO] Running com.qa.autotest.application.iam.PasswordPolicyTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in com.qa.autotest.application.iam.PasswordPolicyTest
+[INFO] Running com.qa.autotest.application.iam.AuthServiceRenewTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.240 s -- in com.qa.autotest.application.iam.AuthServiceRenewTest
+[INFO] Running com.qa.autotest.application.iam.ProjectCardVisibilityTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 s -- in com.qa.autotest.application.iam.ProjectCardVisibilityTest
+[INFO] Running com.qa.autotest.application.iam.AuditAspectTest
+2026-11-08T09:50:00.708+08:00  WARN 2359547 --- [robot-autotest] [           main] c.q.a.application.iam.AuditService       : 审计写入失败 action=user:create resource=app_user id=99：java.lang.IllegalStateException: disk full
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.285 s -- in com.qa.autotest.application.iam.AuditAspectTest
+[INFO] Running com.qa.autotest.application.ci.CiWritebackTest
+2026-11-08T09:50:00.785+08:00  WARN 2359547 --- [robot-autotest] [           main] c.q.a.application.execution.RunService   : run RUN-CI-1 的完成监听器 CiWritebackTest$$Lambda/0x00007fea58b56d40 执行失败（已忽略）: listener boom
+2026-11-08T09:50:00.798+08:00  WARN 2359547 --- [robot-autotest] [           main] c.q.a.application.ci.CiWritebackService  : CI 回写失败 run=RUN-CI-1 trigger=1 reason=github_error: IllegalStateException: github_status_io_error
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.019 s -- in com.qa.autotest.application.ci.CiWritebackTest
+[INFO] Running com.qa.autotest.application.ci.CiTriggerServiceTest
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.021 s -- in com.qa.autotest.application.ci.CiTriggerServiceTest
+[INFO] Running com.qa.autotest.application.caseasset.FilePathTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.010 s -- in com.qa.autotest.application.caseasset.FilePathTest
+[INFO] Running com.qa.autotest.application.caseasset.PriorityNormalizeTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.792 s -- in com.qa.autotest.application.caseasset.PriorityNormalizeTest
+[INFO] Running com.qa.autotest.application.caseasset.TestSetPlatformServiceTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.349 s -- in com.qa.autotest.application.caseasset.TestSetPlatformServiceTest
+[INFO] Running com.qa.autotest.application.caseasset.Ed202OrganizationTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.034 s -- in com.qa.autotest.application.caseasset.Ed202OrganizationTest
+[INFO] Running com.qa.autotest.application.caseasset.ImportPreflightReportTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.428 s -- in com.qa.autotest.application.caseasset.ImportPreflightReportTest
+[INFO] Running com.qa.autotest.application.caseasset.AssetUpgradeServiceTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.026 s -- in com.qa.autotest.application.caseasset.AssetUpgradeServiceTest
+[INFO] Running com.qa.autotest.application.caseasset.CaseStepIngestTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.676 s -- in com.qa.autotest.application.caseasset.CaseStepIngestTest
+[INFO] Running com.qa.autotest.application.caseasset.RequirementVersionImmutabilityTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.007 s -- in com.qa.autotest.application.caseasset.RequirementVersionImmutabilityTest
+[INFO] Running com.qa.autotest.application.caseasset.CaseHeaderAliasTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.344 s -- in com.qa.autotest.application.caseasset.CaseHeaderAliasTest
+[INFO] Running com.qa.autotest.application.caseasset.Ed202MultiSheetImportTest
+[EDIM-01] sheet=测试用例看板 headerRow=R15 mappedColumns=8 rows=730
+[EDIM-01] sheet=Import详细测试流程 headerRow=R3 mappedColumns=10 rows=414
+[EDIM-01] sheet=XCCL详细测试流程 headerRow=R1 mappedColumns=10 rows=61
+[EDIM-01] sheet=AI参数网_详细测试流程 headerRow=R1 mappedColumns=9 rows=67
+[EDIM-01] sheet=存储_详细测试流程 headerRow=R1 mappedColumns=9 rows=86
+[EDIM-01] sheet=HCI详细测试流程 headerRow=R1 mappedColumns=8 rows=102
+[EDIM-01] sheet=UECGSE适配 headerRow=R1 mappedColumns=6 rows=83
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.295 s -- in com.qa.autotest.application.caseasset.Ed202MultiSheetImportTest
+[INFO] Running com.qa.autotest.application.caseasset.ExecutionSelectionFreezeTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.028 s -- in com.qa.autotest.application.caseasset.ExecutionSelectionFreezeTest
+[INFO] Running com.qa.autotest.application.caseasset.AssetVersionServiceTest
+[INFO] Tests run: 18, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.044 s -- in com.qa.autotest.application.caseasset.AssetVersionServiceTest
+[INFO] Running com.qa.autotest.application.kernel.RobotKernelParityTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.013 s -- in com.qa.autotest.application.kernel.RobotKernelParityTest
+[INFO] Running com.qa.autotest.application.kernel.PytestKernelTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.039 s -- in com.qa.autotest.application.kernel.PytestKernelTest
+[INFO] Running com.qa.autotest.application.kernel.KernelSelectorTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.007 s -- in com.qa.autotest.application.kernel.KernelSelectorTest
+[INFO] Running com.qa.autotest.application.report.OutputXmlParserTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.033 s -- in com.qa.autotest.application.report.OutputXmlParserTest
+[INFO] Running com.qa.autotest.application.report.RetentionServiceTest
+2026-11-08T09:50:06.983+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.report.RetentionService          : 产物清理完成 projectId=9 runs=1 bytes=70 files=0 operator=ops
+2026-11-08T09:50:06.986+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.report.RetentionService          : 产物清理完成 projectId=9 runs=1 bytes=160 files=2 operator=ops
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.021 s -- in com.qa.autotest.application.report.RetentionServiceTest
+[INFO] Running com.qa.autotest.application.report.ReportIngestServiceTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.023 s -- in com.qa.autotest.application.report.ReportIngestServiceTest
+[INFO] Running com.qa.autotest.application.report.ReportExportTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.330 s -- in com.qa.autotest.application.report.ReportExportTest
+[INFO] Running com.qa.autotest.application.report.ReportTemplateServiceTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.026 s -- in com.qa.autotest.application.report.ReportTemplateServiceTest
+[INFO] Running com.qa.autotest.application.report.CompareServiceTest
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.030 s -- in com.qa.autotest.application.report.CompareServiceTest
+[INFO] Running com.qa.autotest.application.report.ReportFourFormatDumpTest
+[TPLX-03] 四格式产物已写入 /home/evergreen/robot-autotest/backend/target/evidence/four-formats，字段数=21
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.064 s -- in com.qa.autotest.application.report.ReportFourFormatDumpTest
+[INFO] Running com.qa.autotest.application.report.ReportViewRenderDumpTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.017 s -- in com.qa.autotest.application.report.ReportViewRenderDumpTest
+[INFO] Running com.qa.autotest.application.report.ReportLogServiceTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.010 s -- in com.qa.autotest.application.report.ReportLogServiceTest
+[INFO] Running com.qa.autotest.application.report.TrendServiceTest
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.017 s -- in com.qa.autotest.application.report.TrendServiceTest
+[INFO] Running com.qa.autotest.application.report.ReportSnapshotTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.013 s -- in com.qa.autotest.application.report.ReportSnapshotTest
+[INFO] Running com.qa.autotest.application.report.DocxExporterTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.356 s -- in com.qa.autotest.application.report.DocxExporterTest
+[INFO] Running com.qa.autotest.application.report.PdfRendererTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.041 s -- in com.qa.autotest.application.report.PdfRendererTest
+[INFO] Running com.qa.autotest.application.report.RetentionPlannerTest
+2026-11-08T09:50:08.936+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.report.RetentionService          : 产物清理完成 projectId=21 runs=1 bytes=1048576 files=1 operator=admin
+2026-11-08T09:50:08.939+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.report.RetentionService          : 产物清理完成 projectId=21 runs=1 bytes=1048576 files=1 operator=admin
+2026-11-08T09:50:08.945+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.report.RetentionService          : 产物清理完成 projectId=21 runs=1 bytes=1048576 files=1 operator=admin
+2026-11-08T09:50:08.947+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.report.RetentionService          : 产物清理完成 projectId=21 runs=1 bytes=1048576 files=1 operator=admin
+[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.017 s -- in com.qa.autotest.application.report.RetentionPlannerTest
+[INFO] Running com.qa.autotest.application.report.ReportTemplateFreezeTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.031 s -- in com.qa.autotest.application.report.ReportTemplateFreezeTest
+[INFO] Running com.qa.autotest.application.report.ReportDigestTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in com.qa.autotest.application.report.ReportDigestTest
+[INFO] Running com.qa.autotest.application.report.ReportLogReaderTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.014 s -- in com.qa.autotest.application.report.ReportLogReaderTest
+[INFO] Running com.qa.autotest.application.report.ExportServiceTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.174 s -- in com.qa.autotest.application.report.ExportServiceTest
+[INFO] Running com.qa.autotest.application.execution.LeaseServiceTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.010 s -- in com.qa.autotest.application.execution.LeaseServiceTest
+[INFO] Running com.qa.autotest.application.execution.CaseRunServiceTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.031 s -- in com.qa.autotest.application.execution.CaseRunServiceTest
+[INFO] Running com.qa.autotest.application.execution.NodeAgentRunnerTest
+2026-11-08T09:50:09.248+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.application.node.NodeAgentRunner   : node-agent: run RUN-AG1 回传完成（HTTP 200）
+2026-11-08T09:50:09.276+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.application.node.NodeAgentRunner   : node-agent: run RUN-AG1 回传完成（HTTP 200）
+2026-11-08T09:50:09.282+08:00 ERROR 2359547 --- [robot-autotest] [           main] c.q.a.application.node.NodeAgentRunner   : node-agent: 任务 RUN-AG1 执行失败: boom
+
+java.lang.IllegalStateException: boom
+	at com.qa.autotest.application.execution.NodeAgentRunnerTest$RecordingExecutions.execute(NodeAgentRunnerTest.java:192) ~[test-classes/:na]
+	at com.qa.autotest.application.node.NodeAgentRunner.lambda$run$0(NodeAgentRunner.java:101) ~[classes/:na]
+	at com.qa.autotest.common.tenant.TenantContext.runAs(TenantContext.java:82) ~[classes/:na]
+	at com.qa.autotest.application.node.NodeAgentRunner.run(NodeAgentRunner.java:90) ~[classes/:na]
+	at com.qa.autotest.application.execution.NodeAgentRunnerTest.执行异常回传失败(NodeAgentRunnerTest.java:122) ~[test-classes/:na]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[na:na]
+	at org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:728) ~[junit-platform-commons-1.10.5.jar:1.10.5]
+	at org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:60) ~[junit-jupiter-engine-5.10.5.jar:5.10.5]
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorChain.java:131) ~[junit-jupiter-engine-5.10.5.jar:5.10.5]
+	at org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:156) ~[junit-jupiter-engine-5.10.5.jar:5.10.5]
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:147) ~[junit-jupiter-engine-5.10.5.jar:5.10.5]
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:86) ~[junit-jupiter-engine-5.10.5.jar:5.10.5]
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(InterceptingExecutableInvoker.java:103) ~[junit-jupiter-engine-5.10.5.jar:5.10.5]
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:93) ~[junit-jupiter-engine-5.10.5.jar:5.10.5]
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorChain.java:106) ~[junit-jupiter-engine-5.10.5.jar:5.10.5]
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:64) ~[junit-jupiter-engine-5.10.5.jar:5.10.5]
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:45) ~[junit-jupiter-engine-5.10.5.jar:5.10.5]
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:37) ~[junit-jupiter-engine-5.10.5.jar:5.10.5]
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:92) ~[junit-jupiter-engine-5.10.5.jar:5.10.5]
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:86) ~[junit-jupiter-engine-5.10.5.jar:5.10.5]
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$7(TestMethodTestDescriptor.java:218) ~[junit-jupiter-engine-5.10.5.jar:5.10.5]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73) ~[junit-platform-engine-1.10.5.jar:1.10.5]
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:214) ~[junit-jupiter-engine-5.10.5.jar:5.10.5]
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:139) ~[junit-jupiter-engine-5.10.5.jar:5.10.5]
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:69) ~[junit-jupiter-engine-5.10.5.jar:5.10.5]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:156) ~[junit-platform-engine-1.10.5.jar:1.10.5]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73) ~[junit-platform-engine-1.10.5.jar:1.10.5]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146) ~[junit-platform-engine-1.10.5.jar:1.10.5]
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137) ~[junit-platform-engine-1.10.5.jar:1.10.5]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144) ~[junit-platform-engine-1.10.5.jar:1.10.5]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73) ~[junit-platform-engine-1.10.5.jar:1.10.5]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143) ~[junit-platform-engine-1.10.5.jar:1.10.5]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100) ~[junit-platform-engine-1.10.5.jar:1.10.5]
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596) ~[na:na]
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41) ~[junit-platform-engine-1.10.5.jar:1.10.5]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160) ~[junit-platform-engine-1.10.5.jar:1.10.5]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73) ~[junit-platform-engine-1.10.5.jar:1.10.5]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146) ~[junit-platform-engine-1.10.5.jar:1.10.5]
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137) ~[junit-platform-engine-1.10.5.jar:1.10.5]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144) ~[junit-platform-engine-1.10.5.jar:1.10.5]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73) ~[junit-platform-engine-1.10.5.jar:1.10.5]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143) ~[junit-platform-engine-1.10.5.jar:1.10.5]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100) ~[junit-platform-engine-1.10.5.jar:1.10.5]
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596) ~[na:na]
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41) ~[junit-platform-engine-1.10.5.jar:1.10.5]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160) ~[junit-platform-engine-1.10.5.jar:1.10.5]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73) ~[junit-platform-engine-1.10.5.jar:1.10.5]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146) ~[junit-platform-engine-1.10.5.jar:1.10.5]
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137) ~[junit-platform-engine-1.10.5.jar:1.10.5]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144) ~[junit-platform-engine-1.10.5.jar:1.10.5]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73) ~[junit-platform-engine-1.10.5.jar:1.10.5]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143) ~[junit-platform-engine-1.10.5.jar:1.10.5]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100) ~[junit-platform-engine-1.10.5.jar:1.10.5]
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:35) ~[junit-platform-engine-1.10.5.jar:1.10.5]
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:57) ~[junit-platform-engine-1.10.5.jar:1.10.5]
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:54) ~[junit-platform-engine-1.10.5.jar:1.10.5]
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:198) ~[junit-platform-launcher-1.10.5.jar:1.10.5]
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:169) ~[junit-platform-launcher-1.10.5.jar:1.10.5]
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:93) ~[junit-platform-launcher-1.10.5.jar:1.10.5]
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:58) ~[junit-platform-launcher-1.10.5.jar:1.10.5]
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:141) ~[junit-platform-launcher-1.10.5.jar:1.10.5]
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:57) ~[junit-platform-launcher-1.10.5.jar:1.10.5]
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:103) ~[junit-platform-launcher-1.10.5.jar:1.10.5]
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:85) ~[junit-platform-launcher-1.10.5.jar:1.10.5]
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47) ~[junit-platform-launcher-1.10.5.jar:1.10.5]
+	at org.apache.maven.surefire.junitplatform.LazyLauncher.execute(LazyLauncher.java:56) ~[surefire-junit-platform-3.2.5.jar:3.2.5]
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.execute(JUnitPlatformProvider.java:184) ~[surefire-junit-platform-3.2.5.jar:3.2.5]
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invokeAllTests(JUnitPlatformProvider.java:148) ~[surefire-junit-platform-3.2.5.jar:3.2.5]
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invoke(JUnitPlatformProvider.java:122) ~[surefire-junit-platform-3.2.5.jar:3.2.5]
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385) ~[surefire-booter-3.2.5.jar:3.2.5]
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
+
+2026-11-08T09:50:09.298+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.application.node.NodeAgentRunner   : node-agent: run RUN-AG1 回传完成（HTTP 200）
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.077 s -- in com.qa.autotest.application.execution.NodeAgentRunnerTest
+[INFO] Running com.qa.autotest.application.execution.RunLogFileServiceTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.011 s -- in com.qa.autotest.application.execution.RunLogFileServiceTest
+[INFO] Running com.qa.autotest.application.execution.FailureClusterServiceTest
+[INFO] Tests run: 17, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.046 s -- in com.qa.autotest.application.execution.FailureClusterServiceTest
+[INFO] Running com.qa.autotest.application.execution.RunIdGeneratorTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.231 s -- in com.qa.autotest.application.execution.RunIdGeneratorTest
+[INFO] Running com.qa.autotest.application.execution.WorkerLogTailerTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.522 s -- in com.qa.autotest.application.execution.WorkerLogTailerTest
+[INFO] Running com.qa.autotest.application.execution.DutCollectorServiceTest
+dut-failure mode=cmd_not_found kind=cmd_not_found advice=确认 DUT 系统含该工具
+password-scan secretHits=0 targetLabel=root@10.202.54.106 via evergreen@192.168.180.2
+dut-failure mode=auth_failed kind=auth_failed advice=检查凭据或公钥
+dut-replay outputs=3 ipHasAddr=true ethtoolHasRxErrors=true interruptLines=9 kind=ok
+dut-failure mode=command_failed kind=command_failed advice=查看 stderr 原文
+dut-failure mode=unreachable kind=unreachable advice=检查 180 段路由与跳板机
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.021 s -- in com.qa.autotest.application.execution.DutCollectorServiceTest
+[INFO] Running com.qa.autotest.application.execution.RunDispatchNodeTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.032 s -- in com.qa.autotest.application.execution.RunDispatchNodeTest
+[INFO] Running com.qa.autotest.application.execution.LeaseWaitRegistryTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.002 s -- in com.qa.autotest.application.execution.LeaseWaitRegistryTest
+[INFO] Running com.qa.autotest.application.execution.RetryPolicyTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.003 s -- in com.qa.autotest.application.execution.RetryPolicyTest
+[INFO] Running com.qa.autotest.application.execution.ExecutionRequestPrecheckTest
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.026 s -- in com.qa.autotest.application.execution.ExecutionRequestPrecheckTest
+[INFO] Running com.qa.autotest.application.execution.FailureClassifierTest
+sample id=ENV-01 expected=ENV actual=ENV retry=yes result=PASS
+sample id=ENV-02 expected=ENV actual=ENV retry=yes result=PASS
+sample id=ENV-03 expected=ENV actual=ENV retry=yes result=PASS
+sample id=ENV-04 expected=ENV actual=ENV retry=yes result=PASS
+sample id=ENV-05 expected=ENV actual=ENV retry=yes result=PASS
+sample id=ENV-06 expected=ENV actual=ENV retry=yes result=PASS
+sample id=ENV-07 expected=ENV actual=ENV retry=yes result=PASS
+sample id=ENV-08 expected=ENV actual=ENV retry=yes result=PASS
+sample id=ENV-09 expected=ENV actual=ENV retry=yes result=PASS
+sample id=INFRA-01 expected=INFRA actual=INFRA retry=no result=PASS
+sample id=INFRA-02 expected=INFRA actual=INFRA retry=no result=PASS
+sample id=INFRA-03 expected=INFRA actual=INFRA retry=no result=PASS
+sample id=INFRA-04 expected=INFRA actual=INFRA retry=no result=PASS
+sample id=INFRA-05 expected=INFRA actual=INFRA retry=no result=PASS
+sample id=INFRA-06 expected=INFRA actual=INFRA retry=no result=PASS
+sample id=INFRA-07 expected=INFRA actual=INFRA retry=no result=PASS
+sample id=INFRA-08 expected=INFRA actual=INFRA retry=no result=PASS
+sample id=INFRA-09 expected=INFRA actual=INFRA retry=no result=PASS
+sample id=CANCELED-01 expected=CANCELED actual=CANCELED retry=no result=PASS
+sample id=CANCELED-02 expected=CANCELED actual=CANCELED retry=no result=PASS
+sample id=CANCELED-03 expected=CANCELED actual=CANCELED retry=no result=PASS
+sample id=CANCELED-04 expected=CANCELED actual=CANCELED retry=no result=PASS
+sample id=ASSERT-01 expected=ASSERT actual=ASSERT retry=no result=PASS
+sample id=ASSERT-02 expected=ASSERT actual=ASSERT retry=no result=PASS
+sample id=ASSERT-03 expected=ASSERT actual=ASSERT retry=no result=PASS
+sample id=ASSERT-04 expected=ASSERT actual=ASSERT retry=no result=PASS
+sample id=ASSERT-05 expected=ASSERT actual=ASSERT retry=no result=PASS
+sample id=ASSERT-06 expected=ASSERT actual=ASSERT retry=no result=PASS
+sample id=ASSERT-07 expected=ASSERT actual=ASSERT retry=no result=PASS
+sample id=ASSERT-08 expected=ASSERT actual=ASSERT retry=no result=PASS
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in com.qa.autotest.application.execution.FailureClassifierTest
+[INFO] Running com.qa.autotest.application.execution.FrozenPlanIdempotencyIT
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.015 s -- in com.qa.autotest.application.execution.FrozenPlanIdempotencyIT
+[INFO] Running com.qa.autotest.application.execution.FailureClusterPerfTest
+[perf] 1 万条失败聚类耗时 292 ms
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.305 s -- in com.qa.autotest.application.execution.FailureClusterPerfTest
+[INFO] Running com.qa.autotest.application.execution.LogDeliveryLatencyTest
+[log-latency] samples=40 p50=100 p95=100 p99=101 max=101 ms
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.510 s -- in com.qa.autotest.application.execution.LogDeliveryLatencyTest
+[INFO] Running com.qa.autotest.application.execution.LogRingBufferTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.002 s -- in com.qa.autotest.application.execution.LogRingBufferTest
+[INFO] Running com.qa.autotest.application.execution.RunProgressRegistryTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in com.qa.autotest.application.execution.RunProgressRegistryTest
+[INFO] Running com.qa.autotest.application.execution.RunTimeoutMonitorTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in com.qa.autotest.application.execution.RunTimeoutMonitorTest
+[INFO] Running com.qa.autotest.application.execution.CaseScriptResolverTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.003 s -- in com.qa.autotest.application.execution.CaseScriptResolverTest
+[INFO] Running com.qa.autotest.application.execution.LeaseAdminServiceTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.016 s -- in com.qa.autotest.application.execution.LeaseAdminServiceTest
+[INFO] Running com.qa.autotest.application.execution.ArtifactVerifierTest
+[Fatal Error] broken.xml:1:2445: The element type "suite" must be terminated by the matching end-tag "</suite>".
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.054 s -- in com.qa.autotest.application.execution.ArtifactVerifierTest
+[INFO] Running com.qa.autotest.application.execution.RestartRecoveryTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in com.qa.autotest.application.execution.RestartRecoveryTest
+[INFO] Running com.qa.autotest.application.execution.ShardFailoverServiceTest
+2026-11-08T09:50:11.179+08:00  WARN 2359547 --- [robot-autotest] [           main] c.q.a.a.execution.ShardFailoverService   : 故障转移：OFFLINE 节点 [12, 13] 的 1 个 run 分片租约已判 LOST
+2026-11-08T09:50:11.186+08:00  WARN 2359547 --- [robot-autotest] [           main] c.q.a.a.execution.ShardFailoverService   : 重启恢复完成：2 个 run 的遗留分片租约已判 LOST
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.036 s -- in com.qa.autotest.application.execution.ShardFailoverServiceTest
+[INFO] Running com.qa.autotest.application.execution.ShardFailoverTest
+2026-11-08T09:50:11.199+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.execution.ShardService           : run RUN-W3-FAILOVER 规划 2 个分片（nodeCount=2）
+2026-11-08T09:50:11.203+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.execution.ShardService           : 节点 node-11 领取 run RUN-W3-FAILOVER 分片 0（attempt=1，fencing=1）
+2026-11-08T09:50:11.204+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.execution.ShardService           : 节点 node-12 领取 run RUN-W3-FAILOVER 分片 0（attempt=2，fencing=2）
+2026-11-08T09:50:11.209+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.execution.ShardService           : run RUN-W3-FAILOVER 规划 2 个分片（nodeCount=2）
+2026-11-08T09:50:11.209+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.execution.ShardService           : 节点 node-11 领取 run RUN-W3-FAILOVER 分片 0（attempt=1，fencing=1）
+2026-11-08T09:50:11.210+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.execution.ShardService           : 节点 node-12 领取 run RUN-W3-FAILOVER 分片 1（attempt=1，fencing=1）
+2026-11-08T09:50:11.213+08:00  WARN 2359547 --- [robot-autotest] [           main] c.q.a.a.execution.ShardService           : 重启恢复：1 个 run 的遗留租约判 LOST
+2026-11-08T09:50:11.217+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.execution.ShardService           : run RUN-W3-FAILOVER 规划 2 个分片（nodeCount=2）
+2026-11-08T09:50:11.217+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.execution.ShardService           : 节点 node-11 领取 run RUN-W3-FAILOVER 分片 0（attempt=1，fencing=1）
+2026-11-08T09:50:11.217+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.execution.ShardService           : 节点 node-12 领取 run RUN-W3-FAILOVER 分片 1（attempt=1，fencing=1）
+2026-11-08T09:50:11.222+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.execution.ShardService           : run RUN-W3-FAILOVER 规划 2 个分片（nodeCount=2）
+2026-11-08T09:50:11.222+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.execution.ShardService           : 节点 node-11 领取 run RUN-W3-FAILOVER 分片 0（attempt=1，fencing=1）
+2026-11-08T09:50:11.223+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.execution.ShardService           : 节点 node-12 领取 run RUN-W3-FAILOVER 分片 1（attempt=1，fencing=1）
+2026-11-08T09:50:11.226+08:00  WARN 2359547 --- [robot-autotest] [           main] c.q.a.a.execution.ShardService           : 故障转移：节点 [11] 的租约判 LOST，涉及 1 个 run
+2026-11-08T09:50:11.230+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.execution.ShardService           : 节点 node-12 领取 run RUN-W3-FAILOVER 分片 0（attempt=2，fencing=2）
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.047 s -- in com.qa.autotest.application.execution.ShardFailoverTest
+[INFO] Running com.qa.autotest.application.execution.CancelServiceTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in com.qa.autotest.application.execution.CancelServiceTest
+[INFO] Running com.qa.autotest.application.execution.ExecutionPrecheckTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in com.qa.autotest.application.execution.ExecutionPrecheckTest
+[INFO] Running com.qa.autotest.application.execution.LogBatcherTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.130 s -- in com.qa.autotest.application.execution.LogBatcherTest
+[INFO] Running com.qa.autotest.application.execution.ShardTwoNodeEquivalenceTest
+2026-11-08T09:50:11.395+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.execution.ShardService           : run RUN-W2-EQ 规划 2 个分片（nodeCount=2）
+[two-node] plan: nodeCount=2 shards=2 suites=8
+2026-11-08T09:50:11.397+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.execution.ShardService           : 节点 node-11 领取 run RUN-W2-EQ 分片 0（attempt=1，fencing=1）
+2026-11-08T09:50:11.398+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.execution.ShardService           : 节点 node-12 领取 run RUN-W2-EQ 分片 1（attempt=1，fencing=1）
+[two-node] node claimed shard 0 paths=[suites/s01.robot, suites/s02.robot, suites/s03.robot, suites/s04.robot] token=1 attempt=1
+[two-node] node claimed shard 1 paths=[suites/s05.robot, suites/s06.robot, suites/s07.robot, suites/s08.robot] token=1 attempt=1
+[two-node] coverage: executed=8 distinct=8 duplicates=0 missing=0
+[two-node] aggregate: complete=true tests=8 fails=0 state=DONE
+2026-11-08T09:50:11.407+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.execution.ShardService           : run RUN-W2-EQ 规划 2 个分片（nodeCount=2）
+[two-node] balance: shard sizes=[4, 4]
+2026-11-08T09:50:11.416+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.execution.ShardService           : run RUN-W2-EQ 规划 2 个分片（nodeCount=2）
+2026-11-08T09:50:11.417+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.execution.ShardService           : 节点 node-11 领取 run RUN-W2-EQ 分片 0（attempt=1，fencing=1）
+2026-11-08T09:50:11.417+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.execution.ShardService           : 节点 node-12 领取 run RUN-W2-EQ 分片 1（attempt=1，fencing=1）
+[two-node] failure-in-one-shard: tests=8 fails=1 state=FAILED
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.039 s -- in com.qa.autotest.application.execution.ShardTwoNodeEquivalenceTest
+[INFO] Running com.qa.autotest.application.execution.IdempotencyTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.014 s -- in com.qa.autotest.application.execution.IdempotencyTest
+[INFO] Running com.qa.autotest.application.execution.PabotCommandBuilderTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.017 s -- in com.qa.autotest.application.execution.PabotCommandBuilderTest
+[INFO] Running com.qa.autotest.application.execution.ThreeRoundVerdictTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.016 s -- in com.qa.autotest.application.execution.ThreeRoundVerdictTest
+[INFO] Running com.qa.autotest.application.execution.TestSetRunServiceTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.026 s -- in com.qa.autotest.application.execution.TestSetRunServiceTest
+[INFO] Running com.qa.autotest.application.execution.ShardServiceTest
+2026-11-08T09:50:11.508+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.execution.ShardService           : 节点 node-11 领取 run RUN-W2-01 分片 0（attempt=1，fencing=1）
+2026-11-08T09:50:11.508+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.execution.ShardService           : 节点 node-12 领取 run RUN-W2-01 分片 1（attempt=1，fencing=1）
+2026-11-08T09:50:11.512+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.execution.ShardService           : run RUN-W2-01 规划 4 个分片（nodeCount=4）
+2026-11-08T09:50:11.517+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.execution.ShardService           : 节点 node-11 领取 run RUN-W2-01 分片 0（attempt=1，fencing=1）
+2026-11-08T09:50:11.523+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.execution.ShardService           : 节点 node-11 领取 run RUN-W2-01 分片 0（attempt=1，fencing=1）
+2026-11-08T09:50:11.528+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.execution.ShardService           : 节点 node-11 领取 run RUN-W2-01 分片 0（attempt=1，fencing=1）
+2026-11-08T09:50:11.529+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.execution.ShardService           : 节点 node-11 领取 run RUN-W2-01 分片 0（attempt=2，fencing=2）
+2026-11-08T09:50:11.536+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.execution.ShardService           : 节点 node-11 领取 run RUN-W2-01 分片 0（attempt=1，fencing=1）
+2026-11-08T09:50:11.536+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.execution.ShardService           : 节点 node-12 领取 run RUN-W2-01 分片 1（attempt=1，fencing=1）
+2026-11-08T09:50:11.540+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.execution.ShardService           : 节点 node-11 领取 run RUN-W2-01 分片 0（attempt=1，fencing=1）
+2026-11-08T09:50:11.545+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.execution.ShardService           : 节点 node-11 领取 run RUN-W2-01 分片 0（attempt=1，fencing=1）
+2026-11-08T09:50:11.545+08:00  INFO 2359547 --- [robot-autotest] [           main] c.q.a.a.execution.ShardService           : 节点 node-12 领取 run RUN-W2-01 分片 0（attempt=2，fencing=2）
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.045 s -- in com.qa.autotest.application.execution.ShardServiceTest
+[INFO] Running com.qa.autotest.application.execution.EvidenceLogFormatTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.014 s -- in com.qa.autotest.application.execution.EvidenceLogFormatTest
+[INFO] Running com.qa.autotest.application.execution.RunLogServiceTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in com.qa.autotest.application.execution.RunLogServiceTest
+[INFO] Running com.qa.autotest.application.execution.TestTimeoutInjectorTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.033 s -- in com.qa.autotest.application.execution.TestTimeoutInjectorTest
+[INFO] Running com.qa.autotest.application.execution.RunMetadataServiceTest
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.018 s -- in com.qa.autotest.application.execution.RunMetadataServiceTest
+[INFO] Running com.qa.autotest.application.execution.LeaseConcurrencyTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.079 s -- in com.qa.autotest.application.execution.LeaseConcurrencyTest
+[INFO] Running com.qa.autotest.application.execution.ShardPolicyTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.010 s -- in com.qa.autotest.application.execution.ShardPolicyTest
+[INFO] Running com.qa.autotest.application.execution.QuickRunServiceTest
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.038 s -- in com.qa.autotest.application.execution.QuickRunServiceTest
+[INFO] Running com.qa.autotest.application.execution.ProcessTreeKillerTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in com.qa.autotest.application.execution.ProcessTreeKillerTest
+[INFO] Running com.qa.autotest.application.execution.DutTargetRedactionTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.002 s -- in com.qa.autotest.application.execution.DutTargetRedactionTest
+[INFO] Running com.qa.autotest.application.execution.RunExecutionServiceTest
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.096 s -- in com.qa.autotest.application.execution.RunExecutionServiceTest
+[INFO] Running com.qa.autotest.application.ai.AiContextScrubTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.019 s -- in com.qa.autotest.application.ai.AiContextScrubTest
+[INFO] Running com.qa.autotest.application.ai.AiEnabledFlagTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in com.qa.autotest.application.ai.AiEnabledFlagTest
+[INFO] Running com.qa.autotest.application.ai.AiPanelTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in com.qa.autotest.application.ai.AiPanelTest
+[INFO] Running com.qa.autotest.application.ai.AiSuggestContentTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.020 s -- in com.qa.autotest.application.ai.AiSuggestContentTest
+[INFO] Running com.qa.autotest.application.ai.AiRealCliChainTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.019 s -- in com.qa.autotest.application.ai.AiRealCliChainTest
+[INFO] Running com.qa.autotest.application.ai.AiCliArgvContractTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 s -- in com.qa.autotest.application.ai.AiCliArgvContractTest
+[INFO] Running com.qa.autotest.arch.LayerRulesMetaTest
+2026-11-08T09:50:13.984+08:00  INFO 2359547 --- [robot-autotest] [           main] com.tngtech.archunit.core.PluginLoader   : Detected Java version 21.0.12.1
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.464 s -- in com.qa.autotest.arch.LayerRulesMetaTest
+[INFO] Running com.qa.autotest.arch.KernelBoundaryTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 9.431 s -- in com.qa.autotest.arch.KernelBoundaryTest
+[INFO] Running com.qa.autotest.domain.group.EffectiveRoleTest
+[INFO] Tests run: 82, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.311 s -- in com.qa.autotest.domain.group.EffectiveRoleTest
+[INFO] Running com.qa.autotest.domain.iam.PermissionMatrixTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.022 s -- in com.qa.autotest.domain.iam.PermissionMatrixTest
+[INFO] Running com.qa.autotest.domain.kernel.NormalizedRunTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.034 s -- in com.qa.autotest.domain.kernel.NormalizedRunTest
+[INFO] Running com.qa.autotest.domain.report.MetadataGateTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.041 s -- in com.qa.autotest.domain.report.MetadataGateTest
+[INFO] Running com.qa.autotest.domain.report.MetadataOverlayTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.040 s -- in com.qa.autotest.domain.report.MetadataOverlayTest
+[INFO] Running com.qa.autotest.domain.report.ReportStateMachineTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in com.qa.autotest.domain.report.ReportStateMachineTest
+[INFO] Running com.qa.autotest.domain.execution.RunStateMachineTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.016 s -- in com.qa.autotest.domain.execution.RunStateMachineTest
+[INFO] Running com.qa.autotest.domain.execution.FailureClusterKeyTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in com.qa.autotest.domain.execution.FailureClusterKeyTest
+[INFO] Running com.qa.autotest.infrastructure.ProjectRunDispatcherTest
+2026-11-08T09:50:26.562+08:00  WARN 2359547 --- [robot-autotest] [           main] c.q.a.i.ProjectRunDispatcher             : run run-dup 已在派发队列中，忽略重复提交（plan=null）
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.454 s -- in com.qa.autotest.infrastructure.ProjectRunDispatcherTest
+[INFO] Running com.qa.autotest.infrastructure.ProcessRobotSyntaxValidatorTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.621 s -- in com.qa.autotest.infrastructure.ProcessRobotSyntaxValidatorTest
+[INFO] Running com.qa.autotest.infrastructure.TrendRepositorySqlTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.002 s -- in com.qa.autotest.infrastructure.TrendRepositorySqlTest
+[INFO] Running com.qa.autotest.infrastructure.ReportRepositoryCaseKeyTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in com.qa.autotest.infrastructure.ReportRepositoryCaseKeyTest
+[INFO] Running com.qa.autotest.common.security.SecretCipherTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.017 s -- in com.qa.autotest.common.security.SecretCipherTest
+[INFO] Running com.qa.autotest.common.tenant.TenantGuardMetaTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.014 s -- in com.qa.autotest.common.tenant.TenantGuardMetaTest
+[INFO] Running com.qa.autotest.arch.LayerRulesTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 8.047 s -- in com.qa.autotest.arch.LayerRulesTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 1061, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] --- jacoco:0.8.12:report (report) @ robot-autotest-backend ---
+[INFO] Loading execution data file /tmp/jacoco-robot-autotest.exec
+[INFO] Analyzed bundle 'robot-autotest-backend' with 635 classes
+[WARNING] Classes in bundle 'robot-autotest-backend' do not match with execution data. For report generation the same class files must be used as at runtime.
+[WARNING] Execution data for class com/qa/autotest/application/caseasset/CaseImportService$RowError does not match.
+[WARNING] Execution data for class com/qa/autotest/application/caseasset/CaseImportService$ImportPreview does not match.
+[WARNING] Execution data for class com/qa/autotest/application/caseasset/CaseImportService$ImportResult does not match.
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  01:15 min
+[INFO] Finished at: 2026-11-08T09:50:41+08:00
+[INFO] ------------------------------------------------------------------------

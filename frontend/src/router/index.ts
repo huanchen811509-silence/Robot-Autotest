@@ -2,17 +2,23 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { capabilitiesForRole, roleFromCodes } from '@/config/navigation'
 
-// 6 个一级菜单（总览 / 资产 / 用例 / 执行 / 报告 / 管理）
+// 7 个一级菜单（工作台 / 执行与报告 / 用例 / 资产 / 环境与拓扑 / 维护与恢复 / 系统设置）
 // history 模式要求服务端回退到 index.html，否则刷新 404（TC-v0.1-041）
 const router = createRouter({
   history: createWebHistory(),
   routes: [
-    { path: '/', redirect: '/overview' },
+    // v2.3 / FR-UI-02：落地页改为跨项目总览（原先是单项目看板）。
+    { path: '/', redirect: '/workbench' },
     {
       path: '/login',
       name: 'login',
       component: () => import('@/views/LoginView.vue'),
       meta: { public: true },
+    },
+    {
+      path: '/workbench',
+      name: 'workbench',
+      component: () => import('@/views/WorkbenchView.vue'),
     },
     {
       path: '/overview',
@@ -237,11 +243,11 @@ const router = createRouter({
   ],
 })
 
-// 未登录跳 /login；已登录访问 /login 直接回总览（token 只存 localStorage，服务端仍会校验）
+// 未登录跳 /login；已登录访问 /login 直接回落地页（token 只存 localStorage，服务端仍会校验）
 router.beforeEach((to) => {
   const auth = useAuthStore()
   if (to.meta.public) {
-    if (auth.authenticated && to.path === '/login') return '/overview'
+    if (auth.authenticated && to.path === '/login') return '/workbench'
     return true
   }
   if (!auth.authenticated) {

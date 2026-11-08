@@ -13,7 +13,7 @@ const { t } = useI18n()
       `prefetch` 行为），视觉与三态交给 `NButton`。直接把 `class="btn"` 挂在 `<a>` 上
       会得到一个"长得像按钮的链接"，键盘 Enter 能跳但拿不到按钮的 loading/disabled 状态位。
     -->
-    <RouterLink v-slot="{ navigate }" to="/overview" custom>
+    <RouterLink v-slot="{ navigate }" to="/workbench" custom>
       <NButton type="primary" @click="navigate">{{ t('notFound.back') }}</NButton>
     </RouterLink>
   </div>

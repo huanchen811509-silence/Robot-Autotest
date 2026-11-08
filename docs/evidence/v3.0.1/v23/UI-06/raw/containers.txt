@@ -1,0 +1,16 @@
+$ for c in app-side app-main ai-drawer ai-history table-scroll data-table; do grep -rn "class=\"[^\"]*$c" frontend/src --include=*.vue; done
+== .app-side ==
+frontend/src/views/StyleguideView.vue:177:        <aside class="app-side">
+frontend/src/App.vue:164:      <aside class="app-side">
+frontend/src/App.vue:167:        <div class="app-side-head">
+== .app-main ==
+frontend/src/App.vue:190:      <main class="app-main">
+== .ai-drawer ==
+frontend/src/components/AiPanelDrawer.vue:134:  <aside v-if="open" class="ai-drawer" :aria-label="t('aiPanel.title')">
+== .ai-history ==
+frontend/src/components/AiPanelDrawer.vue:159:      class="ai-history"
+== .table-scroll ==
+frontend/src/views/ReportDetailView.vue:588:        <div class="table-scroll">
+== .data-table ==
+frontend/src/components/DataTable.vue:133:  <div class="data-table" :aria-busy="loading ? 'true' : 'false'">
+frontend/src/components/DataTable.vue:136:      class="data-table__skeleton"

@@ -1,0 +1,129 @@
+# v2.3 负向验证红/绿对照
+# 执行人：学徒（自动注入缺陷后跑定向判据）
+# 方法：备份原文件 → 注入单点缺陷 → 跑判据（必须判红）→ 还原 → 复跑（必须回绿）
+# 注：不使用 git checkout 还原，工作区存在未提交改动
+
+## N-01（TC-UI-01）打乱一级项顺序（模块加载后 reverse）
+- 注入位置：`frontend/src/config/navigation.ts`
+- 判据命令：`npx vitest run src/config/navigation.spec.ts`
+- 期望变红：一级项顺序断言
+- 实测：exit=1 → RED（符合预期）
+- 输出尾：
+     ❯ src/config/navigation.spec.ts:101:48
+         99|   it('v2.3 / FR-UI-01：一级恰好 7 组，顺序按「日常闭环 → 支撑域」，层级不超过 2', () => {
+        100|     expect(NAVIGATION).toHaveLength(7)
+        101|     expect(NAVIGATION.map((node) => node.key)).toEqual([
+           |                                                ^
+        102|       'workbench', 'execution', 'cases', 'assets', 'environment', 'mai…
+        103|     ])
+    ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+## N-09（TC-UI-30）给合并组加回组级 capability: execution:read（照抄原 runs 组）
+- 注入位置：`frontend/src/config/navigation.ts`
+- 判据命令：`npx vitest run src/config/navigation.spec.ts`
+- 期望变红：组级 capability 未定义 + viewer 角色矩阵
+- 实测：exit=1 → RED（符合预期）
+- 输出尾：
+     ❯ src/config/navigation.spec.ts:254:20
+        252|     const keysOf = (role: Parameters<typeof navKeysForRole>[0]): strin…
+        253|     const viewer = keysOf('viewer')
+        254|     expect(viewer).toEqual(expect.arrayContaining([
+           |                    ^
+        255|       'execution-reports', 'execution-report-templates', 'execution-ex…
+        256|     ]))
+    ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+## N-10（TC-UI-29）把 reports 一级项加回去（合并只做一半）
+- 注入位置：`frontend/src/config/navigation.ts`
+- 判据命令：`npx vitest run src/config/navigation.spec.ts`
+- 期望变红：一级项不含 reports
+- 实测：exit=1 → RED（符合预期）
+- 输出尾：
+     ❯ src/config/navigation.spec.ts:331:24
+        329| 
+        330|   it('7 个一级项全部是分组，且各至少 2 个二级入口（不再有叶子冒充分组）', () => {
+        331|     expect(NAVIGATION).toHaveLength(7)
+           |                        ^
+        332|     for (const node of NAVIGATION) {
+        333|       expect(isGroup(node), `一级项 ${node.key} 不是分组`).toBe(true)
+    ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/6]⎯
+
+## N-11（TC-UI-31）把 /test-reports 入口改道（孤儿页复发）
+- 注入位置：`frontend/src/config/navigation.ts`
+- 判据命令：`npx vitest run src/config/navigation.spec.ts`
+- 期望变红：/test-reports 叶子计数
+- 实测：exit=1 → RED（符合预期）
+- 输出尾：
+     ❯ src/config/navigation.spec.ts:270:18
+        268|   it('/test-reports 有且只有一个菜单入口（消除孤儿页）', () => {
+        269|     const hits = leaves().filter((leaf) => leaf.path === '/test-report…
+        270|     expect(hits).toHaveLength(1)
+           |                  ^
+        271|   })
+        272| 
+    ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+## N-12（TC-UI-32）让 section 参与选中判定（带 section 的叶子跳过 exclude）
+- 注入位置：`frontend/src/config/navigation.ts`
+- 判据命令：`npx vitest run src/config/navigation.spec.ts`
+- 期望变红：isLeafActive 带/不带 section 结果相同
+- 实测：exit=1 → RED（符合预期）
+- 输出尾：
+     ❯ src/config/navigation.spec.ts:290:51
+        288|     delete without.section
+        289|     for (const path of ['/reports', '/reports/RUN-1', '/reports/templa…
+        290|       expect(isLeafActive(withSection, { path })).toBe(isLeafActive(wi…
+           |                                                   ^
+        291|     }
+        292|   })
+    ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+## N-06（TC-UI-15）主题快捷按钮改回三态（永远点向同一档）
+- 注入位置：`frontend/src/components/AppHeader.vue`
+- 判据命令：`npx vitest run src/components/AppHeader.spec.ts`
+- 期望变红：二态翻转
+- 实测：exit=1 → RED（符合预期）
+- 输出尾：
+     ❯ src/components/AppHeader.spec.ts:161:65
+        159|     btn.click()
+        160|     await nextTick()
+        161|     expect(document.documentElement.getAttribute('data-theme')).toBe('…
+           |                                                                 ^
+        162|     expect(useTheme().mode.value).not.toBe('system')
+        163|   })
+    ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+## N-07（TC-UI-18）卡牌页加一次重复请求（N+1 回潮）
+- 注入位置：`frontend/src/views/WorkbenchView.vue`
+- 判据命令：`npx vitest run src/views/WorkbenchView.spec.ts`
+- 期望变红：请求次数 = 1
+- 实测：exit=1 → RED（符合预期）
+- 输出尾：
+     ❯ src/views/WorkbenchView.spec.ts:156:18
+        154| 
+        155|     expect(cardEls(root)[0].textContent).toContain('Alpha 项目')
+        156|     expect(list).toHaveBeenCalledTimes(1)
+           |                  ^
+        157|   })
+        158| 
+    ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+## N-04（TC-UI-22）滚动条样式里写一个字面色值 #888
+- 注入位置：`frontend/src/styles/main.css`
+- 判据命令：`python3 tools/check_colors.py`
+- 期望变红：check_colors 字面色值
+- 实测：exit=1 → RED（符合预期）
+- 输出尾：
+    frontend/src/styles/main.css  （1 处）
+      1227: #888      .neg-probe-scrollbar { background: #888; }
+    [FAIL] 1 个文件共 1 处硬编码色值。
+           改用语义 token（见 frontend/src/styles/theme.css），确需写死请加 color-check: ignore-start/end 并注明原因。
+
+## 还原后复跑（必须回绿）
+
+- navigation.spec.ts: exit=0 → GREEN
+- AppHeader.spec.ts: exit=0 → GREEN
+- WorkbenchView.spec.ts: exit=0 → GREEN
+- check_colors.py: exit=0 → GREEN
+
+NEG_RESULT ALL_RED_AS_EXPECTED

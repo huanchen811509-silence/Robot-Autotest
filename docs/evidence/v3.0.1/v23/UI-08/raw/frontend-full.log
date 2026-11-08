@@ -1,0 +1,281 @@
+
+ RUN  v3.2.7 /home/evergreen/robot-autotest/frontend
+
+(node:2386742) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:2386723) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:2386736) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:2386730) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:2386753) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:2386879) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:2386859) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:2386722) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:2386729) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:2386853) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:2386748) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:2386873) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:2386830) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:2386867) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:2386845) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/views/ReportTemplatesView.spec.ts (5 tests) 753ms
+(node:2387032) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/components/DataTable.spec.ts (11 tests) 1024ms
+ ✓ src/views/PlanGroupsView.spec.ts (5 tests) 449ms
+ ✓ src/components/ShardBoard.spec.ts (6 tests) 1364ms
+   ✓ ShardBoard > 渲染分片卡片：状态标签、节点/领取者、套件路径与聚合口径  384ms
+   ✓ ShardBoard > 规划：每行一个路径拆数组、节点数原样透传、成功后通知父视图  478ms
+ ✓ src/views/FailureClustersView.spec.ts (7 tests) 1395ms
+   ✓ FailureClustersView > 渲染两级：两个类别各带自己的簇  399ms
+ ✓ src/views/LoginView.spec.ts (10 tests) 2296ms
+   ✓ LoginView 记住账号名与自动登录 > 勾选记住账号名：登录成功后落 localStorage，重挂载自动预填  378ms
+ ✓ src/views/OverviewView.spec.ts (4 tests) 1970ms
+   ✓ OverviewView 表格 > 近期执行表保留设备与链路两段信息  796ms
+   ✓ OverviewView 表格 > 近期执行表的通过率与用例数都渲染出来  399ms
+   ✓ OverviewView 表格 > 报告结果表覆盖失败用例前 N 与通过率  374ms
+   ✓ OverviewView 表格 > 状态列是图标 + 文字双编码  399ms
+ ✓ src/views/AuditView.spec.ts (2 tests) 1901ms
+   ✓ AuditView > 日期控件初始值为空时页面正常渲染（回归：空串会让 NDatePicker 抛 RangeError）  1065ms
+   ✓ AuditView > 未选日期时查询参数不带 from / to，默认第一页 20 条  832ms
+(node:2387052) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:2387091) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:2387059) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:2387126) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:2387113) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:2387112) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:2387166) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/components/report/SuiteTree.spec.ts (8 tests) 376ms
+ ✓ src/views/NodesView.spec.ts (7 tests) 4393ms
+   ✓ NodesView 列表 > 四态原样显示：NEW 节点不得被前端推断成 OFFLINE  705ms
+   ✓ NodesView 列表 > 能力与并发上限可见：RF + pytest 组合与未上报能力  393ms
+   ✓ NodesView 列表 > 停用调用 disable；列表已是 DISABLED 时走 enable 分支  1131ms
+   ✓ NodesView 注册 > 注册后明文令牌只出现在对话框里，且不写 localStorage  754ms
+   ✓ NodesView 注册 > 注册表单可填 agent 接入地址并随请求提交（NODX-04）  759ms
+   ✓ NodesView 离线时长与最近任务（NODX-04） > 心跳列显示相对时长且不在前端推断状态；无心跳显示空  330ms
+   ✓ NodesView 离线时长与最近任务（NODX-04） > 最近任务列显示 runId 与本地化状态；无 run 显示空  307ms
+ ✓ src/components/AiPanelDrawer.spec.ts (6 tests) 595ms
+ ✓ src/components/plan/PlanGraph.spec.ts (10 tests) 407ms
+stderr | src/views/RunsView.spec.ts > RunsView 列表与日志联动 > 日志面板可下载完整日志（EXEC-06）
+Error: connect ECONNREFUSED 127.0.0.1:3000
+[90m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:2021:16)[39m {
+  errno: [33m-111[39m,
+  code: [32m'ECONNREFUSED'[39m,
+  syscall: [32m'connect'[39m,
+  address: [32m'127.0.0.1'[39m,
+  port: [33m3000[39m
+}
+
+ ✓ src/components/ProjectCard.spec.ts (6 tests) 395ms
+ ✓ src/views/WorkbenchView.spec.ts (5 tests) 512ms
+stderr | src/views/RunsView.spec.ts > RunsView 列表与日志联动 > 日志面板可下载完整日志（EXEC-06）
+Error: connect ECONNREFUSED 127.0.0.1:3000
+[90m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:2021:16)[39m {
+  errno: [33m-111[39m,
+  code: [32m'ECONNREFUSED'[39m,
+  syscall: [32m'connect'[39m,
+  address: [32m'127.0.0.1'[39m,
+  port: [33m3000[39m
+}
+
+ ✓ src/views/ReportDetailView.spec.ts (9 tests) 5009ms
+   ✓ ReportDetailView 元数据表 > 保持原生 table：10 项全渲染且是 th + td 的两列定义表  771ms
+   ✓ ReportDetailView 导出 > 不可对外时两个外部导出按钮禁用，内部两枚仍可用  343ms
+   ✓ ReportDetailView 导出 > 导出历史：内部版是 warn 徽标而不是红字  397ms
+   ✓ ReportDetailView 趋势 > 日/周是单选组，切到周会按 week 重新取通过率  382ms
+   ✓ ReportDetailView 对比 > 开关是 NCheckbox：勾选后才发对比请求并多出一张表  761ms
+   ✓ ReportDetailView 对比 > 两轮都 FAIL 显示「持续失败」，不能落成「无变化」  847ms
+   ✓ ReportDetailView 对比 > 手动基线：候选由后端给出，选中后带 baselineRunId 重新对比（RPT-03 补口）  690ms
+   ✓ ReportDetailView 对比 > 两侧结论与变化列都是图标 + 文字双编码  515ms
+ ✓ src/components/report/TrendChart.spec.ts (7 tests) 443ms
+(node:2387197) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:2387204) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/components/AppLogo.spec.ts (5 tests) 159ms
+(node:2387237) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/components/RunTimeline.spec.ts (4 tests) 488ms
+(node:2387217) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:2387231) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:2387297) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/components/EmptyIllustration.spec.ts (4 tests) 100ms
+ ✓ src/utils/format.spec.ts (8 tests) 61ms
+ ✓ src/components/AboutDialog.spec.ts (4 tests) 250ms
+(node:2387304) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:2387330) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/stores/auth.spec.ts (4 tests) 40ms
+(node:2387357) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/composables/useBatchAction.spec.ts (5 tests) 49ms
+(node:2387384) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/views/environment/pages.spec.ts (4 tests) 36ms
+(node:2387364) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/components/AppHeader.spec.ts (11 tests) 1014ms
+ ✓ src/components/AppNav.spec.ts (6 tests) 883ms
+(node:2387404) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/locales/index.spec.ts (6 tests) 51ms
+ ✓ src/config/layout.spec.ts (5 tests) 32ms
+ ✓ src/composables/useSelection.spec.ts (8 tests) 29ms
+ ✓ src/views/CaseSetsView.spec.ts (12 tests) 8380ms
+   ✓ CaseSetsView 列表 > 编号 / 名称 / 描述三列都渲染，空描述显示占位符  713ms
+   ✓ CaseSetsView 列表 > 点「编辑」预填原值，且集合编号不可改  659ms
+   ✓ CaseSetsView 成员管理 > 打开面板后按后端顺序列出成员并编号  878ms
+   ✓ CaseSetsView 成员管理 > 上移提交完整成员列表的新顺序，而不是只提交被移动的一条  745ms
+   ✓ CaseSetsView 资产版本（PUBX-01/02） > 打开面板出现资产版本读数：v2 与「已同步」徽标  667ms
+   ✓ CaseSetsView 资产版本（PUBX-01/02） > 平台有新版本时显示提示；检查差异后按类型渲染 diff 行  895ms
+   ✓ CaseSetsView 资产版本（PUBX-01/02） > 保持分叉：调用 diverge、徽标切到「已分叉」、内容接口不再动  992ms
+   ✓ CaseSetsView 资产版本（PUBX-01/02） > 非副本集合：面板显示占位，不渲染同步按钮  381ms
+   ✓ CaseSetsView 同步策略（N9） > 默认按 FULL 同步  611ms
+   ✓ CaseSetsView 同步策略（N9） > 下拉切到 ADD_ONLY 后按策略同步  941ms
+   ✓ CaseSetsView 平台用例集库（N9） > 管理员可见平台库、可展开只读成员  564ms
+   ✓ CaseSetsView 平台用例集库（N9） > 非管理员不渲染平台库，也不发请求  320ms
+(node:2387411) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:2387460) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/composables/useAccent.spec.ts (8 tests) 32ms
+ ✓ src/composables/naiveTheme.spec.ts (5 tests) 22ms
+ ✓ src/views/PlansView.spec.ts (14 tests) 9741ms
+   ✓ PlansView 列表 > 双行单元格两行都在：名称 + 套件路径、Cron + 时区  1078ms
+   ✓ PlansView 列表 > 未来触发时间保留第 2、3 次，不只显示第一个  581ms
+   ✓ PlansView 列表 > 状态徽标图标 + 文字双编码  450ms
+   ✓ PlansView 列表 > 暂停 / 恢复按行状态取文案，不是全页一个文案  430ms
+   ✓ PlansView 编辑对话框 > 点「编辑」预填原值，而不是打开一张空表单  823ms
+   ✓ PlansView 编辑对话框 > 新建打开空表单，且不显示「编辑」标题  833ms
+   ✓ PlansView 编辑对话框 > 依赖列表排除自己，勾选后写回 dependencyIds  678ms
+   ✓ PlansView 编排冲突（W5） > 冲突行用计划名展示涉及的计划，并标记严重级  386ms
+   ✓ PlansView 编排冲突（W5） > 无冲突时显示空态，不显示批量按钮  310ms
+   ✓ PlansView 编排冲突（W5） > 全选后批量暂停：多条冲突里的计划去重后一次性提交  621ms
+   ✓ PlansView 依赖跳过事件（PLN-02） > 展开后按审计 detail 还原下游计划名、原因文案与上游运行号  903ms
+   ✓ PlansView 依赖跳过事件（PLN-02） > 无权限时不给空表格，明确提示仅管理员或项目所有者可看  801ms
+   ✓ PlansView 依赖跳过事件（PLN-02） > 超过一页时给翻页器，翻页带页码重新拉（PLN-02 残余）  978ms
+   ✓ PlansView 依赖跳过事件（PLN-02） > 填时间范围后回到第一页并按 from 重新拉（PLN-02 残余）  864ms
+(node:2387479) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:2387507) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/config/viewState.spec.ts (3 tests) 7ms
+(node:2387493) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/composables/useDensity.spec.ts (7 tests) 58ms
+(node:2387508) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/views/baselines/pages.spec.ts (4 tests) 38ms
+(node:2387521) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/views/CasesView.spec.ts (8 tests) 9886ms
+   ✓ CasesView 勾选接线 > 渲染出接口返回的行  1328ms
+   ✓ CasesView 勾选接线 > 勾一行出现批量条并计数为 1  1123ms
+   ✓ CasesView 勾选接线 > 表头全选只选本页，再点一次全部取消  1301ms
+   ✓ CasesView 勾选接线 > 状态列走 StatusTag，图标与文字双编码  775ms
+   ✓ CasesView 执行所选（EXEC-02） > 提交只传所选 id 与执行参数，成功提示运行号  1748ms
+   ✓ CasesView 执行所选（EXEC-02） > 后端未绑定 400：错误原文展示在表单内，勾选不丢  1502ms
+   ✓ CasesView 执行所选（EXEC-02） > 选中 L2 用例时禁用执行并给出原因（ADR-0013）  859ms
+   ✓ CasesView 执行所选（EXEC-02） > 跨页选中的 L2 不在当前页时，预检结果同样能提前禁用（EXEC-15 残余）  1245ms
+(node:2387535) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:2387527) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/views/maintenance/pages.spec.ts (5 tests) 41ms
+(node:2387600) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:2387647) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/utils/tableWidth.spec.ts (8 tests) 16ms
+ ✓ src/config/commandPalette.spec.ts (6 tests) 20ms
+ ✓ src/utils/statusLabels.spec.ts (9 tests) 18ms
+ ✓ src/config/navigation.spec.ts (32 tests) 80ms
+(node:2387639) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/views/CaseBoardView.spec.ts (8 tests) 33ms
+(node:2387684) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/config/testReports.spec.ts (2 tests) 11ms
+ ✓ src/composables/useConfirm.spec.ts (3 tests) 12ms
+(node:2387719) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:2387666) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:2387727) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/config/imports.spec.ts (2 tests) 12ms
+ ✓ src/config/changelog.spec.ts (6 tests) 18ms
+ ✓ src/config/groups.spec.ts (2 tests) 6ms
+(node:2387759) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/config/kernels.spec.ts (2 tests) 6ms
+(node:2387767) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/config/aiPanel.spec.ts (2 tests) 6ms
+ ✓ src/views/AdminView.spec.ts (8 tests) 12074ms
+   ✓ AdminView 用户列表 > 渲染用户行，空邮箱显示统一占位  2524ms
+   ✓ AdminView 用户列表 > 启用状态走 StatusTag，图标 + 文字双编码  1719ms
+   ✓ AdminView 用户列表 > 勾一行出现批量条并计数为 1  1923ms
+   ✓ AdminView 项目成员 > 所有者行是只读文本，不给可编辑的角色下拉  1357ms
+   ✓ AdminView 项目成员 > 停用成员显示「已停用」，不是笼统的「否」  1797ms
+   ✓ AdminView 项目成员 > 所有者不可移除，非所有者有移除按钮  1587ms
+   ✓ AdminView 项目与角色 > 项目表渲染项目编码与启用状态  678ms
+   ✓ AdminView 项目与角色 > 角色表渲染角色码与内置标记  484ms
+ ✓ src/views/RunsView.spec.ts (16 tests) 13136ms
+   ✓ RunsView 列表与日志联动 > 渲染两行运行记录  1117ms
+   ✓ RunsView 列表与日志联动 > 列表页直接显示设备范围，未声明时写「全部设备」而不是空白（EXEC-11）  1120ms
+   ✓ RunsView 列表与日志联动 > 点「查看日志」后打开对应行的面板，且只有那一行被标为选中  1460ms
+   ✓ RunsView 列表与日志联动 > 日志面板可下载完整日志（EXEC-06）  1095ms
+   ✓ RunsView 列表与日志联动 > 状态列是图标 + 文字双编码，不是只靠颜色  687ms
+   ✓ RunsView 列表与日志联动 > 排队中的运行在日志面板显示位次，位次未知时明说未知（EXEC-10）  997ms
+   ✓ RunsView 列表与日志联动 > 等设备租约的运行显示「等待资源」而不是运行中（FR-08）  841ms
+   ✓ RunsView 列表与日志联动 > 已终止的行不再显示「取消」  710ms
+   ✓ RunsView 手动执行 > 点「手动执行」打开表单，默认带一套可改的套件路径  1152ms
+   ✓ RunsView 手动执行 > 并发度固定 1/2/4 三档，选 4 后按 4 提交（EXEC-11）  1421ms
+   ✓ RunsView 手动执行 > 套件路径按行解析并原样提交给 quick-run  850ms
+   ✓ RunsView 手动执行 > 套件路径清空后提交按钮禁用，不会把空列表打到后端  330ms
+   ✓ RunsView 手动执行 > 手动执行表单可声明设备范围，并随 quick-run 提交（FR-v0.4-01）  600ms
+ ✓ src/views/AssetsView.spec.ts (16 tests) 14051ms
+   ✓ AssetsView 设备页 > 渲染设备行，空值列显示统一占位而不是空白  1765ms
+   ✓ AssetsView 设备页 > 勾一行出现批量条，计数为 1  1185ms
+   ✓ AssetsView 设备页 > 端口按钮打开下方卡片，含设备名与端口行  1139ms
+   ✓ AssetsView 设备页 > 再点一次收起端口卡片  1106ms
+   ✓ AssetsView 页签切换 > 切到链路页签后换数据源，且设备表不再渲染  1249ms
+   ✓ AssetsView 页签切换 > 切页签会清空上一页的勾选  1365ms
+   ✓ AssetsView 链路拓扑（AST-02） > 拓扑按 A 端 → 链路 → B 端渲染，表格让位给拓扑  1537ms
+   ✓ AssetsView 链路拓扑（AST-02） > 两端都没登记设备的链路显示「未连接」，切回表格可复原  1304ms
+   ✓ AssetsView 链路拓扑（AST-02） > 三跳链路串成一条链，节点按 A→B→C→D 排开且边不丢  1001ms
+   ✓ AssetsView 链路拓扑（AST-02） > 分叉时每条链路仍各渲染一次，不会被主干吞掉  527ms
+   ✓ AssetsView 租约页 > 切到租约页签后列出占用资源与剩余时间  386ms
+   ✓ AssetsView 租约页 > 非管理员看不到强制释放按钮  334ms
+   ✓ AssetsView 租约页 > 管理员强制释放以 runId 作二次确认，成功后刷新列表  373ms
+
+ Test Files  53 passed (53)
+      Tests  370 passed (370)
+   Start at  10:01:52
+   Duration  19.95s (transform 11.16s, setup 1.30s, collect 79.97s, tests 94.18s, environment 44.78s, prepare 13.12s)
+

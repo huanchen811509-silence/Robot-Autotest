@@ -1,0 +1,12 @@
+== 参数边界（token=qa-e2e-admin）==
+GET /api/projects/cards?current=abc  ->  HTTP=400
+  body: {"code":40001,"codeName":"INVALID_ARGUMENT","message":"参数类型不正确：current","data":null,"success":false}
+GET /api/projects/cards?current=  ->  HTTP=200
+  body: {"code":0,"codeName":"OK","message":"OK","data":[{"id":77,"code":"ED202-COMMON","name":"ED202 公共用例库","description":"ED202 公共用例库（v2.2 SCEN-04 由 tools/seed_ed202_organization.py 
+GET /api/projects/cards?window=  ->  HTTP=200
+  body: {"code":0,"codeName":"OK","message":"OK","data":[{"id":77,"code":"ED202-COMMON","name":"ED202 公共用例库","description":"ED202 公共用例库（v2.2 SCEN-04 由 tools/seed_ed202_organization.py 
+GET /api/projects/cards?window=90d  ->  HTTP=400
+  body: {"code":40001,"codeName":"INVALID_ARGUMENT","message":"非法的统计窗口：90d（仅支持 7d / 30d）","data":null,"success":false}
+== 未携带令牌 ==
+GET /api/projects/cards?window=7d (no token)  ->  HTTP=401
+  body: {"code":40100,"codeName":"UNAUTHENTICATED","message":"缺少访问令牌","data":null,"success":false}

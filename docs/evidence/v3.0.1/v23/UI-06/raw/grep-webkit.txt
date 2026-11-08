@@ -1,0 +1,8 @@
+$ grep -rln "webkit-scrollbar" frontend/src | wc -l   # 改造后
+1
+frontend/src/styles/main.css
+
+$ grep -rn "webkit-scrollbar" frontend/src | wc -l
+23
+
+$ git stash list  # 改造前读数来自改造前同一命令，见 README §4

@@ -1,0 +1,45 @@
+$ python3 tools/check_colors.py
+[PASS] 180 个文件无硬编码色值
+exit=0
+
+$ python3 tools/check_tokens.py
+扫描 71 个文件：114 个 token 定义，424 处不同引用
+[PASS] var 引用 0 悬空；px 字面量 1084 处全部在白名单内（39 个取值）
+exit=0
+
+$ python3 tools/check_css_vars.py
+[OK] CSS 变量引用全部有定义（已定义 114 个）
+exit=0
+
+$ python3 tools/check_w7_tokens.py
+[OK] W7 token guard: 8 grid tokens / 6 font levels / theme + density + a11y overrides
+exit=0
+
+$ python3 tools/subset_font.py --check
+扫描到界面汉字 1103 个（下限 200）
+  noto-sans-sc-latin.woff2                 13304 B  gzip     13327 B
+  noto-sans-sc-ui.woff2                   154316 B  gzip    154384 B
+  jetbrains-mono-latin.woff2               21168 B  gzip     21196 B
+  中文字体 cmap 覆盖 1103 / 1103 字
+  合计（gzip）                                            188907 B  / 预算 819200 B
+[PASS] 字体子集 1103 字 / 188907 B gzip，未超 800 KiB 预算
+exit=0
+
+$ git diff --stat tools/px-allow.txt
+diff --git a/tools/px-allow.txt b/tools/px-allow.txt
+index c729e6f..8d2bbcf 100644
+--- a/tools/px-allow.txt
++++ b/tools/px-allow.txt
+@@ -19,6 +19,7 @@
+ 22px
+ 24px
+ 28px
++32px
+ 34px
+ 36px
+ 40px
+@@ -39,4 +40,3 @@
+ 760px
+ 999px
+ 1440px
+-32px

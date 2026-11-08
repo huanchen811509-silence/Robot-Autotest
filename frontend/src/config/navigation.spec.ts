@@ -16,6 +16,7 @@ import {
   filterNav,
   isGroup,
   isGroupActive,
+  isSectionBreak,
   isLeafActive,
   isNodeActive,
   leafTarget,
@@ -95,11 +96,10 @@ describe('权限过滤', () => {
 })
 
 describe('v2.0 六域 IA 与能力驱动过滤（NAV-01 / FR-v2.0-07、08）', () => {
-  it('v2.2 / MENU-01：一级恰好 8 组，层级不超过 2', () => {
-    expect(NAVIGATION).toHaveLength(8)
+  it('v2.3 / FR-UI-01：一级恰好 7 组，顺序按「日常闭环 → 支撑域」，层级不超过 2', () => {
+    expect(NAVIGATION).toHaveLength(7)
     expect(NAVIGATION.map((node) => node.key)).toEqual([
-      'overview', 'assets', 'cases', 'runs', 'reports', 'settings',
-      'environment', 'maintenance',
+      'workbench', 'execution', 'cases', 'assets', 'environment', 'maintenance', 'settings',
     ])
     for (const node of NAVIGATION) {
       if (isGroup(node)) {
@@ -121,10 +121,10 @@ describe('v2.0 六域 IA 与能力驱动过滤（NAV-01 / FR-v2.0-07、08）', (
     const engineer = navKeysForRole('engineer')
     const admin = navKeysForRole('admin')
 
-    expect(viewer).not.toContain('runs')            // execution:read
+    expect(viewer).not.toContain('execution-runs')  // execution:read
     expect(viewer).not.toContain('settings-audit')    // audit:read
     expect(viewer).not.toContain('settings-platform') // settings:read
-    expect(engineer).toContain('runs')
+    expect(engineer).toContain('execution-runs')
     expect(engineer).not.toContain('settings-platform')
     expect(pm).toContain('settings-platform')
     expect(pm).not.toContain('settings-audit')
@@ -138,10 +138,10 @@ describe('v2.0 六域 IA 与能力驱动过滤（NAV-01 / FR-v2.0-07、08）', (
     const keys = visibleNavByCapabilities([]).flatMap((node) =>
       isGroup(node) ? [node.key, ...node.children.map((child) => child.key)] : [node.key],
     )
-    expect(keys).toContain('overview')
+    expect(keys).toContain('workbench-board')
     expect(keys).not.toContain('settings-audit')
     expect(keys).not.toContain('settings-platform')
-    expect(keys).not.toContain('runs')
+    expect(keys).not.toContain('execution-runs')
   })
 })
 
@@ -162,15 +162,27 @@ describe('选中判定', () => {
     expect(assets.children.some((child) => isLeafActive(child, route))).toBe(false)
   })
 
-  it('报告详情仍点亮「报告」', () => {
-    const reports = NAVIGATION.find((node) => node.key === 'reports') as NavLeaf
-    expect(isLeafActive(reports, { path: '/reports/RUN-001/print' })).toBe(true)
-    expect(isLeafActive(reports, { path: '/reports/RUN-001' })).toBe(true)
+  const execution = groups().find((group) => group.key === 'execution') as NavGroup
+  const leafOf = (key: string): NavLeaf =>
+    execution.children.find((child) => child.key === key) as NavLeaf
+
+  it('报告详情仍点亮「报告列表」（列表 / 详情 / 打印三处同属一个入口）', () => {
+    expect(isLeafActive(leafOf('execution-reports'), { path: '/reports/RUN-001/print' })).toBe(true)
+    expect(isLeafActive(leafOf('execution-reports'), { path: '/reports/RUN-001' })).toBe(true)
+    expect(isLeafActive(leafOf('execution-reports'), { path: '/reports' })).toBe(true)
   })
 
   it('前缀匹配落在路径分段边界：/reportsX 不误点亮', () => {
-    const reports = NAVIGATION.find((node) => node.key === 'reports') as NavLeaf
-    expect(isLeafActive(reports, { path: '/reportsX' })).toBe(false)
+    expect(isLeafActive(leafOf('execution-reports'), { path: '/reportsX' })).toBe(false)
+  })
+
+  it('报告模板独立成项：点模板时「报告列表」不再跟着亮（exclude 生效）', () => {
+    const list = leafOf('execution-reports')
+    const templates = leafOf('execution-report-templates')
+    expect(isLeafActive(templates, { path: '/reports/templates' })).toBe(true)
+    expect(isLeafActive(list, { path: '/reports/templates' })).toBe(false)
+    // 排除只作用于模板前缀，详情页仍归列表
+    expect(isLeafActive(list, { path: '/reports/RUN-9' })).toBe(true)
   })
 
   it('编辑器与只读查看器点亮「用例库」并展开「用例」分组', () => {
@@ -183,25 +195,144 @@ describe('选中判定', () => {
 
   it('分组在有子项选中时算选中，并成为自动展开目标', () => {
     const route = { path: '/plans' }
-    expect(isGroupActive(groups().find((g) => g.key === 'runs')!, route)).toBe(true)
-    expect(activeGroupKey(route)).toBe('runs')
+    expect(isGroupActive(groups().find((g) => g.key === 'execution')!, route)).toBe(true)
+    expect(activeGroupKey(route)).toBe('execution')
     expect(isNodeActive(NAVIGATION[0], route)).toBe(false)
   })
 })
 
 /* --------------------------------------------------------------------------
- * v2.2 / MENU-01（FR-v2.2-01、06）：8 组 IA + 业务域不建一级菜单
+ * v2.3 / FR-UI-01..08、26..30：7 组 IA、执行与报告合并、命名唯一性
  * -------------------------------------------------------------------------- */
-describe('v2.2 / MENU-01 八组菜单与业务域隔离', () => {
-  it('一级分组数 = 8', () => {
-    expect(NAVIGATION).toHaveLength(8)
+describe('v2.3 菜单 IA 与执行/报告合并', () => {
+  const byKey = (key: string): NavNode => NAVIGATION.find((node) => node.key === key) as NavNode
+
+  it('工作台是分组，且「项目总览 / 项目看板」两个 path 都命中真实页面', () => {
+    const workbench = byKey('workbench')
+    expect(isGroup(workbench)).toBe(true)
+    const group = workbench as NavGroup
+    expect(group.children.map((child) => child.path)).toEqual(['/workbench', '/overview'])
+    for (const child of group.children) {
+      const name = router.resolve(leafTarget(child)).matched.at(-1)?.name
+      expect(name, `${child.path} 没有命中路由`).toBeTruthy()
+      expect(name).not.toBe('not-found')
+    }
   })
 
-  it('8 个一级项各至少 1 个二级入口（叶子自身即一个可导航入口）', () => {
-    expect(NAVIGATION).toHaveLength(8)
+  it('「工作台」与「项目看板」是两件事：词条键不同，且各自只被该用的地方引用', () => {
+    const workbench = byKey('workbench') as NavGroup
+    const board = workbench.children.find((child) => child.key === 'workbench-board') as NavLeaf
+    expect(workbench.labelKey).toBe('menu.workspace')
+    expect(board.labelKey).toBe('menu.overview')
+    // 侧栏一级叫「工作台」，/overview 页头叫「项目看板」——两键不能相等，
+    // 否则又回到 v1.0 那个「同一个页面两处叫两个名字」的缺陷。
+    expect(workbench.labelKey).not.toBe(board.labelKey)
+  })
+
+  it('执行与报告合并：组内 6 项顺序固定，且一级不再有 reports', () => {
+    const execution = byKey('execution') as NavGroup
+    expect(execution.children.map((child) => child.path)).toEqual([
+      '/runs', '/plans', '/nodes', '/reports', '/reports/templates', '/test-reports',
+    ])
+    expect(NAVIGATION.some((node) => node.key === 'reports')).toBe(false)
+  })
+
+  it('合并组不带组级 capability，能力只设在 3 个运行态子项上（否则 viewer 会丢报告入口）', () => {
+    const execution = byKey('execution') as NavGroup
+    expect(execution.capability).toBeUndefined()
+    const guarded = execution.children.filter((child) => child.capability === 'execution:read')
+    expect(guarded.map((child) => child.key)).toEqual([
+      'execution-runs', 'execution-plans', 'execution-nodes',
+    ])
+    const reportItems = execution.children.filter((child) => child.section === 'report')
+    expect(reportItems.every((child) => child.capability === undefined)).toBe(true)
+  })
+
+  it('角色矩阵：viewer 仍见 3 个报告项、不见 3 个运行项；engineer 6 项全见（V-UI-11）', () => {
+    const keysOf = (role: Parameters<typeof navKeysForRole>[0]): string[] => navKeysForRole(role)
+    const viewer = keysOf('viewer')
+    expect(viewer).toEqual(expect.arrayContaining([
+      'execution-reports', 'execution-report-templates', 'execution-external-reports',
+    ]))
+    expect(viewer).not.toContain('execution-runs')
+    expect(viewer).not.toContain('execution-plans')
+    expect(viewer).not.toContain('execution-nodes')
+
+    const engineer = keysOf('engineer')
+    expect(engineer).toEqual(expect.arrayContaining([
+      'execution-runs', 'execution-plans', 'execution-nodes',
+      'execution-reports', 'execution-report-templates', 'execution-external-reports',
+    ]))
+  })
+
+  it('/test-reports 有且只有一个菜单入口（消除孤儿页）', () => {
+    const hits = leaves().filter((leaf) => leaf.path === '/test-reports')
+    expect(hits).toHaveLength(1)
+  })
+
+  it('/nodes 有且只有一个菜单入口（设置页里那个是跳转链接，不是第二个渲染）', () => {
+    const hits = leaves().filter((leaf) => leaf.path === '/nodes')
+    expect(hits).toHaveLength(1)
+  })
+
+  it('7 个一级项图标两两不同', () => {
+    const icons = NAVIGATION.map((node) => node.icon)
+    expect(new Set(icons).size).toBe(icons.length)
+    expect(icons).toHaveLength(7)
+  })
+
+  it('section 只影响渲染分组，不影响选中判定（同一 leaf 带/不带 section 结果相同）', () => {
+    const execution = byKey('execution') as NavGroup
+    const withSection = execution.children.find((c) => c.key === 'execution-reports') as NavLeaf
+    const without: NavLeaf = { ...withSection }
+    delete without.section
+    for (const path of ['/reports', '/reports/RUN-1', '/reports/templates', '/x']) {
+      expect(isLeafActive(withSection, { path })).toBe(isLeafActive(without, { path }))
+    }
+  })
+
+  it('合并组内恰好 1 条分区线：前三项 run、后三项 report（FR-UI-29）', () => {
+    const execution = byKey('execution') as NavGroup
+    expect(execution.children.map((child) => child.section)).toEqual([
+      'run', 'run', 'run', 'report', 'report', 'report',
+    ])
+    const breaks = execution.children
+      .map((_, index) => isSectionBreak(execution.children, index))
+      .filter(Boolean)
+    expect(breaks).toHaveLength(1)
+    expect(isSectionBreak(execution.children, 3)).toBe(true)
+    expect(isSectionBreak(execution.children, 0)).toBe(false)
+  })
+
+  it('四处改名落地：用户管理 / 维护原则 / 环境概览 / 独立测试计划词条', () => {
+    const settings = byKey('settings') as NavGroup
+    expect(settings.children.find((c) => c.key === 'settings-users')?.labelKey).toBe('menu.adminUsers')
+    const maintenance = byKey('maintenance') as NavGroup
+    expect(maintenance.children.find((c) => c.key === 'maintenance-principles')?.labelKey)
+      .toBe('menu.mntPrinciples')
+    const environment = byKey('environment') as NavGroup
+    expect(environment.children.find((c) => c.key === 'environment-overview')?.labelKey)
+      .toBe('menu.envOverview')
+    const execution = byKey('execution') as NavGroup
+    const plans = execution.children.find((c) => c.key === 'execution-plans') as NavLeaf
+    expect(plans.labelKey).toBe('menu.runsPlans')
+  })
+})
+
+/* --------------------------------------------------------------------------
+ * v2.2 / MENU-01（FR-v2.2-01、06）：业务域不建一级菜单（v2.3 后一级为 7 组）
+ * -------------------------------------------------------------------------- */
+describe('v2.2 / MENU-01 八组菜单与业务域隔离', () => {
+  it('一级分组数 = 7', () => {
+    expect(NAVIGATION).toHaveLength(7)
+  })
+
+  it('7 个一级项全部是分组，且各至少 2 个二级入口（不再有叶子冒充分组）', () => {
+    expect(NAVIGATION).toHaveLength(7)
     for (const node of NAVIGATION) {
-      expect(secondLevelEntries(node).length, `一级项 ${node.key} 无二级入口`)
-        .toBeGreaterThanOrEqual(1)
+      expect(isGroup(node), `一级项 ${node.key} 不是分组`).toBe(true)
+      expect(secondLevelEntries(node).length, `一级项 ${node.key} 子项过少`)
+        .toBeGreaterThanOrEqual(2)
     }
   })
 

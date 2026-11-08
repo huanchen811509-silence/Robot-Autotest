@@ -1,0 +1,25 @@
+ADMIN token_len=43 ENG token_len=43 NOBODY token_len=43
+cards-admin-7d-current77 HTTP=200 bytes=2663
+cards-admin-30d HTTP=200 bytes=2663
+cards-admin-no-current HTTP=200 bytes=2664
+projects-admin HTTP=200 bytes=1549
+cards-engineer-7d HTTP=200 bytes=389
+projects-engineer HTTP=200 bytes=235
+cards-nobody-7d HTTP=200 bytes=66
+HTTP=400
+--- summary ---
+cards-admin-7d-current77: n=8 ids=[77, 76, 75, 61, 44, 29, 2, 1]
+cards-admin-30d: n=8 ids=[77, 76, 75, 61, 44, 29, 2, 1]
+cards-engineer-7d: n=1 ids=[29]
+cards-nobody-7d: n=0 ids=[]
+admin set_equal: True cards= [1, 2, 29, 44, 61, 75, 76, 77] projects= [1, 2, 29, 44, 61, 75, 76, 77]
+engineer set_equal: True cards= [29] projects= [29]
+engineer sees 77: False
+isCurrent ids: [77]
+isCurrent ids (current omitted): []
+card 77: caseCount=813 runCount=0 passRateBp=None lastRunAt=None deviceCount=0 memberCount=1 myRole=admin
+card 29: caseCount=5 runCount=54 passRateBp=7222 lastRunAt=2026-11-07T19:00:38.348Z deviceCount=0 memberCount=4 myRole=ADMIN
+card 76: caseCount=0 runCount=2 passRateBp=10000 lastRunAt=2026-11-07T06:41:39Z deviceCount=0 memberCount=1 myRole=admin
+card 75: caseCount=0 runCount=2 passRateBp=10000 lastRunAt=2026-11-07T06:30:00Z deviceCount=0 memberCount=1 myRole=admin
+30d vs 7d runCount diff: {}
+bad window body: {"code": 40001, "codeName": "INVALID_ARGUMENT", "message": "非法的统计窗口：90d（仅支持 7d / 30d）", "data": null, "success": false}

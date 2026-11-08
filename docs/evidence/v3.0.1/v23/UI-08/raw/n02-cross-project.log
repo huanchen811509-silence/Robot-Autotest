@@ -1,0 +1,16 @@
+## N-02 跨项目直达越权（真实 HTTP，非单测）
+- 账号：qa-e2e-engineer（仅 29 可见）、qa-e2e-nobody（无任何项目）
+- 目标：直接访问项目 77 下三个端点，期望被拒（403/404），不得 200
+
+engineer /api/projects/77 -> 403
+engineer /api/projects/77/overview -> 403
+engineer /api/projects/77/cases -> 403
+nobody /api/projects/77 -> 403
+nobody /api/projects/77/overview -> 403
+nobody /api/projects/77/cases -> 403
+
+## 对照：同一账号看卡牌接口
+engineer cards -> 1 [29]
+nobody   cards -> 0 []
+
+N-02 结论：6 个直达请求全部 403；卡牌接口可见集合与 /api/projects 一致（engineer=1 项、nobody=0 项），未泄露项目 77。

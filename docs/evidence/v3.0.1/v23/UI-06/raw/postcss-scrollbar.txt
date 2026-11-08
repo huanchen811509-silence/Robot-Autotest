@@ -1,0 +1,26 @@
+$ cd frontend && node /tmp/parse_css.js   # postcss 解析 main.css
+[media=screen] .app-side::-webkit-scrollbar, .app-main::-webkit-scrollbar, .ai-drawer::-webkit-scrollbar, .ai-history::-webkit-scrollbar, .table-scroll::-webkit-scrollbar
+    width: 8px
+    height: 8px
+[media=screen] .app-side::-webkit-scrollbar-track, .app-main::-webkit-scrollbar-track, .ai-drawer::-webkit-scrollbar-track, .ai-history::-webkit-scrollbar-track, .table-scroll::-webkit-scrollbar-track
+    background: transparent
+[media=screen] .app-side::-webkit-scrollbar-thumb, .app-main::-webkit-scrollbar-thumb, .ai-drawer::-webkit-scrollbar-thumb, .ai-history::-webkit-scrollbar-thumb, .table-scroll::-webkit-scrollbar-thumb
+    background: var(--text-muted)
+    border-radius: 4px
+[media=screen] .app-side::-webkit-scrollbar-thumb:hover, .app-main::-webkit-scrollbar-thumb:hover, .ai-drawer::-webkit-scrollbar-thumb:hover, .ai-history::-webkit-scrollbar-thumb:hover, .table-scroll::-webkit-scrollbar-thumb:hover
+    background: var(--text)
+[media=screen] .app-side, .app-main, .ai-drawer, .ai-history, .table-scroll
+    scrollbar-width: thin
+    scrollbar-color: var(--text-muted) transparent
+[media=screen] .app-main
+    scrollbar-gutter: stable
+[media=screen] .data-table .n-scrollbar
+    --n-scrollbar-color: var(--text-muted)  /* !important */
+    --n-scrollbar-color-hover: var(--text)  /* !important */
+    --n-scrollbar-rail-color: transparent  /* !important */
+    --n-scrollbar-width: 8px  /* !important */
+    --n-scrollbar-height: 8px  /* !important */
+    --n-scrollbar-border-radius: 4px  /* !important */
+---
+滚动条相关规则 = 7 | @media screen 内 = 7 | screen 外 = 0
+scrollbar-gutter 位置： .app-main => stable | media= screen

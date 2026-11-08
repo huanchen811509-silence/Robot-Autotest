@@ -1,0 +1,32 @@
+扫描 67 个 .vue；DataTable 壳实例 41 处 / 29 个文件
+  components/CaseDetailPanel.vue               1
+  views/AboutView.vue                          1
+  views/AdminView.vue                          4
+  views/AssetsView.vue                         5
+  views/AuditView.vue                          1
+  views/CaseBoardView.vue                      1
+  views/CaseSetsView.vue                       1
+  views/CasesView.vue                          1
+  views/FailureClustersView.vue                1
+  views/GroupsView.vue                         1
+  views/ImportPreflightView.vue                1
+  views/NodesView.vue                          1
+  views/OverviewView.vue                       3
+  views/PlansView.vue                          2
+  views/ReportDetailView.vue                   2
+  views/ReportsView.vue                        2
+  views/RunsView.vue                           1
+  views/TestReportsView.vue                    1
+  views/baselines/CclBaselineView.vue          1
+  views/baselines/IperfBaselineView.vue        1
+  views/baselines/PerftestBaselineView.vue     1
+  views/environment/CollectionAnalysisView.vue 1
+  views/environment/EnvironmentCollectView.vue 1
+  views/environment/EnvironmentOverviewView.vue 1
+  views/environment/EnvironmentPrepareView.vue 1
+  views/environment/TopologySnapshotView.vue   1
+  views/maintenance/ExecutionPrinciplesView.vue 1
+  views/maintenance/ReadOnlyRecoverView.vue    1
+  views/maintenance/RecoveryRecordsView.vue    1
+
+[PASS] 表格规范：41 处数据网格全部走壳；原生 <table> 仅出现在白名单 3 个文件

@@ -1,0 +1,33 @@
+$ python3 /tmp/contrast_calc.py   # 暗色三级层 + 滚动条 thumb 独立计算（WCAG 2.1 相对亮度）
+== 暗色三级层（surface=--bg / elevated=--panel / border=--border）==
+dark             bg vs panel  =  1.18 : 1   (#0f1720 / #1a2634)
+dark         border vs bg     =  1.53 : 1   (#29394a / #0f1720)
+dark         border vs panel  =  1.30 : 1   (#29394a / #1a2634)
+dark             s2 vs bg     =  1.08 : 1   (#141f2b / #0f1720)
+dark             s2 vs panel  =  1.09 : 1   (#141f2b / #1a2634)
+
+== 亮色同结构（对照）==
+light            bg vs panel  =  1.07 : 1   (#f4f7fb / #ffffff)
+light        border vs bg     =  1.20 : 1   (#dde3ea / #f4f7fb)
+light        border vs panel  =  1.29 : 1   (#dde3ea / #ffffff)
+light            s2 vs bg     =  1.05 : 1   (#eef2f7 / #f4f7fb)
+
+== 滚动条 thumb（--border-strong）作为非文本图形 3:1 判据 ==
+dark  thumb vs panel  =  1.76 : 1  FAIL   (#3a4d61 / #1a2634)
+dark  thumb vs bg     =  2.07 : 1  FAIL   (#3a4d61 / #0f1720)
+dark  thumb vs s2     =  1.91 : 1  FAIL   (#3a4d61 / #141f2b)
+light thumb vs panel  =  1.61 : 1  FAIL   (#c4cdd8 / #ffffff)
+light thumb vs bg     =  1.50 : 1  FAIL   (#c4cdd8 / #f4f7fb)
+light thumb vs s2     =  1.43 : 1  FAIL   (#c4cdd8 / #eef2f7)
+
+== 滚动条 thumb hover（--text-muted）==
+dark  hover vs panel  =  5.41 : 1  PASS   (#8b9bb0 / #1a2634)
+dark  hover vs bg     =  6.37 : 1  PASS   (#8b9bb0 / #0f1720)
+dark  hover vs s2     =  5.88 : 1  PASS   (#8b9bb0 / #141f2b)
+light hover vs panel  =  5.47 : 1  PASS   (#5b6b7c / #ffffff)
+light hover vs bg     =  5.09 : 1  PASS   (#5b6b7c / #f4f7fb)
+light hover vs s2     =  4.87 : 1  PASS   (#5b6b7c / #eef2f7)
+
+== 备选 thumb：--border（太弱）对照 ==
+dark  border vs panel =  1.30 : 1
+light border vs panel =  1.29 : 1

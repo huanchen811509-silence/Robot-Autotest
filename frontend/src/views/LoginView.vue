@@ -92,7 +92,7 @@ async function submit(): Promise<void> {
   try {
     await auth.login(username.value.trim(), password.value)
     persistRemember(username.value.trim(), password.value)
-    const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/overview'
+    const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/workbench'
     await router.replace(redirect)
   } catch (e) {
     error.value = localizeError(e)
