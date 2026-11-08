@@ -1,0 +1,133 @@
+{
+  "name": "RUN-20261108150337-a30000",
+  "status": "FAIL",
+  "suites": [
+    {
+      "name": "tests",
+      "status": "FAIL",
+      "suites": [
+        {
+          "name": "test_demo",
+          "status": "FAIL",
+          "suites": [],
+          "cases": [
+            {
+              "caseKey": "tests/test_demo.py::test_DEMO_001_算术冒烟",
+              "name": "py::test_DEMO_001_算术冒烟",
+              "verdict": "PASS",
+              "durationMs": 0,
+              "failureMsg": null,
+              "keywords": []
+            },
+            {
+              "caseKey": "tests/test_demo.py::test_DEMO_002_字符串大小写转换",
+              "name": "py::test_DEMO_002_字符串大小写转换",
+              "verdict": "PASS",
+              "durationMs": 0,
+              "failureMsg": null,
+              "keywords": []
+            },
+            {
+              "caseKey": "tests/test_demo.py::test_DEMO_003_列表排序",
+              "name": "py::test_DEMO_003_列表排序",
+              "verdict": "PASS",
+              "durationMs": 0,
+              "failureMsg": null,
+              "keywords": []
+            },
+            {
+              "caseKey": "tests/test_demo.py::test_DEMO_004_字典读写",
+              "name": "py::test_DEMO_004_字典读写",
+              "verdict": "PASS",
+              "durationMs": 0,
+              "failureMsg": null,
+              "keywords": []
+            },
+            {
+              "caseKey": "tests/test_demo.py::test_DEMO_005_集合交集",
+              "name": "py::test_DEMO_005_集合交集",
+              "verdict": "PASS",
+              "durationMs": 0,
+              "failureMsg": null,
+              "keywords": []
+            },
+            {
+              "caseKey": "tests/test_demo.py::test_DEMO_006_参数化三例[1-2]",
+              "name": "py::test_DEMO_006_参数化三例[1-2]",
+              "verdict": "PASS",
+              "durationMs": 0,
+              "failureMsg": null,
+              "keywords": []
+            },
+            {
+              "caseKey": "tests/test_demo.py::test_DEMO_006_参数化三例[2-4]",
+              "name": "py::test_DEMO_006_参数化三例[2-4]",
+              "verdict": "PASS",
+              "durationMs": 0,
+              "failureMsg": null,
+              "keywords": []
+            },
+            {
+              "caseKey": "tests/test_demo.py::test_DEMO_006_参数化三例[3-6]",
+              "name": "py::test_DEMO_006_参数化三例[3-6]",
+              "verdict": "PASS",
+              "durationMs": 0,
+              "failureMsg": null,
+              "keywords": []
+            },
+            {
+              "caseKey": "tests/test_demo.py::test_DEMO_007_条件跳过",
+              "name": "py::test_DEMO_007_条件跳过",
+              "verdict": "SKIP",
+              "durationMs": 0,
+              "failureMsg": null,
+              "keywords": []
+            },
+            {
+              "caseKey": "tests/test_demo.py::test_DEMO_008_故意失败",
+              "name": "py::test_DEMO_008_故意失败",
+              "verdict": "FAIL",
+              "durationMs": 0,
+              "failureMsg": "failed",
+              "keywords": []
+            },
+            {
+              "caseKey": "tests/test_demo.py::test_DEMO_009_预期失败且失败发生",
+              "name": "py::test_DEMO_009_预期失败且失败发生",
+              "verdict": "SKIP",
+              "durationMs": 0,
+              "failureMsg": null,
+              "keywords": []
+            },
+            {
+              "caseKey": "tests/test_demo.py::test_DEMO_010_预期失败但未发生",
+              "name": "py::test_DEMO_010_预期失败但未发生",
+              "verdict": "FAIL",
+              "durationMs": 0,
+              "failureMsg": "xpassed",
+              "keywords": []
+            },
+            {
+              "caseKey": "tests/test_demo.py::test_DEMO_011_JSON解析",
+              "name": "py::test_DEMO_011_JSON解析",
+              "verdict": "PASS",
+              "durationMs": 0,
+              "failureMsg": null,
+              "keywords": []
+            },
+            {
+              "caseKey": "tests/test_demo.py::test_DEMO_012_临时文件读写",
+              "name": "py::test_DEMO_012_临时文件读写",
+              "verdict": "PASS",
+              "durationMs": 0,
+              "failureMsg": null,
+              "keywords": []
+            }
+          ]
+        }
+      ],
+      "cases": []
+    }
+  ],
+  "cases": []
+}

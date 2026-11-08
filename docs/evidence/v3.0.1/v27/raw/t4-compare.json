@@ -1,0 +1,118 @@
+{
+  "rf_run": "RUN-20261108145647-e80000",
+  "pytest_run": "RUN-20261108150337-a30000",
+  "rf_total_cases": 12,
+  "pytest_total_cases": 14,
+  "comparison": [
+    {
+      "case": "DEMO-001",
+      "rf": [
+        "PASS"
+      ],
+      "pytest": [
+        "PASS"
+      ]
+    },
+    {
+      "case": "DEMO-002",
+      "rf": [
+        "PASS"
+      ],
+      "pytest": [
+        "PASS"
+      ]
+    },
+    {
+      "case": "DEMO-003",
+      "rf": [
+        "PASS"
+      ],
+      "pytest": [
+        "PASS"
+      ]
+    },
+    {
+      "case": "DEMO-004",
+      "rf": [
+        "PASS"
+      ],
+      "pytest": [
+        "PASS"
+      ]
+    },
+    {
+      "case": "DEMO-005",
+      "rf": [
+        "PASS"
+      ],
+      "pytest": [
+        "PASS"
+      ]
+    },
+    {
+      "case": "DEMO-006",
+      "rf": [
+        "PASS"
+      ],
+      "pytest": [
+        "PASS",
+        "PASS",
+        "PASS"
+      ]
+    },
+    {
+      "case": "DEMO-007",
+      "rf": [
+        "SKIP"
+      ],
+      "pytest": [
+        "SKIP"
+      ]
+    },
+    {
+      "case": "DEMO-008",
+      "rf": [
+        "FAIL"
+      ],
+      "pytest": [
+        "FAIL"
+      ]
+    },
+    {
+      "case": "DEMO-009",
+      "rf": [
+        "PASS"
+      ],
+      "pytest": [
+        "SKIP"
+      ]
+    },
+    {
+      "case": "DEMO-010",
+      "rf": [
+        "FAIL"
+      ],
+      "pytest": [
+        "FAIL"
+      ]
+    },
+    {
+      "case": "DEMO-011",
+      "rf": [
+        "PASS"
+      ],
+      "pytest": [
+        "PASS"
+      ]
+    },
+    {
+      "case": "DEMO-012",
+      "rf": [
+        "PASS"
+      ],
+      "pytest": [
+        "PASS"
+      ]
+    }
+  ]
+}

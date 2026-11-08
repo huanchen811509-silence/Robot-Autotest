@@ -48,13 +48,15 @@ public class ReportIngestService {
     private final OutputXmlParser parser;
     private final CiTriggerRepository ciTriggers;
     private final RunMetadataRepository runMetadata;
+    /** v2.7 FR-02：pytest run 的逐用例解析路由到 PytestKernel.normalize；旧构造为 null → 仅 RF。 */
+    private final com.qa.autotest.application.kernel.PytestKernel pytestKernel;
 
     public ReportIngestService(RunRepository runs,
                                RunArtifactRepository artifacts,
                                ReportRepository reports,
                                AccessControlService access,
                                OutputXmlParser parser) {
-        this(runs, artifacts, reports, access, parser, null, null);
+        this(runs, artifacts, reports, access, parser, null, null, null);
     }
 
     public ReportIngestService(RunRepository runs,
@@ -63,7 +65,7 @@ public class ReportIngestService {
                                AccessControlService access,
                                OutputXmlParser parser,
                                CiTriggerRepository ciTriggers) {
-        this(runs, artifacts, reports, access, parser, ciTriggers, null);
+        this(runs, artifacts, reports, access, parser, ciTriggers, null, null);
     }
 
     @Autowired
@@ -73,7 +75,8 @@ public class ReportIngestService {
                                AccessControlService access,
                                OutputXmlParser parser,
                                CiTriggerRepository ciTriggers,
-                               RunMetadataRepository runMetadata) {
+                               RunMetadataRepository runMetadata,
+                               com.qa.autotest.application.kernel.PytestKernel pytestKernel) {
         this.runs = runs;
         this.artifacts = artifacts;
         this.reports = reports;
@@ -81,6 +84,7 @@ public class ReportIngestService {
         this.parser = parser;
         this.ciTriggers = ciTriggers;
         this.runMetadata = runMetadata;
+        this.pytestKernel = pytestKernel;
     }
 
     /**
@@ -118,8 +122,11 @@ public class ReportIngestService {
 
         RunRecord run = runs.findByRunId(projectId, runId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "运行不存在: " + runId));
-        Path xml = resolveOutputXml(projectId, run, outputXmlPath);
-        ParsedReport parsed = mergePlanMetadata(projectId, runId, parser.parse(xml));
+        String kernel = runs.findKernel(projectId, runId).orElse("robot");
+        ParsedReport parsed = "pytest".equals(kernel)
+                ? parsePytest(projectId, run)
+                : parser.parse(resolveOutputXml(projectId, run, outputXmlPath));
+        parsed = mergePlanMetadata(projectId, runId, parsed);
         // 已补录过的 run 重新解析时，门禁必须按「解析值 + 补录值」计算，
         // 否则人已补齐的十项会被一次重析冲回不可导出（HRD-02）。
         GateResult gate = MetadataGate.check(effectiveMetadata(projectId, runId, parsed.metadata()));
@@ -128,6 +135,68 @@ public class ReportIngestService {
         reports.replace(projectId, run.id(), parsed, gate, startedAt);
         return reports.find(projectId, runId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "报告入库后读取失败: " + runId));
+    }
+
+    /**
+     * pytest run 逐用例解析（v2.7 FR-02）：产物目录定位 → {@code PytestKernel.normalize}
+     * → 六态映射（{@link KernelStatusMapper}）→ 组装报告域套件树。
+     * metadata 直接取归一结果（十项门禁与 RF 共用同一口径）。
+     */
+    private ParsedReport parsePytest(long projectId, RunRecord run) {
+        if (pytestKernel == null) {
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR,
+                    "pytest 内核未装配，无法解析 pytest run 的报告");
+        }
+        Path artifactDir = resolvePytestArtifactDir(projectId, run);
+        com.qa.autotest.domain.kernel.NormalizedRun normalized =
+                pytestKernel.normalize(artifactDir, run.runId());
+        java.util.List<com.qa.autotest.domain.report.CaseNode> cases = new java.util.ArrayList<>();
+        int pass = 0;
+        int fail = 0;
+        int skip = 0;
+        for (com.qa.autotest.domain.kernel.NormalizedCaseResult item : normalized.cases()) {
+            String status = KernelStatusMapper.toReportStatus(item.status());
+            switch (status) {
+                case "PASS" -> pass++;
+                case "FAIL" -> fail++;
+                default -> skip++;
+            }
+            String message = "FAIL".equals(status)
+                    ? item.message() == null ? "pytest: " + item.status() : item.message()
+                    : null;
+            cases.add(new com.qa.autotest.domain.report.CaseNode(item.name(), status,
+                    Math.round(item.durationSeconds() * 1000.0), message,
+                    java.util.List.of()));
+        }
+        String rootStatus = fail > 0 ? "FAIL" : pass + skip == cases.size() ? "PASS" : "UNKNOWN";
+        com.qa.autotest.domain.report.SuiteNode root =
+                new com.qa.autotest.domain.report.SuiteNode("run-" + run.runId(), rootStatus,
+                        normalized.metadata(), java.util.List.of(), cases);
+        return new ParsedReport(root, normalized.metadata(), pass, fail, skip);
+    }
+
+    /** pytest 产物目录：run_artifact(kind=pytest_report_json) → artifactsDir/kernel-pytest-0。 */
+    private Path resolvePytestArtifactDir(long projectId, RunRecord run) {
+        for (RunArtifact artifact : artifacts.list(projectId, run.id())) {
+            if (!"pytest_report_json".equals(artifact.kind())
+                    || artifact.path() == null || artifact.path().isBlank()) {
+                continue;
+            }
+            Path candidate = ExecutionPaths.resolve(artifact.path());
+            if (Files.isRegularFile(candidate)) {
+                return candidate.getParent();
+            }
+        }
+        if (run.artifactsDir() != null && !run.artifactsDir().isBlank()) {
+            Path fallback = ExecutionPaths.resolve(run.artifactsDir())
+                    .resolve("kernel-pytest-0");
+            if (Files.isRegularFile(fallback.resolve("pytest-report.json"))
+                    || Files.isRegularFile(fallback.resolve("junit.xml"))) {
+                return fallback;
+            }
+        }
+        throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                "未找到 pytest 产物（pytest-report.json / junit.xml）：请确认 run 已真实执行完成");
     }
 
     /** 解析值 + 补录值；无补录仓储（单测）时直接用解析值。 */

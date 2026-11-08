@@ -16,7 +16,8 @@ import org.junit.jupiter.api.io.TempDir;
 
 class PytestKernelTest {
 
-    private final PytestKernel kernel = new PytestKernel(new ObjectMapper());
+    private final PytestKernel kernel = new PytestKernel(new ObjectMapper(),
+            new com.qa.autotest.application.execution.ExecutionProperties());
 
     @Test
     void jsonReportMapsAllSixStatuses(@TempDir Path dir) throws Exception {
@@ -68,7 +69,7 @@ class PytestKernelTest {
         KernelRequest request = new KernelRequest(1L, "R4", 2, 4,
                 List.of("tests/"), List.of("tests/test_a.py::test_ok"), null, "preview");
         List<String> argv = kernel.command(request, Path.of("artifacts"));
-        assertEquals("pytest", argv.get(0));
+        assertTrue(argv.get(0).endsWith("pytest"), "argv[0] 应指向 venv pytest: " + argv.get(0));
         assertTrue(argv.stream().anyMatch(a -> a.startsWith("--json-report-file=")));
         assertTrue(argv.stream().anyMatch(a -> a.startsWith("--junitxml=")));
         assertTrue(argv.contains("tests/test_a.py::test_ok"));

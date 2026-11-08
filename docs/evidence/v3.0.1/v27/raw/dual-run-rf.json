@@ -1,0 +1,21 @@
+{
+  "id": 16550,
+  "runId": "RUN-20261108145647-e80000",
+  "projectId": 1,
+  "testSetId": null,
+  "state": "FAILED",
+  "priority": 0,
+  "concurrency": 1,
+  "attemptNo": 0,
+  "totalTests": 12,
+  "passedTests": 0,
+  "failedTests": 12,
+  "failureClass": "INFRA",
+  "failureReason": "ok",
+  "failureMessage": "分片执行失败: ok",
+  "artifactsDir": "/home/evergreen/robot-test/artifacts/RUN-20261108145647-e80000",
+  "enqueuedAt": "2026-11-08T06:56:47.412Z",
+  "startedAt": "2026-11-08T06:56:47.656Z",
+  "finishedAt": "2026-11-08T06:56:49.373Z",
+  "deviceScope": null
+}

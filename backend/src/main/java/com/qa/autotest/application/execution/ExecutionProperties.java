@@ -16,6 +16,12 @@ public class ExecutionProperties {
     private String workspaceRoot = "~/robot-test/infra-monitor";
     private String artifactsRoot = "~/robot-test/artifacts";
     private String venvBin = "~/rf-stack/.venv/bin";
+    /**
+     * pytest 可执行文件（v2.7）：与 RF 的 pabot 不同源——pytest 运行时
+     * （pytest 9.x + json-report + xdist）在独立 venv，可由 execution.pytest-bin /
+     * 环境变量 EXECUTION_PYTEST_BIN 覆盖；为空时回落 venvBin/pytest。
+     */
+    private String pytestBin = "";
     private int maxParallel = 4;
     private int leaseTtlSeconds = 120;
     private int leaseHeartbeatSeconds = 40;
@@ -54,6 +60,14 @@ public class ExecutionProperties {
 
     public void setVenvBin(String venvBin) {
         this.venvBin = venvBin;
+    }
+
+    public String getPytestBin() {
+        return pytestBin;
+    }
+
+    public void setPytestBin(String pytestBin) {
+        this.pytestBin = pytestBin;
     }
 
     public int getMaxParallel() {

@@ -58,6 +58,9 @@ public class RunExecutionService {
     private final ExecutionNodeRepository nodeRepo;
     private final NodeChannel nodeChannel;
     private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
+    /** v2.7 双内核：执行链唯一路由真源；null（旧构造/单测）时按 RF 处理，行为不变。 */
+    private final com.qa.autotest.application.kernel.KernelSelector kernelSelector;
+    private final com.qa.autotest.application.kernel.PytestRunAdapter pytestRuns;
 
     public RunExecutionService(RunService runs,
                                ExecutionProperties props,
@@ -73,7 +76,7 @@ public class RunExecutionService {
                                Clock clock,
                                LeaseWaitRegistry leaseWaits) {
         this(runs, props, precheck, leases, workspaces, commands, orchestrator, artifacts,
-                results, classifier, retryPolicy, clock, leaseWaits, null, null, null);
+                results, classifier, retryPolicy, clock, leaseWaits, null, null, null, null, null);
     }
 
     @org.springframework.beans.factory.annotation.Autowired
@@ -92,7 +95,9 @@ public class RunExecutionService {
                                LeaseWaitRegistry leaseWaits,
                                ExecutionNodeRepository nodeRepo,
                                NodeChannel nodeChannel,
-                               com.fasterxml.jackson.databind.ObjectMapper objectMapper) {
+                               com.fasterxml.jackson.databind.ObjectMapper objectMapper,
+                               com.qa.autotest.application.kernel.KernelSelector kernelSelector,
+                               com.qa.autotest.application.kernel.PytestRunAdapter pytestRuns) {
         this.runs = runs;
         this.props = props;
         this.precheck = precheck;
@@ -110,6 +115,8 @@ public class RunExecutionService {
         this.nodeChannel = nodeChannel;
         this.objectMapper = objectMapper == null
                 ? new com.fasterxml.jackson.databind.ObjectMapper() : objectMapper;
+        this.kernelSelector = kernelSelector;
+        this.pytestRuns = pytestRuns;
     }
 
     public RunRecord execute(RunService.CreateRunCommand cmd) {
@@ -160,6 +167,21 @@ public class RunExecutionService {
                     RunService.TransitionContext.plain());
         }
 
+        // v2.7 FR-04：执行链内核路由唯一走 KernelSelector（项目默认→覆盖），run 表记快照。
+        // 旧构造/单测 kernelSelector 为 null → 按 RF 处理，既有行为不变。
+        String kernel = com.qa.autotest.application.kernel.RobotKernel.NAME;
+        if (kernelSelector != null) {
+            kernel = kernelSelector.select(created.projectId(), null, null).kernel();
+            runs.updateKernel(created.runId(), kernel);
+            if (com.qa.autotest.application.kernel.PytestKernel.NAME.equals(kernel)
+                    && cmd.nodeId() != null) {
+                // pytest 走本机适配器（xdist 承担并行）；节点投递是 pabot 语义，本版范围外，
+                // 不静默回落 RF（会跑错内核），直接判失败。
+                return fail(created, "node_dispatch_unsupported",
+                        "pytest 内核不支持节点投递（本版范围外）：runId=" + created.runId());
+            }
+        }
+
         Path artifactsRoot = ExecutionPaths.resolve(props.getArtifactsRoot());
         Path runDir = artifactsRoot.resolve(created.runId());
         try {
@@ -184,7 +206,8 @@ public class RunExecutionService {
         // `Test Timeout`。只改本 run 的副本（materialize 成功时），
         // 不碰数据库脚本与真实 workspace-root（回落分支下那是用户原脚本）。
         // 本次触发显式给了 testTimeoutSeconds 就用它，否则沿用全局默认。
-        if (materialized) {
+        // v2.7：pytest 没有 Test Timeout 概念（超时由 run 级 timeout 兜底），跳过注入。
+        if (materialized && !com.qa.autotest.application.kernel.PytestKernel.NAME.equals(kernel)) {
             int testTimeout = cmd.testTimeoutSeconds() > 0
                     ? cmd.testTimeoutSeconds() : props.getTestTimeoutSeconds();
             TestTimeoutInjector.inject(workDir, cmd.suitePaths(), testTimeout);
@@ -250,16 +273,32 @@ public class RunExecutionService {
             runs.transition(created.runId(), RunState.RUNNING,
                     new RunService.TransitionContext(clock.instant(), null, null, null, null, true, true));
 
-            int processes = Math.min(cmd.concurrency(), cmd.suitePaths().size());
-            PabotCommandBuilder.ShardSpec shard = new PabotCommandBuilder.ShardSpec(
-                    0, cmd.suitePaths(), processes, cmd.includeTag(),
-                    "run-" + created.runId(), cmd.testNames());
-            PabotCommandBuilder.PabotCommand command = commands.build(shard, props, runDir, workDir);
-            PabotOrchestrator.ShardResult result = orchestrator.runShard(
-                    created.runId(), command, Duration.ofSeconds(cmd.timeoutSeconds()), line -> {
-                    });
+            PabotCommandBuilder.PabotCommand command;
+            PabotOrchestrator.ShardResult result;
+            if (com.qa.autotest.application.kernel.PytestKernel.NAME.equals(kernel)) {
+                // v2.7 FR-01：pytest 内核走专用适配器（venv pytest + json-report，
+                // 并行由 xdist 承担）；产物校验 = 可归一。RF 路径逐字等价不动。
+                command = pytestRuns.build(created.projectId(), created.runId(),
+                        cmd.suitePaths(), Math.max(1, cmd.concurrency()), runDir, workDir);
+                result = pytestRuns.run(created.runId(), command,
+                        Duration.ofSeconds(cmd.timeoutSeconds()));
+            } else {
+                int processes = Math.min(cmd.concurrency(), cmd.suitePaths().size());
+                PabotCommandBuilder.ShardSpec shard = new PabotCommandBuilder.ShardSpec(
+                        0, cmd.suitePaths(), processes, cmd.includeTag(),
+                        "run-" + created.runId(), cmd.testNames());
+                command = commands.build(shard, props, runDir, workDir);
+                result = orchestrator.runShard(
+                        created.runId(), command, Duration.ofSeconds(cmd.timeoutSeconds()), line -> {
+                        });
+            }
 
             registerArtifacts(created.projectId(), created.id(), command, result);
+            // v2.7：pytest 产物单独登记（RF 路径这两个文件不存在，register 会跳过）。
+            register(created.projectId(), created.id(), "pytest_report_json",
+                    command.outputDir().resolve("pytest-report.json"), 0);
+            register(created.projectId(), created.id(), "junit_xml",
+                    command.outputDir().resolve("junit.xml"), 0);
 
             int total = result.totalTests();
             int passed = result.success() ? total : 0;

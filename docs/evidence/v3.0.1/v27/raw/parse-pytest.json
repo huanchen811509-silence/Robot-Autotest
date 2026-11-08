@@ -1,0 +1,26 @@
+{
+  "runId": "RUN-20261108150337-a30000",
+  "projectId": 80,
+  "state": "failed",
+  "exportable": true,
+  "metadataMissing": [],
+  "metadata": {
+    "CASE_KIND": "demo",
+    "BASELINE": "main",
+    "RUN_ID": "RUN-20261108150337-a30000",
+    "OPERATOR": "qa-e2e-admin",
+    "QA_PROJECT": "演示项目-Pytest",
+    "DUT": "workstation-local",
+    "CASE_ID": "DEMO-COMMON",
+    "STARTED_AT": "seed-time",
+    "SW_BUILD": "v2.7",
+    "LINK": "local-loopback"
+  },
+  "counts": {
+    "pass": 10,
+    "fail": 2,
+    "skip": 2
+  },
+  "startedAt": "2026-11-08T07:03:37.346Z",
+  "finishedAt": "2026-11-08T07:03:37.818Z"
+}

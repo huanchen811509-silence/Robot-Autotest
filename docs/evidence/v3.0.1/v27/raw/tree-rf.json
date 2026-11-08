@@ -1,0 +1,359 @@
+{
+  "name": "RUN-20261108145647-e80000",
+  "status": "FAIL",
+  "suites": [
+    {
+      "name": "DEMO-001 算术冒烟",
+      "status": "PASS",
+      "suites": [],
+      "cases": [
+        {
+          "caseKey": "DEMO-001 算术冒烟",
+          "name": "DEMO-001 算术冒烟",
+          "verdict": "PASS",
+          "durationMs": 2,
+          "failureMsg": null,
+          "keywords": [
+            {
+              "name": "Evaluate",
+              "status": "PASS",
+              "children": []
+            },
+            {
+              "name": "Should Be Equal As Integers",
+              "status": "PASS",
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "DEMO-002 字符串大小写转换",
+      "status": "PASS",
+      "suites": [],
+      "cases": [
+        {
+          "caseKey": "DEMO-002 字符串大小写转换",
+          "name": "DEMO-002 字符串大小写转换",
+          "verdict": "PASS",
+          "durationMs": 1,
+          "failureMsg": null,
+          "keywords": [
+            {
+              "name": "Evaluate",
+              "status": "PASS",
+              "children": []
+            },
+            {
+              "name": "Should Be Equal",
+              "status": "PASS",
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "DEMO-003 列表排序",
+      "status": "PASS",
+      "suites": [],
+      "cases": [
+        {
+          "caseKey": "DEMO-003 列表排序",
+          "name": "DEMO-003 列表排序",
+          "verdict": "PASS",
+          "durationMs": 1,
+          "failureMsg": null,
+          "keywords": [
+            {
+              "name": "Evaluate",
+              "status": "PASS",
+              "children": []
+            },
+            {
+              "name": "Should Be Equal",
+              "status": "PASS",
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "DEMO-004 字典读写",
+      "status": "PASS",
+      "suites": [],
+      "cases": [
+        {
+          "caseKey": "DEMO-004 字典读写",
+          "name": "DEMO-004 字典读写",
+          "verdict": "PASS",
+          "durationMs": 1,
+          "failureMsg": null,
+          "keywords": [
+            {
+              "name": "Evaluate",
+              "status": "PASS",
+              "children": []
+            },
+            {
+              "name": "Should Be Equal",
+              "status": "PASS",
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "DEMO-005 集合交集",
+      "status": "PASS",
+      "suites": [],
+      "cases": [
+        {
+          "caseKey": "DEMO-005 集合交集",
+          "name": "DEMO-005 集合交集",
+          "verdict": "PASS",
+          "durationMs": 1,
+          "failureMsg": null,
+          "keywords": [
+            {
+              "name": "Evaluate",
+              "status": "PASS",
+              "children": []
+            },
+            {
+              "name": "Should Be Equal",
+              "status": "PASS",
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "DEMO-006 参数化三例",
+      "status": "PASS",
+      "suites": [],
+      "cases": [
+        {
+          "caseKey": "DEMO-006 参数化三例",
+          "name": "DEMO-006 参数化三例",
+          "verdict": "PASS",
+          "durationMs": 3,
+          "failureMsg": null,
+          "keywords": [
+            {
+              "name": "倍数校验",
+              "status": "PASS",
+              "children": [
+                {
+                  "name": "Evaluate",
+                  "status": "PASS",
+                  "children": []
+                },
+                {
+                  "name": "Should Be Equal As Integers",
+                  "status": "PASS",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "倍数校验",
+              "status": "PASS",
+              "children": [
+                {
+                  "name": "Evaluate",
+                  "status": "PASS",
+                  "children": []
+                },
+                {
+                  "name": "Should Be Equal As Integers",
+                  "status": "PASS",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "倍数校验",
+              "status": "PASS",
+              "children": [
+                {
+                  "name": "Evaluate",
+                  "status": "PASS",
+                  "children": []
+                },
+                {
+                  "name": "Should Be Equal As Integers",
+                  "status": "PASS",
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "DEMO-007 条件跳过",
+      "status": "SKIP",
+      "suites": [],
+      "cases": [
+        {
+          "caseKey": "DEMO-007 条件跳过",
+          "name": "DEMO-007 条件跳过",
+          "verdict": "SKIP",
+          "durationMs": 1,
+          "failureMsg": null,
+          "keywords": [
+            {
+              "name": "Skip",
+              "status": "SKIP",
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "DEMO-008 故意失败",
+      "status": "FAIL",
+      "suites": [],
+      "cases": [
+        {
+          "caseKey": "DEMO-008 故意失败",
+          "name": "DEMO-008 故意失败",
+          "verdict": "FAIL",
+          "durationMs": 1,
+          "failureMsg": "1 != 2",
+          "keywords": [
+            {
+              "name": "Should Be Equal As Integers",
+              "status": "FAIL",
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "DEMO-009 预期失败且失败发生",
+      "status": "PASS",
+      "suites": [],
+      "cases": [
+        {
+          "caseKey": "DEMO-009 预期失败且失败发生",
+          "name": "DEMO-009 预期失败且失败发生",
+          "verdict": "PASS",
+          "durationMs": 1,
+          "failureMsg": "boom",
+          "keywords": [
+            {
+              "name": "Run Keyword And Expect Error",
+              "status": "PASS",
+              "children": [
+                {
+                  "name": "Fail",
+                  "status": "FAIL",
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "DEMO-010 预期失败但未发生",
+      "status": "FAIL",
+      "suites": [],
+      "cases": [
+        {
+          "caseKey": "DEMO-010 预期失败但未发生",
+          "name": "DEMO-010 预期失败但未发生",
+          "verdict": "FAIL",
+          "durationMs": 1,
+          "failureMsg": "Expected error '*boom*' did not occur.",
+          "keywords": [
+            {
+              "name": "Run Keyword And Expect Error",
+              "status": "FAIL",
+              "children": [
+                {
+                  "name": "Evaluate",
+                  "status": "PASS",
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "DEMO-011 JSON 解析",
+      "status": "PASS",
+      "suites": [],
+      "cases": [
+        {
+          "caseKey": "DEMO-011 JSON 解析",
+          "name": "DEMO-011 JSON 解析",
+          "verdict": "PASS",
+          "durationMs": 1,
+          "failureMsg": null,
+          "keywords": [
+            {
+              "name": "Evaluate",
+              "status": "PASS",
+              "children": []
+            },
+            {
+              "name": "Should Be Equal As Integers",
+              "status": "PASS",
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "DEMO-012 临时文件读写",
+      "status": "PASS",
+      "suites": [],
+      "cases": [
+        {
+          "caseKey": "DEMO-012 临时文件读写",
+          "name": "DEMO-012 临时文件读写",
+          "verdict": "PASS",
+          "durationMs": 2,
+          "failureMsg": null,
+          "keywords": [
+            {
+              "name": "Evaluate",
+              "status": "PASS",
+              "children": []
+            },
+            {
+              "name": "Evaluate",
+              "status": "PASS",
+              "children": []
+            },
+            {
+              "name": "Evaluate",
+              "status": "PASS",
+              "children": []
+            },
+            {
+              "name": "Should Be Equal",
+              "status": "PASS",
+              "children": []
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "cases": []
+}

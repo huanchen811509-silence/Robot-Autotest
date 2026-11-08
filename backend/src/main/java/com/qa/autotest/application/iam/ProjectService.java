@@ -35,13 +35,23 @@ public class ProjectService {
     private final UserRepository users;
     private final AccessControlService access;
     private final AuditService audit;
+    /** v2.7 FR-04：test_kernel 标注列与 kernel.default 路由真源同步（null = 旧构造/单测）。 */
+    private final com.qa.autotest.application.system.SystemSettingService settings;
 
     public ProjectService(ProjectRepository projects, UserRepository users,
                           AccessControlService access, AuditService audit) {
+        this(projects, users, access, audit, null);
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public ProjectService(ProjectRepository projects, UserRepository users,
+                          AccessControlService access, AuditService audit,
+                          com.qa.autotest.application.system.SystemSettingService settings) {
         this.projects = projects;
         this.users = users;
         this.access = access;
         this.audit = audit;
+        this.settings = settings;
     }
 
     /** 当前用户可见的项目（管理员全部，其他人按成员关系）。 */
@@ -71,6 +81,7 @@ public class ProjectService {
                 ownerId, visibility == null || visibility.isBlank() ? "private" : visibility,
                 normalizeKernel(testKernel)));
         projects.addMember(id, ownerId, RoleCode.ADMIN.code(), ownerId);
+        syncKernelSetting(id, normalizeKernel(testKernel));
         audit.recordChange("project:create", "project", String.valueOf(id), null,
                 "code=" + code + "; name=" + name + "; owner=" + ownerId);
         return projects.findById(id)
@@ -81,11 +92,26 @@ public class ProjectService {
                           Long ownerId, String visibility, String testKernel) {
         access.bindProject(projectId);
         access.require(PermissionResource.PROJECT, PermissionAction.UPDATE);
+        String kernel = normalizeKernel(testKernel);
         projects.update(projectId, name, description, enabled, ownerId, visibility,
-                normalizeKernel(testKernel), TenantContext.userId());
+                kernel, TenantContext.userId());
+        syncKernelSetting(projectId, kernel);
         audit.record("project.update", "project", String.valueOf(projectId),
-                "name=" + name + "; kernel=" + normalizeKernel(testKernel));
+                "name=" + name + "; kernel=" + kernel);
         return get(projectId);
+    }
+
+    /**
+     * v2.7 FR-04：把 test_kernel 标注列同步到 {@code kernel.default} 项目设置——
+     * 执行链路由真源是 KernelSelector（读 kernel.default），不同步会出现
+     * 「界面标 pytest、实际跑 robot」的脱节。best-effort：设置服务未装配（旧构造）时跳过。
+     */
+    private void syncKernelSetting(long projectId, String kernel) {
+        if (settings != null) {
+            settings.putProject(projectId, java.util.Map.of(
+                    com.qa.autotest.application.system.SystemSettingService.P_DEFAULT_KERNEL,
+                    kernel));
+        }
     }
 
     /** 测试内核归一：空值回 robot（RF 是平台主内核），其余只认 robot / pytest。 */

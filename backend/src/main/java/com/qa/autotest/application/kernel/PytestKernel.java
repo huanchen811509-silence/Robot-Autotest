@@ -35,9 +35,12 @@ public class PytestKernel implements ExecutionKernel {
     public static final String NAME = "pytest";
 
     private final ObjectMapper mapper;
+    private final com.qa.autotest.application.execution.ExecutionProperties props;
 
-    public PytestKernel(ObjectMapper mapper) {
+    public PytestKernel(ObjectMapper mapper,
+                        com.qa.autotest.application.execution.ExecutionProperties props) {
         this.mapper = mapper;
+        this.props = props;
     }
 
     @Override
@@ -49,11 +52,20 @@ public class PytestKernel implements ExecutionKernel {
     public List<String> command(KernelRequest request, Path artifactsRoot) {
         Path dir = artifactsRoot.resolve("kernel-pytest-" + request.shardNo());
         List<String> argv = new ArrayList<>();
-        argv.add("pytest");
+        // v2.7 FR-01：执行链真实跑的是 venv 里的 pytest（与 pabot 同源），预览/实跑同一 argv。
+        argv.add(pytestExecutable());
         argv.add("--json-report");
         argv.add("--json-report-file=" + dir.resolve("pytest-report.json"));
         argv.add("--junitxml=" + dir.resolve("junit.xml"));
         argv.add("-q");
+        // v2.7 FR-03：run 级动态键经命令行透传（RUN_ID 是三方关联键）；
+        // 静态键（QA_PROJECT/DUT/LINK 等）由套件 pytest.ini 携带，与 RF 的 `Metadata:` 设置同口径。
+        if (request.runId() != null && !request.runId().isBlank()
+                && !"PREVIEW".equals(request.runId())) {
+            argv.add("--metadata");
+            argv.add("RUN_ID");
+            argv.add(request.runId());
+        }
         // ADR-0007：并行统一由 xdist 承担（json-report 由 master 聚合），不用平台分片。
         if (request.processes() > 1) {
             argv.add("-n");
@@ -64,6 +76,17 @@ public class PytestKernel implements ExecutionKernel {
         }
         argv.addAll(request.suitePaths());
         return List.copyOf(argv);
+    }
+
+    /** v2.7：pytest 可执行文件解析顺序 EXECUTION_PYTEST_BIN > venvBin/pytest > PATH 上的 pytest。 */
+    private String pytestExecutable() {
+        if (props.getPytestBin() != null && !props.getPytestBin().isBlank()) {
+            return props.getPytestBin();
+        }
+        if (props.getVenvBin() == null || props.getVenvBin().isBlank()) {
+            return "pytest";
+        }
+        return java.nio.file.Path.of(props.getVenvBin()).resolve("pytest").toString();
     }
 
     @Override
@@ -91,9 +114,12 @@ public class PytestKernel implements ExecutionKernel {
                 cases.add(new NormalizedCaseResult(nodeId, nodeId,
                         CaseStatus.fromPytest(outcome), duration, outcome));
             }
-            // N3：pytest-metadata 由 --metadata / pytest.ini 写入 json-report 的 metadata 节点。
-            // 只保留十项门禁键，其余（Python/Platform/Packages 等）不污染 run_metadata。
-            Map<String, String> metadata = canonicalMetadata(root.path("metadata"));
+            // N3：pytest-metadata 由 --metadata / conftest 写入 json-report。
+            // json-report 1.5.0 的 metadata 落在 **environment** 键（v2.7 实测），
+            // 旧版落 metadata 键——两个位置都兜住。只保留十项门禁键，其余（Python/Platform 等）不污染 run_metadata。
+            JsonNode env = root.path("environment");
+            JsonNode source = env.isObject() && env.size() > 0 ? env : root.path("metadata");
+            Map<String, String> metadata = canonicalMetadata(source);
             return new NormalizedRun(NAME, runId, cases, withRunId(metadata, runId));
         } catch (Exception e) {
             throw new IllegalStateException("pytest json-report 解析失败: " + path, e);

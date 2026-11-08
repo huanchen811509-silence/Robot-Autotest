@@ -233,6 +233,24 @@ public class RunRepositoryJdbc implements RunRepository {
     }
 
     @Override
+    public void updateKernel(String runId, String kernel) {
+        String sql = """
+                UPDATE run
+                   SET kernel = ?, updated_at = CURRENT_TIMESTAMP(3)
+                 WHERE run_id = ? AND project_id > 0
+                """;
+        TenantGuard.requireProjectScope(sql, "run");
+        jdbc.update(sql, kernel == null || kernel.isBlank() ? "robot" : kernel, runId);
+    }
+
+    @Override
+    public Optional<String> findKernel(long projectId, String runId) {
+        return JdbcSupport.first(jdbc.query(
+                "SELECT kernel FROM run WHERE project_id = ? AND run_id = ?",
+                (rs, rowNum) -> rs.getString("kernel"), projectId, runId));
+    }
+
+    @Override
     public int recordLeaseWait(String runId, long waitMs) {
         String sql = """
                 UPDATE run

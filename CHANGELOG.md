@@ -8,7 +8,40 @@
 > `<!-- current -->` 是给解析器用的语言无关标识（Markdown 渲染时不可见）。
 > 因此代码里不需要硬编码中文，界面显示文案一律走 i18n 语言包 `changelog.*`。
 
-## v2.6-assistant-ux（2026-11-08） <!-- current -->
+## v2.7-dual-kernel-demo（2026-11-08） <!-- current -->
+
+### 新增 <!-- added -->
+- **pytest 项目可真实执行**：执行链按内核分流——RF 走原 pabot 路径（一行未动），
+  pytest 走新增 `PytestRunAdapter`（复用进程启动器 / 注册表 / 超时杀树，单命令 + xdist 并行，
+  产物校验失败报 `pytest_artifact_invalid`），跑完产物自动归一入库
+- **pytest 逐用例报告解析**：`ReportIngestService` 按 run 内核快照分流，
+  pytest 产物经 `PytestKernel.normalize` 解析成与 RF 同构的套件 / 用例树；
+  状态映射唯一出口 `KernelStatusMapper`（PASS/FAIL/SKIP 三态，
+  XFAIL→SKIP、XPASS→FAIL、ERROR→FAIL，与用例失败口径一致）
+- **run 级内核事实快照**：`run` 表新增 `kernel` 列（V11_17，默认 `robot`），
+  执行时由内核选择器落库，报告解析按该列分流，历史 run 不受影响
+- **双演示项目**：`演示项目-RobotFramework` 与 `演示项目-Pytest`——12 条编号 / 标题 / 断言语义
+  完全等价的用例（DEMO-001..012，含参数化、预期失败对照），同值设备与环境资产，
+  两项目均可独立真实跑通且 metadata 十项门禁全绿
+- 新增 `docs/release/v2.7-dual-kernel-demo/` 六份产物（机检 `FR=6 / TC=12`）
+
+### 变更 <!-- changed -->
+- pytest 可执行文件三级解析：`EXECUTION_PYTEST_BIN` 配置 > 项目 venv 内 pytest > PATH，
+  不与 Robot Framework 的 venv 配置牵连
+- 工作区允许上传 `.ini` / `.cfg`（pytest 配置文件此前被文件类型白名单拒绝）
+- 项目保存时 `test_kernel` 标注列与系统设置 `kernel.default` 双源自动同步
+
+### 修复 <!-- fixed -->
+- pytest 静态 metadata（CASE_ID / RUN_ID / QA_PROJECT 等十项）进不了报告：
+  pytest-metadata 3.1.1 已不支持 ini / CLI 注入 json-report，且 json-report 1.5.0 把 metadata
+  落在 `environment` 键——现在由 conftest 直写 `config._metadata`，后端按
+  `environment` 优先、`metadata` 兜底双键读取，演示项目零补录即达 exportable=true
+
+### 破坏性变更 <!-- breaking -->
+- 无。RF 执行路径逐字未动；`run.kernel` 为带默认值的新增列，旧代码与历史 run 不受影响；
+  `EXECUTION_PYTEST_BIN` 未配置时按三级解析回落，行为与 v2.6 一致
+
+## v2.6-assistant-ux（2026-11-08）
 
 ### 新增 <!-- added -->
 - 工作助手（右侧 AI 抽屉）**宽度可调**：拖左缘 340–760px，鼠标、方向键（±20 / Home / End）、

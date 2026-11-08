@@ -180,7 +180,7 @@ class NodeAgentRunnerTest {
         private RecordingExecutions(RunService runs, ExecutionProperties props,
                                     boolean explode) {
             super(runs, props, null, null, null, null, null, null, null,
-                    null, null, ExecutionTestSupport.CLOCK, null, null, null, null);
+                    null, null, ExecutionTestSupport.CLOCK, null, null, null, null, null, null);
             this.explode = explode;
         }
 

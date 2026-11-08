@@ -29,7 +29,7 @@ public class FileWorkspaceService {
     public static final int MAX_CONTENT_BYTES = 2 * 1024 * 1024;
 
     private static final List<String> ALLOWED_EXTENSIONS =
-            List.of(".robot", ".resource", ".py", ".yaml", ".yml", ".json", ".txt", ".md");
+            List.of(".robot", ".resource", ".py", ".ini", ".cfg", ".yaml", ".yml", ".json", ".txt", ".md");
 
     private final RobotFileRepository files;
     private final AccessControlService access;

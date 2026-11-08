@@ -34,7 +34,8 @@ class KernelSelectorTest {
         return new KernelRegistry(List.of(
                 new RobotKernel(new com.qa.autotest.application.execution.ExecutionProperties(),
                         new OutputXmlNormalizer()),
-                new PytestKernel(new com.fasterxml.jackson.databind.ObjectMapper())));
+                new PytestKernel(new com.fasterxml.jackson.databind.ObjectMapper(),
+                        new com.qa.autotest.application.execution.ExecutionProperties())));
     }
 
     @Test
@@ -66,7 +67,9 @@ class KernelSelectorTest {
     void registryRejectsDuplicateNames() {
         assertThrows(IllegalStateException.class,
                 () -> new KernelRegistry(List.of(
-                        new PytestKernel(new com.fasterxml.jackson.databind.ObjectMapper()),
-                        new PytestKernel(new com.fasterxml.jackson.databind.ObjectMapper()))));
+                        new PytestKernel(new com.fasterxml.jackson.databind.ObjectMapper(),
+                        new com.qa.autotest.application.execution.ExecutionProperties()),
+                        new PytestKernel(new com.fasterxml.jackson.databind.ObjectMapper(),
+                        new com.qa.autotest.application.execution.ExecutionProperties()))));
     }
 }

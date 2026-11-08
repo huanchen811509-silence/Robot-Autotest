@@ -271,6 +271,14 @@ public class RunService {
     }
 
     /**
+     * v2.7 FR-04：回写本次运行使用的测试内核（run 级快照，路由真源仍是 KernelSelector）。
+     * 只在执行线程里调用，仓储未建模（内存版）时静默跳过。
+     */
+    public void updateKernel(String runId, String kernel) {
+        runs.updateKernel(runId, kernel);
+    }
+
+    /**
      * 租约外键 {@code job_id}：{@code execution_job} 与 run 同事务创建（{@code job_no = run_id}），
      * run 表本身不保存该主键，执行前按 run_id 反查一次。
      */

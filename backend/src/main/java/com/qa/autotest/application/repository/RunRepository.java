@@ -70,6 +70,20 @@ public interface RunRepository {
     int updateCounts(String runId, int total, int passed, int failed, String artifactsDir);
 
     /**
+     * 回写本次运行使用的测试内核（v2.7 FR-04，run 级事实快照，路由真源仍是 KernelSelector）。
+     * 默认空实现，保证内存仓储与既有测试无需改动；JDBC 实现必须覆盖。
+     */
+    default void updateKernel(String runId, String kernel) {
+    }
+
+    /**
+     * 回读本次运行的测试内核；无记录/未建模时按 RF 处理（空 Optional 由调用方落 'robot'）。
+     */
+    default Optional<String> findKernel(long projectId, String runId) {
+        return Optional.empty();
+    }
+
+    /**
      * 回写本次运行的租约等待耗时（{@code run.lease_wait_ms}，FR-08）。
      * 默认空实现，保证内存仓储与既有测试无需改动；JDBC 实现必须覆盖。
      */

@@ -6,7 +6,7 @@
 面向 GPU、智能网卡与基础设施的一体化自动化测试平台：把「设备台账 → 用例编写 → 并发执行 → 报告交付 → 定时/CI 自动化」收在同一个系统里，并用 metadata 门禁保证每一份对外报告都能追溯。
 
 > 当前阶段（2026-11-08）：**版本号动态化**（唯一真源是仓库根 `VERSION`，也可用 `APP_VERSION` 环境变量在运行期覆盖，见「关于」页）。
-> v3.0.1 平台化 W1–W5 全部落库；v2.2 体验与可观测、v2.3 界面与主题、v2.4 CLI 多 agent、v2.5 AI 助手配置、v2.6 工作助手体验已开发并自测。
+> v3.0.1 平台化 W1–W5 全部落库；v2.2 体验与可观测、v2.3 界面与主题、v2.4 CLI 多 agent、v2.5 AI 助手配置、v2.6 工作助手体验、v2.7 双内核演示已开发并自测。
 > 130 个任务包：**已完成 124 / 待验 0 / 待现场 6 / 未开始 0 / 进行中 0**。
 > 余下 6 个 `待现场` 缺的是**外部条件**（GitHub runner、真实 pabot 子进程树与日志样本、真机 DUT），不是代码。
 > **G4 / G5 / G7 / G8 门禁尚未判过，不得对外称「已发版」**。
@@ -21,7 +21,7 @@
 | 导入与预检 | 压缩包导入沙箱：解压前校验条目数 / 总体积 / 单文件体积 / 嵌套深度并防 zip slip；只落只读副本，预检只跑 `--collect-only` / `--dryrun`，不执行用例 |
 | 执行引擎 | 状态机、项目 / 设备维度调度、资源租约与强制释放、4 并发不打架；实时日志、取消与超时、失败分类与重试；pabot 编排、工作区落盘、全量日志下载 |
 | 执行节点与分布式执行 | 节点注册 / 心跳 / 四态（NEW·ONLINE·OFFLINE·DISABLED），令牌只存哈希；指定节点发起执行，按节点独立并发分道；**非 ONLINE 一律当场拒绝——不排队、不重投、不回落本机**；节点 agent 与主控同 jar 双角色（`--spring.profiles.active=node`），复用同一命令构造器保证**同参数命令等价**，产物经 HTTP 回传；节点崩溃（心跳停止）自动判失败并清理在跑 run，不留悬挂；**分片执行**按用例套件贪心分配，DB 租约 + CAS fencing 防双跑，节点失联分片自动重派（`attempt+1`，上限 3 次），主控重启后幂等回收（W2 / W3） |
-| 双测试内核 | `ExecutionKernel` SPI 统一抽象：Robot Framework（pabot 编排，复用同一命令构造器）与 pytest（主 `pytest-json-report`、兜底 `junitxml`）；按用例集自动选核，同一作业不混跑两套内核 |
+| 双测试内核 | `ExecutionKernel` SPI 统一抽象：Robot Framework（pabot 编排，复用同一命令构造器）与 pytest（主 `pytest-json-report`、兜底 `junitxml`）；按用例集自动选核，同一作业不混跑两套内核。**两种内核均可真实执行并出报告**（v2.7 起 pytest 走 PytestRunAdapter 接入执行链），双演示项目（演示项目-RobotFramework / 演示项目-Pytest）用例等价、环境相同、各自独立跑通 |
 | 计划组与依赖图 | 计划组实体与批量建边；依赖图视图与关键路径；**编排冲突四类只读检测**（cron 无效 / 目标重复 / 同刻触发 / 依赖已暂停）与**批量启停**（审计 + 事务，单条失败不中断）；失败聚类与重跑清单，支持**最近 N 轮跨 run 聚类**（W5） |
 | 报告中心 | 解析 `output.xml`，递归采集 metadata；十项门禁；用例树、原始日志分页、跨运行对比、趋势与通过率；PDF / Word / CSV 导出、一次性打印链接与打印页 |
 | 报告模板 | 模板实体与字段白名单、按模板冻结 + xlsx 导出、四格式一致性校验（v2.1） |
@@ -115,6 +115,7 @@ docs/             设计、计划、版本、证据文档
 | [docs/plan/WBS-STATUS.md](docs/plan/WBS-STATUS.md) | **进度唯一真源**：130 个任务包的五态、证据与阻塞 |
 | [docs/release/README.md](docs/release/README.md) | 版本地图与每版交付口径 |
 | [VERSION](VERSION) | **版本号唯一真源**：发版只改这一行；`scripts/gen_build_info.py` 在打包时写进产物，「关于」页展示并标注来源 |
+| [docs/release/v2.7-dual-kernel-demo/](docs/release/v2.7-dual-kernel-demo/) | v2.7 双内核演示（调研 / 评估 / PRD / DEV-PLAN / TEST-PLAN / 测试报告，含 T4 双内核结果比对） |
 | [docs/release/v2.6-assistant-ux/](docs/release/v2.6-assistant-ux/) | v2.6 工作助手体验（含宽度方案评估对比 / PRD / DEV-PLAN / TEST-PLAN / 测试报告） |
 | [docs/release/v2.5-ai-config/](docs/release/v2.5-ai-config/) | v2.5 AI 助手配置（PRD / DEV-PLAN / TEST-PLAN 指针） |
 | [docs/release/v2.1-platform/](docs/release/v2.1-platform/) | v2.1 的 PRD / 开发计划（DEV-PLAN）/ 测试计划（TEST-PLAN） |

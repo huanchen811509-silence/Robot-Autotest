@@ -1,0 +1,27 @@
+{
+  "runId": "RUN-20261108145647-e80000",
+  "projectId": 1,
+  "state": "failed",
+  "exportable": false,
+  "metadataMissing": [
+    "RUN_ID"
+  ],
+  "metadata": {
+    "SW_BUILD": "v2.7",
+    "CASE_KIND": "demo",
+    "DUT": "workstation-local",
+    "CASE_ID": "DEMO-COMMON",
+    "LINK": "local-loopback",
+    "OPERATOR": "qa-e2e-admin",
+    "STARTED_AT": "seed-time",
+    "QA_PROJECT": "演示项目-RobotFramework",
+    "BASELINE": "main"
+  },
+  "counts": {
+    "pass": 9,
+    "fail": 2,
+    "skip": 1
+  },
+  "startedAt": "2026-11-08T06:56:47.656Z",
+  "finishedAt": "2026-11-08T06:56:49.373Z"
+}
