@@ -1,0 +1,240 @@
+{
+  "generated_at": "2026-11-09T03:24:03.858Z",
+  "browser": "HeadlessChrome/157.0.8103.38",
+  "method": "CDP computed style 采样（暗色主题强制 theme=dark）",
+  "routes": [
+    "/",
+    "/settings",
+    "/plans",
+    "/runs"
+  ],
+  "summary": {
+    "pages": 4,
+    "selects": 10,
+    "flagged": 10
+  },
+  "pages": [
+    {
+      "path": "/workbench",
+      "theme": "dark",
+      "rootColorScheme": "dark",
+      "rootBg": "rgba(0, 0, 0, 0)",
+      "selects": [
+        {
+          "id": "",
+          "name": "",
+          "cls": "app-project-select",
+          "options": 8,
+          "bg": "rgba(0, 0, 0, 0)",
+          "fg": "rgb(230, 237, 243)",
+          "bgTransparent": true,
+          "effectiveBg": "rgb(26,38,52)",
+          "colorScheme": "dark",
+          "appearance": "none",
+          "contrast": 12.97,
+          "optionBg": "rgba(0, 0, 0, 0)",
+          "optionFg": "rgb(230, 237, 243)",
+          "flags": [
+            "背景透明"
+          ],
+          "red": true
+        },
+        {
+          "id": "",
+          "name": "",
+          "cls": "app-lang-select",
+          "options": 2,
+          "bg": "rgba(0, 0, 0, 0)",
+          "fg": "rgb(230, 237, 243)",
+          "bgTransparent": true,
+          "effectiveBg": "rgb(26,38,52)",
+          "colorScheme": "dark",
+          "appearance": "none",
+          "contrast": 12.97,
+          "optionBg": "rgba(0, 0, 0, 0)",
+          "optionFg": "rgb(230, 237, 243)",
+          "flags": [
+            "背景透明"
+          ],
+          "red": true
+        }
+      ]
+    },
+    {
+      "path": "/settings",
+      "theme": "dark",
+      "rootColorScheme": "dark",
+      "rootBg": "rgba(0, 0, 0, 0)",
+      "selects": [
+        {
+          "id": "",
+          "name": "",
+          "cls": "app-project-select",
+          "options": 8,
+          "bg": "rgba(0, 0, 0, 0)",
+          "fg": "rgb(230, 237, 243)",
+          "bgTransparent": true,
+          "effectiveBg": "rgb(26,38,52)",
+          "colorScheme": "dark",
+          "appearance": "none",
+          "contrast": 12.97,
+          "optionBg": "rgba(0, 0, 0, 0)",
+          "optionFg": "rgb(230, 237, 243)",
+          "flags": [
+            "背景透明"
+          ],
+          "red": true
+        },
+        {
+          "id": "",
+          "name": "",
+          "cls": "app-lang-select",
+          "options": 2,
+          "bg": "rgba(0, 0, 0, 0)",
+          "fg": "rgb(230, 237, 243)",
+          "bgTransparent": true,
+          "effectiveBg": "rgb(26,38,52)",
+          "colorScheme": "dark",
+          "appearance": "none",
+          "contrast": 12.97,
+          "optionBg": "rgba(0, 0, 0, 0)",
+          "optionFg": "rgb(230, 237, 243)",
+          "flags": [
+            "背景透明"
+          ],
+          "red": true
+        },
+        {
+          "id": "",
+          "name": "",
+          "cls": "",
+          "options": 2,
+          "bg": "rgba(0, 0, 0, 0)",
+          "fg": "rgb(230, 237, 243)",
+          "bgTransparent": true,
+          "effectiveBg": "rgb(15,23,32)",
+          "colorScheme": "dark",
+          "appearance": "auto",
+          "contrast": 15.27,
+          "optionBg": "rgba(0, 0, 0, 0)",
+          "optionFg": "rgb(230, 237, 243)",
+          "flags": [
+            "背景透明"
+          ],
+          "red": true
+        },
+        {
+          "id": "",
+          "name": "",
+          "cls": "",
+          "options": 2,
+          "bg": "rgba(0, 0, 0, 0)",
+          "fg": "rgb(230, 237, 243)",
+          "bgTransparent": true,
+          "effectiveBg": "rgb(15,23,32)",
+          "colorScheme": "dark",
+          "appearance": "auto",
+          "contrast": 15.27,
+          "optionBg": "rgba(0, 0, 0, 0)",
+          "optionFg": "rgb(230, 237, 243)",
+          "flags": [
+            "背景透明"
+          ],
+          "red": true
+        }
+      ]
+    },
+    {
+      "path": "/plans",
+      "theme": "dark",
+      "rootColorScheme": "dark",
+      "rootBg": "rgba(0, 0, 0, 0)",
+      "selects": [
+        {
+          "id": "",
+          "name": "",
+          "cls": "app-project-select",
+          "options": 8,
+          "bg": "rgba(0, 0, 0, 0)",
+          "fg": "rgb(230, 237, 243)",
+          "bgTransparent": true,
+          "effectiveBg": "rgb(26,38,52)",
+          "colorScheme": "dark",
+          "appearance": "none",
+          "contrast": 12.97,
+          "optionBg": "rgba(0, 0, 0, 0)",
+          "optionFg": "rgb(230, 237, 243)",
+          "flags": [
+            "背景透明"
+          ],
+          "red": true
+        },
+        {
+          "id": "",
+          "name": "",
+          "cls": "app-lang-select",
+          "options": 2,
+          "bg": "rgba(0, 0, 0, 0)",
+          "fg": "rgb(230, 237, 243)",
+          "bgTransparent": true,
+          "effectiveBg": "rgb(26,38,52)",
+          "colorScheme": "dark",
+          "appearance": "none",
+          "contrast": 12.97,
+          "optionBg": "rgba(0, 0, 0, 0)",
+          "optionFg": "rgb(230, 237, 243)",
+          "flags": [
+            "背景透明"
+          ],
+          "red": true
+        }
+      ]
+    },
+    {
+      "path": "/runs",
+      "theme": "dark",
+      "rootColorScheme": "dark",
+      "rootBg": "rgba(0, 0, 0, 0)",
+      "selects": [
+        {
+          "id": "",
+          "name": "",
+          "cls": "app-project-select",
+          "options": 8,
+          "bg": "rgba(0, 0, 0, 0)",
+          "fg": "rgb(230, 237, 243)",
+          "bgTransparent": true,
+          "effectiveBg": "rgb(26,38,52)",
+          "colorScheme": "dark",
+          "appearance": "none",
+          "contrast": 12.97,
+          "optionBg": "rgba(0, 0, 0, 0)",
+          "optionFg": "rgb(230, 237, 243)",
+          "flags": [
+            "背景透明"
+          ],
+          "red": true
+        },
+        {
+          "id": "",
+          "name": "",
+          "cls": "app-lang-select",
+          "options": 2,
+          "bg": "rgba(0, 0, 0, 0)",
+          "fg": "rgb(230, 237, 243)",
+          "bgTransparent": true,
+          "effectiveBg": "rgb(26,38,52)",
+          "colorScheme": "dark",
+          "appearance": "none",
+          "contrast": 12.97,
+          "optionBg": "rgba(0, 0, 0, 0)",
+          "optionFg": "rgb(230, 237, 243)",
+          "flags": [
+            "背景透明"
+          ],
+          "red": true
+        }
+      ]
+    }
+  ]
+}

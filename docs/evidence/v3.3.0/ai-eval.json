@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-09T03:02:32.015062+00:00",
+  "generatedAt": "2026-11-09T03:37:24.525969+00:00",
   "engine": "grounded-answer-factory",
   "realCli": false,
   "fakeCliContract": true,
@@ -13,13 +13,13 @@
     "factTargetPct": 95.0,
     "severeHallucinations": 0,
     "citationCoveragePct": 100.0,
-    "firstTokenMs": 38,
+    "firstTokenMs": 35,
     "firstTokenBudgetMs": 3000
   },
   "cases": [
     {
       "case": "triage",
-      "elapsedMs": 53,
+      "elapsedMs": 34,
       "checks": [
         {
           "name": "triage.mode",
@@ -51,7 +51,7 @@
     },
     {
       "case": "narrative",
-      "elapsedMs": 42,
+      "elapsedMs": 32,
       "checks": [
         {
           "name": "narrative.conclusion",
@@ -78,7 +78,7 @@
     },
     {
       "case": "log_explain",
-      "elapsedMs": 35,
+      "elapsedMs": 32,
       "checks": [
         {
           "name": "log_explain.mode",
@@ -95,7 +95,7 @@
     },
     {
       "case": "refusal",
-      "elapsedMs": 47,
+      "elapsedMs": 19,
       "checks": [
         {
           "name": "refusal.mode",
@@ -112,7 +112,7 @@
     },
     {
       "case": "case_draft",
-      "elapsedMs": 31,
+      "elapsedMs": 37,
       "checks": [
         {
           "name": "case_draft.mode",
@@ -134,9 +134,9 @@
     },
     {
       "case": "stream",
-      "streamId": "7e1549a4-43f0-4614-baa2-6a31c782f22c",
-      "elapsedMs": 99,
-      "firstTokenMs": 38,
+      "streamId": "68c4fea1-8ec8-4fa0-8497-148cdb71c8fe",
+      "elapsedMs": 92,
+      "firstTokenMs": 35,
       "events": [
         "meta",
         "citations",
@@ -147,9 +147,9 @@
       ],
       "done": {
         "citationCount": 0,
-        "firstTokenMs": 0,
+        "firstTokenMs": 1,
         "mode": "NO_EVIDENCE",
-        "elapsedMs": 37
+        "elapsedMs": 38
       },
       "checks": [
         {
@@ -160,12 +160,12 @@
         {
           "name": "stream.first_token",
           "pass": true,
-          "detail": "firstDeltaMs=38 budget=3000"
+          "detail": "firstDeltaMs=35 budget=3000"
         },
         {
           "name": "stream.done",
           "pass": true,
-          "detail": "{\"citationCount\": 0, \"firstTokenMs\": 0, \"mode\": \"NO_EVIDENCE\", \"elapsedMs\": 37}"
+          "detail": "{\"citationCount\": 0, \"firstTokenMs\": 1, \"mode\": \"NO_EVIDENCE\", \"elapsedMs\": 38}"
         },
         {
           "name": "stream.deltas",
