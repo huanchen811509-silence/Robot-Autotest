@@ -233,6 +233,25 @@ export interface IssuedPrintToken {
   mode: ReportExportMode
 }
 
+/** 报告速览（FR-3.1-07）：数字由后端从报告详情直接汇总，前端不重算。 */
+export interface ReportSummaryTopFailure {
+  name: string
+  count: number
+}
+
+export interface ReportSummary {
+  conclusion: 'NO_DATA' | 'PASSED' | 'FAILED'
+  total: number
+  passed: number
+  failed: number
+  skipped: number
+  passRate: number
+  durationMs: number
+  topFailures: ReportSummaryTopFailure[]
+  risks: string[]
+  generatedAt: string
+}
+
 export const reportsApi = {
   page(projectId: number, page = 1, size = 20): Promise<PageResult<ReportListItem>> {
     return request<PageResult<ReportListItem>>(
@@ -249,6 +268,12 @@ export const reportsApi = {
   tree(projectId: number, runId: string): Promise<ReportSuiteNode> {
     return request<ReportSuiteNode>(
       `/reports/${encodeURIComponent(runId)}/tree${toQuery({ projectId })}`,
+    )
+  },
+
+  summary(projectId: number, runId: string): Promise<ReportSummary> {
+    return request<ReportSummary>(
+      `/reports/${encodeURIComponent(runId)}/summary${toQuery({ projectId })}`,
     )
   },
 

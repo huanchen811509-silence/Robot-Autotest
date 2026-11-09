@@ -32,7 +32,9 @@ DST_DB="${DRILL_TARGET_DB:-robot_it}"
 [ "$SRC_DB" = "$DST_DB" ] && { echo "DRILL_FAIL 源库与目标库不能相同（$SRC_DB）"; exit 1; }
 
 OUT_DIR="${DRILL_OUT_DIR:-docs/evidence/v3.0/raw}"
+STATUS_JSON="${DRILL_STATUS_JSON:-docs/evidence/ops/backup-drill-latest.json}"
 STAMP="$(date +%Y%m%d_%H%M%S)"
+T0=$(date +%s)
 DUMP="$OUT_DIR/backup-drill-$STAMP.sql"
 PRE="$OUT_DIR/drill-pre-target-$STAMP.sql"
 LOG="$OUT_DIR/backup-drill.log"
@@ -81,8 +83,9 @@ say "DRILL_BACKUP ok size=$(wc -c < "$DUMP" | tr -d ' ')B file=$DUMP"
 dump_db "$DST_DB" > "$PRE" || die "目标库 $DST_DB 预备份失败"
 say "DRILL_PRE ok size=$(wc -c < "$PRE" | tr -d ' ')B file=$PRE"
 mysql_run "$DST_DB" < "$DUMP" 2>>"$LOG" || die "导入失败（见 $LOG）"
-say "DRILL_RESTORE ok tables=$(mysql_run "$DST_DB" -N -B -e \
-  "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='$DST_DB'" | tr -d ' ')"
+RESTORED_TABLES=$(mysql_run "$DST_DB" -N -B -e \
+  "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='$DST_DB'" | tr -d ' ')
+say "DRILL_RESTORE ok tables=$RESTORED_TABLES"
 
 # 3) 行数比对：核心业务表必须逐表一致。
 KEY_TABLES="run test_result test_report execution_shard execution_node audit_log robot_file execution_plan project app_user"
@@ -120,4 +123,24 @@ if [ "$bad" -eq 0 ]; then
 else
   say "DRILL_RESULT FAIL(issues=$bad)"
 fi
+
+# 6) 写机器可读状态（运维中心与门禁都读它，不靠日志里的人工解读）。
+RTO=$(( $(date +%s) - T0 ))
+if [ "$bad" -eq 0 ] && [ "$RTO" -le 7200 ]; then VERDICT=PASS; else VERDICT=FAIL; fi
+mkdir -p "$(dirname "$STATUS_JSON")"
+cat > "$STATUS_JSON" <<JSON
+{
+  "generatedAt": "$(date -u '+%Y-%m-%dT%H:%M:%SZ')",
+  "rtoSeconds": $RTO,
+  "rpoSeconds": 0,
+  "rpoNote": "演练为即时全量快照，恢复点不早于 dump 开始；正式 RPO 由备份计划决定",
+  "verdict": "$VERDICT",
+  "tables": ${RESTORED_TABLES:-0},
+  "database": "$DST_DB",
+  "source": "$SRC_DB",
+  "issues": $bad,
+  "log": "$LOG"
+}
+JSON
+say "DRILL_STATUS wrote=$STATUS_JSON verdict=$VERDICT rto=${RTO}s"
 exit "$bad"

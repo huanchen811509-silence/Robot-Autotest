@@ -79,6 +79,18 @@ vi.mock('@/api/reports', async (importOriginal) => {
           },
         ],
       })),
+      summary: vi.fn(async () => ({
+        conclusion: 'FAILED',
+        total: 4,
+        passed: 3,
+        failed: 1,
+        skipped: 0,
+        passRate: 75,
+        durationMs: 300000,
+        topFailures: [{ name: '大包吞吐', count: 1 }],
+        risks: ['存在失败用例，建议先看大包吞吐'],
+        generatedAt: '2026-11-05T07:05:00+08:00',
+      })),
       compare: vi.fn(async () => ({
         baseline: { runId: 'RUN-OLD', startedAt: '2026-11-04T07:00:00+08:00', crossEnvironment: false, dut: 'DUT-A', link: 'LINK-AB' },
         rows: [

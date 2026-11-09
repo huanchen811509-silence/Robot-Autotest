@@ -26,6 +26,7 @@ import {
   type ReportExportResult,
   type ReportLogLine,
   type ReportSuiteNode,
+  type ReportSummary,
 } from '@/api/reports'
 import { useAuthStore } from '@/stores/auth'
 import DataTable from '@/components/DataTable.vue'
@@ -34,6 +35,9 @@ import TrendChart from '@/components/report/TrendChart.vue'
 import type { TrendChartSeries } from '@/components/report/trendChart'
 import ErrorLineView from '@/components/ErrorLine.vue'
 import EmptyState from '@/components/EmptyState.vue'
+import ReportSummaryCard from '@/components/ReportSummaryCard.vue'
+import AiAnswerCard from '@/components/AiAnswerCard.vue'
+import { aiWorkbenchApi, type AiResult } from '@/api/aiWorkbench'
 import StatusTag from '@/components/StatusTag.vue'
 import { localizeError, type ErrorLine } from '@/utils/errors'
 import { formatBytes, formatDateTime, formatDuration } from '@/utils/format'
@@ -52,6 +56,16 @@ const detail = ref<ReportDetail | null>(null)
 const tree = ref<ReportSuiteNode | null>(null)
 const loading = ref(false)
 const error = ref<ErrorLine | null>(null)
+
+// 速览（FR-3.1-07）：独立请求，失败不拖垮详情；数字直接来自后端聚合。
+const summary = ref<ReportSummary | null>(null)
+const summaryLoading = ref(false)
+const summaryError = ref<ErrorLine | null>(null)
+
+// v3.3.0 报告叙述：按需生成，不阻塞首屏；事实/推测由后端分段。
+const narrative = ref<AiResult | null>(null)
+const narrativeLoading = ref(false)
+const narrativeError = ref('')
 
 const showCompare = ref(false)
 const compare = ref<CompareResult | null>(null)
@@ -109,9 +123,12 @@ async function loadAll(): Promise<void> {
   if (!projectId.value || !runId.value) {
     detail.value = null
     tree.value = null
+    summary.value = null
+    summaryLoading.value = false
     return
   }
   loading.value = true
+  void loadSummary()
   try {
     const [d, tr] = await Promise.all([
       reportsApi.detail(projectId.value, runId.value),
@@ -125,6 +142,48 @@ async function loadAll(): Promise<void> {
     error.value = localizeError(e)
   } finally {
     loading.value = false
+  }
+}
+
+async function loadSummary(): Promise<void> {
+  summaryError.value = null
+  if (!projectId.value || !runId.value) {
+    summary.value = null
+    summaryLoading.value = false
+    return
+  }
+  summaryLoading.value = true
+  try {
+    summary.value = await reportsApi.summary(projectId.value, runId.value)
+  } catch (e) {
+    summary.value = null
+    summaryError.value = localizeError(e)
+  } finally {
+    summaryLoading.value = false
+  }
+}
+
+/** 锚点到失败明细；尊重 reduced-motion 偏好，并把焦点一并送过去。 */
+function scrollToFailures(): void {
+  const target = document.getElementById('report-failures')
+  if (!target) return
+  const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
+  target.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' })
+  target.focus({ preventScroll: true })
+}
+
+/** AI 叙述（FR-3.3-05）：按需触发，数字仍由后端证据装配器校验，前端不做二次加工。 */
+async function loadNarrative(): Promise<void> {
+  if (!projectId.value || !runId.value) return
+  narrativeLoading.value = true
+  narrativeError.value = ''
+  try {
+    narrative.value = await aiWorkbenchApi.narrative(projectId.value, runId.value)
+  } catch (error) {
+    narrative.value = null
+    narrativeError.value = error instanceof Error ? error.message : t('reportAi.failed')
+  } finally {
+    narrativeLoading.value = false
   }
 }
 
@@ -528,6 +587,9 @@ function exportDownloadUrl(item: ReportExportHistoryItem): string {
 }
 
 watch([projectId, runId], () => {
+  summary.value = null
+  summaryError.value = null
+  summaryLoading.value = false
   compare.value = null
   showCompare.value = false
   baselineCandidates.value = []
@@ -573,6 +635,32 @@ watch(granularity, () => {
     <p v-if="loading" class="muted">{{ t('common.loading') }}</p>
 
     <template v-if="detail">
+      <ReportSummaryCard
+        :summary="summary"
+        :loading="summaryLoading"
+        :error="summaryError?.summary ?? ''"
+        @retry="loadSummary"
+        @show-failures="scrollToFailures"
+      />
+
+      <section class="card wide-card" data-testid="report-ai-narrative">
+        <div class="toolbar narrative-bar">
+          <span class="card-title">{{ t('reportAi.title') }}</span>
+          <NButton size="small" :loading="narrativeLoading" @click="loadNarrative">
+            {{ narrative ? t('reportAi.regenerate') : t('reportAi.generate') }}
+          </NButton>
+        </div>
+        <p v-if="!narrative && !narrativeLoading && !narrativeError" class="muted">
+          {{ t('reportAi.hint') }}
+        </p>
+        <AiAnswerCard
+          v-else
+          :result="narrative"
+          :loading="narrativeLoading"
+          :error="narrativeError"
+        />
+      </section>
+
       <div class="toolbar summary-bar">
         <span class="text-ok">PASS {{ detail.passCount }}</span>
         <span class="text-fail">FAIL {{ detail.failCount }}</span>
@@ -750,7 +838,7 @@ watch(granularity, () => {
         <EmptyState v-else :title="t('reports.trend.empty')" icon="reports" />
       </section>
 
-      <section class="card wide-card">
+      <section id="report-failures" class="card wide-card" tabindex="-1">
         <div class="section-head">
           <h2 class="card-title">{{ t('reports.treeTitle') }}</h2>
           <NCheckbox :checked="showCompare" @update:checked="toggleCompare">

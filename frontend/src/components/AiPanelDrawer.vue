@@ -8,9 +8,11 @@
  * ② 可选 Agent 与模型 —— 清单来自 /api/ai/agents（不含端点与密钥），按次覆盖注入。
  * ③ 输入输出放大 —— 历史区撑满剩余高度，输入改多行 textarea（Enter 发送 / Shift+Enter 换行）。
  */
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, ref, toRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import AppIcon from '@/components/AppIcon.vue'
+import AiEvidencePanel from '@/components/AiEvidencePanel.vue'
+import { useFocusTrap } from '@/composables/useFocusTrap'
 import {
   aiPanelApi,
   canRequestExecution,
@@ -53,6 +55,8 @@ const agents = ref<AiAgentItem[]>([])
 const defaultAgent = ref('')
 const fallbackNote = ref('')
 const resizing = ref(false)
+/** v3.3.0：助手（旧通用对话）与证据问答分开；默认助手，保持既有行为与快捷键。 */
+const mode = ref<'assistant' | 'evidence'>('assistant')
 
 /** 宽度预设陈列：快速选择档位（拖拽与键盘保留，都过同一套钳制）。 */
 const WIDTH_PRESETS = [
@@ -187,6 +191,9 @@ function close(): void {
   emit('update:open', false)
 }
 
+const drawerRef = ref<HTMLElement | null>(null)
+useFocusTrap(drawerRef, toRef(props, 'open'), { onEscape: close })
+
 function scrollToBottom(): void {
   if (historyEl.value) historyEl.value.scrollTop = historyEl.value.scrollHeight
 }
@@ -261,7 +268,13 @@ watch(prompt, () => nextTick(resizeInput))
 </script>
 
 <template>
-  <aside v-if="open" class="ai-drawer" :class="{ 'ai-resizing': resizing }" :aria-label="t('aiPanel.title')">
+  <aside
+    v-if="open"
+    ref="drawerRef"
+    class="ai-drawer"
+    :class="{ 'ai-resizing': resizing }"
+    :aria-label="t('aiPanel.title')"
+  >
     <!-- 拖拽手柄：宽 6px 的边界条，键盘也能用（左右键 20px / Home 最窄 / End 最宽） -->
     <div
       class="ai-resizer"
@@ -286,10 +299,36 @@ watch(prompt, () => nextTick(resizeInput))
     </header>
     <p class="ai-muted">{{ t('aiPanel.subtitle') }}</p>
 
+    <div class="ai-mode" role="tablist" data-testid="ai-mode">
+      <button
+        class="btn btn-ghost ai-mode-btn"
+        type="button"
+        role="tab"
+        data-testid="ai-mode-assistant"
+        :aria-selected="mode === 'assistant'"
+        :class="{ active: mode === 'assistant' }"
+        @click="mode = 'assistant'"
+      >
+        {{ t('aiPanel.modeAssistant') }}
+      </button>
+      <button
+        class="btn btn-ghost ai-mode-btn"
+        type="button"
+        role="tab"
+        data-testid="ai-mode-evidence"
+        :aria-selected="mode === 'evidence'"
+        :class="{ active: mode === 'evidence' }"
+        @click="mode = 'evidence'"
+      >
+        {{ t('aiPanel.modeEvidence') }}
+      </button>
+    </div>
+
     <p v-if="failed" class="ai-line ai-error">{{ t('aiPanel.failed') }}</p>
     <p v-if="disabled" class="ai-line ai-error" data-testid="ai-disabled">{{ t(LABEL.disabled) }}</p>
     <p v-else-if="degraded" class="ai-line ai-degraded" data-testid="ai-degraded">{{ t(LABEL.degraded) }}</p>
 
+    <template v-if="mode === 'assistant'">
     <!-- Agent / 模型：清单来自后端探测，只列本机真能跑的；空清单时明确说明走降级 -->
     <div class="ai-picker" data-testid="ai-picker">
       <label class="ai-field">
@@ -384,6 +423,10 @@ watch(prompt, () => nextTick(resizeInput))
         {{ t('aiPanel.terminate') }}
       </button>
     </div>
+    </template>
+
+    <!-- v3.3.0 证据问答：SSE 流式 + 引用 + 模板 + 会话导出 + 用例草稿审阅 -->
+    <AiEvidencePanel v-else :project-id="projectId" />
 
     <!-- 宽度预设陈列（v2.6.1 大师反馈「拖拽不直观」）：一排档位直接点，当前档高亮；
          拖拽与键盘（±20 / Home / End）保留，三条路径共用同一套钳制与持久化。 -->
@@ -466,6 +509,15 @@ watch(prompt, () => nextTick(resizeInput))
 .ai-head { display: flex; align-items: center; justify-content: space-between; }
 .ai-head h2 { margin: 0; font-size: 16px; }
 .ai-muted { margin: 0; color: var(--text-muted); font-size: 12px; }
+
+/* 助手 / 证据问答：两个模式按钮，当前模式实心高亮 */
+.ai-mode { display: flex; gap: 6px; }
+.ai-mode-btn { padding: 4px 10px; font-size: 12px; }
+.ai-mode-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-contrast);
+}
 
 .ai-picker { display: flex; gap: 8px; }
 .ai-field { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 4px; }

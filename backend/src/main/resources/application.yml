@@ -3,6 +3,9 @@ spring:
     name: robot-autotest
   profiles:
     default: dev
+  lifecycle:
+    # 与 server.shutdown=graceful 配合：停机时给在途请求与异步队列留出排空时间（EW32-04）
+    timeout-per-shutdown-phase: 20s
   datasource:
     url: jdbc:mariadb://${DB_HOST:127.0.0.1}:${DB_PORT:3306}/${DB_NAME:robot_dev}
     # 用户名给默认值、口令不给：缺 DB_PASSWORD 时启动即失败，且报错里带变量名（FR-v0.1-07）
@@ -10,7 +13,10 @@ spring:
     password: ${DB_PASSWORD}
     driver-class-name: org.mariadb.jdbc.Driver
     hikari:
-      maximum-pool-size: 8
+      # EW32-10 容量压测：8 条连接时 20 并发读 p95=155ms、运行创建 p95=688ms，
+      # 50/100 并发呈线性劣化（队列全压在连接池上）。默认提到 16 并可用环境变量调；
+      # 单实例 16 条，多实例部署时按 DB 的 max_connections 重新核算。
+      maximum-pool-size: ${DB_POOL_SIZE:16}
       connection-timeout: 5000
   flyway:
     # 迁移由 make db-migrate（mvn flyway:migrate）执行，不跟应用启动绑死
@@ -19,10 +25,52 @@ spring:
 
 server:
   port: ${SERVER_PORT:8081}
+  # 优雅停机：先停止接新请求，等在途请求与异步排空后再退出
+  shutdown: graceful
 
 logging:
   level:
     com.qa.autotest: INFO
+  pattern:
+    # traceId 由 TraceIdFilter 写入 MDC；异步任务由 BoundedExecutor 透传（EW32-07）
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %5p [%X{traceId:-}] %logger{36} - %msg%n"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        # 只开健康、信息、指标；不暴露 env/heapdump 等敏感端点
+        include: health,info,metrics
+  endpoint:
+    health:
+      probes:
+        # /actuator/health/liveness 与 /actuator/health/readiness
+        enabled: true
+      show-details: never
+  metrics:
+    tags:
+      application: robot-autotest
+
+execution:
+  # EW32-05：请求指纹幂等（Header 优先）；关闭即回退随机请求号
+  idempotency-fingerprint-enabled: ${EXECUTION_IDEMPOTENCY_FINGERPRINT:true}
+  idempotency-window-seconds: ${EXECUTION_IDEMPOTENCY_WINDOW_SECONDS:120}
+  # EW32-05：孤儿进程周期清扫；interval=0 关闭
+  orphan-sweep-interval-seconds: ${EXECUTION_ORPHAN_SWEEP_SECONDS:60}
+  orphan-min-age-seconds: ${EXECUTION_ORPHAN_MIN_AGE_SECONDS:30}
+
+app:
+  cache:
+    # EW32-03：关闭后所有读路径回源，用于「关缓存等价」回归
+    enabled: ${APP_CACHE_ENABLED:true}
+    ttl-seconds: ${APP_CACHE_TTL_SECONDS:30}
+    max-entries: ${APP_CACHE_MAX_ENTRIES:512}
+  async:
+    # EW32-04：审计写入的有界池；队列满降级同步，停机排空
+    core-size: ${APP_ASYNC_CORE:2}
+    max-size: ${APP_ASYNC_MAX:4}
+    queue-capacity: ${APP_ASYNC_QUEUE:1024}
+    shutdown-timeout-seconds: ${APP_ASYNC_SHUTDOWN_SECONDS:10}
 
 report:
   retention:

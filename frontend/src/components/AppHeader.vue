@@ -2,12 +2,12 @@
 /**
  * 顶栏（v2.3 / UI-04，FR-UI-15..19）。
  *
- * 为什么从 App.vue 抽出来：顶栏现在有 4 段、8 个控件、3 条分隔线与「28px 栅格」的
+ * 为什么从 App.vue 抽出来：顶栏现在有 4 段、9 个控件、3 条分隔线与「28px 栅格」的
  * 硬约束，再挤在外壳组件里就没人能单独验它。抽出来之后 `AppHeader.spec.ts` 能直接
  * 断 DOM 结构与交互，外壳只负责布局。
  *
  * 四段排序（从左到右，按「离用户多近」）：
- *   上下文（当前项目）→ 工具（检索 / AI）→ 偏好（外观 / 主题 / 语言）→ 账户（身份 / 登出）
+ *   上下文（当前项目）→ 工具（检索 / 通知 / AI）→ 偏好（外观 / 主题 / 语言）→ 账户（身份 / 登出）
  *
  * 三条不做的事：
  * 1. 不再有「关于」按钮——侧栏「系统设置 > 关于」是同一入口，顶栏留着只是占位。
@@ -23,11 +23,13 @@ import { useAiDrawer } from '@/composables/useAiDrawer'
 import { confirmAction } from '@/composables/useConfirm'
 import { preferenceApi } from '@/api/preferences'
 import AppIcon from '@/components/AppIcon.vue'
+import NotificationCenter from '@/components/NotificationCenter.vue'
 import type { IconName } from '@/components/iconMap'
 
 const props = defineProps<{ aiEnabled: boolean }>()
 const emit = defineEmits<{
   (event: 'open-palette'): void
+  (event: 'open-shortcuts'): void
   (event: 'open-appearance'): void
   (event: 'logout'): void
 }>()
@@ -128,7 +130,7 @@ async function askLogout(): Promise<void> {
 
       <span class="app-sep" role="presentation" aria-hidden="true" />
 
-      <!-- 段 2 工具：检索 / AI。AI 受 ai.enabled 门控，关闭时整项不渲染。 -->
+      <!-- 段 2 工具：检索 / 通知 / AI。AI 受 ai.enabled 门控，关闭时整项不渲染。 -->
       <div class="app-seg" data-seg="tools">
         <button
           class="btn btn-ghost app-icon-btn"
@@ -139,6 +141,16 @@ async function askLogout(): Promise<void> {
         >
           <AppIcon name="search" :size="16" />
         </button>
+        <button
+          class="btn btn-ghost app-icon-btn"
+          type="button"
+          :aria-label="t('shortcuts.help')"
+          :title="`${t('shortcuts.help')} (?)`"
+          @click="emit('open-shortcuts')"
+        >
+          <AppIcon name="help" :size="16" />
+        </button>
+        <NotificationCenter />
         <button
           v-if="props.aiEnabled"
           class="btn btn-ghost app-icon-btn"

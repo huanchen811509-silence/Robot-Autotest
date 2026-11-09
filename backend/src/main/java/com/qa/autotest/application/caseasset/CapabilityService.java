@@ -16,16 +16,28 @@ public class CapabilityService {
 
     private final TestCaseRepository cases;
     private final AccessControlService access;
+    private final CapabilityCache cache;
 
     public CapabilityService(TestCaseRepository cases, AccessControlService access) {
+        this(cases, access, null);
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public CapabilityService(TestCaseRepository cases, AccessControlService access,
+                             CapabilityCache cache) {
         this.cases = cases;
         this.access = access;
+        this.cache = cache;
     }
 
     public List<CapabilityStat> list(long projectId) {
         access.bindProject(projectId);
         access.require(PermissionResource.CASE, PermissionAction.READ);
-        return cases.capabilities(projectId);
+        if (cache == null) {
+            return cases.capabilities(projectId);
+        }
+        // 先做权限检查再查缓存：缓存命中不能绕过租户/权限校验。
+        return cache.get(projectId, () -> cases.capabilities(projectId));
     }
 
     /** 某能力下的用例分页。 */

@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "updatedAt": "2026-11-08",
+  "note": "v3.2.0 四类预算。改阈值必须同时改 docs/plan/v3.2.0-版本规划-20261108.md §3 并在证据 README 说明理由。",
+  "dataset": {
+    "scale": "standard",
+    "seed": 20261108,
+    "cases": 10000,
+    "runs": 100000,
+    "logs": 1000000
+  },
+  "sampling": {
+    "rounds": 3,
+    "samplesPerRound": 200,
+    "localSamplesPerRound": 20,
+    "warmupRounds": 2,
+    "note": "CI 固定机用 samplesPerRound；本机冒烟用 localSamplesPerRound（D32-5）。"
+  },
+  "api": {
+    "regression": {"pct": 0.10, "floorMs": 30},
+    "slowQuery": {"warnMs": 200, "errorMs": 500},
+    "scenarios": {
+      "cases_list": {
+        "path": "/api/projects/{projectId}/cases?page=1&size=50",
+        "p95Ms": 150,
+        "p99Ms": 300,
+        "note": "1 万用例数据集下的首页列表"
+      },
+      "runs_list": {
+        "path": "/api/execution/runs?projectId={projectId}&page=1&size=50",
+        "p95Ms": 150,
+        "p99Ms": 300,
+        "note": "10 万运行数据集下的首页列表"
+      },
+      "reports_list": {
+        "path": "/api/reports?projectId={projectId}&page=1&size=50",
+        "p95Ms": 150,
+        "p99Ms": 300
+      },
+      "audit_list": {
+        "path": "/api/audit?projectId={projectId}&page=1&size=100",
+        "p95Ms": 150,
+        "p99Ms": 300
+      }
+    }
+  },
+  "frontend": {
+    "entryGzipBytes": 307200,
+    "routeGzipBytes": 153600,
+    "routeSwitchMs": 300,
+    "note": "入口 300 KiB gzip / 单路由块 150 KiB gzip；由 tools/check_bundle_budget.py 执行"
+  },
+  "longList": {
+    "rows": 10000,
+    "minFps": 50,
+    "note": "Playwright + rAF 采样，浏览器项在 CI/版本候选执行"
+  },
+  "runChain": {
+    "createP95Ms": 200,
+    "logRowsPerSecond": 5000,
+    "note": "运行创建为写接口，不在只读采样内；由 EW32-10 压测报告提供"
+  }
+}

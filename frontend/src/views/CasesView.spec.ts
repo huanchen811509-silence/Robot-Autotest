@@ -54,12 +54,24 @@ vi.mock('@/api/cases', () => ({
     })),
     capabilities: vi.fn(async () => []),
     create: vi.fn(),
+    update: vi.fn(),
     submit: vi.fn(),
     review: vi.fn(),
     remove: vi.fn(),
     batch: vi.fn(),
     previewImport: vi.fn(),
     commitImport: vi.fn(),
+  },
+}))
+
+// 保存视图（v3.1.0）在挂载时会请求一次列表；本文件只测勾选/执行接线，
+// 打桩避免 happy-dom 真的去连后端（会刷出 ECONNREFUSED 噪声）。
+vi.mock('@/api/views', () => ({
+  viewsApi: {
+    list: vi.fn(async () => []),
+    create: vi.fn(),
+    update: vi.fn(),
+    remove: vi.fn(),
   },
 }))
 
@@ -276,5 +288,62 @@ describe('CasesView 执行所选（EXEC-02）', () => {
     expect(root.textContent).toContain(
       i18n.global.t('cases.run.blocked', { codes: 'DESTRUCT-999(L2)' }),
     )
+  })
+})
+
+describe('CasesView 表单草稿（v3.1.0）', () => {
+  const DRAFT_KEY = 'robot-autotest:draft:1:case:new'
+
+  function clickByText(root: ParentNode, label: string): void {
+    const found = [...root.querySelectorAll<HTMLButtonElement>('button')].find((button) =>
+      button.textContent?.trim() === label,
+    )
+    found?.click()
+  }
+
+  it('再次打开新建表单时提示较新草稿，恢复后回填字段', async () => {
+    localStorage.setItem(
+      DRAFT_KEY,
+      JSON.stringify({
+        value: { caseCode: 'DRAFT-001', title: '草稿标题', priority: 'P1', safetyLevel: 'LX' },
+        savedAt: Date.now(),
+      }),
+    )
+
+    const root = await mountView()
+    clickByText(root, i18n.global.t('common.create'))
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    await nextTick()
+
+    // NModal 内容 Teleport 到 body，按钮不在 root 里
+    clickByText(document.body, i18n.global.t('draft.restore'))
+    await nextTick()
+
+    const inputs = [...root.querySelectorAll<HTMLInputElement>('input')]
+    expect(inputs.some((input) => input.value === 'DRAFT-001')).toBe(true)
+    expect(inputs.some((input) => input.value === '草稿标题')).toBe(true)
+
+    localStorage.removeItem(DRAFT_KEY)
+  })
+
+  it('丢弃草稿后不再回填，并清除存储', async () => {
+    localStorage.setItem(
+      DRAFT_KEY,
+      JSON.stringify({
+        value: { caseCode: 'DRAFT-002', title: '旧草稿', priority: 'P2', safetyLevel: 'LX' },
+        savedAt: Date.now(),
+      }),
+    )
+
+    const root = await mountView()
+    clickByText(root, i18n.global.t('common.create'))
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    await nextTick()
+    clickByText(document.body, i18n.global.t('draft.discard'))
+    await nextTick()
+
+    expect(localStorage.getItem(DRAFT_KEY)).toBeNull()
+    const inputs = [...root.querySelectorAll<HTMLInputElement>('input')]
+    expect(inputs.some((input) => input.value === 'DRAFT-002')).toBe(false)
   })
 })

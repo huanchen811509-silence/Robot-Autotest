@@ -12,8 +12,11 @@
 #   19 证据完整性（v2.2 CLOS-02：output.xml metadata 六必填 + 三处单测基线只增不减
 #      + AI 契约机检（AI-06：零 prompt 文件开关 / 零硬编码凭据 / 零 L4-L5 自动提交））
 #
-# 本脚本共 19 步：01–17 为 run 步，18 为末尾 structure_selfcheck 内联块，19 为证据完整性 run 步。
-# 结构自检：若步骤 13 / 14 / 17 / 19 被删除，脚本末尾的 check_structure 必须变红（`--selfcheck` 会实证 13/14）。
+# 本脚本共 27 步：01–17 为 run 步，18 为末尾 structure_selfcheck 内联块，19 为证据完整性 run 步，
+# 20–23 为 v3.2.0 的契约 / 包体 / 性能预算 / 版本一致性门禁。
+# 24–27 为 v3.3.0+v3.4.0 的 AI 评测 / 安全扫描 / 容量+备份演练 / i18n+对比度门禁。
+# 结构自检：若步骤 13 / 14 / 17 / 19 / 20 / 21 / 22 / 23 / 24 / 25 / 26 / 27 被删除，
+# check_structure 必须变红（`--selfcheck` 会实证 13/14、20/23 与新增的 24/27）。
 #
 # 用法：
 #   bash scripts/gates.sh              # 全量门禁，0 = 全 PASS
@@ -53,6 +56,14 @@ check_structure() {
   grep -qE '^run 14 report_sensitive ' "$file" || { echo "STRUCT_FAIL 缺少步骤 14 report_sensitive"; bad=1; }
   grep -qE '^run 17 perf_baseline ' "$file" || { echo "STRUCT_FAIL 缺少步骤 17 perf_baseline"; bad=1; }
   grep -qE '^run 19 evidence_integrity ' "$file" || { echo "STRUCT_FAIL 缺少步骤 19 evidence_integrity"; bad=1; }
+  grep -qE '^run 20 api_contract ' "$file" || { echo "STRUCT_FAIL 缺少步骤 20 api_contract"; bad=1; }
+  grep -qE '^run 21 bundle_budget ' "$file" || { echo "STRUCT_FAIL 缺少步骤 21 bundle_budget"; bad=1; }
+  grep -qE '^run 22 perf_budget ' "$file" || { echo "STRUCT_FAIL 缺少步骤 22 perf_budget"; bad=1; }
+  grep -qE '^run 23 version_consistency ' "$file" || { echo "STRUCT_FAIL 缺少步骤 23 version_consistency"; bad=1; }
+  grep -qE '^run 24 ai_eval ' "$file" || { echo "STRUCT_FAIL 缺少步骤 24 ai_eval"; bad=1; }
+  grep -qE '^run 25 security_scan ' "$file" || { echo "STRUCT_FAIL 缺少步骤 25 security_scan"; bad=1; }
+  grep -qE '^run 26 capacity_backup ' "$file" || { echo "STRUCT_FAIL 缺少步骤 26 capacity_backup"; bad=1; }
+  grep -qE '^run 27 i18n_contrast ' "$file" || { echo "STRUCT_FAIL 缺少步骤 27 i18n_contrast"; bad=1; }
   return "$bad"
 }
 
@@ -72,6 +83,10 @@ if [ "${1:-}" = "--selfcheck" ]; then
   sed '/^run 13 /d' "$SELF" > "$tmp/no13.sh"
   sed '/^run 14 /d' "$SELF" > "$tmp/no14.sh"
   sed '/^run 19 /d' "$SELF" > "$tmp/no19.sh"
+  sed '/^run 20 /d' "$SELF" > "$tmp/no20.sh"
+  sed '/^run 23 /d' "$SELF" > "$tmp/no23.sh"
+  sed '/^run 24 /d' "$SELF" > "$tmp/no24.sh"
+  sed '/^run 27 /d' "$SELF" > "$tmp/no27.sh"
   if check_structure "$tmp/no13.sh"; then
     echo 'SELFCHECK 删步骤 13 FAIL（删了仍然绿）'; FAILS=$((FAILS + 1))
   else
@@ -86,6 +101,26 @@ if [ "${1:-}" = "--selfcheck" ]; then
     echo 'SELFCHECK 删步骤 19 FAIL（删了仍然绿）'; FAILS=$((FAILS + 1))
   else
     echo 'SELFCHECK 删步骤 19 PASS（删了变红）'
+  fi
+  if check_structure "$tmp/no20.sh"; then
+    echo 'SELFCHECK 删步骤 20 FAIL（删了仍然绿）'; FAILS=$((FAILS + 1))
+  else
+    echo 'SELFCHECK 删步骤 20 PASS（删了变红）'
+  fi
+  if check_structure "$tmp/no23.sh"; then
+    echo 'SELFCHECK 删步骤 23 FAIL（删了仍然绿）'; FAILS=$((FAILS + 1))
+  else
+    echo 'SELFCHECK 删步骤 23 PASS（删了变红）'
+  fi
+  if check_structure "$tmp/no24.sh"; then
+    echo 'SELFCHECK 删步骤 24 FAIL（删了仍然绿）'; FAILS=$((FAILS + 1))
+  else
+    echo 'SELFCHECK 删步骤 24 PASS（删了变红）'
+  fi
+  if check_structure "$tmp/no27.sh"; then
+    echo 'SELFCHECK 删步骤 27 FAIL（删了仍然绿）'; FAILS=$((FAILS + 1))
+  else
+    echo 'SELFCHECK 删步骤 27 PASS（删了变红）'
   fi
   rm -rf "$tmp"
   printf '\nSELFCHECK_RESULT FAILS=%s\n' "$FAILS"
@@ -159,6 +194,39 @@ fi
 # 零 L4-L5 自动提交、假 CLI 夹具齐全）：它此前只在证据 README 里「独立执行」，
 # 没进门禁就等于没有——2026-11-08 补接，避免 AI 契约回退无人发现。
 run 19 evidence_integrity "python3 tools/check_output_metadata.py && python3 tools/check_test_baseline.py && python3 tools/check_ai_contract.py"
+
+# v3.2.0 新增三步（编号续在 19 之后，不重排既有判据）：
+# 20 OpenAPI 快照漂移：控制器改动必须同步 docs/contracts/openapi.json，否则契约门禁失效。
+#    与 CoreApiContractTest 分工：这里判「端点/参数集合」漂移，单测判字段语义。
+run 20 api_contract "python3 tools/gen_api_contract.py --check"
+
+# 21 前端包体：主入口 ≤300 KiB / 单路由块 ≤150 KiB / 单路由加载总量 ≤300 KiB。
+#    必须在 04 frontend_build 之后，否则扫的是旧 dist。
+run 21 bundle_budget "python3 tools/check_bundle_budget.py"
+
+# 22 性能预算：API p95/p99、长列表 fps、运行链时延/吞吐对账 tools/perf-budget.json。
+#    --require：报告缺失直接失败，避免「忘了采样」被当成通过（EW32-01 报告已入库）。
+run 22 perf_budget "python3 tools/check_perf_budget.py --report docs/evidence/v3.2.0/EW32-01/perf/perf-report.json --require"
+
+# 23 版本一致性：VERSION / 后端构建产物 / CHANGELOG 两份副本 / openapi 快照 / 运行期关于页 /
+#    入口托管的 /CHANGELOG.md 必须同版本。v3.2.0 真实发生过「VERSION 升了、关于页仍报 3.0.1」，
+#    而 22 步全绿——本步把「部署了但没重建」变成红。--static 只做静态四副本对账。
+run 23 version_consistency "python3 tools/check_version_consistency.py"
+
+# 24 AI 黄金集评测（v3.3.0 / FR-3.3-08）：直接打后端真实端点，事实一致性 ≥95%、
+#    严重幻觉 0、拒答必须明确、流式首字 ≤3s；默认 fake CLI 契约，不依赖外部模型。
+run 24 ai_eval "python3 tools/ai_eval.py"
+
+# 25 安全扫描（v3.4.0 / FR-3.4-03）：密钥 / SAST / 危险依赖，高危必须为 0。
+run 25 security_scan "python3 tools/security_scan.py"
+
+# 26 容量与灾备（v3.4.0 / FR-3.4-01、05）：实测行数/体积/索引与归档候选 EXPLAIN，
+#    并校验 backup-drill.sh 写出的 RTO/RPO 证据。证据缺失直接红，不静默放行。
+run 26 capacity_backup "python3 tools/capacity_report.py && python3 tools/check_backup_status.py"
+
+# 27 无障碍 AA 与 i18n（v3.4.0 / FR-3.4-04）：中英键集相等、无占位缺失；
+#    主题×强调色的正文/大字对比度全部达标。沿用两台已有检查器，避免重复判据。
+run 27 i18n_contrast "python3 tools/check_i18n.py && python3 tools/check_contrast.py"
 
 printf '\nGATES_RESULT FAILS=%s\n' "$FAILS"
 exit "$FAILS"

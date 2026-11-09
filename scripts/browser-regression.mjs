@@ -26,8 +26,8 @@ const APP = process.env.APP_BASE ?? 'http://localhost:8001'
 const USER = process.env.QA_USER ?? 'qa-e2e-admin'
 const ROUTES = (process.env.REGRESS_ROUTES ?? '/,/runs,/assets,/reports/templates,/nodes').split(',')
 const VIEWPORTS = [1440, 1280]
-/** 根路由 `/` 会被前端重定向到 `/overview`；其余路由要求原样命中。 */
-const ROUTE_EXPECT = { '/': '/overview' }
+/** 根路由 `/` 会被前端重定向到 `/workbench`（v3.1 起的默认落地页）；其余路由要求原样命中。 */
+const ROUTE_EXPECT = { '/': '/workbench' }
 const SELFCHECK = process.argv.includes('--selfcheck')
 /**
  * B8：报告页的「对比 / 趋势」真实浏览器回归。

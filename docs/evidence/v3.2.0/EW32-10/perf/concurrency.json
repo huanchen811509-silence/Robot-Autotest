@@ -1,0 +1,145 @@
+{
+  "version": 1,
+  "mode": "concurrency",
+  "generatedAt": "2026-11-08T13:09:48.786874+00:00",
+  "environment": {
+    "base": "http://127.0.0.1:8001",
+    "projectId": 29,
+    "user": "qa-e2e-admin",
+    "readSeconds": 5.0,
+    "warmupSeconds": 2.0,
+    "writeSamplesPerLevel": 5,
+    "timeoutSeconds": 30.0
+  },
+  "machine": {
+    "host": "Thinkbook14G5",
+    "platform": "Linux-5.15.167.4-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "cpu": "13th Gen Intel(R) Core(TM) i5-13500H",
+    "cpuCount": 16,
+    "python": "3.12.3"
+  },
+  "budget": {
+    "apiScenarios": {
+      "cases_list": {
+        "path": "/api/projects/{projectId}/cases?page=1&size=50",
+        "p95Ms": 150,
+        "p99Ms": 300,
+        "note": "1 万用例数据集下的首页列表"
+      },
+      "runs_list": {
+        "path": "/api/execution/runs?projectId={projectId}&page=1&size=50",
+        "p95Ms": 150,
+        "p99Ms": 300,
+        "note": "10 万运行数据集下的首页列表"
+      },
+      "reports_list": {
+        "path": "/api/reports?projectId={projectId}&page=1&size=50",
+        "p95Ms": 150,
+        "p99Ms": 300
+      },
+      "audit_list": {
+        "path": "/api/audit?projectId={projectId}&page=1&size=100",
+        "p95Ms": 150,
+        "p99Ms": 300
+      }
+    },
+    "runChain": {
+      "createP95Ms": 200,
+      "logRowsPerSecond": 5000,
+      "note": "运行创建为写接口，不在只读采样内；由 EW32-10 压测报告提供"
+    }
+  },
+  "levels": [
+    {
+      "level": 20,
+      "read": {
+        "workers": 20,
+        "seconds": 5.0,
+        "warmupSeconds": 2.0,
+        "overall": {
+          "samples": 453,
+          "success": 337,
+          "successRate": 0.7439,
+          "p50Ms": 143.21,
+          "p95Ms": 569.08,
+          "p99Ms": 599.09,
+          "maxMs": 630.04,
+          "errorCodes": {
+            "INTERNAL_ERROR": 116
+          }
+        },
+        "scenarios": {
+          "cases_list": {
+            "samples": 116,
+            "success": 0,
+            "successRate": 0.0,
+            "p50Ms": 140.34,
+            "p95Ms": 564.46,
+            "p99Ms": 599.53,
+            "maxMs": 603.92,
+            "errorCodes": {
+              "INTERNAL_ERROR": 116
+            }
+          },
+          "runs_list": {
+            "samples": 112,
+            "success": 112,
+            "successRate": 1.0,
+            "p50Ms": 145.84,
+            "p95Ms": 569.44,
+            "p99Ms": 609.58,
+            "maxMs": 630.04,
+            "errorCodes": {}
+          },
+          "reports_list": {
+            "samples": 113,
+            "success": 113,
+            "successRate": 1.0,
+            "p50Ms": 158.13,
+            "p95Ms": 583.85,
+            "p99Ms": 594.78,
+            "maxMs": 613.15,
+            "errorCodes": {}
+          },
+          "audit_list": {
+            "samples": 112,
+            "success": 112,
+            "successRate": 1.0,
+            "p50Ms": 135.43,
+            "p95Ms": 538.66,
+            "p99Ms": 561.2,
+            "maxMs": 588.7,
+            "errorCodes": {}
+          }
+        }
+      },
+      "write": {
+        "samples": 5,
+        "success": 5,
+        "successRate": 1.0,
+        "p50Ms": 267.36,
+        "p95Ms": 269.52,
+        "p99Ms": 269.62,
+        "maxMs": 269.65,
+        "errorCodes": {},
+        "workers": 20,
+        "runIds": [
+          "RUN-20261108210948-c60004",
+          "RUN-20261108210948-c60001",
+          "RUN-20261108210948-c60000",
+          "RUN-20261108210948-c60003",
+          "RUN-20261108210948-c60002"
+        ],
+        "cancelled": 4
+      }
+    }
+  ],
+  "violations": [
+    "20 并发读成功率 0.7439 < 0.99",
+    "20 并发 cases_list p95 564.46ms > 150ms",
+    "20 并发 runs_list p95 569.44ms > 150ms",
+    "20 并发 reports_list p95 583.85ms > 150ms",
+    "20 并发 audit_list p95 538.66ms > 150ms",
+    "20 运行创建 p95 269.52ms > 预算 200ms"
+  ]
+}

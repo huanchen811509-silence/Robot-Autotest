@@ -59,4 +59,34 @@ class LayerRulesMetaTest {
         assertThatCode(() -> LayerRules.R2_DOMAIN_NOT_DEPEND_ON_FRAMEWORKS.check(clean))
                 .doesNotThrowAnyException();
     }
+
+    @Test
+    @DisplayName("R6：字段注入必须被拦住")
+    void 字段注入被拦() {
+        JavaClasses bad = importFixture("com.qa.archfixture.violation.fieldinjection");
+        assertThatThrownBy(() -> LayerRules.R6_NO_FIELD_INJECTION.check(bad))
+                .isInstanceOf(AssertionError.class)
+                .hasMessageContaining("FieldInjectedBean")
+                .hasMessageContaining("Autowired");
+    }
+
+    @Test
+    @DisplayName("R7：仓储接口依赖 Spring JDBC 必须被拦住")
+    void 仓储接口依赖Jdbc被拦() {
+        JavaClasses bad = importFixture("com.qa.archfixture.violation.repojdbc.application.repository");
+        assertThatThrownBy(() -> LayerRules.R7_REPOSITORY_INTERFACES_FREE_OF_SPRING_JDBC.check(bad))
+                .isInstanceOf(AssertionError.class)
+                .hasMessageContaining("LeakyOrderRepository")
+                .hasMessageContaining("JdbcTemplate");
+    }
+
+    @Test
+    @DisplayName("R8：端点返回裸类型必须被拦住")
+    void 端点返回裸类型被拦() {
+        JavaClasses bad = importFixture("com.qa.archfixture.violation.controllerraw.api");
+        assertThatThrownBy(() -> LayerRules.R8_CONTROLLER_ENDPOINTS_RETURN_ENVELOPE.check(bad))
+                .isInstanceOf(AssertionError.class)
+                .hasMessageContaining("RawController.raw")
+                .hasMessageContaining("必须是 ApiResponse");
+    }
 }

@@ -31,10 +31,16 @@ check() {
 # （execution_selection），故 69 → 70。V11_10..13 顺延落号是因为 V11_9 已应用，
 # Flyway 未开 out-of-order，插回 11.5 会被拒。
 # 2026-11-08 再续：V11_14 加 1 张（ai_assistant_config，AI 助手端点与凭据），故 70 → 71。
+# v3.1 V11_18 加 4 张（saved_view / batch_undo / notification_preference /
+# notification_read；已读按用户隔离，故单列一表），故 71 → 75。
+# v3.3 V11_21 加 8 张（ai_project_config / ai_prompt_template / ai_message /
+# alert_channel / alert_rule / alert_event / slo_daily / release_record），
+# v3.4 V11_22 加 4 张（archive_policy / archived_run / archived_test_result /
+# archived_keyword_result），故 75 → 87；V11_23 只补审计列，不加表。
 # V11_2 首版曾建 TRIGGER，因 binlog + 无 SUPER 权限被实测推翻（Error 1419），
 # 已改为纯建表 + 应用层不可变约束，见该迁移文件头修订说明。
 # 此处期望值随迁移演进而更新，不是「表越多越好」的口径。
-check "业务表数 = 71" "71" \
+check "业务表数 = 87" "87" \
     "SELECT COUNT(*) FROM information_schema.tables
      WHERE table_schema='$DB_NAME' AND table_name<>'flyway_schema_history';"
 
@@ -55,7 +61,11 @@ check "缺审计四列的表的数量 = 0" "0" \
         AND c.column_name IN ('created_at','created_by','updated_at','updated_by')
        WHERE t.table_schema='$DB_NAME' AND t.table_name<>'flyway_schema_history'
          AND t.table_name NOT IN ('resource_lease_history','run_attempt',
-                                  'test_report_export','test_report_audit','ai_action')
+                                  'test_report_export','test_report_audit','ai_action',
+                                  -- v3.3 / v3.4 新增的 append-only 表：只增不改，
+                                  -- 各自的时间语义见列注释（fired_at / archived_at / day）
+                                  'ai_message','alert_event','slo_daily',
+                                  'release_record','archived_run')
        GROUP BY t.table_name HAVING have < 4
      ) x;"
 # 这五张 append-only 表必须各有一个 created_at（5 张 → 期望 5，少一张就报）。

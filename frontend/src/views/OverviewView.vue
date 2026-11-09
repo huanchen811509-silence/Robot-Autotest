@@ -17,6 +17,7 @@ import {
 import { useAuthStore } from '@/stores/auth'
 import DataTable from '@/components/DataTable.vue'
 import ErrorLineView from '@/components/ErrorLine.vue'
+import OnboardingChecklist from '@/components/OnboardingChecklist.vue'
 import StatusTag from '@/components/StatusTag.vue'
 import { localizeError, type ErrorLine } from '@/utils/errors'
 import { EMPTY, formatDateTime, formatDuration, formatPercent } from '@/utils/format'
@@ -254,6 +255,8 @@ function rateBarClass(point: DigestTrendPoint): string {
     <ErrorLineView v-else-if="error" :error="error" />
 
     <template v-else-if="data">
+      <OnboardingChecklist :data="data" />
+
       <section class="stat-grid">
         <article class="stat-card">
           <span class="stat-label">{{ t('overview.cases.title') }}</span>

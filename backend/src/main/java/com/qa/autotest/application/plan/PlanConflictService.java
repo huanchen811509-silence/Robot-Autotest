@@ -1,12 +1,14 @@
 package com.qa.autotest.application.plan;
 
 import com.qa.autotest.application.iam.AccessControlService;
+import com.qa.autotest.application.notification.NotificationService;
 import com.qa.autotest.application.repository.PlanRepository;
 import com.qa.autotest.domain.common.PageResult;
 import com.qa.autotest.domain.iam.PermissionAction;
 import com.qa.autotest.domain.iam.PermissionResource;
 import com.qa.autotest.domain.plan.PlanRecord;
 import com.qa.autotest.domain.plan.PlanStatus;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
@@ -44,11 +46,20 @@ public class PlanConflictService {
     private final PlanRepository plans;
     private final AccessControlService access;
     private final Clock clock;
+    private final NotificationService notifications;
 
+    /** 兼容既有单测：不传通知服务时保持纯只读。 */
     public PlanConflictService(PlanRepository plans, AccessControlService access, Clock clock) {
+        this(plans, access, clock, null);
+    }
+
+    @Autowired
+    public PlanConflictService(PlanRepository plans, AccessControlService access, Clock clock,
+                               NotificationService notifications) {
         this.plans = plans;
         this.access = access;
         this.clock = clock;
+        this.notifications = notifications;
     }
 
     /**
@@ -94,7 +105,22 @@ public class PlanConflictService {
             }
             return Long.compare(left.planIds().get(0), right.planIds().get(0));
         });
+        if (notifications != null && !conflicts.isEmpty()) {
+            // 检测点本身就是「有冲突」的权威信号；按项目聚合一条，upsert 保证不刷屏。
+            notifications.notifyPlanConflict(projectId, "plan-conflict:" + projectId,
+                    summarize(conflicts));
+        }
         return conflicts;
+    }
+
+    private static String summarize(List<PlanConflict> conflicts) {
+        StringBuilder message = new StringBuilder("检测到 ")
+                .append(conflicts.size()).append(" 条计划冲突：")
+                .append(conflicts.get(0).detail());
+        if (conflicts.size() > 1) {
+            message.append(" 等");
+        }
+        return message.length() > 500 ? message.substring(0, 500) : message.toString();
     }
 
     private List<PlanRecord> loadAll(long projectId) {

@@ -24,6 +24,12 @@ UX-04 S1 会给主仓引入 Naive UI、lucide-vue-next、@fontsource/noto-sans-s
   注意：这两个数**含 vue runtime**，是「独立入口完整产物」，
   **不是接入主仓后的净增量**。
 
+v3.2.0 EW32-01 追加两档（FR-3.2-06 前端预算）：
+- 主入口闭包（index.html 引用的入口脚本 + 其静态 import 图）：300 KiB = 307200 B（gzip）；
+- 单个路由块（`*View-*.js`）：150 KiB = 153600 B（gzip）。
+  路由块按「每个文件」判，不按合计：一页过大就会拖慢该页自身首屏，
+  合计口径会把问题摊平到看不见。
+
 三档预算（统一按 1 KiB = 1024 B 换算，与既定口径「200 KiB = 204800 B」一致）：
 - 图标 chunk：15 KiB = 15360 B（gzip）。
 - 组件库 vendor chunk：200 KiB = 204800 B（gzip）。
@@ -70,6 +76,7 @@ from __future__ import annotations
 import argparse
 import gzip
 import os
+import posixpath
 import re
 import sys
 import tempfile
@@ -95,9 +102,31 @@ FONT_BUDGET = 800 * 1024       # 819200 B —— §2.2 步骤 2「首屏字体�
 # `AuditView-*.js` 里（171154 B / gzip 38630 B），被下面 `View-` 排除规则漏算，
 # 合计只有 105540 B 看着达标。实测差值 142553 - 105540 = 37013 B，与新 chunk
 # 37141 B 基本吻合，证明总量没变、只是从「不可见」变「可见」。
-# 因此预算上调到 160 KiB（163840 B）覆盖这个一直被漏算的共享体量，余量约 21 KiB；
-# 再往上就必须是真实的体积增长，需要单独论证。
-LAZY_BUDGET = 160 * 1024       # 163840 B
+# 因此那时把**合计**预算上调到 160 KiB（163840 B）。
+# v3.2.0 起改为按单包判（LAZY_CHUNK_BUDGET = 300 KiB）+ 单路由加载总量 300 KiB，
+# 理由见下方常量注释：合计口径会把不同页面的按需包相加，既会误伤，也会掩盖
+# 「某一页真的下载了 400 KiB」——后者由单路由总量这条新判据负责。
+
+# ---- v3.2.0 EW32-01：前端双阈值（PRD §3.2「主入口 JS / 路由块」） ----
+ENTRY_BUDGET = 300 * 1024      # 307200 B —— 主入口闭包 gzip
+ROUTE_BUDGET = 150 * 1024      # 153600 B —— 单个 *View-*.js gzip
+
+# Vite 产物里 index.html 的入口脚本 + ESM 静态 import（from"./x.js" / import"./x.js"）。
+# 动态 import("...") 不进首屏闭包，正则用「引号紧邻」把 import( 排除掉。
+ENTRY_SCRIPT_RE = re.compile(r'<script[^>]+src="([^"]+\.js)"', re.I)
+STATIC_IMPORT_RE = re.compile(r'(?:from|import)\s*["\']([^"\']+\.js)["\']')
+# 静态 from + 动态 import()：用于单路由可加载总量的闭包计算
+ALL_IMPORT_RE = re.compile(r'(?:from\s*|import\s*\(\s*|import\s*)["\']([^"\']+\.js)["\']')
+
+# 懒加载共享分包：v3.2.0 起按**单个 chunk** 判预算（上限与主入口同档 300 KiB），
+# 不再把互不相干的按需分包相加。原因：editor / DataTable / audit 只在各自页面加载，
+# 合计 400 KiB 不代表任一页面首屏要下载 400 KiB；用合计会逼着把编辑器重新塞回
+# EditorView 路由块（那正是 EW32-06 要修的 247 KiB）。总量仍打印为 INFO 供趋势对比。
+LAZY_CHUNK_BUDGET = ENTRY_BUDGET
+
+# 单路由实际加载总量：路由 chunk + 它可达的懒加载分包 - 已在入口闭包里的共享代码。
+# 上限沿用 300 KiB，用于证明「按需加载」没有把首屏搬到路由切换时。
+ROUTE_TOTAL_BUDGET = ENTRY_BUDGET
 
 # 标识是启发式：文件名或内容命中即认为属于该类 chunk（大小写不敏感）。
 # 若 Vite 产物里的标识形态变化（例如只留 n-* 类名、不再出现包名），需同步更新
@@ -171,7 +200,9 @@ def read_bundle(dist: Path) -> Bundle:
         data = path.read_bytes()
         entries.append(Entry(
             path=path,
-            rel=str(path.relative_to(dist)),
+            # 统一用正斜杠：下面的判据正则按 `assets/index-*.js` 写，Windows 的
+            # `assets\index-*.js` 会漏匹配，把入口与 vue/lucide 误算进懒加载预算。
+            rel=path.relative_to(dist).as_posix(),
             data=data,
             raw=len(data),
             gz=gzip_len(data),
@@ -183,6 +214,96 @@ def read_bundle(dist: Path) -> Bundle:
 def has_marker(e: Entry, marker: bytes) -> bool:
     """文件名或内容含标识（大小写不敏感）。"""
     return marker in e.path.name.lower().encode() or marker in e.data.lower()
+
+
+def _normalize_rel(spec: str) -> str:
+    clean = spec.split("?", 1)[0].split("#", 1)[0]
+    if clean.startswith("/"):
+        clean = clean[1:]
+    return posixpath.normpath(clean)
+
+
+def entry_scripts(bundle: Bundle) -> list[str]:
+    """从 index.html 取入口脚本的 dist 相对路径（保持声明顺序）。"""
+    html = next((e for e in bundle.entries if e.rel == "index.html"), None)
+    if html is None:
+        return []
+    text = html.data.decode("utf-8", "ignore")
+    return [m.group(1) for m in ENTRY_SCRIPT_RE.finditer(text)]
+
+
+def entry_closure(bundle: Bundle, starts: list[str]) -> list[Entry]:
+    """静态 import 闭包：入口脚本 + 它（递归）`from "./x.js"` 引用的 chunk。
+
+    只跟静态 import：动态 `import("...")` 是路由块，不属于首屏闭包。
+    找不到的 spec（例如外部 URL、非 .js 资产）直接跳过，不猜。
+    """
+    by_rel = {e.rel: e for e in bundle.js}
+    queue = [_normalize_rel(s) for s in starts]
+    seen: set[str] = set()
+    result: list[Entry] = []
+    while queue:
+        rel = queue.pop(0)
+        if rel in seen:
+            continue
+        entry = by_rel.get(rel)
+        if entry is None:
+            continue
+        seen.add(rel)
+        result.append(entry)
+        text = entry.data.decode("utf-8", "ignore")
+        for match in STATIC_IMPORT_RE.finditer(text):
+            spec = match.group(1)
+            if spec.startswith("http://") or spec.startswith("https://"):
+                continue
+            if spec.startswith("/"):
+                target = _normalize_rel(spec)
+            else:
+                base = entry.rel.rsplit("/", 1)[0] if "/" in entry.rel else ""
+                target = _normalize_rel(f"{base}/{spec}" if base else spec)
+            queue.append(target)
+    return result
+
+
+def module_closure(bundle: Bundle, start_rel: str,
+                   stop_rels: set[str] | None = None) -> list[Entry]:
+    """跟随静态 `from` 与动态 `import()` 的模块闭包，用于单路由加载总量。
+
+    与 `entry_closure` 的区别：这里要算「进入某页后还会按需拉什么」，
+    所以动态 import 也跟进；入口闭包只算首屏静态依赖。
+
+    `stop_rels` 里的文件（已在主入口闭包中）计入体积但不继续展开：否则路由块
+    引用共享 vendor 时会走回入口 chunk，再把入口里**全部路由的懒加载表**算进来，
+    导致每个页面都显示「加载了所有页面」。
+    """
+    by_rel = {e.rel: e for e in bundle.js}
+    stop = stop_rels or set()
+    queue = [_normalize_rel(start_rel)]
+    seen: set[str] = set()
+    result: list[Entry] = []
+    while queue:
+        rel = queue.pop(0)
+        if rel in seen:
+            continue
+        entry = by_rel.get(rel)
+        if entry is None:
+            continue
+        seen.add(rel)
+        result.append(entry)
+        if rel in stop:
+            continue
+        text = entry.data.decode("utf-8", "ignore")
+        for match in ALL_IMPORT_RE.finditer(text):
+            spec = match.group(1)
+            if spec.startswith("http://") or spec.startswith("https://"):
+                continue
+            if spec.startswith("/"):
+                target = _normalize_rel(spec)
+            else:
+                base = entry.rel.rsplit("/", 1)[0] if "/" in entry.rel else ""
+                target = _normalize_rel(f"{base}/{spec}" if base else spec)
+            queue.append(target)
+    return result
 
 
 def evaluate(bundle: Bundle) -> Result:
@@ -275,15 +396,17 @@ def evaluate(bundle: Bundle) -> Result:
     if lazy_shared:
         lazy_gz = sum(e.gz for e in lazy_shared)
         biggest = max(lazy_shared, key=lambda e: e.gz)
-        if lazy_gz > LAZY_BUDGET:
+        over = [e for e in lazy_shared if e.gz > LAZY_CHUNK_BUDGET]
+        for e in over:
             r.violations.append(
-                f"懒加载第三方分包超预算：{len(lazy_shared)} 个合计 gzip {lazy_gz} B > "
-                f"{LAZY_BUDGET} B（{LAZY_BUDGET // 1024} KiB）；最大 {biggest.rel} {biggest.gz} B"
+                f"懒加载分包超预算：{e.rel} gzip {e.gz} B > "
+                f"{LAZY_CHUNK_BUDGET} B（{LAZY_CHUNK_BUDGET // 1024} KiB）"
             )
-        else:
+        if not over:
             r.infos.append(
-                f"懒加载共享分包 {len(lazy_shared)} 个，gzip 合计 {lazy_gz} B ≤ "
-                f"{LAZY_BUDGET} B（{LAZY_BUDGET // 1024} KiB），达标（最大 {biggest.rel} {biggest.gz} B）"
+                f"懒加载共享分包 {len(lazy_shared)} 个，单包最大 {biggest.rel} "
+                f"{biggest.gz} B ≤ {LAZY_CHUNK_BUDGET} B（{LAZY_CHUNK_BUDGET // 1024} KiB），达标"
+                f"；按需总量 gzip 合计 {lazy_gz} B（仅趋势参考，不跨页相加判违规）"
             )
 
     # ---- (c) 字体 ≤ 800 KiB + font-display: swap（§2.2 步骤 2 / TC-S1-02） ----
@@ -368,6 +491,87 @@ def evaluate(bundle: Bundle) -> Result:
             "无法排除「字符串被换名」，故如实计入『未触发』，不假绿"
         )
 
+    # ---- (e) v3.2.0 前端双阈值：主入口闭包 ≤300 KiB / 单路由块 ≤150 KiB ----
+    starts = entry_scripts(bundle)
+    if not starts:
+        r.untriggered.append("主入口闭包（index.html 未声明 <script src>）")
+        r.infos.append(
+            "index.html 中未找到入口脚本；主入口 ≤300 KiB 检查未触发"
+            "（若产物结构变化，请同步 ENTRY_SCRIPT_RE）"
+        )
+    else:
+        closure = entry_closure(bundle, starts)
+        missing = [s for s in starts if _normalize_rel(s) not in {e.rel for e in closure}]
+        entry_gz = sum(e.gz for e in closure)
+        if not closure:
+            r.untriggered.append("主入口闭包（入口脚本不在产物内）")
+            r.infos.append(
+                f"index.html 声明的入口 {starts} 在产物中找不到同名 .js；"
+                "主入口预算无法判定（不假绿）"
+            )
+        else:
+            biggest = max(closure, key=lambda e: e.gz)
+            if entry_gz > ENTRY_BUDGET:
+                r.violations.append(
+                    f"主入口闭包 gzip {entry_gz} B > {ENTRY_BUDGET} B（300 KiB）："
+                    f"{len(closure)} 个文件，最大 {biggest.rel} {biggest.gz} B"
+                )
+            else:
+                r.infos.append(
+                    f"主入口闭包 gzip {entry_gz} B ≤ {ENTRY_BUDGET} B（300 KiB），"
+                    f"含 {len(closure)} 个文件（最大 {biggest.rel} {biggest.gz} B）"
+                )
+        if missing:
+            r.infos.append(
+                "入口声明里有未解析到文件的 src：" + ", ".join(missing)
+                + "（可能被 HTML 改写或产物不完整）"
+            )
+
+    routes = [
+        e for e in bundle.js
+        if re.search(r"(^|/)[^/]*View-[^/]*\.js$", e.rel)
+    ]
+    if not routes:
+        r.untriggered.append("路由块（未找到 *View-*.js）")
+        r.infos.append("未检测到路由视图 chunk；单路由块 ≤150 KiB 检查未触发")
+    else:
+        over = [e for e in routes if e.gz > ROUTE_BUDGET]
+        biggest = max(routes, key=lambda e: e.gz)
+        for e in over:
+            r.violations.append(
+                f"路由块超预算：{e.rel} gzip {e.gz} B > {ROUTE_BUDGET} B（150 KiB）"
+            )
+        if not over:
+            r.infos.append(
+                f"路由块 {len(routes)} 个，单块最大 {biggest.rel} {biggest.gz} B ≤ "
+                f"{ROUTE_BUDGET} B（150 KiB），达标"
+            )
+
+        # (e2) 单路由实际加载总量：路由块 + 其可达的按需分包，扣掉已在入口闭包里的共享代码。
+        # 这条防止「把大块挪进懒加载分包，让路由块数字变好看，但切页仍下载 250 KiB」。
+        entry_rels = set()
+        if starts:
+            entry_rels = {e.rel for e in entry_closure(bundle, starts)}
+        worst_rel = ""
+        worst_total = 0
+        for route in routes:
+            incremental = [e for e in module_closure(bundle, route.rel, entry_rels)
+                           if e.rel not in entry_rels]
+            total = sum(e.gz for e in incremental)
+            if total > worst_total:
+                worst_total = total
+                worst_rel = route.rel
+            if total > ROUTE_TOTAL_BUDGET:
+                r.violations.append(
+                    f"单路由加载总量超预算：{route.rel} 及其按需分包 gzip {total} B > "
+                    f"{ROUTE_TOTAL_BUDGET} B（{ROUTE_TOTAL_BUDGET // 1024} KiB）"
+                )
+        if worst_total <= ROUTE_TOTAL_BUDGET:
+            r.infos.append(
+                f"单路由加载总量（路由块 + 按需分包 - 入口已下载）最大 {worst_rel} "
+                f"{worst_total} B ≤ {ROUTE_TOTAL_BUDGET} B（{ROUTE_TOTAL_BUDGET // 1024} KiB），达标"
+            )
+
     return r
 
 
@@ -403,10 +607,12 @@ def report(bundle: Bundle, r: Result) -> None:
 # ---- 破坏性自检用的夹具：全部写在临时目录，不触碰 frontend/dist ----
 
 def _make_baseline(dist: Path) -> Path:
-    """构造满足计数下限、不含任何违规的最小 Vite 产物。"""
+    """构造满足计数下限、不含任何违规的最小 Vite 产物（含入口 script 引用）。"""
     assets = dist / "assets"
     assets.mkdir(parents=True)
-    (dist / "index.html").write_text("<!doctype html><html></html>", encoding="utf-8")
+    (dist / "index.html").write_text(
+        '<!doctype html><html><body><script type="module" src="./assets/index-AAAA.js">'
+        "</script></body></html>", encoding="utf-8")
     (assets / "index-AAAA.js").write_bytes(b"export const ok = 1;\n")
     # CSS 里放 swap：注入「字体超预算」用例时不会混入「缺 font-display」的额外违规
     (assets / "index-BBBB.css").write_bytes(b"body{color:#333;font-display:swap}\n")
@@ -432,8 +638,25 @@ def _inject_styleguide_leak(dist: Path) -> None:
     )
 
 
+def _inject_entry_over(dist: Path) -> None:
+    # 入口脚本换成一个不可压缩的大文件，gzip 后稳超 300 KiB
+    (dist / "assets" / "index-OVER.js").write_bytes(
+        b"/* entry */\n" + os.urandom(340_000)
+    )
+    (dist / "index.html").write_text(
+        '<!doctype html><html><body><script type="module" src="./assets/index-OVER.js">'
+        "</script></body></html>", encoding="utf-8")
+
+
+def _inject_route_over(dist: Path) -> None:
+    # 单个路由块不可压缩，gzip 后稳超 150 KiB
+    (dist / "assets" / "CasesView-OVER.js").write_bytes(
+        b"/* route */\n" + os.urandom(170_000)
+    )
+
+
 def self_test() -> int:
-    """破坏性自检：在临时目录伪造 dist，注入三类违规，确认 evaluate 真能拦截。
+    """破坏性自检：在临时目录伪造 dist，逐类注入违规，确认 evaluate 真能拦截。
 
     不污染 frontend/dist：每个用例一个 TemporaryDirectory，dist 通过参数传给
     read_bundle/evaluate；不改任何全局常量（无需 monkeypatch），上下文退出即
@@ -458,6 +681,8 @@ def self_test() -> int:
         ("图标超预算", _inject_icon_over, "图标"),
         ("字体超预算", _inject_font_over, "字体"),
         ("styleguide 标记泄漏", _inject_styleguide_leak, "styleguide"),
+        ("主入口超预算", _inject_entry_over, "主入口"),
+        ("单路由块超预算", _inject_route_over, "路由块"),
     ]
     for label, inject, keyword in cases:
         with tempfile.TemporaryDirectory(prefix="bundle-budget-selftest-") as tmp:
@@ -479,7 +704,7 @@ def self_test() -> int:
         print(f"[FAIL] 自检失败：{failures} 个用例未按预期工作", file=sys.stderr)
         return 1
     print(
-        "[SELFTEST] 通过：图标 / 字体 / styleguide 三类违规均可被拦截；"
+        "[SELFTEST] 通过：图标 / 字体 / styleguide / 主入口 / 单路由块五类违规均可被拦截；"
         "临时目录已随上下文销毁，frontend/dist 未被触碰"
     )
     return 0
@@ -525,13 +750,13 @@ def main() -> int:
         return 1
 
     extra = (
-        f"；4 项守门中 {len(r.untriggered)} 项因产物未检出目标资产/标记而未被实际触发验证"
+        f"；6 项守门中 {len(r.untriggered)} 项因产物未检出目标资产/标记而未被实际触发验证"
         "（详见上方 [INFO]）"
         if r.untriggered else ""
     )
     print(
         "\n[PASS] 构建产物体积守门通过：图标 ≤15 KiB / 组件库 ≤200 KiB / "
-        f"字体 ≤800 KiB / 无 styleguide 标记泄漏{extra}"
+        f"字体 ≤800 KiB / 无 styleguide 标记泄漏 / 主入口 ≤300 KiB / 单路由块 ≤150 KiB{extra}"
     )
     return 0
 

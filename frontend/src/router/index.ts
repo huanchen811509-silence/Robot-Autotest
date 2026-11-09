@@ -119,6 +119,21 @@ const router = createRouter({
       component: () => import('@/views/AuditView.vue'),
     },
     {
+      // 运维中心（v3.3.0 / FR-3.3-09..12）：SLO、告警、备份、发布、并发准入。
+      // 仅管理员：capability 与审计页一致，后端另有 isAdmin 校验兜底。
+      path: '/admin/ops',
+      name: 'admin-ops',
+      component: () => import('@/views/OpsCenterView.vue'),
+      meta: { capability: 'audit:read' },
+    },
+    {
+      // 归档中心（v3.4.0 / FR-3.4-01）：策略 / 预览 / 执行 / 冷查 / 恢复。
+      path: '/admin/archive',
+      name: 'admin-archive',
+      component: () => import('@/views/ArchiveCenterView.vue'),
+      meta: { capability: 'audit:read' },
+    },
+    {
       path: '/editor/:projectId',
       name: 'editor',
       component: () => import('@/views/EditorView.vue'),
@@ -280,6 +295,36 @@ if (import.meta.env.DEV) {
     component: () => import('@/views/StyleguideView.vue'),
     meta: { public: true },
   })
+  router.addRoute({
+    path: '/dev/grid-bench',
+    name: 'gridbench',
+    component: () => import('@/views/GridBenchView.vue'),
+    meta: { public: true },
+  })
+}
+
+/**
+ * 首屏稳定后空闲预取高频路由（FR-3.2-06「骨架与预取」）。
+ *
+ * <p>只调用路由记录里已经声明的动态 import 函数，不改变路由行为；ESM 缓存保证
+ * 真正导航时不会二次下载。默认只预取工作台 / 用例 / 运行三页：这三页是登录后
+ * 最常去的入口，其余页面继续按需加载，避免抢首屏带宽。
+ *
+ * <p>测试环境不触发：单测挂载 App 时不应真的去加载整棵视图树。
+ */
+const DEFAULT_PREFETCH = ['/workbench', '/cases', '/runs'] as const
+
+export function prefetchRouteViews(paths: readonly string[] = DEFAULT_PREFETCH): void {
+  if (import.meta.env.MODE === 'test') return
+  for (const path of paths) {
+    const resolved = router.resolve(path)
+    const record = resolved.matched[resolved.matched.length - 1]
+    const loader = record?.components?.default as unknown
+    if (typeof loader === 'function') {
+      // 预取失败不影响导航；导航时仍会重新 import 并由路由错误边界处理
+      ;(loader as () => Promise<unknown>)().catch(() => undefined)
+    }
+  }
 }
 
 export default router

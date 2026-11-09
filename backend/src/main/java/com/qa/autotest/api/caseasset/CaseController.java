@@ -1,6 +1,7 @@
 package com.qa.autotest.api.caseasset;
 
 import com.qa.autotest.application.caseasset.CaseImportService;
+import com.qa.autotest.common.query.PageQuery;
 import com.qa.autotest.application.caseasset.CapabilityService;
 import com.qa.autotest.application.caseasset.TestCaseService;
 import com.qa.autotest.common.ApiResponse;
@@ -9,6 +10,7 @@ import com.qa.autotest.domain.caseasset.TestCase;
 import com.qa.autotest.domain.common.PageResult;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -32,6 +34,16 @@ public class CaseController {
     public record CommitRequest(List<CaseImportService.ImportRow> rows) {
     }
 
+    /** 排序白名单：请求里的 key → 实际 SQL 列；未登记的字段一律 400（FR-3.2-02）。 */
+    private static final Map<String, String> SORTS = Map.of(
+            "id", "id",
+            "case_code", "case_code",
+            "title", "title",
+            "priority", "priority",
+            "review_status", "review_status",
+            "updated_at", "updated_at",
+            "created_at", "created_at");
+
     private final TestCaseService cases;
     private final CapabilityService capabilities;
     private final CaseImportService importer;
@@ -53,9 +65,14 @@ public class CaseController {
             @RequestParam(required = false) String capability,
             @RequestParam(required = false) String safetyLevel,
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false) Long beforeId) {
+        PageQuery paging = beforeId == null
+                ? PageQuery.of(page, size, sort, SORTS, "id")
+                : PageQuery.keyset(size, beforeId);
         return ApiResponse.ok(cases.page(projectId, keyword, domain, priority, reviewStatus,
-                capability, safetyLevel, page, Math.min(size, 200)));
+                capability, safetyLevel, paging));
     }
 
     @GetMapping("/cases/{id}")

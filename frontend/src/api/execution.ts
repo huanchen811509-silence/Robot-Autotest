@@ -117,6 +117,14 @@ export interface RunProgress {
   lastTest: string | null
   lastVerdict: string | null
   elapsedSeconds: number
+  /** 预计剩余秒数；后端未给出或已结束时为 null。 */
+  etaSeconds?: number | null
+  /** 最近一次心跳距今秒数；仅在 stalled 时前端展示。 */
+  heartbeatAgeSeconds?: number | null
+  /** 执行中超过 60s 没有心跳。 */
+  stalled?: boolean
+  /** 已结束（与 state 的终态对齐，便于前端直接隐藏 ETA）。 */
+  finished?: boolean
 }
 
 export interface PageResult<T> {
@@ -200,6 +208,35 @@ export interface SafetyPrecheck {
   blocked: BlockedCase[]
 }
 
+export type PrecheckVerdict = 'BLOCK' | 'WARN' | 'OK'
+export type PrecheckLevel = 'BLOCK' | 'WARN' | 'OK'
+
+export interface PrecheckCheck {
+  key: string
+  level: PrecheckLevel
+  title: string
+  detail: string
+  hint: string | null
+}
+
+/** 发起运行前的预检结果（阻断/警告/通过 + 规模估算）。 */
+export interface RunPrecheckResult {
+  verdict: PrecheckVerdict
+  checks: PrecheckCheck[]
+  estimatedTotal: number
+  estimatedSeconds: number
+  sampleSize: number
+}
+
+export interface PrecheckPayload {
+  projectId: number
+  testSetId?: number | null
+  planId?: number | null
+  caseIds?: number[]
+  shards?: number | null
+  nodeId?: number | null
+}
+
 export interface RunPageQuery {
   state?: string
   page?: number
@@ -244,6 +281,17 @@ export const executionApi = {
       `/execution/cases/safety-precheck${toQuery({ projectId })}`,
       { method: 'POST', body: JSON.stringify({ caseIds }) },
     )
+  },
+
+  /**
+   * 发起运行前的预检（v3.1.0）：返回阻断/警告/通过明细与预计规模。
+   * 预检失败不阻断执行，调用方按「没有预检」直接往下走。
+   */
+  precheck(payload: PrecheckPayload): Promise<RunPrecheckResult> {
+    return request<RunPrecheckResult>('/execution/precheck', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
   },
 
   page(projectId: number, query: RunPageQuery = {}): Promise<PageResult<ExecutionRun>> {

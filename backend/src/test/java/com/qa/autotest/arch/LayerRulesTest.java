@@ -31,4 +31,14 @@ public class LayerRulesTest {
 
     @ArchTest
     static final ArchRule 分层无环 = LayerRules.NO_PACKAGE_CYCLES;
+
+    @ArchTest
+    static final ArchRule R6_禁止字段注入 = LayerRules.R6_NO_FIELD_INJECTION;
+
+    @ArchTest
+    static final ArchRule R7_仓储接口不依赖SpringJdbc =
+            LayerRules.R7_REPOSITORY_INTERFACES_FREE_OF_SPRING_JDBC;
+
+    @ArchTest
+    static final ArchRule R8_端点返回统一信封 = LayerRules.R8_CONTROLLER_ENDPOINTS_RETURN_ENVELOPE;
 }

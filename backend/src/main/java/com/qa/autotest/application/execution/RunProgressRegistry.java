@@ -67,7 +67,17 @@ public class RunProgressRegistry {
         State state = states.get(runId);
         if (state != null) {
             state.phase = phase;
+            state.lastActivityAt = clock.instant();
         }
+    }
+
+    /**
+     * 最近一次活动时间：开始、阶段切换、任意控制台行都会刷新。
+     * 进度接口用它算心跳年龄，判断「RUNNING 但长时间没有输出」。
+     */
+    public java.time.Instant lastActivityAt(String runId) {
+        State state = states.get(runId);
+        return state == null ? null : state.lastActivityAt;
     }
 
     /** 吃一行控制台输出；不是结果行/汇总行就忽略。 */
@@ -79,6 +89,7 @@ public class RunProgressRegistry {
         if (state == null) {
             return;
         }
+        state.lastActivityAt = clock.instant();
         String text = stripPrefix(line);
         Matcher summary = SUMMARY.matcher(text);
         if (summary.find()) {
@@ -192,6 +203,7 @@ public class RunProgressRegistry {
 
     private static final class State {
         private final Instant startedAt;
+        private volatile Instant lastActivityAt;
         private volatile String phase = "running";
         private int completed;
         private int passed;
@@ -204,6 +216,7 @@ public class RunProgressRegistry {
 
         private State(Instant startedAt) {
             this.startedAt = startedAt;
+            this.lastActivityAt = startedAt;
         }
     }
 }

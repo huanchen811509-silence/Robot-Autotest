@@ -2,6 +2,8 @@ package com.qa.autotest.infrastructure;
 
 import com.qa.autotest.application.repository.RunRepository;
 import com.qa.autotest.application.repository.RunRetryOrigin;
+import com.qa.autotest.common.db.SlowQuery;
+import com.qa.autotest.common.query.PageQuery;
 import com.qa.autotest.common.tenant.TenantGuard;
 import com.qa.autotest.domain.common.PageResult;
 import com.qa.autotest.domain.execution.RunOrigin;
@@ -33,6 +35,12 @@ public class RunRepositoryJdbc implements RunRepository {
                    failure_reason, failure_message, artifacts_dir, enqueued_at, started_at, finished_at
               FROM run
             """;
+
+    /**
+     * 按 id 排序（键集 / sort=id）时强制走 (project_id, id)：索引变多后优化器可能
+     * 误选 enqueued_at 索引再 filesort，这里固定路径（依据见 EW32-02 EXPLAIN 日志）。
+     */
+    private static final String SELECT_BY_ID_INDEX = SELECT + " FORCE INDEX (idx_run_project_id)";
 
     private static final RowMapper<RunRecord> MAPPER = (rs, rowNum) -> new RunRecord(
             rs.getLong("id"),
@@ -284,6 +292,11 @@ public class RunRepositoryJdbc implements RunRepository {
 
     @Override
     public PageResult<RunRecord> page(long projectId, RunState state, int page, int size) {
+        return page(projectId, state, PageQuery.of(page, size));
+    }
+
+    @Override
+    public PageResult<RunRecord> page(long projectId, RunState state, PageQuery paging) {
         StringBuilder where = new StringBuilder(" WHERE project_id = ?");
         List<Object> args = new ArrayList<>();
         args.add(projectId);
@@ -294,12 +307,26 @@ public class RunRepositoryJdbc implements RunRepository {
         String countSql = "SELECT COUNT(*) FROM run" + where;
         TenantGuard.requireProjectScope(countSql, "run");
         Long total = jdbc.queryForObject(countSql, Long.class, args.toArray());
-        args.add(size);
-        args.add((page - 1) * size);
-        String listSql = SELECT + where + " ORDER BY enqueued_at DESC, id DESC LIMIT ? OFFSET ?";
+        String order = paging.explicitSort() ? paging.orderBy() : "enqueued_at DESC, id DESC";
+        List<Object> listArgs = new ArrayList<>(args);
+        String listWhere = where.toString();
+        if (paging.keysetMode()) {
+            // 键集：按 id 倒序取游标之后的一段（FR-3.2-02）。
+            order = "id DESC";
+            listWhere += " AND id < ?";
+            listArgs.add(paging.beforeId());
+        }
+        listArgs.add(paging.size());
+        String select = order.startsWith("id ") ? SELECT_BY_ID_INDEX : SELECT;
+        String listSql = select + listWhere + " ORDER BY " + order + " LIMIT ?"
+                + (paging.keysetMode() ? "" : " OFFSET ?");
+        if (!paging.keysetMode()) {
+            listArgs.add(paging.offset());
+        }
         TenantGuard.requireProjectScope(listSql, "run");
-        List<RunRecord> rows = jdbc.query(listSql, MAPPER, args.toArray());
-        return new PageResult<>(rows, total == null ? 0 : total, page, size);
+        List<RunRecord> rows = SlowQuery.measure("run.page", listSql,
+                () -> jdbc.query(listSql, MAPPER, listArgs.toArray()));
+        return new PageResult<>(rows, total == null ? 0 : total, paging.page(), paging.size());
     }
 
     @Override

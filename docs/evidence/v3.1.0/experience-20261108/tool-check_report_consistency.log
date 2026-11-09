@@ -1,0 +1,2 @@
+﻿四格式字段集合一致性校验（TPLX-03）。
+用法: python3 tools/check_report_consistency.py <a.html> <b.docx> ...（至少 2 个）

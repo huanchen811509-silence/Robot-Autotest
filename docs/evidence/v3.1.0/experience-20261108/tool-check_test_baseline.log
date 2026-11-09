@@ -1,0 +1,21 @@
+﻿==============================================================================
+CLOS-02 · 三处单测回归基线机检（FR-v2.2-28）
+==============================================================================
+[基线] docs/evidence/v3.0.1/test-baseline.json | capturedAt=2026-11-08
+       floor={'frontend': 325, 'backend': 1016, 'editor': 219}（防下调）  rule=只增不减：三处当前 tests 必须 >= 各自 baseline.tests，且 failures/errors 必须均为 0；baseline.tests 不得低于 floor（防止偷偷调低基线来放过倒退）。floor 固定为本版起点读数，永不随日志上涨而上调。
+
+[判据自校验] 临时目录构造假日志，逐组走 parse_log + evaluate：
+  [PASS] 正常三处读数 + 正常基线 -> 判据接受（预期接受） | 0 问题
+  [PASS] backend failures=1 假日志 + 正常基线 -> 判据判红（预期判红） | backend: failures=1 errors=0，必须为 0
+  [PASS] 正常三处读数 + 基线被下调到 1 -> 判据判红（预期判红） | backend: 基线被下调 baseline.tests=1 < floor=1016（拒绝放过倒退）
+  [PASS] backend 日志乱码（解析不出） + 正常基线 -> 判据判红（预期判红） | backend: 无有效读数（日志缺失或解析失败）; backend: 解析失败 -> 未解析出 'Tests run: N, Failures: F, Errors: E'
+  [PASS] 三份日志全缺失 -> 判据判红（预期判红） | frontend: 日志缺失 docs/evidence/gates/logs/02-frontend_test.log; backend: 日志缺失 docs/evidence/gates/logs/05-backend_test.log
+PASS  判据自校验：5 组样本全部符合预期（正常放行、failures=1 判红、下调基线判红、乱码日志判红、日志缺失判红）
+
+  FAIL frontend: 无有效读数（日志缺失或解析失败）
+  FAIL backend: 无有效读数（日志缺失或解析失败）
+  FAIL editor: 无有效读数（日志缺失或解析失败）
+  FAIL frontend: 日志缺失 docs/evidence/gates/logs/02-frontend_test.log
+  FAIL backend: 日志缺失 docs/evidence/gates/logs/05-backend_test.log
+  FAIL editor: 日志缺失 docs/evidence/gates/logs/11-editor_test.log
+结论 FAIL：三处基线判据未达标（日志缺失/解析失败/倒退/failures 非 0 均不放行）

@@ -12,6 +12,7 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { NConfigProvider } from 'naive-ui'
 import { useRoute, useRouter } from 'vue-router'
+import { prefetchRouteViews } from '@/router'
 import { useI18n } from 'vue-i18n'
 import { useLocaleStore } from '@/stores/locale'
 import { useAuthStore } from '@/stores/auth'
@@ -28,7 +29,9 @@ import AppNav from '@/components/AppNav.vue'
 import AppearanceDialog from '@/components/AppearanceDialog.vue'
 import ConfirmModal from '@/components/ConfirmModal.vue'
 import CommandPalette from '@/components/CommandPalette.vue'
+import ShortcutPanel from '@/components/ShortcutPanel.vue'
 import AiPanelDrawer from '@/components/AiPanelDrawer.vue'
+import { isEditableTarget } from '@/utils/keyboard'
 import { useAiDrawer } from '@/composables/useAiDrawer'
 import { performLogout } from '@/composables/useLogout'
 import {
@@ -67,13 +70,20 @@ const nav = computed<NavNode[]>(() =>
 
 // NAV-04：命令面板全局快捷键。打印页/登录页不响应，避免无头打印被快捷键干扰。
 const paletteOpen = ref(false)
+// FR-3.1-09：? 打开快捷键面板；输入控件内不触发，避免把问号吃掉。
+const shortcutsOpen = ref(false)
 // FR-AI-07：顶栏入口与抽屉按 /api/ai/state 的 enabled 显隐（顶栏按钮已移到 AppHeader）。
 const aiEnabled = ref(false)
 function onGlobalKeydown(event: KeyboardEvent): void {
+  if (isStandalone.value) return
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
-    if (isStandalone.value) return
     event.preventDefault()
     paletteOpen.value = !paletteOpen.value
+    return
+  }
+  if (event.key === '?' && !isEditableTarget(event.target)) {
+    event.preventDefault()
+    shortcutsOpen.value = true
   }
 }
 
@@ -99,6 +109,19 @@ async function logout(): Promise<void> {
 
 onMounted(() => window.addEventListener('keydown', onGlobalKeydown))
 onUnmounted(() => window.removeEventListener('keydown', onGlobalKeydown))
+
+// FR-3.2-06：首屏稳定后空闲预取高频路由，路由切换不再等下载
+onMounted(() => {
+  router.isReady().then(() => {
+    const idle = (globalThis as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void })
+      .requestIdleCallback
+    if (typeof idle === 'function') {
+      idle(() => prefetchRouteViews(), { timeout: 3000 })
+    } else {
+      setTimeout(() => prefetchRouteViews(), 1500)
+    }
+  })
+})
 
 // 偏好跟随用户：同一浏览器换账号登录（App 不重挂）也要切到当前用户的服务端偏好，
 // 只靠启动时拉一次的话，第二个登录的人会一直用第一个人的主题/强调色。
@@ -162,6 +185,8 @@ onMounted(async () => {
       :class="{ 'has-drawer': aiOpen, 'side-collapsed': sideCollapsed }"
       :style="{ '--ai-drawer-w': `${aiWidth}px` }"
     >
+      <a class="skip-link" href="#main">{{ t('a11y.skipToMain') }}</a>
+
       <aside class="app-side">
         <!-- v2.3 / FR-UI-18：折叠按钮从顶栏移到侧栏头部——它是外壳控制，不是页面动作。
              折叠后品牌区隐藏，按钮居中保留（否则侧栏折叠后无法展开，只能清缓存）。 -->
@@ -184,11 +209,12 @@ onMounted(async () => {
       <AppHeader
         :ai-enabled="aiEnabled"
         @open-palette="paletteOpen = true"
+        @open-shortcuts="shortcutsOpen = true"
         @open-appearance="appearanceOpen = true"
         @logout="logout"
       />
 
-      <main class="app-main">
+      <main id="main" class="app-main" tabindex="-1">
         <p v-if="auth.passwordExpired" class="banner-warn">{{ t('login.passwordExpired') }}</p>
 
         <section class="app-body">
@@ -199,6 +225,7 @@ onMounted(async () => {
       <AppearanceDialog v-model:open="appearanceOpen" />
       <ConfirmModal />
       <CommandPalette v-model:open="paletteOpen" />
+      <ShortcutPanel v-model:open="shortcutsOpen" />
       <AiPanelDrawer v-if="aiEnabled" v-model:open="aiOpen" :width="aiWidth" @update:width="setAiWidth" :project-id="auth.projectId ?? 0" />
     </div>
   </NConfigProvider>

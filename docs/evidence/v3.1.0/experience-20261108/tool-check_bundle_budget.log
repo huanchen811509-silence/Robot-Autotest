@@ -1,0 +1,131 @@
+﻿扫描产物目录：E:\workspace\自动化测试\Robot-Autotest\frontend\dist
+产物概览：共 117 个文件（JS 65 / CSS 46 / woff2 3 / 其它 3）
+全量 JS ：原始   2224581 B / gzip    686712 B（65 个文件）
+全量 CSS：原始    192897 B / gzip     41934 B（46 个文件）
+
+=== 产物文件清单（原始字节 / gzip 字节 / 文件名）===
+       3994 B / gzip      1604 B  assets/AboutView-B5ztrnfb.js
+       1430 B / gzip       517 B  assets/AboutView-ky8Mzb2X.css
+        244 B / gzip       170 B  assets/AdminView-BEBnRhvk.css
+      14012 B / gzip      4083 B  assets/AdminView-CLSNFPpk.js
+       2867 B / gzip       676 B  assets/AiAssistantsView-B6qkMdGj.css
+       6242 B / gzip      2220 B  assets/AiAssistantsView-PZnA8YLc.js
+        871 B / gzip       305 B  assets/asset-CDwA0ewG.js
+       1433 B / gzip       526 B  assets/AssetsView-CU_VqytG.css
+      59810 B / gzip     16371 B  assets/AssetsView-DqzYKHES.js
+     167230 B / gzip     37151 B  assets/audit-BKXBqKCb.js
+       4206 B / gzip      1807 B  assets/AuditView-BUCELnu7.js
+       4429 B / gzip      1704 B  assets/CaseBoardView-COKNz5q-.js
+       2006 B / gzip       627 B  assets/CaseBoardView-DFGJv6wp.css
+       2062 B / gzip       588 B  assets/cases-lkLanEOr.js
+       3301 B / gzip       747 B  assets/CaseSetsView-BQmsfhqi.css
+      15998 B / gzip      4525 B  assets/CaseSetsView-DdIeYYtU.js
+       7748 B / gzip      1539 B  assets/CasesView-DMAxqQMx.css
+      50721 B / gzip     15121 B  assets/CasesView-e5xuTRxA.js
+        687 B / gzip       310 B  assets/CclBaselineView-DUdXTdG7.css
+       1103 B / gzip       606 B  assets/CclBaselineView-Jhdu9Hze.js
+       1984 B / gzip      1020 B  assets/ChangelogView-ArWm_yQ4.js
+        979 B / gzip       396 B  assets/ChangelogView-BiQRr3j8.css
+      58662 B / gzip     17416 B  assets/CheckboxGroup-Cdu8PdIu.js
+       1125 B / gzip       609 B  assets/CollectionAnalysisView-CybQiGvZ.js
+        687 B / gzip       310 B  assets/CollectionAnalysisView-D_xamFAp.css
+        428 B / gzip       226 B  assets/DataTable-625Mmmx3.css
+     269110 B / gzip     76344 B  assets/DataTable-DGUrpJKS.js
+     809527 B / gzip    247191 B  assets/EditorView-D1KtI0aa.js
+      86589 B / gzip     13247 B  assets/EditorView-VVZeRiJy.css
+       2225 B / gzip       933 B  assets/EmptyState-BAUkiOHX.js
+       1172 B / gzip       371 B  assets/EmptyState-DJxlP0Ds.css
+        687 B / gzip       310 B  assets/EnvironmentCollectView-BIcAW91F.css
+       1094 B / gzip       586 B  assets/EnvironmentCollectView-LVgj8OVO.js
+        687 B / gzip       310 B  assets/EnvironmentOverviewView-7Qxutu75.css
+       1050 B / gzip       580 B  assets/EnvironmentOverviewView-BrTfcaEc.js
+        827 B / gzip       334 B  assets/EnvironmentPrepareView--eLq8Ei2.css
+       1095 B / gzip       592 B  assets/EnvironmentPrepareView-DIJ8Ee7c.js
+        707 B / gzip       341 B  assets/ErrorLine-D-aJ6yPk.css
+        739 B / gzip       436 B  assets/ErrorLine-DkOiYBuo.js
+        586 B / gzip       346 B  assets/errors-DE6bqfEY.js
+        478 B / gzip       269 B  assets/eta-eXb9pEII.js
+       1917 B / gzip       584 B  assets/execution-DeE_Qyfn.js
+        687 B / gzip       311 B  assets/ExecutionPrinciplesView-BxHIGCa8.css
+       1063 B / gzip       577 B  assets/ExecutionPrinciplesView-DhKwOGEv.js
+        642 B / gzip       306 B  assets/FailureClustersView-DaUHLtr7.css
+       5052 B / gzip      2075 B  assets/FailureClustersView-jShhBzf5.js
+        450 B / gzip       286 B  assets/ForbiddenView-C9axjRLw.css
+        598 B / gzip       402 B  assets/ForbiddenView-Dlak8A1p.js
+        680 B / gzip       255 B  assets/FormField-CwkPrgJO.css
+       1007 B / gzip       548 B  assets/FormField-DKi_o9JX.js
+        389 B / gzip       231 B  assets/GroupsView-CnkGST2U.css
+       2854 B / gzip      1326 B  assets/GroupsView-CxZOzcu6.js
+       2998 B / gzip      1424 B  assets/ImportPreflightView-CvNFYfOj.js
+        435 B / gzip       243 B  assets/ImportPreflightView-HgZWM_s9.css
+     447547 B / gzip    147051 B  assets/index-B6OwrAOD.js
+      41422 B / gzip      8194 B  assets/index-CA9WCEU-.css
+      10915 B / gzip      3783 B  assets/InputNumber-DMW3JR_2.js
+        687 B / gzip       310 B  assets/IperfBaselineView-CIZUT4g_.css
+       1107 B / gzip       610 B  assets/IperfBaselineView-TBLMmtKN.js
+      21168 B / gzip     21196 B  assets/jetbrains-mono-latin-V6pRDFza.woff2
+       1654 B / gzip       840 B  assets/KernelsView-BMEuTIXX.js
+        357 B / gzip       204 B  assets/KernelsView-Bq6rx3EQ.css
+       3303 B / gzip      1427 B  assets/LoginView-CEYc4mGs.js
+        392 B / gzip       206 B  assets/LoginView-GP4AgVyt.css
+      19616 B / gzip      4208 B  assets/lucide-BTBc_UKg.js
+       8473 B / gzip      2880 B  assets/NodesView---sT3zTy.js
+       1417 B / gzip       465 B  assets/NodesView-DXtKFBiN.css
+        572 B / gzip       386 B  assets/NotFoundView-BMI4ARv2.js
+      13304 B / gzip     13327 B  assets/noto-sans-sc-latin-C8q2FS1w.woff2
+     157588 B / gzip    157656 B  assets/noto-sans-sc-ui-O36FEA3P.woff2
+        224 B / gzip       184 B  assets/observability-C5liFLfc.js
+      15640 B / gzip      4550 B  assets/OverviewView-BcTxObEN.js
+       1862 B / gzip       528 B  assets/OverviewView-BZ9OvrFI.css
+       1113 B / gzip       612 B  assets/PerftestBaselineView-B0K5J5ay.js
+        687 B / gzip       309 B  assets/PerftestBaselineView-BYGSTMlQ.css
+       1700 B / gzip       549 B  assets/PlanGraphPage-Cu5q91D-.css
+       7488 B / gzip      3013 B  assets/PlanGraphPage-DHHc39Yo.js
+        756 B / gzip       352 B  assets/PlanGroupsView-BgPm5YMz.css
+       6350 B / gzip      2229 B  assets/PlanGroupsView-CP9KE33s.js
+        907 B / gzip       361 B  assets/plans-IJgmEKeY.js
+      16670 B / gzip      5176 B  assets/PlansView-Cbqmr-8f.js
+       2162 B / gzip       558 B  assets/PlansView-CiNUrdbd.css
+       1029 B / gzip       529 B  assets/RadioButton-BXc-mR7O.js
+        827 B / gzip       334 B  assets/ReadOnlyRecoverView-C1n9FmKk.css
+       1233 B / gzip       628 B  assets/ReadOnlyRecoverView-lt4uADRD.js
+       1222 B / gzip       614 B  assets/RecoveryRecordsView-B8-5NcVe.js
+        827 B / gzip       334 B  assets/RecoveryRecordsView-YvoLkRMu.css
+      28033 B / gzip      8930 B  assets/ReportDetailView-NoIkLY1A.js
+       6924 B / gzip      1699 B  assets/ReportDetailView-ZPEsMs7_.css
+       2098 B / gzip       671 B  assets/ReportPrintView-BWBGy9fY.css
+       4586 B / gzip      1784 B  assets/ReportPrintView-DPg_n9r0.js
+       1471 B / gzip       545 B  assets/reports-uxdsJuy-.js
+       5742 B / gzip      2228 B  assets/ReportsView-55od8YAI.js
+        140 B / gzip       130 B  assets/ReportsView-BXNXO0Y5.css
+       1073 B / gzip       429 B  assets/ReportTemplatesView-C3bzCyef.css
+       8393 B / gzip      2707 B  assets/ReportTemplatesView-DSve6ztW.js
+       5848 B / gzip      1411 B  assets/RunsView-Ar_J6ZU_.css
+      28120 B / gzip      8721 B  assets/RunsView-Yj_wcgsu.js
+        363 B / gzip       220 B  assets/settings-Bh4EfI2X.js
+       1442 B / gzip       536 B  assets/SettingsView-BhNY_CWj.css
+       4684 B / gzip      1729 B  assets/SettingsView-vJdcoHDv.js
+       1328 B / gzip       551 B  assets/statusLabels-T1hvjpcs.js
+        598 B / gzip       417 B  assets/StatusTag-B1ZlS543.js
+        729 B / gzip       295 B  assets/StatusTag-BkZKYVEF.css
+        406 B / gzip       252 B  assets/TestReportsView-DfHhRYU_.css
+       2293 B / gzip      1103 B  assets/TestReportsView-qXbIXB5H.js
+        687 B / gzip       310 B  assets/TopologySnapshotView-Cy9Uu-L9.css
+       1072 B / gzip       590 B  assets/TopologySnapshotView-HFZo-9Ix.js
+        562 B / gzip       391 B  assets/useBatchAction-BFQJ0uuV.js
+       1212 B / gzip       402 B  assets/useSelection-CRuu47my.css
+       4905 B / gzip      2100 B  assets/useSelection-DTMnaYVU.js
+      85989 B / gzip     33660 B  assets/vue-BCR_L7lm.js
+       3480 B / gzip       867 B  assets/WorkbenchView-BgQ4nl1F.css
+       7537 B / gzip      2612 B  assets/WorkbenchView-BitpvJ3r.js
+
+=== 各项判定 ===
+[INFO] 图标 chunk 1 个，gzip 合计 4208 B ≤ 15360 B（15 KiB），达标
+[INFO] 组件库 vendor chunk 1 个，gzip 合计 147051 B ≤ 204800 B（200 KiB），达标
+[INFO] 懒加载共享分包 22 个，gzip 合计 147014 B ≤ 163840 B（160 KiB），达标（最大 assets/DataTable-DGUrpJKS.js 76344 B）
+[INFO] 字体 3 个 woff2：原始合计 192060 B、gzip 合计 192179 B ≤ 819200 B（800 KiB），达标
+[INFO] CSS 中存在 font-display: swap，首帧不被字体阻塞，达标
+[INFO] styleguide 标记在源码中存在（StyleguideView.vue），产物侧 grep 因此具备判定力
+[INFO] 生产产物中未找到 __STYLEGUIDE_DEV_ONLY__ 标记，且源码侧标记确认存在（DEV 条件挂载 + tree-shaking 生效），本项已被反向验证
+
+[PASS] 构建产物体积守门通过：图标 ≤15 KiB / 组件库 ≤200 KiB / 字体 ≤800 KiB / 无 styleguide 标记泄漏

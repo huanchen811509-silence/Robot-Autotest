@@ -1,0 +1,101 @@
+{
+  "version": 1,
+  "generatedAt": "2026-11-08T11:18:04.494519+00:00",
+  "seed": 20261108,
+  "scale": "standard",
+  "projectId": 29,
+  "counts": {
+    "cases": 10000,
+    "runs": 100000,
+    "logs": 1000000
+  },
+  "logSplit": 100000,
+  "files": [
+    {
+      "path": "cases.csv",
+      "rows": 10000,
+      "bytes": 906433,
+      "headerRows": 1,
+      "sha256": "272bdb09a2d646e68737f93eb2b3390fe76c3781858cd89a7e88d54302028cb9"
+    },
+    {
+      "path": "runs.csv",
+      "rows": 100000,
+      "bytes": 6809006,
+      "headerRows": 1,
+      "sha256": "dcad01309ac75adde3d00b0b8d6bb0ecb82676826b68f3b397a97f39a34278b4"
+    },
+    {
+      "path": "logs/log-000.csv",
+      "rows": 100000,
+      "bytes": 6695144,
+      "headerRows": 0,
+      "sha256": "f9c17948b8b797cc11c3ff9fcf95c0c18a25d6343e780fd8162590295b95c6e5"
+    },
+    {
+      "path": "logs/log-001.csv",
+      "rows": 100000,
+      "bytes": 6692885,
+      "headerRows": 0,
+      "sha256": "59e263ceb43f762960f088df4ac5329e1c539e02b58df9e55133238d57aeb72e"
+    },
+    {
+      "path": "logs/log-002.csv",
+      "rows": 100000,
+      "bytes": 6697094,
+      "headerRows": 0,
+      "sha256": "df7b3af092b265d8eaffd27b17a0da97b55851597386f322ed72d6f8eb329638"
+    },
+    {
+      "path": "logs/log-003.csv",
+      "rows": 100000,
+      "bytes": 6693278,
+      "headerRows": 0,
+      "sha256": "041e0f56a56b6e6268c92cc7e6cc31d30621b4e0215b83cf66e613cabda3880f"
+    },
+    {
+      "path": "logs/log-004.csv",
+      "rows": 100000,
+      "bytes": 6696500,
+      "headerRows": 0,
+      "sha256": "0459749597681f1279d89a860a46a906c8016618618e1cfd34bbb5e99aebdcce"
+    },
+    {
+      "path": "logs/log-005.csv",
+      "rows": 100000,
+      "bytes": 6692082,
+      "headerRows": 0,
+      "sha256": "39123966966d63f2c763322d222c40adaa882713241a0e0364dd4c0c23933f19"
+    },
+    {
+      "path": "logs/log-006.csv",
+      "rows": 100000,
+      "bytes": 6696896,
+      "headerRows": 0,
+      "sha256": "e23a325d01039fedec60a46290b43ebccd5cd47d02b2be6bc0fa5527e4d94afa"
+    },
+    {
+      "path": "logs/log-007.csv",
+      "rows": 100000,
+      "bytes": 6693803,
+      "headerRows": 0,
+      "sha256": "fd527e4ac32f380d1697fccc68b8c61d7e6fa493556a5436466c8e0a3e5b2c9c"
+    },
+    {
+      "path": "logs/log-008.csv",
+      "rows": 100000,
+      "bytes": 6693628,
+      "headerRows": 0,
+      "sha256": "1b18c4a9dbded2a01becfd0b648cf1d88888c6b96ffa1b328c9ea2998188faa9"
+    },
+    {
+      "path": "logs/log-009.csv",
+      "rows": 100000,
+      "bytes": 6695432,
+      "headerRows": 0,
+      "sha256": "60763fa8177a9fb51511d481d2eeb9855de9faadfa615e79f9ed9dac96ade238"
+    }
+  ],
+  "contentHash": "59824208438adcd769ca17b368062bd684a81825e356fb1454dd7cbf1f5cbdc7",
+  "elapsedMs": 24439.31
+}

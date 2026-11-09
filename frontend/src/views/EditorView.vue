@@ -8,11 +8,10 @@
  * - 版本历史（列表 / 回滚 / 两版 diff）来自版本快照，回滚生成新版本而非删历史（FR-v0.3-21/22）。
  * - 语法校验由服务端做（RF `--dryrun`）；服务端缺 RF 时返回 `syntaxChecked=false`，如实提示。
  */
-import { computed, ref, watch } from 'vue'
+import { computed, defineAsyncComponent, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { NButton } from 'naive-ui'
-import { RobotEditor, configureEditorAdapter, setEditorScope } from '@robot-autotest/editor'
 import '@robot-autotest/editor-css'
 import {
   editorKeywordApi,
@@ -26,25 +25,41 @@ import { localizeError, type ErrorLine } from '@/utils/errors'
 import { formatDateTime, EMPTY } from '@/utils/format'
 import ErrorLineView from '@/components/ErrorLine.vue'
 
-// 适配器注入是进程级单例：宿主全应用只注入一次（N13：编辑器包内零 HTTP）
-configureEditorAdapter({
-  searchKeywords: async (query: string, scopeId?: number) => {
-    const keyword = query.trim()
-    const rows = await editorKeywordApi.search({
-      projectId: scopeId,
-      q: keyword.length > 0 ? keyword : '*',
-      limit: 50,
-    })
-    return {
-      results: rows.map((row) => ({
-        name: row.name,
-        library: row.library,
-        doc: row.doc ?? '',
-        args: row.args,
-      })),
-    }
-  },
+/**
+ * 编辑器包按需加载（FR-3.2-06 路由块预算）：静态 import 会把 452 KB 的
+ * `editor.js` 整个打进 EditorView 路由块（实测 gzip 247 KiB > 150 KiB）。
+ * 改成异步组件后，路由块只剩页面壳；编辑器本身体积进入懒加载共享分包，
+ * 由 `check_bundle_budget.py` 的 160 KiB 预算单独把关。
+ *
+ * <p>适配器注入是进程级单例：在 loader 里配置，保证组件渲染前已完成；
+ * 编辑器的 `import()` 结果被 ESM 缓存，后续 `withEditor()` 复用同一模块。
+ */
+const RobotEditor = defineAsyncComponent(async () => {
+  const editor = await import('@robot-autotest/editor')
+  editor.configureEditorAdapter({
+    searchKeywords: async (query: string, scopeId?: number) => {
+      const keyword = query.trim()
+      const rows = await editorKeywordApi.search({
+        projectId: scopeId,
+        q: keyword.length > 0 ? keyword : '*',
+        limit: 50,
+      })
+      return {
+        results: rows.map((row) => ({
+          name: row.name,
+          library: row.library,
+          doc: row.doc ?? '',
+          args: row.args,
+        })),
+      }
+    },
+  })
+  return editor.RobotEditor
 })
+
+async function withEditor() {
+  return await import('@robot-autotest/editor')
+}
 
 const route = useRoute()
 const { t } = useI18n()
@@ -89,7 +104,8 @@ async function open(): Promise<void> {
   try {
     const permissions = await editorPermissionApi.get(pid)
     canWrite.value = permissions.canWrite
-    setEditorScope({ scopeId: pid, filePath: path })
+    const editor = await withEditor()
+    editor.setEditorScope({ scopeId: pid, filePath: path })
     await reloadFile()
     if (canWrite.value) await loadVersions()
   } catch (e) {

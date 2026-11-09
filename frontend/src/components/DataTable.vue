@@ -7,6 +7,7 @@ import EmptyState from './EmptyState.vue'
 import type { IllustrationName } from './EmptyIllustration.vue'
 import type { IconName } from './iconMap'
 import { computeScrollX } from '@/utils/tableWidth'
+import { shouldVirtualize } from '@/utils/tableVirtual'
 
 /**
  * UX-05 表格规范壳。
@@ -52,6 +53,11 @@ const props = withDefaults(
      * 传 true 时空态改用 `error` 插图与「加载失败」文案。
      */
     error?: boolean
+    /**
+     * 窗口化（FR-3.2-06）：不传按行数自动（≥200 行开启）；false 关闭；true 强制。
+     * 整页滚动（maxHeight=null）时始终关闭。
+     */
+    virtualScroll?: boolean
   }>(),
   {
     loading: false,
@@ -66,12 +72,16 @@ const props = withDefaults(
     emptyIcon: 'inbox',
     emptyIllustration: 'no-data',
     error: false,
+    virtualScroll: undefined,
   },
 )
 
 const { t } = useI18n()
 
 const scrollX = computed(() => computeScrollX(props.columns, props.minScrollX))
+const virtualScroll = computed(() =>
+  shouldVirtualize(props.data.length, props.maxHeight, props.virtualScroll),
+)
 
 /** 加载中且一行数据都没有：画骨架；已有数据（翻页、刷新）保留旧行，避免闪成骨架 */
 const showSkeleton = computed(() => props.loading && props.data.length === 0)
@@ -154,6 +164,7 @@ const skeletonData = computed<T[]>(() =>
       :row-props="rowProps"
       :scroll-x="scrollX"
       :max-height="maxHeight ?? undefined"
+      :virtual-scroll="virtualScroll"
       :bordered="false"
       size="small"
     >

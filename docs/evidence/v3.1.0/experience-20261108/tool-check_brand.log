@@ -1,0 +1,5 @@
+﻿[INFO] favicon：5 个图元 / 最细描边 2.2px / viewBox 32×32
+[INFO] 品牌区：App.vue 与 LoginView.vue 均挂载 AppLogo
+[INFO] 版本号：副标题无版本，关于面板从 /_ping 取
+
+[PASS] 品牌：favicon 可辨 / 侧栏与登录页均有标记 / 版本号只在关于（取自 /_ping）

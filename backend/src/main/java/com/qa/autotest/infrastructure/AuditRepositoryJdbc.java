@@ -2,6 +2,7 @@ package com.qa.autotest.infrastructure;
 
 import com.qa.autotest.application.iam.AuditQuery;
 import com.qa.autotest.application.repository.AuditRepository;
+import com.qa.autotest.common.db.SlowQuery;
 import com.qa.autotest.domain.common.PageResult;
 import com.qa.autotest.domain.iam.AuditEntry;
 import java.sql.Timestamp;
@@ -14,6 +15,10 @@ import org.springframework.stereotype.Repository;
 /** 审计日志实现（audit_log 在白名单内，不需要 project_id 条件）。 */
 @Repository
 public class AuditRepositoryJdbc implements AuditRepository {
+
+    /** 显式投影（FR-3.2-02：列表查询禁止 SELECT *，避免为未用列付 I/O）。 */
+    private static final String COLUMNS = "id, project_id, actor_id, operator, action, "
+            + "resource_type, resource_id, detail, summary, ip, occurred_at";
 
     private static final RowMapper<AuditEntry> ROW = (rs, rowNum) -> new AuditEntry(
             rs.getLong("id"),
@@ -79,17 +84,19 @@ public class AuditRepositoryJdbc implements AuditRepository {
             args.add(Timestamp.from(q.cursorAt()));
             args.add(q.cursorId());
             args.add(q.size());
-            items = jdbc.query("SELECT * FROM audit_log" + where
-                            + (where.isEmpty() ? " WHERE " : " AND ")
-                            + "(occurred_at < ? OR (occurred_at = ? AND id < ?))"
-                            + " ORDER BY occurred_at DESC, id DESC LIMIT ?",
-                    ROW, args.toArray());
+            String sql = "SELECT " + COLUMNS + " FROM audit_log" + where
+                    + (where.isEmpty() ? " WHERE " : " AND ")
+                    + "(occurred_at < ? OR (occurred_at = ? AND id < ?))"
+                    + " ORDER BY occurred_at DESC, id DESC LIMIT ?";
+            items = SlowQuery.measure("audit.keyset", sql,
+                    () -> jdbc.query(sql, ROW, args.toArray()));
         } else {
             args.add(q.size());
             args.add((q.page() - 1) * q.size());
-            items = jdbc.query("SELECT * FROM audit_log" + where
-                            + " ORDER BY occurred_at DESC, id DESC LIMIT ? OFFSET ?",
-                    ROW, args.toArray());
+            String sql = "SELECT " + COLUMNS + " FROM audit_log" + where
+                    + " ORDER BY occurred_at DESC, id DESC LIMIT ? OFFSET ?";
+            items = SlowQuery.measure("audit.page", sql,
+                    () -> jdbc.query(sql, ROW, args.toArray()));
         }
         return new PageResult<>(items, total, q.page(), q.size());
     }
@@ -100,7 +107,7 @@ public class AuditRepositoryJdbc implements AuditRepository {
         List<Object> args = new ArrayList<>();
         String where = where(q, args);
         args.add(limit);
-        return jdbc.query("SELECT * FROM audit_log" + where
+        return jdbc.query("SELECT " + COLUMNS + " FROM audit_log" + where
                 + " ORDER BY occurred_at DESC, id DESC LIMIT ?", ROW, args.toArray());
     }
 

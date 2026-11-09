@@ -31,10 +31,20 @@ public class ExecutionProperties {
     /** 单用例超时秒数（FR-v0.4-24）；<=0 表示不注入 Test Timeout。 */
     private int testTimeoutSeconds = 1800;
     private int inactivityTimeoutSeconds = 900;
+    /** RUNNING 状态下多久没有进度更新判定为卡死（秒，FR-3.1-05）。 */
+    private int progressStalledSeconds = 60;
     private long minFreeBytes = 5L * 1024 * 1024 * 1024;
     private int availablePorts = 32;
     private String pabotVersionPrefix = "5.2";
     private boolean schedulingEnabled = true;
+    /** FR-3.2-05：无显式幂等键时按请求指纹去重；关闭即回退 v3.1（每次生成随机请求号）。 */
+    private boolean idempotencyFingerprintEnabled = true;
+    /** 请求指纹去重窗口（秒）：窗口内相同参数只落一条运行，过窗视为有意重跑。 */
+    private int idempotencyWindowSeconds = 120;
+    /** 孤儿进程清扫周期（秒）；0 表示关闭定时清扫。 */
+    private int orphanSweepIntervalSeconds = 60;
+    /** 进程登记多久之后才允许被判为孤儿（秒），避开刚启动运行与快照竞态。 */
+    private int orphanMinAgeSeconds = 30;
     private List<FailureRuleConfig> failureRules = new ArrayList<>();
     private DutConfig dut = new DutConfig();
 
@@ -134,6 +144,14 @@ public class ExecutionProperties {
         this.inactivityTimeoutSeconds = inactivityTimeoutSeconds;
     }
 
+    public int getProgressStalledSeconds() {
+        return progressStalledSeconds;
+    }
+
+    public void setProgressStalledSeconds(int progressStalledSeconds) {
+        this.progressStalledSeconds = progressStalledSeconds;
+    }
+
     public long getMinFreeBytes() {
         return minFreeBytes;
     }
@@ -164,6 +182,38 @@ public class ExecutionProperties {
 
     public void setSchedulingEnabled(boolean schedulingEnabled) {
         this.schedulingEnabled = schedulingEnabled;
+    }
+
+    public boolean isIdempotencyFingerprintEnabled() {
+        return idempotencyFingerprintEnabled;
+    }
+
+    public void setIdempotencyFingerprintEnabled(boolean idempotencyFingerprintEnabled) {
+        this.idempotencyFingerprintEnabled = idempotencyFingerprintEnabled;
+    }
+
+    public int getIdempotencyWindowSeconds() {
+        return idempotencyWindowSeconds;
+    }
+
+    public void setIdempotencyWindowSeconds(int idempotencyWindowSeconds) {
+        this.idempotencyWindowSeconds = idempotencyWindowSeconds;
+    }
+
+    public int getOrphanSweepIntervalSeconds() {
+        return orphanSweepIntervalSeconds;
+    }
+
+    public void setOrphanSweepIntervalSeconds(int orphanSweepIntervalSeconds) {
+        this.orphanSweepIntervalSeconds = orphanSweepIntervalSeconds;
+    }
+
+    public int getOrphanMinAgeSeconds() {
+        return orphanMinAgeSeconds;
+    }
+
+    public void setOrphanMinAgeSeconds(int orphanMinAgeSeconds) {
+        this.orphanMinAgeSeconds = orphanMinAgeSeconds;
     }
 
     public List<FailureRuleConfig> getFailureRules() {

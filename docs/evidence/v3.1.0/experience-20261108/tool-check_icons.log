@@ -1,0 +1,4 @@
+﻿图标映射表：41 个名字 - admin, alert, arrowUpRight, audit, bell, boxes, cases, check, chevronDown, chevronRight, close, copy, credential, dashboard, database, device, download, external, fail, help, inbox, info, language, link, loader, logout, moon, palette, plus, refresh, reports, runs, search, sliders, sparkles, success, sun, system, trash, users, warn
+静态引用：60 处；动态表达式（跳过）：13 处
+
+[PASS] 图标名对账通过：60 处静态引用全部在 41 个定义内

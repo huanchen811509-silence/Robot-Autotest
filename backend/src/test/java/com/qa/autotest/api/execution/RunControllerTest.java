@@ -40,6 +40,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -118,6 +119,56 @@ class RunControllerTest {
         assertEquals(List.of("suites/a.robot"), captor.getValue().suitePaths());
         assertEquals("runs-view", captor.getValue().source());
         assertEquals(2, captor.getValue().concurrency());
+    }
+
+    @Test
+    @DisplayName("幂等键：Idempotency-Key 优先于 body，两次提交透传同一请求号")
+    void quickRun_幂等键优先与重复提交() throws Exception {
+        when(quickRuns.trigger(any())).thenReturn(run("RUN-1"));
+        String body = """
+                {"projectId":7,"suitePaths":["suites/a.robot"],"runRequestId":"BODY-1"}
+                """;
+
+        mvc.perform(post("/api/execution/quick-run").contentType(MediaType.APPLICATION_JSON)
+                        .header("Idempotency-Key", "IDEM-1").content(body))
+                .andExpect(status().isOk());
+        mvc.perform(post("/api/execution/quick-run").contentType(MediaType.APPLICATION_JSON)
+                        .header("Idempotency-Key", "IDEM-1").content(body))
+                .andExpect(status().isOk());
+
+        ArgumentCaptor<QuickRunService.QuickRunCommand> captor =
+                ArgumentCaptor.forClass(QuickRunService.QuickRunCommand.class);
+        verify(quickRuns, times(2)).trigger(captor.capture());
+        assertEquals(List.of("IDEM-1", "IDEM-1"),
+                captor.getAllValues().stream().map(QuickRunService.QuickRunCommand::runRequestId).toList());
+    }
+
+    @Test
+    @DisplayName("无 Header 时回落到 body runRequestId")
+    void quickRun_body请求号兜底() throws Exception {
+        when(quickRuns.trigger(any())).thenReturn(run("RUN-2"));
+
+        mvc.perform(post("/api/execution/quick-run").contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"projectId":7,"suitePaths":["suites/a.robot"],"runRequestId":"BODY-2"}
+                                """))
+                .andExpect(status().isOk());
+
+        ArgumentCaptor<QuickRunService.QuickRunCommand> captor =
+                ArgumentCaptor.forClass(QuickRunService.QuickRunCommand.class);
+        verify(quickRuns).trigger(captor.capture());
+        assertEquals("BODY-2", captor.getValue().runRequestId());
+    }
+
+    @Test
+    @DisplayName("非法 Idempotency-Key：400 且不触发执行")
+    void quickRun_非法幂等键() throws Exception {
+        mvc.perform(post("/api/execution/quick-run").contentType(MediaType.APPLICATION_JSON)
+                        .header("Idempotency-Key", "bad key!")
+                        .content("{\"projectId\":7,\"suitePaths\":[\"suites/a.robot\"]}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.codeName").value("INVALID_ARGUMENT"));
+        verify(quickRuns, times(0)).trigger(any());
     }
 
     @Test

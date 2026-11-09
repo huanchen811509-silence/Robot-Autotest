@@ -1,5 +1,6 @@
 package com.qa.autotest.application.repository;
 
+import com.qa.autotest.common.query.PageQuery;
 import com.qa.autotest.domain.common.PageResult;
 import com.qa.autotest.domain.execution.RunOrigin;
 import com.qa.autotest.domain.execution.RunRecord;
@@ -102,6 +103,11 @@ public interface RunRepository {
     List<RunRecord> findActive();
 
     PageResult<RunRecord> page(long projectId, RunState state, int page, int size);
+
+    /** 新入口：未指定排序时统一按 id DESC（FR-3.2-02）。 */
+    default PageResult<RunRecord> page(long projectId, RunState state, PageQuery paging) {
+        return page(projectId, state, paging.page(), paging.size());
+    }
 
     int markAttempt(String runId, int attemptNo, String retryOf);
 

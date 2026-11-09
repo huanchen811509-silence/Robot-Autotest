@@ -33,6 +33,41 @@ let tokenProvider: () => string | null = () => null
 
 export function setTokenProvider(provider: () => string | null): void {
   tokenProvider = provider
+  // 换身份后旧 GET 缓存不能复用（否则另一个用户会读到上一个用户的列表）
+  resetRequestCache()
+}
+
+/** GET 短缓存默认 3 秒：足够吸收同一页面的重复刷新，又不会让写后读到旧值。 */
+const DEFAULT_GET_CACHE_TTL_MS = 3000
+let getCacheTtlMs = DEFAULT_GET_CACHE_TTL_MS
+
+interface CacheEntry {
+  value: unknown
+  expiresAt: number
+}
+
+const getCache = new Map<string, CacheEntry>()
+const inFlightGets = new Map<string, Promise<unknown>>()
+
+/** 测试 / 退出登录 / 手动刷新时清空 GET 缓存与在途去重表。 */
+export function resetRequestCache(): void {
+  getCache.clear()
+  inFlightGets.clear()
+}
+
+/** 调整短缓存 TTL；0 关闭缓存（在途去重仍在，避免同一瞬间重复请求）。 */
+export function configureRequestCache(ttlMs: number): void {
+  getCacheTtlMs = Math.max(0, ttlMs)
+  getCache.clear()
+}
+
+/** 浏览器端请求追踪号：后端 TraceIdFilter 会写入 MDC 并回显 X-Trace-Id。 */
+function newRequestId(): string {
+  const cryptoApi = globalThis.crypto
+  if (cryptoApi && typeof cryptoApi.randomUUID === 'function') {
+    return cryptoApi.randomUUID()
+  }
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
 }
 
 export class ApiError extends Error {
@@ -69,10 +104,10 @@ function parseEnvelope<T>(raw: string): ApiEnvelope<T> {
   }
 }
 
-export async function request<T>(
+async function doRequest<T>(
   path: string,
-  init: RequestInit = {},
-  timeoutMs: number = DEFAULT_TIMEOUT_MS,
+  init: RequestInit,
+  timeoutMs: number,
 ): Promise<T> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), timeoutMs)
@@ -85,6 +120,7 @@ export async function request<T>(
       headers: {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        'X-Request-Id': newRequestId(),
         ...(init.headers ?? {}),
       },
     })
@@ -99,6 +135,65 @@ export async function request<T>(
   } finally {
     clearTimeout(timer)
   }
+}
+
+/**
+ * 统一请求入口（FR-3.2-06）：
+ *
+ * <p>① **在途去重**：同一 GET 并发（页面两个组件同时拉同一列表）只发一次网络请求；
+ * ② **短缓存**：成功后缓存 3 秒，吸收「收起/展开」「切换 tab 再切回」的重复刷新；
+ * ③ **写后失效**：任何非 GET 成功/失败都清空 GET 缓存，避免展示写前旧值；
+ * ④ **换身份失效**：{@link setTokenProvider} 清空缓存。
+ *
+ * <p>带外部 signal 的请求不参与去重与缓存（调用方可能在组件卸载时 abort，
+ * 复用在途 Promise 会让另一个组件拿到被中止的结果）。
+ */
+export async function request<T>(
+  path: string,
+  init: RequestInit = {},
+  timeoutMs: number = DEFAULT_TIMEOUT_MS,
+): Promise<T> {
+  const method = (init.method ?? 'GET').toUpperCase()
+  const cacheable = method === 'GET' && getCacheTtlMs > 0 && !init.signal
+  const key = `${BASE_URL}${path}`
+
+  if (cacheable) {
+    const cached = getCache.get(key)
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.value as T
+    }
+    const pending = inFlightGets.get(key)
+    if (pending) {
+      return pending as Promise<T>
+    }
+  }
+
+  if (method !== 'GET') {
+    // 写请求发出前先失效：即使写失败，也不该继续展示可能已被改动的旧列表
+    getCache.clear()
+  }
+
+  const tracked = doRequest<T>(path, init, timeoutMs).then(
+    (value) => {
+      if (cacheable) {
+        getCache.set(key, { value, expiresAt: Date.now() + getCacheTtlMs })
+      }
+      return value
+    },
+    (error) => {
+      if (method !== 'GET') {
+        getCache.clear()
+      }
+      throw error
+    },
+  )
+
+  if (cacheable) {
+    inFlightGets.set(key, tracked)
+    const cleanup = () => inFlightGets.delete(key)
+    tracked.then(cleanup, cleanup)
+  }
+  return tracked
 }
 
 /**

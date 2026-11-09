@@ -35,9 +35,11 @@ class SchemaIT {
      * v2.2 V11_1/V11_2 各 +1 → 69，V11_12（execution_selection）+1 → 70。
      * 2026-11-08 与 scripts/db-audit.sh 对齐为 70；此前 60 是 v2.0 的历史读数，
      * 本类 @Tag("it") 默认被 surefire 跳过，所以漂移一直没被发现。
+     * v3.1 V11_18 增 4 张（saved_view / batch_undo / notification_preference /
+     * notification_read；已读按用户隔离，故单列一表）→ 75。
      * 这个值随迁移演进更新，不是「越多越好」。
      */
-    private static final int EXPECTED_TABLES = 70;
+    private static final int EXPECTED_TABLES = 75;
 
     /**
      * append-only 表：按设计只增不改，没有「更新人/更新时间」这回事。

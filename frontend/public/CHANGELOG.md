@@ -8,7 +8,162 @@
 > `<!-- current -->` 是给解析器用的语言无关标识（Markdown 渲染时不可见）。
 > 因此代码里不需要硬编码中文，界面显示文案一律走 i18n 语言包 `changelog.*`。
 
-## v2.7-dual-kernel-demo（2026-11-08） <!-- current -->
+## v3.4.0-scale-archive（2026-11-08） <!-- current -->
+
+### 新增 <!-- added -->
+- **归档与保留**：`V11_22` 新增 `archive_policy` / `archived_run` / `archived_test_result` /
+  `archived_keyword_result`；`ArchiveService` 只搬运行明细、保留运行主记录与聚合数字，
+  dry-run 默认开启，按运行逐事务（索引 + 明细 + 审计同时成立），恢复按原主键插回，冲突显式 409；
+  `ArchiveScheduler` 按小时触发且默认策略为停用；`/api/admin/archive/*` 提供策略、预览、执行、
+  冷表明细与恢复；前端新增归档中心页
+- **并发准入与背压**：`RunAdmissionService` 三层上限（全局 50 / 单项目 20 / 单节点 10）、
+  公平锁按到达顺序发放、超时以 409 返回当前占用并可解释；运行进入终态释放名额，
+  每小时兜底回收超过 6h 的异常占用；`GET /api/admin/ops/admission` 与运维中心准入卡片
+- **安全加固**：`SecurityHeadersFilter` 恒定发送 nosniff / DENY / no-referrer / CSP，
+  HTTPS 额外发送 HSTS；`LoginRateLimiter` 按 IP + 用户名滑动窗口限流（默认 5 次 / 300s，成功清零，超限 429）
+- **新增门禁步骤**：24 AI 黄金集评测、25 安全扫描（密钥 / SAST / 危险依赖，高危必须 0）、
+  26 容量与备份演练校验（RTO ≤ 2h、RPO ≤ 24h、候选查询必须走索引）、27 i18n 与对比度 AA；
+  `scripts/backup-drill.sh` 输出 `docs/evidence/ops/backup-drill-latest.json`
+
+### 变更 <!-- changed -->
+- `RunService` 在落库 + 审计之后申请并发名额，失败整事务回滚（不留孤儿运行）；取消 / 租约 / 分片
+  等所有终态路径统一经 `transition` 释放名额
+- `run` 表新增 `idx_run_project_created(project_id, created_at)`，归档候选查询不再全表扫描
+- 运维中心补并发准入卡片；导航外新增 `/admin/ops` 与 `/admin/archive` 两个管理员路由
+
+### 修复 <!-- fixed -->
+- 归档恢复遇到原主键占用时整事务回滚并显式报 CONFLICT，不再静默丢明细或错位引用
+- 异常路径造成的并发名额泄漏由定时回收兜底，不再永久占用
+
+### 破坏性变更 <!-- breaking -->
+- 超过并发上限的创建运行请求现在返回 409（可用 `execution.admission.max-inflight` /
+  `max-per-project` / `max-per-node` / `max-wait-ms` 调整）
+- 登录连续失败达到阈值后返回 429，窗口与阈值可通过配置调整
+
+## v3.3.0-ai-ops（2026-11-08）
+
+### 新增 <!-- added -->
+- **AI 工作台**：`V11_21` 新增 `ai_project_config` / `ai_prompt_template` / `ai_message` /
+  `alert_channel` / `alert_rule` / `alert_event` / `slo_daily` / `release_record`，并内置 7 条提示词模板；
+  `AiEvidenceService` 按运行 / 需求 / 模板装配证据，`AiAnswerFactory` 输出事实 / 推测 / 建议三段，
+  `AiFactVerifier` 校验数字与引用（无证据必须明确拒答），`AiWorkbenchService` 管配额与会话，
+  用例草稿只有 `reviewed=true` 才允许落库（状态 AI_DRAFT / PENDING）
+- **SSE 流式对话**：`POST /api/ai/workbench/chat/stream` 事件序列 meta→citations→delta*→done，
+  24 字/块、18ms 间隔、30s 超时；取消 / 超时 / 断连均落库为 CANCELLED / TIMEOUT；会话可导出 Markdown
+- **运维闭环**：SLO 与错误预算（含 MTTD / MTTR）、告警规则 / 通道 / 事件、Webhook HMAC-SHA256 签名、
+  冷却去重与恢复、投递失败重试一次；`/api/admin/ops/*` 汇总 SLO、实时指标、备份状态、发布记录；
+  运维中心页面展示 SLO 卡、错误预算、告警与备份状态
+- **请求指标**：按项目的 1024 槽环形 P95 与 5xx 计数，`/api/admin/ops/summary` 可读
+- **前端接入**：AI 抽屉新增「证据问答」（流式、停止、引用 chip、模板、历史会话、导出）与
+  「用例草稿」（生成 → 逐条勾选 → 确认已审阅 → 保存）；报告详情新增 AI 叙述；失败聚类新增 AI 分诊
+- **门禁第 24 步**：`tools/ai_eval.py` 直接调用真实端点，校验事实一致性、严重幻觉 0、明确拒答与首字时延
+
+### 变更 <!-- changed -->
+- `AiPanelDrawer` 拆成「助手 / 证据问答」双模式，默认仍是助手，既有快捷键与行为不变
+- 运维中心与归档中心复用既有布局与对比度令牌，不新增硬编码颜色
+
+### 修复 <!-- fixed -->
+- AI 回答必须区分事实与推测；校验不通过时在卡片上明确标红，不冒充结论
+- 模型 CLI 不可用时以 `degraded=true` 的本地证据装配继续服务，不再整页报错
+
+### 破坏性变更 <!-- breaking -->
+- AI 端点新增会话 / 配额语义：跨会话追问需显式传 `sessionId`，否则按新会话处理
+
+## v3.2.0-fast-stable（2026-11-08）
+
+### 新增 <!-- added -->
+- **四类性能预算与门禁**：`tools/perf-budget.json` 单一事实源（API p95 150ms / p99 300ms、慢查询
+  200ms WARN / 500ms ERROR、前端入口 300 KiB / 单路由 150 KiB、长列表 50 fps、运行链 create p95 200ms /
+  日志 5000 行/s），`check_perf_budget.py`、`check_bundle_budget.py` 越线即红，门禁新增第 20–22 步
+- **查询治理**：`PageQuery` 统一 page/size（上限 100）与排序白名单（用例 7 字段 / 运行 4 字段）；
+  用例、运行、审计三条高频列表支持键集分页（`beforeId`），列表投影不再 `SELECT *`（生产代码 0 处）
+- **索引与慢查询**：`V11_19` 新增 5 个复合索引并带 down；列表 SQL 走 `SlowQuery.measure`，
+  >200ms WARN / >500ms ERROR，`/api/admin/observability/summary` 可读 measured / warned / errored
+- **进程内读缓存**：`TtlCache` + 能力索引缓存（TTL 30s / 容量 512），键为 projectId；
+  新建/修改/删除/批量/导入成功后立即失效；`app.cache.enabled=false` 时行为与开启一致
+- **有界异步与优雅停机**：`BoundedExecutor`（队列 1024、core 2 / max 4），拒绝时改由调用线程同步执行并计数；
+  停机 `shutdown()` → 等待 10s → `shutdownNow()`，审计不丢；异步任务透传 MDC traceId
+- **执行链幂等**：四个提交入口统一解析 `Idempotency-Key`（Header 优先）→ `runRequestId` →
+  端点+参数+时间桶 SHA-256；`uk_run_project_request` 唯一键兜底，重复提交 0 重复运行；
+  孤儿进程按 DB 活跃运行对账周期清理
+- **前端性能**：编辑器改 `defineAsyncComponent` 懒加载（EditorView 路由块 253 KiB → 6.7 KiB）；
+  `DataTable` 增 `virtualScroll`（≥200 行自动开启，1 万行 58.5 fps）；`api/http.ts` 增同 GET 在途去重、
+  3 秒短缓存、写后清缓存、每请求 `X-Request-Id`；首屏空闲预取工作台/用例/运行三页
+- **可观测性**：`TraceIdFilter`（`X-Trace-Id` → `X-Request-Id` → 32 位 hex）与日志 `%X{traceId}`；
+  Actuator `health,info,metrics` + liveness/readiness；管理员看板端点 `GET /api/admin/observability/summary`
+- **API 契约与架构守护**：`tools/gen_api_contract.py` 从控制器源码生成 `docs/contracts/openapi.json`
+  （240 端点 / 188 路径），`--check` 漂移退出 1；8 个核心端点契约测试 + 跨端点约定测试；
+  ArchUnit 补 R6/R7/R8（禁字段注入 / 仓储 JDBC 只在 infrastructure / 控制器不直连 JDBC），
+  附违规 fixture 证明规则真会红
+- **容量报告**（`docs/evidence/v3.2.0/EW32-10/perf/`）：并发（1/20/50/100）与峰值（200 并发 10s）
+  两份完整报告；长稳 2h 按要求跳过本轮，仅保留 213 点部分采样作旁证（不作通过结论）。
+  另附队列空闲创建基线与日志吞吐探针（实时发布 98.8 万行/s、逐行落盘 22.5 万行/s）
+- **测试体系 v2**：门禁 22 步（新增契约 / 包体 / 预算），`--selfcheck` 证明删步骤必红；
+  7 类 14 条历史环境失败归档 `docs/evidence/v3.2.0/flaky-ledger.md`
+
+### 变更 <!-- changed -->
+- `VERSION` 升至 `3.2.0`；`application.yml` Hikari `maximum-pool-size` 8 → 16（压测实测：20 并发读
+  p95 155.76 → 142.59ms，提升有限，瓶颈在 DB 与单实例 CPU，见 EW32-10 报告）
+- 分页 `size` 由各仓储各自 `Math.min(size, 200)` 统一为上限 100；超出归一为 100
+- 列表默认 `id DESC` 分支加 `FORCE INDEX`，避免索引变多后优化器误选 `(project_id, updated_at)`
+  导致 filesort（真实 EXPLAIN 回退，非理论风险）
+- 编辑器依赖从 EditorView 路由块拆为懒加载分包；门禁单路由口径改为「路由块 + 按需分包」而非
+  「所有懒加载合计」（互不相干的按需包不再相加）
+- 日志格式统一带 traceId；`server.shutdown=graceful` + 20s 停机等待
+
+### 修复 <!-- fixed -->
+- **用例列表全量 500**（`ERROR 1176`）：代码 `FORCE INDEX (idx_case_project_id)` 依赖的索引从未建，
+  `V11_19` 只建了 `idx_case_project_updated`。由 EW32-10 容量压测在 20 并发下暴露，
+  新增 `V11_20__case_project_id_index.sql` 补建 `(project_id, id)` 并补 down
+- **索引回退**：`V11_19` 后默认 `ORDER BY id DESC` 被优化器改选 `idx_case_project_updated`，
+  Extra 出现 `Using filesort`；按表钉死访问路径后恢复 `Backward index scan`
+- **编辑器 247 KiB 路由块**：EditorView 静态 `import` 整个编辑器包，首屏多下 94 KiB 的 `editor.js`；
+  懒加载后路由块 6.7 KiB，编辑器只在进入编辑器页时加载
+- **同 GET 重复请求**：列表刷新/切页会重复打同一接口；改为在途去重 + 3 秒短缓存，写操作前后清空
+- **慢查询无读数**：此前只有日志，`/summary` 无慢查询计数；补 `SlowQuery.stats()` 并按 200/500ms 分级
+- **审计写入阻塞请求**：写审计同步落库；改为有界池异步，拒绝时同步降级，停机排空
+
+### 破坏性变更 <!-- breaking -->
+- 无数据库破坏性变更：`V11_19` / `V11_20` 均为纯增量索引，表结构与旧接口不受影响；
+  回滚需先回滚 `FORCE INDEX` 代码再执行 down 迁移（顺序见 `EW32-02` README §9）
+- 接口侧唯一行为差异：`size > 100` 归一为 100；非法 `sort` 返回 400 `INVALID_ARGUMENT`
+  （名单外字段此前不保证行为）。两者只影响原本越界或非法的请求，合法调用方无需改动
+
+## v3.1.0-experience（2026-11-08）
+
+### 新增 <!-- added -->
+- **报告速览卡**：`GET /api/reports/{runId}/summary` 聚合出结论、通过率、总数、失败、跳过、耗时、
+  Top 失败项与风险提示；skipped > 0 时结论显式写明跳过数，不把「有跳过」读成「全部通过」
+- **新手引导清单**：创建项目 / 导入用例 / 配置执行节点 / 发起运行 / 查看报告五步，
+  按概览既有统计判断完成态并给跳转；可折叠、可按用户 + 项目「不再显示」
+- **快捷键面板**：`?` 与顶栏帮助按钮都能打开，列出 Ctrl/Cmd+K、`?`、Esc、↑↓、Enter；
+  输入框 / 文本域 / 下拉 / contenteditable 内不触发 `?`
+- **全局实体搜索 / 保存视图 / 通知中心**：命令面板可按实体跳转；列表筛选可命名保存；
+  通知按类型分组、未读计数并在顶栏常驻入口
+- **运行预检与 ETA**：发起运行前预检节点与资产，运行中展示预计剩余时间
+- **批量撤销与表单草稿**：批量操作提供一次撤销；表单中断后草稿可恢复
+- **无障碍基线**：焦点陷阱 composable 统一命令面板 / 侧栏 / AI 抽屉，Tab 首尾循环、
+  Esc 关闭、关闭后焦点归还触发元素；新增「跳到主内容」skip link、sr-only 未读文案与
+  `prefers-reduced-motion` 收口
+
+### 变更 <!-- changed -->
+- 报告详情首屏先给速览，再进入原有套件树；「查看失败明细」锚点滚动并同步移动焦点
+- 顶栏工具段新增快捷键帮助入口，图标按钮统一补齐 `aria-label`
+- 页面主内容区标记为 `<main id="main">`，`overflow-x: clip` 保证 1280 视口无页面级横滚，
+  宽表格仍在 `.table-scroll` 内部滚动
+- 版本文件 `VERSION` 升至 `3.1.0`
+
+### 修复 <!-- fixed -->
+- 侧栏 / 命令面板此前各自监听 Esc 与焦点归还，卸载路径容易漏移除监听；现统一由
+  `useFocusTrap` 管理，避免两套实现
+- 通知徽标只有视觉数字，读屏器读不到未读数；现补 `sr-only` 文案与含未读数的 aria-label
+- 弹层打开后焦点可能留在遮罩后的页面；现在打开即聚焦容器内首个可聚焦元素
+
+### 破坏性变更 <!-- breaking -->
+- 无。数据库迁移 V11_18 为纯增量（新增列 / 表均带默认值），历史数据与旧接口不受影响；
+  `GET /api/reports/{runId}/summary` 为新增只读端点，未改动既有报告接口
+
+## v2.7-dual-kernel-demo（2026-11-08）
 
 ### 新增 <!-- added -->
 - **pytest 项目可真实执行**：执行链按内核分流——RF 走原 pabot 路径（一行未动），

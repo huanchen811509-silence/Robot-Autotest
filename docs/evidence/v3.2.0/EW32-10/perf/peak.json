@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "mode": "peak",
+  "generatedAt": "2026-11-08T13:41:54.956431+00:00",
+  "environment": {
+    "base": "http://127.0.0.1:8001",
+    "projectId": 29,
+    "peakWorkers": 200,
+    "peakSeconds": 10.0,
+    "recoverySeconds": 5.0,
+    "timeoutSeconds": 30.0
+  },
+  "machine": {
+    "host": "Thinkbook14G5",
+    "platform": "Linux-5.15.167.4-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "cpu": "13th Gen Intel(R) Core(TM) i5-13500H",
+    "cpuCount": 16,
+    "python": "3.12.3"
+  },
+  "overall": {
+    "samples": 1297,
+    "success": 1297,
+    "successRate": 1.0,
+    "p50Ms": 1027.92,
+    "p95Ms": 4439.64,
+    "p99Ms": 5320.93,
+    "maxMs": 5896.26,
+    "errorCodes": {}
+  },
+  "rejections": 0,
+  "serverErrors": 0,
+  "healthBefore": {
+    "status": 200
+  },
+  "healthAfter": {
+    "status": 200
+  },
+  "recovery": {
+    "samples": 4,
+    "success": 4,
+    "successRate": 1.0,
+    "p50Ms": 19.16,
+    "p95Ms": 22.47,
+    "p99Ms": 22.48,
+    "maxMs": 22.48,
+    "errorCodes": {}
+  },
+  "violations": []
+}

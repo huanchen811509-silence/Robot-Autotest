@@ -2,6 +2,7 @@ package com.qa.autotest.api.iam;
 
 import com.qa.autotest.api.AuthInterceptor;
 import com.qa.autotest.application.iam.AuthService;
+import com.qa.autotest.application.iam.LoginRateLimiter;
 import com.qa.autotest.common.ApiResponse;
 import com.qa.autotest.common.tenant.TenantContext;
 import com.qa.autotest.domain.iam.UserSummary;
@@ -29,16 +30,37 @@ public class AuthController {
     }
 
     private final AuthService auth;
+    private final LoginRateLimiter loginLimiter;
 
-    public AuthController(AuthService auth) {
+    public AuthController(AuthService auth, LoginRateLimiter loginLimiter) {
         this.auth = auth;
+        this.loginLimiter = loginLimiter;
     }
 
     @PostMapping("/login")
-    public ApiResponse<LoginResponse> login(@RequestBody LoginRequest request) {
-        AuthService.LoginResult result = auth.login(request.username(), request.password());
-        return ApiResponse.ok(new LoginResponse(result.token(), result.expiresAt(),
-                result.user(), result.passwordExpired()));
+    public ApiResponse<LoginResponse> login(@RequestBody LoginRequest request,
+                                            HttpServletRequest http) {
+        String ip = clientIp(http);
+        loginLimiter.requireAllowed(ip, request.username());
+        try {
+            AuthService.LoginResult result = auth.login(request.username(), request.password());
+            loginLimiter.reset(ip, request.username());
+            return ApiResponse.ok(new LoginResponse(result.token(), result.expiresAt(),
+                    result.user(), result.passwordExpired()));
+        } catch (RuntimeException failure) {
+            loginLimiter.recordFailure(ip, request.username());
+            throw failure;
+        }
+    }
+
+    /** 代理场景取 X-Forwarded-For 第一跳；无代理头时用直连地址。 */
+    static String clientIp(HttpServletRequest request) {
+        String forwarded = request.getHeader("X-Forwarded-For");
+        if (forwarded != null && !forwarded.isBlank()) {
+            int comma = forwarded.indexOf(',');
+            return (comma < 0 ? forwarded : forwarded.substring(0, comma)).trim();
+        }
+        return request.getRemoteAddr();
     }
 
     @PostMapping("/logout")

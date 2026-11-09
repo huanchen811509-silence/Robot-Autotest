@@ -1,6 +1,8 @@
 package com.qa.autotest.application.repository;
 
+import com.qa.autotest.common.query.PageQuery;
 import com.qa.autotest.domain.caseasset.CapabilityStat;
+import com.qa.autotest.domain.caseasset.ReviewSnapshot;
 import com.qa.autotest.domain.caseasset.TestCase;
 import com.qa.autotest.domain.caseasset.TestCaseStep;
 import com.qa.autotest.domain.common.PageResult;
@@ -23,6 +25,14 @@ public interface TestCaseRepository {
     PageResult<TestCase> page(long projectId, String keyword, String domain, String priority,
                               String reviewStatus, String capability, String safetyLevel,
                               int page, int size);
+
+    /** 新入口：未指定排序时统一按 id DESC（FR-3.2-02）。 */
+    default PageResult<TestCase> page(long projectId, String keyword, String domain, String priority,
+                                      String reviewStatus, String capability, String safetyLevel,
+                                      PageQuery paging) {
+        return page(projectId, keyword, domain, priority, reviewStatus, capability, safetyLevel,
+                paging.page(), paging.size());
+    }
 
     Optional<TestCase> find(long projectId, long id);
 
@@ -57,6 +67,15 @@ public interface TestCaseRepository {
 
     /** 批量改执行安全级（G2-3 / ADR-0013）：人工补判 LX 的唯一入口。 */
     void updateSafetyLevel(long projectId, long id, String safetyLevel, Long operatorId);
+
+    /**
+     * 批量撤销（FR-3.1-04）：读取操作前的前像。
+     *
+     * <p>默认空实现保证既有测试的假仓储无需跟着改；真实实现见 JDBC 仓储。
+     */
+    default Optional<ReviewSnapshot> reviewSnapshot(long projectId, long id) {
+        return Optional.empty();
+    }
 
     boolean codeExists(long projectId, String caseCode, Long excludeId);
 

@@ -1,0 +1,39 @@
+{
+  "generatedAt": "2026-11-08T16:05:38.348753+00:00",
+  "database": "robot_dev",
+  "counts": {
+    "testCase": 1068,
+    "testResult": 537,
+    "keywordResult": 70,
+    "run": 479,
+    "auditLog": 6166
+  },
+  "currentSizeMb": 7.8,
+  "indexes": [
+    "PRIMARY",
+    "fk_run_test_set",
+    "idx_run_node",
+    "idx_run_plan",
+    "idx_run_project_created",
+    "idx_run_project_enq",
+    "idx_run_project_id",
+    "idx_run_project_started",
+    "idx_run_project_status_enq",
+    "idx_run_round",
+    "uk_run_idempotency",
+    "uk_run_project_request",
+    "uk_run_run_id"
+  ],
+  "archiveQuery": {
+    "type": "NULL",
+    "key": "uk_run_project_request,uk_run_idempotency,idx_run_project_started,idx_run_plan,idx_run_round,idx_run_project_enq,idx_run_project_status_enq,idx_run_project_id,idx_run_project_created",
+    "fullScan": false
+  },
+  "targets": {
+    "cases": 50000,
+    "results": 1000000
+  },
+  "projectedSizeMb": 410.0,
+  "budgetMb": 2048.0,
+  "verdict": "PASS"
+}

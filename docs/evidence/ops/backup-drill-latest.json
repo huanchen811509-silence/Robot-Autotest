@@ -1,0 +1,12 @@
+{
+  "generatedAt": "2026-11-08T15:48:09Z",
+  "rtoSeconds": 20,
+  "rpoSeconds": 0,
+  "rpoNote": "演练为即时全量快照，恢复点不早于 dump 开始；正式 RPO 由备份计划决定",
+  "verdict": "PASS",
+  "tables": 76,
+  "database": "robot_it",
+  "source": "robot_dev",
+  "issues": 0,
+  "log": "docs/evidence/v3.0/raw/backup-drill.log"
+}

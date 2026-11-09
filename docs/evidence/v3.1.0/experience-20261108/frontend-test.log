@@ -1,0 +1,287 @@
+﻿
+> robot-autotest-frontend@0.1.0 test
+> vitest run
+
+
+[1m[46m RUN [49m[22m [36mv3.2.7 [39m[90mE:/workspace/自动化测试/Robot-Autotest/frontend[39m
+
+ [32m✓[39m src/components/AiPanelDrawer.spec.ts [2m([22m[2m17 tests[22m[2m)[22m[33m 940[2mms[22m[39m
+ [32m✓[39m src/components/ShardBoard.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 1975[2mms[22m[39m
+   [33m[2m✓[22m[39m ShardBoard[2m > [22m渲染分片卡片：状态标签、节点/领取者、套件路径与聚合口径 [33m 378[2mms[22m[39m
+   [33m[2m✓[22m[39m ShardBoard[2m > [22m规划：每行一个路径拆数组、节点数原样透传、成功后通知父视图 [33m 687[2mms[22m[39m
+ [32m✓[39m src/views/AuditView.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 2668[2mms[22m[39m
+   [33m[2m✓[22m[39m AuditView[2m > [22m日期控件初始值为空时页面正常渲染（回归：空串会让 NDatePicker 抛 RangeError） [33m 1620[2mms[22m[39m
+   [33m[2m✓[22m[39m AuditView[2m > [22m未选日期时查询参数不带 from / to，默认第一页 20 条 [33m 1046[2mms[22m[39m
+ [32m✓[39m src/views/FailureClustersView.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 2466[2mms[22m[39m
+   [33m[2m✓[22m[39m FailureClustersView[2m > [22m渲染两级：两个类别各带自己的簇 [33m 544[2mms[22m[39m
+   [33m[2m✓[22m[39m FailureClustersView[2m > [22m占比按百分比展示（0.6667 → 66.7%） [33m 413[2mms[22m[39m
+   [33m[2m✓[22m[39m FailureClustersView[2m > [22mcaseIds 为空的簇禁用重跑 [33m 344[2mms[22m[39m
+   [33m[2m✓[22m[39m FailureClustersView[2m > [22m重跑带上项目、运行与簇键 [33m 365[2mms[22m[39m
+   [33m[2m✓[22m[39m FailureClustersView[2m > [22m跨轮模式下重跑按钮全部禁用 [33m 311[2mms[22m[39m
+ [32m✓[39m src/views/ReportDetailView.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[33m 7560[2mms[22m[39m
+   [33m[2m✓[22m[39m ReportDetailView 元数据表[2m > [22m保持原生 table：10 项全渲染且是 th + td 的两列定义表 [33m 754[2mms[22m[39m
+   [33m[2m✓[22m[39m ReportDetailView 导出[2m > [22m不可对外时两个外部导出按钮禁用，内部两枚仍可用 [33m 450[2mms[22m[39m
+   [33m[2m✓[22m[39m ReportDetailView 导出[2m > [22m导出历史：内部版是 warn 徽标而不是红字 [33m 306[2mms[22m[39m
+   [33m[2m✓[22m[39m ReportDetailView 趋势[2m > [22m日/周是单选组，切到周会按 week 重新取通过率 [33m 477[2mms[22m[39m
+   [33m[2m✓[22m[39m ReportDetailView 对比[2m > [22m开关是 NCheckbox：勾选后才发对比请求并多出一张表 [33m 790[2mms[22m[39m
+   [33m[2m✓[22m[39m ReportDetailView 对比[2m > [22m两轮都 FAIL 显示「持续失败」，不能落成「无变化」 [33m 1191[2mms[22m[39m
+   [33m[2m✓[22m[39m ReportDetailView 对比[2m > [22m手动基线：候选由后端给出，选中后带 baselineRunId 重新对比（RPT-03 补口） [33m 2119[2mms[22m[39m
+   [33m[2m✓[22m[39m ReportDetailView 对比[2m > [22m两侧结论与变化列都是图标 + 文字双编码 [33m 1206[2mms[22m[39m
+ [32m✓[39m src/views/NodesView.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 7047[2mms[22m[39m
+   [33m[2m✓[22m[39m NodesView 列表[2m > [22m四态原样显示：NEW 节点不得被前端推断成 OFFLINE [33m 769[2mms[22m[39m
+   [33m[2m✓[22m[39m NodesView 列表[2m > [22m能力与并发上限可见：RF + pytest 组合与未上报能力 [33m 567[2mms[22m[39m
+   [33m[2m✓[22m[39m NodesView 列表[2m > [22m停用调用 disable；列表已是 DISABLED 时走 enable 分支 [33m 1981[2mms[22m[39m
+   [33m[2m✓[22m[39m NodesView 注册[2m > [22m注册后明文令牌只出现在对话框里，且不写 localStorage [33m 1046[2mms[22m[39m
+   [33m[2m✓[22m[39m NodesView 注册[2m > [22m注册表单可填 agent 接入地址并随请求提交（NODX-04） [33m 1368[2mms[22m[39m
+   [33m[2m✓[22m[39m NodesView 离线时长与最近任务（NODX-04）[2m > [22m心跳列显示相对时长且不在前端推断状态；无心跳显示空 [33m 702[2mms[22m[39m
+   [33m[2m✓[22m[39m NodesView 离线时长与最近任务（NODX-04）[2m > [22m最近任务列显示 runId 与本地化状态；无 run 显示空 [33m 606[2mms[22m[39m
+node.exe : [90mstderr[2m | src/views/RunsView.spec.ts[2m > [22m[2mRunsView 列表与日志联动[2m > [22m[2m日志面板可下载完整日志（EXEC
+-06）
+所在位置 D:\Program Files\nodejs\npm.ps1:29 字符: 3
++   & $NODE_EXE $NPM_CLI_JS $args
++   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([90mstderr[2m...下载完整日志（EXEC-06）:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[22m[39mAggregateError: 
+[90m    at internalConnectMultiple (node:net:1139:18)[39m
+[90m    at afterConnectMultiple (node:net:1714:7)[39m {
+  code: [32m'ECONNREFUSED'[39m,
+  [errors]: [
+    Error: connect ECONNREFUSED ::1:3000
+    [90m    at createConnectionError (node:net:1677:14)[39m
+    [90m    at afterConnectMultiple (node:net:1707:16)[39m {
+      errno: [33m-4078[39m,
+      code: [32m'ECONNREFUSED'[39m,
+      syscall: [32m'connect'[39m,
+      address: [32m'::1'[39m,
+      port: [33m3000[39m
+    },
+    Error: connect ECONNREFUSED 127.0.0.1:3000
+    [90m    at createConnectionError (node:net:1677:14)[39m
+    [90m    at afterConnectMultiple (node:net:1707:16)[39m {
+      errno: [33m-4078[39m,
+      code: [32m'ECONNREFUSED'[39m,
+      syscall: [32m'connect'[39m,
+      address: [32m'127.0.0.1'[39m,
+      port: [33m3000[39m
+    }
+  ]
+}
+
+ [32m✓[39m src/components/NotificationCenter.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 2326[2mms[22m[39m
+   [33m[2m✓[22m[39m NotificationCenter[2m > [22m打开列表后按类型分组，点击未读条目调用已读接口并移除 [33m 555[2mms[22m[39m
+   [33m[2m✓[22m[39m NotificationCenter[2m > [22m偏好保存失败时回滚开关并提示，不留下假开关 [33m 828[2mms[22m[39m
+   [33m[2m✓[22m[39m NotificationCenter[2m > [22m偏好保存成功后提示，并按四类开关提交 [33m 566[2mms[22m[39m
+ [32m✓[39m src/views/OverviewView.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 4306[2mms[22m[39m
+   [33m[2m✓[22m[39m OverviewView 表格[2m > [22m近期执行表保留设备与链路两段信息 [33m 1236[2mms[22m[39m
+   [33m[2m✓[22m[39m OverviewView 表格[2m > [22m近期执行表的通过率与用例数都渲染出来 [33m 968[2mms[22m[39m
+   [33m[2m✓[22m[39m OverviewView 表格[2m > [22m报告结果表覆盖失败用例前 N 与通过率 [33m 1144[2mms[22m[39m
+   [33m[2m✓[22m[39m OverviewView 表格[2m > [22m状态列是图标 + 文字双编码 [33m 956[2mms[22m[39m
+[90mstderr[2m | src/views/RunsView.spec.ts[2m > [22m[2mRunsView 列表与日志联动[2m > [22m[2m状态列是图标 + 文字双编码，不是只靠颜色
+[22m[39mAggregateError: 
+[90m    at internalConnectMultiple (node:net:1139:18)[39m
+[90m    at afterConnectMultiple (node:net:1714:7)[39m {
+  code: [32m'ECONNREFUSED'[39m,
+  [errors]: [
+    Error: connect ECONNREFUSED ::1:3000
+    [90m    at createConnectionError (node:net:1677:14)[39m
+    [90m    at afterConnectMultiple (node:net:1707:16)[39m {
+      errno: [33m-4078[39m,
+      code: [32m'ECONNREFUSED'[39m,
+      syscall: [32m'connect'[39m,
+      address: [32m'::1'[39m,
+      port: [33m3000[39m
+    },
+    Error: connect ECONNREFUSED 127.0.0.1:3000
+    [90m    at createConnectionError (node:net:1677:14)[39m
+    [90m    at afterConnectMultiple (node:net:1707:16)[39m {
+      errno: [33m-4078[39m,
+      code: [32m'ECONNREFUSED'[39m,
+      syscall: [32m'connect'[39m,
+      address: [32m'127.0.0.1'[39m,
+      port: [33m3000[39m
+    }
+  ]
+}
+
+ [32m✓[39m src/views/LoginView.spec.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 6489[2mms[22m[39m
+   [33m[2m✓[22m[39m LoginView 表单[2m > [22m两个字段都渲染成输入框，密码框类型正确 [33m 580[2mms[22m[39m
+   [33m[2m✓[22m[39m LoginView 表单[2m > [22m填齐后提交走 auth.login，并按 redirect 参数跳转 [33m 969[2mms[22m[39m
+   [33m[2m✓[22m[39m LoginView 表单[2m > [22m登录失败把错误渲染到界面上，而不是只留在控制台 [33m 576[2mms[22m[39m
+   [33m[2m✓[22m[39m LoginView 记住账号名与自动登录[2m > [22m勾选记住账号名：登录成功后落 localStorage，重挂载自动预填 [33m 1104[2mms[22m[39m
+   [33m[2m✓[22m[39m LoginView 记住账号名与自动登录[2m > [22m预置记住的凭据：未认证挂载即自动提交一次登录 [33m 445[2mms[22m[39m
+   [33m[2m✓[22m[39m LoginView 记住账号名与自动登录[2m > [22m自动登录失败：清掉记住的密码（防反复 401 撞锁定），保留账号名 [33m 750[2mms[22m[39m
+   [33m[2m✓[22m[39m LoginView 记住账号名与自动登录[2m > [22m刚点过退出（退出意图标记）：不自动登录、不预填密码；账号名预填保留 [33m 350[2mms[22m[39m
+   [33m[2m✓[22m[39m LoginView 记住账号名与自动登录[2m > [22m退出意图标记一次性消费：标记消掉后自动登录恢复原行为 [33m 774[2mms[22m[39m
+ [32m✓[39m src/views/CasesView.views.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 6363[2mms[22m[39m
+   [33m[2m✓[22m[39m CasesView 应用保存视图[2m > [22m默认视图加载后自动回填筛选、页大小与列，页码回 1 [33m 3197[2mms[22m[39m
+   [33m[2m✓[22m[39m CasesView 应用保存视图[2m > [22m从视图菜单应用非默认视图，筛选状态与页大小同步回填 [33m 3164[2mms[22m[39m
+ [32m✓[39m src/views/AdminView.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 17798[2mms[22m[39m
+   [33m[2m✓[22m[39m AdminView 用户列表[2m > [22m渲染用户行，空邮箱显示统一占位 [33m 2307[2mms[22m[39m
+   [33m[2m✓[22m[39m AdminView 用户列表[2m > [22m启用状态走 StatusTag，图标 + 文字双编码 [33m 1471[2mms[22m[39m
+   [33m[2m✓[22m[39m AdminView 用户列表[2m > [22m勾一行出现批量条并计数为 1 [33m 2038[2mms[22m[39m
+   [33m[2m✓[22m[39m AdminView 项目成员[2m > [22m所有者行是只读文本，不给可编辑的角色下拉 [33m 2650[2mms[22m[39m
+   [33m[2m✓[22m[39m AdminView 项目成员[2m > [22m停用成员显示「已停用」，不是笼统的「否」 [33m 2247[2mms[22m[39m
+   [33m[2m✓[22m[39m AdminView 项目成员[2m > [22m所有者不可移除，非所有者有移除按钮 [33m 2631[2mms[22m[39m
+   [33m[2m✓[22m[39m AdminView 项目与角色[2m > [22m项目表渲染项目编码与启用状态 [33m 2015[2mms[22m[39m
+   [33m[2m✓[22m[39m AdminView 项目与角色[2m > [22m角色表渲染角色码与内置标记 [33m 2435[2mms[22m[39m
+ [32m✓[39m src/views/CaseSetsView.spec.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 14834[2mms[22m[39m
+   [33m[2m✓[22m[39m CaseSetsView 列表[2m > [22m编号 / 名称 / 描述三列都渲染，空描述显示占位符 [33m 878[2mms[22m[39m
+   [33m[2m✓[22m[39m CaseSetsView 列表[2m > [22m点「编辑」预填原值，且集合编号不可改 [33m 931[2mms[22m[39m
+   [33m[2m✓[22m[39m CaseSetsView 成员管理[2m > [22m打开面板后按后端顺序列出成员并编号 [33m 1365[2mms[22m[39m
+   [33m[2m✓[22m[39m CaseSetsView 成员管理[2m > [22m上移提交完整成员列表的新顺序，而不是只提交被移动的一条 [33m 1426[2mms[22m[39m
+   [33m[2m✓[22m[39m CaseSetsView 资产版本（PUBX-01/02）[2m > [22m打开面板出现资产版本读数：v2 与「已同步」徽标 [33m 1182[2mms[22m[39m
+   [33m[2m✓[22m[39m CaseSetsView 资产版本（PUBX-01/02）[2m > [22m平台有新版本时显示提示；检查差异后按类型渲染 diff 行 [33m 1817[2mms[22m[39m
+   [33m[2m✓[22m[39m CaseSetsView 资产版本（PUBX-01/02）[2m > [22m保持分叉：调用 diverge、徽标切到「已分叉」、内容接口不再动 [33m 1960[2mms[22m[39m
+   [33m[2m✓[22m[39m CaseSetsView 资产版本（PUBX-01/02）[2m > [22m非副本集合：面板显示占位，不渲染同步按钮 [33m 533[2mms[22m[39m
+   [33m[2m✓[22m[39m CaseSetsView 同步策略（N9）[2m > [22m默认按 FULL 同步 [33m 1119[2mms[22m[39m
+   [33m[2m✓[22m[39m CaseSetsView 同步策略（N9）[2m > [22m下拉切到 ADD_ONLY 后按策略同步 [33m 1676[2mms[22m[39m
+   [33m[2m✓[22m[39m CaseSetsView 平台用例集库（N9）[2m > [22m管理员可见平台库、可展开只读成员 [33m 1335[2mms[22m[39m
+   [33m[2m✓[22m[39m CaseSetsView 平台用例集库（N9）[2m > [22m非管理员不渲染平台库，也不发请求 [33m 607[2mms[22m[39m
+ [32m✓[39m src/views/PlansView.spec.ts [2m([22m[2m14 tests[22m[2m)[22m[33m 18030[2mms[22m[39m
+   [33m[2m✓[22m[39m PlansView 列表[2m > [22m双行单元格两行都在：名称 + 套件路径、Cron + 时区 [33m 1087[2mms[22m[39m
+   [33m[2m✓[22m[39m PlansView 列表[2m > [22m未来触发时间保留第 2、3 次，不只显示第一个 [33m 803[2mms[22m[39m
+   [33m[2m✓[22m[39m PlansView 列表[2m > [22m状态徽标图标 + 文字双编码 [33m 1018[2mms[22m[39m
+   [33m[2m✓[22m[39m PlansView 列表[2m > [22m暂停 / 恢复按行状态取文案，不是全页一个文案 [33m 754[2mms[22m[39m
+   [33m[2m✓[22m[39m PlansView 编辑对话框[2m > [22m点「编辑」预填原值，而不是打开一张空表单 [33m 1339[2mms[22m[39m
+   [33m[2m✓[22m[39m PlansView 编辑对话框[2m > [22m新建打开空表单，且不显示「编辑」标题 [33m 1511[2mms[22m[39m
+   [33m[2m✓[22m[39m PlansView 编辑对话框[2m > [22m依赖列表排除自己，勾选后写回 dependencyIds [33m 1768[2mms[22m[39m
+   [33m[2m✓[22m[39m PlansView 编排冲突（W5）[2m > [22m冲突行用计划名展示涉及的计划，并标记严重级 [33m 1289[2mms[22m[39m
+   [33m[2m✓[22m[39m PlansView 编排冲突（W5）[2m > [22m无冲突时显示空态，不显示批量按钮 [33m 848[2mms[22m[39m
+   [33m[2m✓[22m[39m PlansView 编排冲突（W5）[2m > [22m全选后批量暂停：多条冲突里的计划去重后一次性提交 [33m 1199[2mms[22m[39m
+   [33m[2m✓[22m[39m PlansView 依赖跳过事件（PLN-02）[2m > [22m展开后按审计 detail 还原下游计划名、原因文案与上游运行号 [33m 1837[2mms[22m[39m
+   [33m[2m✓[22m[39m PlansView 依赖跳过事件（PLN-02）[2m > [22m无权限时不给空表格，明确提示仅管理员或项目所有者可看 [33m 879[2mms[22m[39m
+   [33m[2m✓[22m[39m PlansView 依赖跳过事件（PLN-02）[2m > [22m超过一页时给翻页器，翻页带页码重新拉（PLN-02 残余） [33m 1893[2mms[22m[39m
+   [33m[2m✓[22m[39m PlansView 依赖跳过事件（PLN-02）[2m > [22m填时间范围后回到第一页并按 from 重新拉（PLN-02 残余） [33m 1801[2mms[22m[39m
+ [32m✓[39m src/composables/useAiDrawer.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 666[2mms[22m[39m
+   [33m[2m✓[22m[39m 侧栏折叠态迁移[2m > [22m遗留的「已折叠」在升级后首次加载时归位为展开，并写下迁移标记 [33m 619[2mms[22m[39m
+ [32m✓[39m src/views/CasesView.spec.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 20366[2mms[22m[39m
+   [33m[2m✓[22m[39m CasesView 勾选接线[2m > [22m渲染出接口返回的行 [33m 2621[2mms[22m[39m
+   [33m[2m✓[22m[39m CasesView 勾选接线[2m > [22m勾一行出现批量条并计数为 1 [33m 2325[2mms[22m[39m
+   [33m[2m✓[22m[39m CasesView 勾选接线[2m > [22m表头全选只选本页，再点一次全部取消 [33m 3090[2mms[22m[39m
+   [33m[2m✓[22m[39m CasesView 勾选接线[2m > [22m状态列走 StatusTag，图标与文字双编码 [33m 1347[2mms[22m[39m
+   [33m[2m✓[22m[39m CasesView 执行所选（EXEC-02）[2m > [22m提交只传所选 id 与执行参数，成功提示运行号 [33m 1943[2mms[22m[39m
+   [33m[2m✓[22m[39m CasesView 执行所选（EXEC-02）[2m > [22m后端未绑定 400：错误原文展示在表单内，勾选不丢 [33m 2605[2mms[22m[39m
+   [33m[2m✓[22m[39m CasesView 执行所选（EXEC-02）[2m > [22m选中 L2 用例时禁用执行并给出原因（ADR-0013） [33m 892[2mms[22m[39m
+   [33m[2m✓[22m[39m CasesView 执行所选（EXEC-02）[2m > [22m跨页选中的 L2 不在当前页时，预检结果同样能提前禁用（EXEC-15 残余） [33m 1453[2mms[22m[39m
+   [33m[2m✓[22m[39m CasesView 表单草稿（v3.1.0）[2m > [22m再次打开新建表单时提示较新草稿，恢复后回填字段 [33m 2121[2mms[22m[39m
+   [33m[2m✓[22m[39m CasesView 表单草稿（v3.1.0）[2m > [22m丢弃草稿后不再回填，并清除存储 [33m 1965[2mms[22m[39m
+ [32m✓[39m src/views/ReportTemplatesView.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 1387[2mms[22m[39m
+   [33m[2m✓[22m[39m ReportTemplatesView[2m > [22m上移改变顺序，并原样体现在保存请求里 [33m 584[2mms[22m[39m
+ [32m✓[39m src/components/AppNav.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 837[2mms[22m[39m
+ [32m✓[39m src/components/plan/PlanGraph.spec.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 506[2mms[22m[39m
+ [32m✓[39m src/views/RunsView.spec.ts [2m([22m[2m16 tests[22m[2m)[22m[33m 27913[2mms[22m[39m
+   [33m[2m✓[22m[39m RunsView 列表与日志联动[2m > [22m渲染两行运行记录 [33m 1511[2mms[22m[39m
+   [33m[2m✓[22m[39m RunsView 列表与日志联动[2m > [22m列表页直接显示设备范围，未声明时写「全部设备」而不是空白（EXEC-11） [33m 1268[2mms[22m[39m
+   [33m[2m✓[22m[39m RunsView 列表与日志联动[2m > [22m点「查看日志」后打开对应行的面板，且只有那一行被标为选中 [33m 2372[2mms[22m[39m
+   [33m[2m✓[22m[39m RunsView 列表与日志联动[2m > [22m日志面板可下载完整日志（EXEC-06） [33m 2339[2mms[22m[39m
+   [33m[2m✓[22m[39m RunsView 列表与日志联动[2m > [22m状态列是图标 + 文字双编码，不是只靠颜色 [33m 1013[2mms[22m[39m
+   [33m[2m✓[22m[39m RunsView 列表与日志联动[2m > [22m排队中的运行在日志面板显示位次，位次未知时明说未知（EXEC-10） [33m 2392[2mms[22m[39m
+   [33m[2m✓[22m[39m RunsView 列表与日志联动[2m > [22m等设备租约的运行显示「等待资源」而不是运行中（FR-08） [33m 2013[2mms[22m[39m
+   [33m[2m✓[22m[39m RunsView 列表与日志联动[2m > [22m已终止的行不再显示「取消」 [33m 926[2mms[22m[39m
+   [33m[2m✓[22m[39m RunsView 手动执行[2m > [22m点「手动执行」打开表单，默认带一套可改的套件路径 [33m 1394[2mms[22m[39m
+   [33m[2m✓[22m[39m RunsView 手动执行[2m > [22m并发度固定 1/2/4 三档，选 4 后按 4 提交（EXEC-11） [33m 2192[2mms[22m[39m
+   [33m[2m✓[22m[39m RunsView 手动执行[2m > [22m套件路径按行解析并原样提交给 quick-run [33m 1879[2mms[22m[39m
+   [33m[2m✓[22m[39m RunsView 手动执行[2m > [22m套件路径清空后提交按钮禁用，不会把空列表打到后端 [33m 1488[2mms[22m[39m
+   [33m[2m✓[22m[39m RunsView 手动执行[2m > [22m手动执行表单可声明设备范围，并随 quick-run 提交（FR-v0.4-01） [33m 2902[2mms[22m[39m
+   [33m[2m✓[22m[39m RunsView 手动执行[2m > [22m日志面板显示运行的设备范围，未声明时明确写「全部设备」 [33m 1485[2mms[22m[39m
+   [33m[2m✓[22m[39m RunsView 手动执行[2m > [22m日志面板显示「第 N 次尝试」，首次尝试不渲染该标记（FR-v0.4-29） [33m 1509[2mms[22m[39m
+   [33m[2m✓[22m[39m RunsView 手动执行[2m > [22m日志按级别过滤：取消「信息」后 INFO 行隐藏，ERROR / WARN 保留（FR-v0.4-20） [33m 1222[2mms[22m[39m
+ [32m✓[39m src/views/WorkbenchView.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 687[2mms[22m[39m
+ [32m✓[39m src/components/report/TrendChart.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 402[2mms[22m[39m
+ [32m✓[39m src/components/ProjectCard.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 273[2mms[22m[39m
+ [32m✓[39m src/views/PlanGroupsView.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 534[2mms[22m[39m
+ [32m✓[39m src/components/report/SuiteTree.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 228[2mms[22m[39m
+ [32m✓[39m src/views/AssetsView.spec.ts [2m([22m[2m16 tests[22m[2m)[22m[33m 32264[2mms[22m[39m
+   [33m[2m✓[22m[39m AssetsView 设备页[2m > [22m渲染设备行，空值列显示统一占位而不是空白 [33m 2813[2mms[22m[39m
+   [33m[2m✓[22m[39m AssetsView 设备页[2m > [22m勾一行出现批量条，计数为 1 [33m 2543[2mms[22m[39m
+   [33m[2m✓[22m[39m AssetsView 设备页[2m > [22m端口按钮打开下方卡片，含设备名与端口行 [33m 2573[2mms[22m[39m
+   [33m[2m✓[22m[39m AssetsView 设备页[2m > [22m再点一次收起端口卡片 [33m 2593[2mms[22m[39m
+   [33m[2m✓[22m[39m AssetsView 页签切换[2m > [22m切到链路页签后换数据源，且设备表不再渲染 [33m 2859[2mms[22m[39m
+   [33m[2m✓[22m[39m AssetsView 页签切换[2m > [22m切页签会清空上一页的勾选 [33m 2037[2mms[22m[39m
+   [33m[2m✓[22m[39m AssetsView 链路拓扑（AST-02）[2m > [22m拓扑按 A 端 → 链路 → B 端渲染，表格让位给拓扑 [33m 2046[2mms[22m[39m
+   [33m[2m✓[22m[39m AssetsView 链路拓扑（AST-02）[2m > [22m两端都没登记设备的链路显示「未连接」，切回表格可复原 [33m 2362[2mms[22m[39m
+   [33m[2m✓[22m[39m AssetsView 链路拓扑（AST-02）[2m > [22m三跳链路串成一条链，节点按 A→B→C→D 排开且边不丢 [33m 2130[2mms[22m[39m
+   [33m[2m✓[22m[39m AssetsView 链路拓扑（AST-02）[2m > [22m分叉时每条链路仍各渲染一次，不会被主干吞掉 [33m 2132[2mms[22m[39m
+   [33m[2m✓[22m[39m AssetsView 租约页[2m > [22m切到租约页签后列出占用资源与剩余时间 [33m 1134[2mms[22m[39m
+   [33m[2m✓[22m[39m AssetsView 租约页[2m > [22m非管理员看不到强制释放按钮 [33m 1343[2mms[22m[39m
+   [33m[2m✓[22m[39m AssetsView 租约页[2m > [22m管理员强制释放以 runId 作二次确认，成功后刷新列表 [33m 1811[2mms[22m[39m
+   [33m[2m✓[22m[39m AssetsView 租约页[2m > [22m取消二次确认时一个请求都不发 [33m 1355[2mms[22m[39m
+   [33m[2m✓[22m[39m AssetsView 凭据页[2m > [22m「已配置」走 StatusTag，图标与文字双编码 [33m 1221[2mms[22m[39m
+   [33m[2m✓[22m[39m AssetsView 凭据页[2m > [22m搜索在前端过滤（后端 /credentials 不支持关键词） [33m 1306[2mms[22m[39m
+[90mstderr[2m | src/components/OnboardingChecklist.spec.ts[2m > [22m[2m新手引导完成态[2m > [22m[2m概览数字为 0 时五步全部未完成，并给出
+对应跳转
+[22m[39m[Vue Router warn]: No match found for location with path "/admin"
+[Vue Router warn]: No match found for location with path "/imports"
+[Vue Router warn]: No match found for location with path "/nodes"
+[Vue Router warn]: No match found for location with path "/runs"
+[Vue Router warn]: No match found for location with path "/reports"
+
+[90mstderr[2m | src/components/OnboardingChecklist.spec.ts[2m > [22m[2m新手引导完成态[2m > [22m[2m按用例 / 节点 / 运行数字判断完成态
+[22m[39m[Vue Router warn]: No match found for location with path "/reports"
+
+[90mstderr[2m | src/components/OnboardingChecklist.spec.ts[2m > [22m[2m折叠与不再显示持久化[2m > [22m[2m折叠后刷新仍保持收起（按用户 + 
+项目）
+[22m[39m[Vue Router warn]: No match found for location with path "/imports"
+[Vue Router warn]: No match found for location with path "/nodes"
+[Vue Router warn]: No match found for location with path "/runs"
+[Vue Router warn]: No match found for location with path "/reports"
+
+[90mstderr[2m | src/components/OnboardingChecklist.spec.ts[2m > [22m[2m折叠与不再显示持久化[2m > [22m[2m不再显示后整卡消失，且持久化
+[22m[39m[Vue Router warn]: No match found for location with path "/imports"
+[Vue Router warn]: No match found for location with path "/nodes"
+[Vue Router warn]: No match found for location with path "/runs"
+[Vue Router warn]: No match found for location with path "/reports"
+
+ [32m✓[39m src/components/OnboardingChecklist.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 274[2mms[22m[39m
+ [32m✓[39m src/components/SelectionBar.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 219[2mms[22m[39m
+ [32m✓[39m src/components/AboutDialog.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 366[2mms[22m[39m
+ [32m✓[39m src/config/entitySearch.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 74[2mms[22m[39m
+ [32m✓[39m src/components/ReportSummaryCard.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 249[2mms[22m[39m
+ [32m✓[39m src/components/AppLogo.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 104[2mms[22m[39m
+ [32m✓[39m src/components/EmptyIllustration.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 61[2mms[22m[39m
+ [32m✓[39m src/components/ShortcutPanel.spec.ts [2m([22m[2m1 test[22m[2m)[22m[32m 206[2mms[22m[39m
+ [32m✓[39m src/config/navigation.spec.ts [2m([22m[2m33 tests[22m[2m)[22m[32m 45[2mms[22m[39m
+ [32m✓[39m src/utils/format.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 171[2mms[22m[39m
+ [32m✓[39m src/composables/useFocusTrap.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 121[2mms[22m[39m
+ [32m✓[39m src/composables/useLogout.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 32[2mms[22m[39m
+ [32m✓[39m src/composables/useSavedViews.spec.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 36[2mms[22m[39m
+ [32m✓[39m src/stores/auth.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 32[2mms[22m[39m
+ [32m✓[39m src/composables/useAccent.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 29[2mms[22m[39m
+ [32m✓[39m src/composables/useDensity.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 28[2mms[22m[39m
+ [32m✓[39m src/views/environment/pages.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 21[2mms[22m[39m
+ [32m✓[39m src/views/baselines/pages.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 22[2mms[22m[39m
+ [32m✓[39m src/views/maintenance/pages.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 19[2mms[22m[39m
+ [32m✓[39m src/composables/useBatchAction.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32m✓[39m src/composables/useSelection.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m src/composables/useDraft.spec.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m src/config/commandPalette.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m src/locales/index.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m src/components/ui/columnSettings.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m src/views/CaseBoardView.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m src/utils/keyboard.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m src/components/DataTable.spec.ts [2m([22m[2m11 tests[22m[2m)[22m[33m 981[2mms[22m[39m
+ [32m✓[39m src/utils/statusLabels.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m src/components/AppHeader.spec.ts [2m([22m[2m11 tests[22m[2m)[22m[33m 716[2mms[22m[39m
+ [32m✓[39m src/composables/naiveTheme.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m src/utils/precheck.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m src/config/changelog.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m src/components/RunTimeline.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 456[2mms[22m[39m
+ [32m✓[39m src/config/layout.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m src/utils/eta.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m src/composables/useConfirm.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m src/config/viewState.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m src/config/imports.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m src/config/kernels.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m src/utils/tableWidth.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m src/config/groups.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m src/App.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m src/config/testReports.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m src/config/aiPanel.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m70 passed[39m[22m[90m (70)[39m
+[2m      Tests [22m [1m[32m479 passed[39m[22m[90m (479)[39m
+[2m   Start at [22m 18:26:10
+[2m   Duration [22m 116.25s[2m (transform 26.82s, setup 2.91s, collect 768.11s, tests 183.38s, environment 523.88s, prepare 98.27s)[22m
+

@@ -1,18 +1,30 @@
 <script setup lang="ts">
-import { computed, h, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, h, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   NButton,
   NCheckbox,
   NInput,
   NInputNumber,
+  NModal,
   NPagination,
   NRadioButton,
   NRadioGroup,
   NSelect,
   type DataTableColumns,
 } from 'naive-ui'
-import { executionApi, runLogSocketUrl, type ExecutionRun, type LeaseWait, type PendingActivity, type RunLogLine, type RunProgress, type RunRetryOrigin } from '@/api/execution'
+import {
+  executionApi,
+  runLogSocketUrl,
+  type ExecutionRun,
+  type LeaseWait,
+  type PendingActivity,
+  type PrecheckPayload,
+  type RunLogLine,
+  type RunPrecheckResult,
+  type RunProgress,
+  type RunRetryOrigin,
+} from '@/api/execution'
 import { caseSetApi, type TestSet } from '@/api/cases'
 import { deviceApi, type Device } from '@/api/asset'
 import { useAuthStore } from '@/stores/auth'
@@ -24,6 +36,8 @@ import ShardBoard from '@/components/ShardBoard.vue'
 import RunTimeline from '@/components/RunTimeline.vue'
 import { localizeError, type ErrorLine } from '@/utils/errors'
 import { EMPTY, formatDateTime } from '@/utils/format'
+import { formatEta } from '@/utils/eta'
+import { groupPrechecks, isPrecheckBlocked, needsPrecheck } from '@/utils/precheck'
 import { RUN_STATUSES, runStatusLabel, runStatusTone } from '@/utils/statusLabels'
 
 const { t } = useI18n()
@@ -156,6 +170,60 @@ function parsedEnv(): number | null {
   return Number.isNaN(value) ? null : value
 }
 
+// ---- 执行前预检（v3.1.0「顺手」）----
+const precheckOpen = ref(false)
+const precheckResult = ref<RunPrecheckResult | null>(null)
+const precheckGroups = computed(() => {
+  const checks = precheckResult.value?.checks ?? []
+  const labels: Record<'BLOCK' | 'WARN' | 'OK', string> = {
+    BLOCK: t('execution.precheck.blocked'),
+    WARN: t('execution.precheck.warn'),
+    OK: t('execution.precheck.ok'),
+  }
+  return groupPrechecks(checks).map((group) => ({
+    ...group,
+    label: labels[group.level],
+  }))
+})
+const precheckBlocked = computed(() => isPrecheckBlocked(precheckResult.value))
+
+const etaLabels = computed(() => ({
+  second: t('execution.eta.second'),
+  minute: t('execution.eta.minute'),
+  hour: t('execution.eta.hour'),
+}))
+const progressEta = computed(() => formatEta(progress.value?.etaSeconds, etaLabels.value))
+const precheckEstimate = computed(() => {
+  const result = precheckResult.value
+  if (!result) return ''
+  if (!result.estimatedTotal && !result.estimatedSeconds) {
+    return t('execution.precheck.estimateUnknown')
+  }
+  return t('execution.precheck.estimate', {
+    count: result.estimatedTotal,
+    time: formatEta(result.estimatedSeconds, etaLabels.value),
+    samples: result.sampleSize,
+  })
+})
+
+function manualCommon() {
+  return {
+    environmentId: parsedEnv(),
+    deviceKeys: manualDeviceKeys.value.length > 0 ? [...manualDeviceKeys.value] : undefined,
+    concurrency: Number(manualConcurrency.value) || 1,
+    timeoutSeconds: Number(manualTimeout.value) || 3600,
+    testTimeoutSeconds: Number(manualTestTimeout.value) || 0,
+    includeTag: manualTag.value.trim() || null,
+  }
+}
+
+function precheckPayload(): PrecheckPayload {
+  return {
+    projectId: projectId.value,
+    testSetId: manualMode.value === 'testSet' ? manualTestSetId.value : null,
+  }
+}
+
 async function submitManual(): Promise<void> {
   if (!canManualSubmit.value) return
   error.value = null
@@ -168,17 +236,26 @@ async function submitManual(): Promise<void> {
     error.value = { summary: t('execution.manual.needTestSet'), detail: null }
     return
   }
+
+  // 预检只是提高成功率，不是硬门禁：接口不存在或失败时直接按原流程执行。
+  try {
+    const result = await executionApi.precheck(precheckPayload())
+    if (needsPrecheck(result)) {
+      precheckResult.value = result
+      precheckOpen.value = true
+      return
+    }
+  } catch {
+    // 旧后端 / 预检不可用：继续执行
+  }
+  await executeManual()
+}
+
+async function executeManual(): Promise<void> {
   manualBusy.value = true
   const testSetId = manualTestSetId.value
   try {
-    const common = {
-      environmentId: parsedEnv(),
-      deviceKeys: manualDeviceKeys.value.length > 0 ? [...manualDeviceKeys.value] : undefined,
-      concurrency: Number(manualConcurrency.value) || 1,
-      timeoutSeconds: Number(manualTimeout.value) || 3600,
-      testTimeoutSeconds: Number(manualTestTimeout.value) || 0,
-      includeTag: manualTag.value.trim() || null,
-    }
+    const common = manualCommon()
     const run =
       manualMode.value === 'suite'
         ? await executionApi.quickRun({
@@ -188,6 +265,7 @@ async function submitManual(): Promise<void> {
             source: 'runs-view',
           })
         : await executionApi.runTestSet(projectId.value, testSetId as number, common)
+    precheckOpen.value = false
     manualOpen.value = false
     page.value = 1
     await load()
@@ -199,6 +277,11 @@ async function submitManual(): Promise<void> {
   } finally {
     manualBusy.value = false
   }
+}
+
+function confirmPrecheck(): void {
+  if (precheckBlocked.value) return
+  void executeManual()
 }
 
 const stateOptions = computed(() => [
@@ -435,6 +518,18 @@ function stopProgressPoll(): void {
   }
 }
 
+/** 页面隐藏时暂停进度/排队轮询，回到前台先补一拍再恢复节奏。 */
+function onVisibilityChange(): void {
+  if (document.hidden) {
+    stopProgressPoll()
+    stopPendingPoll()
+    return
+  }
+  if (!selected.value || isTerminal(selected.value.state)) return
+  void loadProgress()
+  startProgressPoll()
+}
+
 async function loadRecentLog(): Promise<void> {
   if (!selected.value) return
   try {
@@ -619,10 +714,15 @@ watch([stateFilter], () => {
   void load()
 })
 
+onMounted(() => {
+  document.addEventListener('visibilitychange', onVisibilityChange)
+})
+
 onBeforeUnmount(() => {
   disconnect()
   stopPendingPoll()
   stopProgressPoll()
+  document.removeEventListener('visibilitychange', onVisibilityChange)
 })
 </script>
 
@@ -742,6 +842,32 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
+    <NModal v-model:show="precheckOpen">
+      <div class="precheck-dialog" role="dialog" aria-modal="true" :aria-label="t('execution.precheck.title')">
+        <h2 class="card-title">{{ t('execution.precheck.title') }}</h2>
+        <p class="muted">{{ precheckEstimate }}</p>
+        <div v-for="group in precheckGroups" :key="group.level" class="precheck-group" :class="`is-${group.level.toLowerCase()}`">
+          <h3 class="precheck-group__title">{{ group.label }}</h3>
+          <ul>
+            <li v-for="check in group.items" :key="check.key">
+              <strong>{{ check.title }}</strong>
+              <span class="muted"> — {{ check.detail }}</span>
+              <p v-if="check.hint" class="precheck-hint">{{ check.hint }}</p>
+            </li>
+          </ul>
+        </div>
+        <p v-if="precheckBlocked" class="precheck-blocked-hint" role="alert">
+          {{ t('execution.precheck.needBlocked') }}
+        </p>
+        <div class="precheck-actions">
+          <NButton quaternary @click="precheckOpen = false">{{ t('execution.precheck.cancel') }}</NButton>
+          <NButton type="primary" :disabled="precheckBlocked" @click="confirmPrecheck">
+            {{ t('execution.precheck.continueAnyway') }}
+          </NButton>
+        </div>
+      </div>
+    </NModal>
+
     <DataTable
       :columns="columns"
       :data="runs"
@@ -838,6 +964,13 @@ onBeforeUnmount(() => {
             }}
           </span>
           <span class="muted">{{ t('execution.progressElapsed', { seconds: progress.elapsedSeconds }) }}</span>
+          <span v-if="progress.etaSeconds !== null && progress.etaSeconds !== undefined" class="muted">
+            {{ t('execution.progressEta', { eta: progressEta }) }}
+          </span>
+          <span v-if="progress.stalled" class="progress-stalled" role="status">
+            {{ t('execution.progressStalled') }}
+          </span>
+          <span v-if="progress.finished" class="muted">{{ t('execution.progressFinished') }}</span>
           <!-- RF 只在用例结束时打印结果行，所以这里说「最近完成」而不是「当前执行」 -->
           <span v-if="progress.lastTest" class="muted progress-last">
             {{ t('execution.progressLast', { test: progress.lastTest, verdict: progress.lastVerdict ?? '' }) }}
@@ -1021,4 +1154,72 @@ onBeforeUnmount(() => {
   display: flex;
   gap: var(--space-2);
 }
+.progress-stalled {
+  color: var(--warn);
+  font-weight: 600;
+}
+
+.precheck-dialog {
+  width: min(560px, 92vw);
+  background: var(--panel);
+  border-radius: 12px;
+  padding: 20px 24px;
+  box-shadow: var(--shadow);
+}
+
+.precheck-group {
+  margin-top: 12px;
+  padding: 8px 12px;
+  border-left: 3px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-2);
+}
+
+.precheck-group.is-block {
+  border-left-color: var(--fail);
+}
+
+.precheck-group.is-warn {
+  border-left-color: var(--warn);
+}
+
+.precheck-group.is-ok {
+  border-left-color: var(--ok);
+}
+
+.precheck-group__title {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.precheck-group ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.precheck-group li {
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+
+.precheck-hint {
+  margin: 2px 0 0;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.precheck-blocked-hint {
+  margin: 12px 0 0;
+  color: var(--fail);
+  font-size: 13px;
+}
+
+.precheck-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
 </style>

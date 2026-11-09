@@ -1,0 +1,31 @@
+﻿==============================================================================
+CLOS-02 · output.xml metadata 六必填机检（FR-v2.2-25）
+==============================================================================
+[扫描范围] docs/evidence/v3.0.1/**/output.xml + fixtures/**/output.xml
+[排除清单] 以下历史冻结目录显式排除（既不计合规，也不判红）：
+  - docs/evidence/v2.0/a3-rf-kernel : 1 份 | v2.0 RF 内核历史冻结证据，无 metadata、字节冻结，不得改
+  - docs/evidence/v2.0/a8-report-chain : 2 份 | v2.0 报告链历史冻结证据（含 deleted-run 原始产物），无 metadata、字节冻结
+  - docs/evidence/v2.1 : 1 份 | v2.1 历史示例证据（SMPL-01），无 metadata、字节冻结
+  - 其它未归类历史/运行产物 : 10 份 | 同上原则处理
+      artifacts/tmp/pabot-fault/output.xml
+      artifacts/tmp/pabot-fault/pabot_results/0/output.xml
+      artifacts/tmp/pabot-fault/pabot_results/1/output.xml
+      artifacts/tmp/pabot-fault/pabot_results/2/output.xml
+      artifacts/tmp/pabot-fault/pabot_results/3/output.xml
+      artifacts/tmp/pabot-smoke/output.xml
+      artifacts/tmp/pabot-smoke/pabot_results/0/output.xml
+      artifacts/tmp/pabot-smoke/pabot_results/1/output.xml
+  以上目录一律：不计为合规、不因缺项判红、一个字节都不改。 全仓 output.xml 实测 14 份，其中排除 14 份。
+[样本] 当前版本样本数 = 0
+INFO  当前版本样本数 = 0：不得静默放行，强制运行判据自校验（负向实证）
+
+[判据自校验] 临时目录生成 6 组 XML，逐组走 parse_metadata + validate：
+  [PASS] 齐全样本（6/6） -> 判据结果 PASS（预期 PASS，判据已接受） | 0 问题
+  [PASS] 缺 1 项样本（缺 SW_BUILD） -> 判据结果 FAIL（预期 FAIL，判据已拒绝） | 缺必填项: SW_BUILD
+  [PASS] 值超 40 字符样本 -> 判据结果 FAIL（预期 FAIL，判据已拒绝） | 值超 40 字符: SW_BUILD (41)
+  [PASS] RUN_ID 改小写别名样本 -> 判据结果 FAIL（预期 FAIL，判据已拒绝） | 缺必填项: RUN_ID; RUN_ID 键名不可改（发现别名: run_id）
+  [PASS] 值含 token= 明文样本 -> 判据结果 FAIL（预期 FAIL，判据已拒绝） | 值含凭据明文特征: LINK
+  [PASS] 键名含 KEY 但值无凭据样本 -> 判据结果 PASS（预期 PASS，判据已接受） | 0 问题
+PASS  判据自校验：6 组正/负样本全部符合预期（缺项被拒、齐全通过、键名不误判）
+
+结论 PASS：当前版本样本数 = 0（这不是合规证明）；判据自校验负向实证通过，据此放行，历史冻结证据一个字节未改、也未假装合规

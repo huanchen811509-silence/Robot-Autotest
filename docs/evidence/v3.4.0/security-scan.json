@@ -1,0 +1,23 @@
+{
+  "generatedAt": "2026-11-08T16:05:37.983395+00:00",
+  "filesScanned": 1032,
+  "counts": {
+    "HIGH": 0,
+    "MEDIUM": 1,
+    "LOW": 0
+  },
+  "verdict": "PASS",
+  "findings": [
+    {
+      "severity": "MEDIUM",
+      "rule": "floating-dependency",
+      "file": "backend/pom.xml",
+      "detail": "0.1.0-SNAPSHOT"
+    }
+  ],
+  "scope": [
+    "secrets",
+    "sast",
+    "dependencies"
+  ]
+}

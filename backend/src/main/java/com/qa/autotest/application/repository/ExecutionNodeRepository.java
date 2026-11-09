@@ -48,6 +48,14 @@ public interface ExecutionNodeRepository {
     java.util.Map<Long, NodeLastRun> latestRunsByNode();
 
     /**
+     * 各节点最近一条 run 所属项目（通知落库用）：run.node_id 是平台维度，
+     * 节点离线时拿不到请求上下文，只能靠最近一次运行反查项目。
+     */
+    default java.util.Map<Long, Long> latestProjectByNode() {
+        return java.util.Map.of();
+    }
+
+    /**
      * 各节点当前在跑的 run 数（NODX-02，占用读数）：按 {@code run.node_id} 聚合，
      * 只数 {@code run_status='running'}。节点无在跑任务时不出现在结果里。
      */

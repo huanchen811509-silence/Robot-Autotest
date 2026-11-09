@@ -1,6 +1,7 @@
 package com.qa.autotest.infrastructure;
 
 import com.qa.autotest.application.repository.TestReportRepository;
+import com.qa.autotest.common.db.SlowQuery;
 import com.qa.autotest.domain.report.ReportSnapshot;
 import com.qa.autotest.domain.report.ReportState;
 import com.qa.autotest.domain.report.TestReport;
@@ -22,6 +23,12 @@ import org.springframework.stereotype.Repository;
 /** 测试报告仓储 JDBC 实现（RPTX-01）。 */
 @Repository
 public class TestReportRepositoryJdbc implements TestReportRepository {
+
+    /** 显式投影（FR-3.2-02）：快照 JSON/HTML 体积大，列表页不允许顺手带出未用列。 */
+    private static final String REPORT_COLUMNS = "id, project_id, run_id, title, state, version, "
+            + "snapshot_hash, snapshot_json, snapshot_html, source_summary, created_at, frozen_at";
+    private static final String EXPORT_COLUMNS = "id, report_id, format, file_name, size_bytes, "
+            + "watermark, created_at";
 
     private static final RowMapper<TestReport> REPORT = (rs, n) -> new TestReport(
             rs.getLong("id"),
@@ -59,13 +66,15 @@ public class TestReportRepositoryJdbc implements TestReportRepository {
 
     @Override
     public Optional<TestReport> find(long id) {
-        return jdbc.query("SELECT * FROM test_report WHERE id = ?", REPORT, id).stream().findFirst();
+        return jdbc.query("SELECT " + REPORT_COLUMNS + " FROM test_report WHERE id = ?",
+                REPORT, id).stream().findFirst();
     }
 
     @Override
     public List<TestReport> listByProject(long projectId) {
-        return jdbc.query("SELECT * FROM test_report WHERE project_id = ? ORDER BY id DESC",
-                REPORT, projectId);
+        String sql = "SELECT " + REPORT_COLUMNS
+                + " FROM test_report WHERE project_id = ? ORDER BY id DESC";
+        return SlowQuery.measure("report.list", sql, () -> jdbc.query(sql, REPORT, projectId));
     }
 
     @Override
@@ -136,7 +145,8 @@ public class TestReportRepositoryJdbc implements TestReportRepository {
 
     @Override
     public List<TestReportExport> exports(long reportId) {
-        return jdbc.query("SELECT * FROM test_report_export WHERE report_id = ? ORDER BY id DESC",
+        return jdbc.query("SELECT " + EXPORT_COLUMNS
+                        + " FROM test_report_export WHERE report_id = ? ORDER BY id DESC",
                 EXPORT, reportId);
     }
 

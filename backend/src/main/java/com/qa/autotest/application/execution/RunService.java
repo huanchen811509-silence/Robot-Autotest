@@ -4,6 +4,7 @@ import com.qa.autotest.application.iam.AccessControlService;
 import com.qa.autotest.application.iam.AuditService;
 import com.qa.autotest.application.repository.ExecutionNodeRepository;
 import com.qa.autotest.application.repository.RunRepository;
+import com.qa.autotest.common.query.PageQuery;
 import com.qa.autotest.application.repository.RunRetryOrigin;
 import com.qa.autotest.common.BusinessException;
 import com.qa.autotest.common.ErrorCode;
@@ -49,6 +50,8 @@ public class RunService {
     private final List<RunCompletionListener> completionListeners;
     /** 节点发起校验用（NODX-02）；旧构造默认装配「无节点」桩，行为 = 任何 nodeId 都不存在。 */
     private final ExecutionNodeRepository nodeRepo;
+    /** 并发准入（FR-3.4-02）；旧构造/单测为 null 表示不限流。 */
+    private final RunAdmissionService admission;
 
     /** 兼容既有装配与单测：默认没有完成监听器。 */
     public RunService(RunRepository runs,
@@ -70,7 +73,7 @@ public class RunService {
         this(runs, access, audit, ids, props, clock, completionListeners, NO_NODES);
     }
 
-    @Autowired
+    /** 兼容既有单测装配：不装配准入（不限流）。 */
     public RunService(RunRepository runs,
                       AccessControlService access,
                       AuditService audit,
@@ -79,6 +82,19 @@ public class RunService {
                       Clock clock,
                       List<RunCompletionListener> completionListeners,
                       ExecutionNodeRepository nodeRepo) {
+        this(runs, access, audit, ids, props, clock, completionListeners, nodeRepo, null);
+    }
+
+    @Autowired
+    public RunService(RunRepository runs,
+                      AccessControlService access,
+                      AuditService audit,
+                      RunIdGenerator ids,
+                      ExecutionProperties props,
+                      Clock clock,
+                      List<RunCompletionListener> completionListeners,
+                      ExecutionNodeRepository nodeRepo,
+                      RunAdmissionService admission) {
         this.runs = runs;
         this.access = access;
         this.audit = audit;
@@ -88,6 +104,7 @@ public class RunService {
         this.completionListeners = completionListeners == null
                 ? List.of() : List.copyOf(completionListeners);
         this.nodeRepo = nodeRepo;
+        this.admission = admission;
     }
 
     /** 「无节点」桩：旧构造（未装配节点域）下任何 nodeId 都判不存在，等价拒绝。 */
@@ -219,6 +236,9 @@ public class RunService {
                             + ", trigger=" + origin.triggerType()
                             + (origin.planId() == null ? "" : ", plan=" + origin.planId())
                             + (nodeId == null ? "" : ", node=" + nodeId));
+            if (admission != null) {
+                admission.admit(cmd.projectId(), nodeId, runId);
+            }
             return inserted;
         } catch (DataIntegrityViolationException duplicate) {
             return runs.findByRequestId(cmd.projectId(), requestId)
@@ -322,13 +342,10 @@ public class RunService {
         return runs.findRetryOrigin(projectId, runId).orElse(null);
     }
 
-    public PageResult<RunRecord> page(long projectId, RunState state, int page, int size) {
-        if (page < 1 || size < 1 || size > 100) {
-            throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "分页参数越界");
-        }
+    public PageResult<RunRecord> page(long projectId, RunState state, PageQuery paging) {
         access.bindProject(projectId);
         access.require(PermissionResource.EXECUTION, PermissionAction.READ);
-        return runs.page(projectId, state, page, size);
+        return runs.page(projectId, state, paging);
     }
 
     /**
@@ -363,6 +380,9 @@ public class RunService {
         }
         audit.record("RUN_" + to.name(), "run", runId,
                 ctx.failureReason() == null ? "" : ctx.failureReason());
+        if (to.terminal() && admission != null) {
+            admission.release(runId);
+        }
         RunRecord completed = new RunRecord(current.id(), current.runId(), current.projectId(),
                 current.testSetId(), to, current.priority(), current.concurrency(),
                 current.attemptNo(), current.totalTests(), current.passedTests(),

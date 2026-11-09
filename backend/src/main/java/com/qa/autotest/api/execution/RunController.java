@@ -7,6 +7,8 @@ import com.qa.autotest.application.execution.LeaseWaitRegistry;
 import com.qa.autotest.application.execution.QuickRunService;
 import com.qa.autotest.application.execution.RunDispatcher;
 import com.qa.autotest.application.execution.RunLogFileService;
+import com.qa.autotest.application.execution.RunEtaCalculator;
+import com.qa.autotest.application.execution.RunIdempotency;
 import com.qa.autotest.application.execution.RunLogService;
 import com.qa.autotest.application.execution.RunProgressRegistry;
 import com.qa.autotest.application.execution.RunService;
@@ -14,6 +16,7 @@ import com.qa.autotest.application.execution.RunService.CreateRunCommand;
 import com.qa.autotest.application.execution.TestSetRunService;
 import com.qa.autotest.application.repository.RunRetryOrigin;
 import com.qa.autotest.common.ApiResponse;
+import com.qa.autotest.common.query.PageQuery;
 import com.qa.autotest.domain.common.PageResult;
 import com.qa.autotest.domain.execution.RunOrigin;
 import com.qa.autotest.domain.execution.RunRecord;
@@ -27,6 +30,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -35,6 +39,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 运行记录接口（EXE-01 + EXEC-01）。
@@ -84,7 +89,15 @@ public class RunController {
 
     /** 页面手动执行（EXEC-01 / FR-v0.2-59~60）。 */
     @PostMapping("/quick-run")
-    public ApiResponse<RunRecord> quickRun(@RequestBody QuickRunRequest request) {
+    public ApiResponse<RunRecord> quickRun(
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
+            @RequestBody QuickRunRequest request) {
+        String requestId = RunIdempotency.resolve(idempotencyKey, request.runRequestId(),
+                "quick-run", Instant.now(), props.isIdempotencyFingerprintEnabled(),
+                props.getIdempotencyWindowSeconds(),
+                request.projectId(), request.testSetId(), request.suitePaths(),
+                request.environmentId(), request.deviceKeys(), request.concurrency(),
+                request.timeoutSeconds(), request.testTimeoutSeconds(), request.includeTag());
         return ApiResponse.ok(quickRuns.trigger(new QuickRunService.QuickRunCommand(
                 request.projectId(),
                 request.testSetId(),
@@ -95,7 +108,7 @@ public class RunController {
                 request.timeoutSeconds(),
                 request.testTimeoutSeconds(),
                 request.includeTag(),
-                request.runRequestId(),
+                requestId,
                 null,
                 request.source() == null || request.source().isBlank()
                         ? "runs-view" : request.source())));
@@ -105,26 +118,41 @@ public class RunController {
     @PostMapping("/test-sets/{testSetId}/run")
     public ApiResponse<RunRecord> runTestSet(@PathVariable long testSetId,
                                               @RequestParam long projectId,
+                                              @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
                                               @RequestBody(required = false) TestSetRunRequest request) {
         TestSetRunRequest body = request == null
                 ? new TestSetRunRequest(null, null, null, null, null, null, null)
                 : request;
+        String requestId = RunIdempotency.resolve(idempotencyKey, body.runRequestId(),
+                "test-sets/run", Instant.now(), props.isIdempotencyFingerprintEnabled(),
+                props.getIdempotencyWindowSeconds(),
+                projectId, testSetId, body.environmentId(), body.deviceKeys(),
+                body.concurrency(), body.timeoutSeconds(), body.testTimeoutSeconds(),
+                body.includeTag());
         return ApiResponse.ok(testSetRuns.run(new TestSetRunService.TestSetRunCommand(
                 projectId, testSetId, body.environmentId(), body.deviceKeys(),
                 body.concurrency(), body.timeoutSeconds(), body.testTimeoutSeconds(),
-                body.includeTag(), body.runRequestId())));
+                body.includeTag(), requestId)));
     }
 
     /** 勾选台账用例直接执行（EXEC-02，v0.4 候选提前实现）：后端解析绑定，前端只传用例 id。 */
     @PostMapping("/cases/run")
-    public ApiResponse<RunRecord> runCases(@RequestParam long projectId,
-                                           @RequestBody(required = false) CaseRunRequest request) {
+    public ApiResponse<RunRecord> runCases(
+            @RequestParam long projectId,
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
+            @RequestBody(required = false) CaseRunRequest request) {
         CaseRunRequest body = request == null
                 ? new CaseRunRequest(null, null, null, null, null, null, null, null) : request;
+        String requestId = RunIdempotency.resolve(idempotencyKey, body.runRequestId(),
+                "cases/run", Instant.now(), props.isIdempotencyFingerprintEnabled(),
+                props.getIdempotencyWindowSeconds(),
+                projectId, body.caseIds(), body.environmentId(), body.deviceKeys(),
+                body.concurrency(), body.timeoutSeconds(), body.testTimeoutSeconds(),
+                body.includeTag());
         return ApiResponse.ok(caseRuns.run(new CaseRunService.CaseRunCommand(
                 projectId, body.caseIds(), body.environmentId(), body.deviceKeys(),
                 body.concurrency(), body.timeoutSeconds(), body.testTimeoutSeconds(),
-                body.includeTag(), body.runRequestId())));
+                body.includeTag(), requestId)));
     }
 
     /**
@@ -142,9 +170,18 @@ public class RunController {
 
     /** CI 专用直建端点（FR-v0.2-61）：落库后立即派发，不再停留 queued。 */
     @PostMapping("/runs")
-    public ApiResponse<RunRecord> create(@RequestBody CreateRunRequest request) {
+    public ApiResponse<RunRecord> create(
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
+            @RequestBody CreateRunRequest request) {
         int timeout = request.timeoutSeconds() == null || request.timeoutSeconds() <= 0
                 ? props.getRunTimeoutSeconds() : request.timeoutSeconds();
+        String requestId = RunIdempotency.resolve(idempotencyKey, request.runRequestId(),
+                "runs", Instant.now(), props.isIdempotencyFingerprintEnabled(),
+                props.getIdempotencyWindowSeconds(),
+                request.projectId(), request.testSetId(), request.suitePaths(),
+                request.concurrency(), request.environmentId(), request.deviceKeys(),
+                request.priority(), timeout, request.includeTag(),
+                request.testTimeoutSeconds(), request.nodeId());
         CreateRunCommand command = new CreateRunCommand(
                 request.projectId(),
                 request.testSetId(),
@@ -152,7 +189,7 @@ public class RunController {
                 request.concurrency() == null ? 1 : request.concurrency(),
                 request.environmentId(),
                 request.deviceKeys() == null ? List.of() : request.deviceKeys(),
-                request.runRequestId(),
+                requestId,
                 request.priority() == null ? 0 : request.priority(),
                 timeout,
                 request.includeTag(),
@@ -170,13 +207,25 @@ public class RunController {
         return ApiResponse.ok(runs.get(projectId, runId));
     }
 
+    /** 排序白名单（FR-3.2-02）：只允许这些列，未登记字段返回 400。 */
+    private static final Map<String, String> SORTS = Map.of(
+            "id", "id",
+            "status", "run_status",
+            "enqueued_at", "enqueued_at",
+            "started_at", "started_at");
+
     @GetMapping("/runs")
     public ApiResponse<PageResult<RunRecord>> page(@RequestParam long projectId,
                                                    @RequestParam(required = false) String state,
                                                    @RequestParam(defaultValue = "1") int page,
-                                                   @RequestParam(defaultValue = "20") int size) {
+                                                   @RequestParam(defaultValue = "20") int size,
+                                                   @RequestParam(required = false) String sort,
+                                                   @RequestParam(required = false) Long beforeId) {
         RunState filter = state == null || state.isBlank() ? null : RunState.fromDb(state);
-        return ApiResponse.ok(runs.page(projectId, filter, page, Math.min(size, 100)));
+        PageQuery paging = beforeId == null
+                ? PageQuery.of(page, size, sort, SORTS, "id")
+                : PageQuery.keyset(size, beforeId);
+        return ApiResponse.ok(runs.page(projectId, filter, paging));
     }
 
     /**
@@ -194,10 +243,18 @@ public class RunController {
         int completed = Math.max(tracked == null ? 0 : tracked.completed(), passed + failed);
         int skipped = tracked == null ? 0 : tracked.skipped();
         String phase = tracked != null ? tracked.phase() : phaseOf(run.state());
+        long elapsed = elapsedSeconds(run, tracked);
+        Instant lastActivity = tracked == null ? null : progresses.lastActivityAt(runId);
+        Long heartbeatAge = RunEtaCalculator.heartbeatAgeSeconds(lastActivity, Instant.now());
+        boolean finished = run.state().terminal();
+        Long eta = RunEtaCalculator.etaSeconds(total, completed, elapsed, finished);
+        boolean stalled = RunEtaCalculator.stalled(run.state(), heartbeatAge,
+                props.getProgressStalledSeconds());
         return ApiResponse.ok(new RunProgress(runId, run.state().name(), phase, total,
                 completed, passed, failed, skipped,
                 tracked == null ? null : tracked.lastTest(),
-                tracked == null ? null : tracked.lastVerdict(), elapsedSeconds(run, tracked)));
+                tracked == null ? null : tracked.lastVerdict(), elapsed,
+                eta, heartbeatAge, stalled, finished));
     }
 
     private static String phaseOf(RunState state) {
@@ -328,7 +385,11 @@ public class RunController {
                               int skipped,
                               String lastTest,
                               String lastVerdict,
-                              long elapsedSeconds) {
+                              long elapsedSeconds,
+                              Long etaSeconds,
+                              Long heartbeatAgeSeconds,
+                              boolean stalled,
+                              boolean finished) {
     }
 
     public record CancelRequest(String reason) {

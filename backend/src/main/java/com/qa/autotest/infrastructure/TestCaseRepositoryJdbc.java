@@ -1,8 +1,11 @@
 package com.qa.autotest.infrastructure;
 
 import com.qa.autotest.application.repository.TestCaseRepository;
+import com.qa.autotest.common.db.SlowQuery;
+import com.qa.autotest.common.query.PageQuery;
 import com.qa.autotest.common.tenant.TenantGuard;
 import com.qa.autotest.domain.caseasset.CapabilityStat;
+import com.qa.autotest.domain.caseasset.ReviewSnapshot;
 import com.qa.autotest.domain.caseasset.SafetyLevel;
 import com.qa.autotest.domain.caseasset.TestCase;
 import com.qa.autotest.domain.caseasset.TestCaseStep;
@@ -30,6 +33,15 @@ public class TestCaseRepositoryJdbc implements TestCaseRepository {
               FROM test_case
             """;
 
+    /**
+     * 按 id 排序（默认 / 键集 / sort=id）时强制走 (project_id, id)。
+     *
+     * <p>实测 MySQL 8.0.46 在有 idx_case_project_updated 后会误选它做 ORDER BY id DESC，
+     * Extra 出现 Using filesort（见 docs/evidence/v3.2.0/EW32-02/logs/explain-v11_19.log）。
+     * 这里强制索引，避免索引越多越慢。
+     */
+    private static final String SELECT_BY_ID_INDEX = SELECT + " FORCE INDEX (idx_case_project_id)";
+
     private static final RowMapper<TestCase> MAPPER = (rs, rowNum) -> new TestCase(
             rs.getLong("id"), rs.getLong("project_id"), rs.getString("case_code"),
             rs.getString("title"), rs.getString("case_kind"), rs.getString("priority"),
@@ -41,6 +53,16 @@ public class TestCaseRepositoryJdbc implements TestCaseRepository {
             rs.getLong("id"), rs.getLong("test_case_id"), rs.getInt("step_no"),
             rs.getString("action"), rs.getString("expectation"));
 
+    /** 撤销快照：reviewed_at 统一转字符串存 JSON，避免依赖 JavaTime 模块配置。 */
+    private static final RowMapper<ReviewSnapshot> SNAPSHOT_MAPPER = (rs, rowNum) -> {
+        Timestamp reviewedAt = rs.getTimestamp("reviewed_at");
+        return new ReviewSnapshot(
+                rs.getLong("id"), rs.getString("review_status"), rs.getString("priority"),
+                rs.getString("domain_tag"), rs.getString("safety_level"),
+                rs.getString("review_comment"), rs.getObject("reviewed_by", Long.class),
+                reviewedAt == null ? null : reviewedAt.toInstant().toString());
+    };
+
     private final JdbcTemplate jdbc;
 
     public TestCaseRepositoryJdbc(JdbcTemplate jdbc) {
@@ -51,6 +73,14 @@ public class TestCaseRepositoryJdbc implements TestCaseRepository {
     public PageResult<TestCase> page(long projectId, String keyword, String domain, String priority,
                                      String reviewStatus, String capability, String safetyLevel,
                                      int page, int size) {
+        return page(projectId, keyword, domain, priority, reviewStatus, capability, safetyLevel,
+                PageQuery.of(page, size));
+    }
+
+    @Override
+    public PageResult<TestCase> page(long projectId, String keyword, String domain, String priority,
+                                     String reviewStatus, String capability, String safetyLevel,
+                                     PageQuery paging) {
         StringBuilder where = new StringBuilder(" WHERE project_id = ?");
         List<Object> args = new ArrayList<>();
         args.add(projectId);
@@ -83,12 +113,26 @@ public class TestCaseRepositoryJdbc implements TestCaseRepository {
         String countSql = "SELECT COUNT(*) FROM test_case" + where;
         TenantGuard.requireProjectScope(countSql, "test_case");
         Long total = jdbc.queryForObject(countSql, Long.class, args.toArray());
-        args.add(size);
-        args.add((page - 1) * size);
-        String listSql = SELECT + where + " ORDER BY id DESC LIMIT ? OFFSET ?";
+        String order = paging.explicitSort() ? paging.orderBy() : "id DESC";
+        List<Object> listArgs = new ArrayList<>(args);
+        String listWhere = where.toString();
+        if (paging.keysetMode()) {
+            // 键集：只扫 id < 游标 的一段，深翻耗时与页号无关（FR-3.2-02）。
+            order = "id DESC";
+            listWhere += " AND id < ?";
+            listArgs.add(paging.beforeId());
+        }
+        listArgs.add(paging.size());
+        String select = order.startsWith("id ") ? SELECT_BY_ID_INDEX : SELECT;
+        String listSql = select + listWhere + " ORDER BY " + order + " LIMIT ?"
+                + (paging.keysetMode() ? "" : " OFFSET ?");
+        if (!paging.keysetMode()) {
+            listArgs.add(paging.offset());
+        }
         TenantGuard.requireProjectScope(listSql, "test_case");
-        List<TestCase> rows = jdbc.query(listSql, MAPPER, args.toArray());
-        return new PageResult<>(rows, total == null ? 0 : total, page, size);
+        List<TestCase> rows = SlowQuery.measure("case.page", listSql,
+                () -> jdbc.query(listSql, MAPPER, listArgs.toArray()));
+        return new PageResult<>(rows, total == null ? 0 : total, paging.page(), paging.size());
     }
 
     @Override
@@ -272,6 +316,18 @@ public class TestCaseRepositoryJdbc implements TestCaseRepository {
                 """;
         TenantGuard.requireProjectScope(sql, "test_case");
         jdbc.update(sql, SafetyLevel.from(safetyLevel).name(), operatorId, projectId, id);
+    }
+
+    @Override
+    public Optional<ReviewSnapshot> reviewSnapshot(long projectId, long id) {
+        String sql = """
+                SELECT id, review_status, priority, domain_tag, safety_level,
+                       review_comment, reviewed_by, reviewed_at
+                  FROM test_case
+                 WHERE project_id = ? AND id = ?
+                """;
+        TenantGuard.requireProjectScope(sql, "test_case");
+        return JdbcSupport.first(jdbc.query(sql, SNAPSHOT_MAPPER, projectId, id));
     }
 
     @Override

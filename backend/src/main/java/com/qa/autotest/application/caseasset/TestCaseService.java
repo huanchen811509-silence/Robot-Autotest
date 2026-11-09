@@ -4,11 +4,13 @@ import com.qa.autotest.application.iam.AccessControlService;
 import com.qa.autotest.application.iam.Audited;
 import com.qa.autotest.application.iam.AuditService;
 import com.qa.autotest.application.repository.TestCaseRepository;
+import com.qa.autotest.common.query.PageQuery;
 import com.qa.autotest.common.BusinessException;
 import com.qa.autotest.common.ErrorCode;
 import com.qa.autotest.common.tenant.TenantContext;
 import com.qa.autotest.domain.caseasset.CapabilityStat;
 import com.qa.autotest.domain.caseasset.Priority;
+import com.qa.autotest.domain.caseasset.ReviewSnapshot;
 import com.qa.autotest.domain.caseasset.ReviewStatus;
 import com.qa.autotest.domain.caseasset.SafetyLevel;
 import com.qa.autotest.domain.caseasset.TestCase;
@@ -19,6 +21,7 @@ import com.qa.autotest.domain.iam.PermissionResource;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -49,6 +52,10 @@ public class TestCaseService {
     public static final Set<String> BATCH_ACTIONS = Set.of("submit", "approve", "reject",
             "setPriority", "setDomainTag", "setSafetyLevel", "delete");
 
+    /** 可撤销的批量动作：delete 记录已不存在，无法恢复，明确排除（FR-3.1-04）。 */
+    public static final Set<String> UNDOABLE_ACTIONS = Set.of("submit", "approve", "reject",
+            "setPriority", "setDomainTag", "setSafetyLevel");
+
     /** 单次批量上限（FR-v0.2-39）。 */
     public static final int BATCH_MAX = 200;
 
@@ -64,42 +71,71 @@ public class TestCaseService {
     public record BatchItemResult(long id, boolean ok, String code, String message) {
     }
 
-    /** 批量结果：部分成功语义（FR-v0.2-38）——逐条独立事务，失败不影响其他。 */
-    public record BatchResult(int total, int succeeded, int failed, List<BatchItemResult> items) {
+    /**
+     * 批量结果：部分成功语义（FR-v0.2-38）——逐条独立事务，失败不影响其他。
+     *
+     * <p>undoToken 仅对可逆动作且确有成功条目时给出；delete 明确不可撤销，恒为 null。
+     */
+    public record BatchResult(int total, int succeeded, int failed, List<BatchItemResult> items,
+                              String undoToken) {
     }
 
     private final TestCaseRepository cases;
     private final AccessControlService access;
     private final AuditService audit;
     private final TransactionTemplate tx;
+    private final BatchUndoRecorder undoRecorder;
 
-    /** Spring 装配入口：批量走逐条独立事务。 */
-    @org.springframework.beans.factory.annotation.Autowired
-    public TestCaseService(TestCaseRepository cases, AccessControlService access, AuditService audit,
-                           PlatformTransactionManager txManager) {
-        this(cases, access, audit, new TransactionTemplate(txManager));
+    /** 能力索引缓存；测试装配入口不注入时为 null（行为等价于无缓存）。 */
+    private CapabilityCache capabilityCache;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setCapabilityCache(CapabilityCache capabilityCache) {
+        this.capabilityCache = capabilityCache;
     }
 
-    /** 测试装配入口：不起事务代理（与既有测试一致），逐条直接执行。 */
+    /** Spring 装配入口：批量走逐条独立事务，成功后写撤销凭据。 */
+    @org.springframework.beans.factory.annotation.Autowired
+    public TestCaseService(TestCaseRepository cases, AccessControlService access, AuditService audit,
+                           PlatformTransactionManager txManager, BatchUndoRecorder undoRecorder) {
+        this(cases, access, audit, new TransactionTemplate(txManager), undoRecorder);
+    }
+
+    /** 测试装配入口：不起事务代理、无撤销记录器（与既有测试一致）。 */
     public TestCaseService(TestCaseRepository cases, AccessControlService access, AuditService audit) {
-        this(cases, access, audit, (TransactionTemplate) null);
+        this(cases, access, audit, (TransactionTemplate) null, null);
+    }
+
+    /** 测试装配入口：有事务代理、无撤销记录器（既有 CaseBatchIT 使用）。 */
+    public TestCaseService(TestCaseRepository cases, AccessControlService access, AuditService audit,
+                           PlatformTransactionManager txManager) {
+        this(cases, access, audit, new TransactionTemplate(txManager), null);
     }
 
     private TestCaseService(TestCaseRepository cases, AccessControlService access, AuditService audit,
-                            TransactionTemplate tx) {
+                            TransactionTemplate tx, BatchUndoRecorder undoRecorder) {
         this.cases = cases;
         this.access = access;
         this.audit = audit;
         this.tx = tx;
+        this.undoRecorder = undoRecorder;
     }
 
     public PageResult<TestCase> page(long projectId, String keyword, String domain, String priority,
                                      String reviewStatus, String capability, String safetyLevel,
-                                     int page, int size) {
+                                     PageQuery paging) {
         access.bindProject(projectId);
         access.require(PermissionResource.CASE, PermissionAction.READ);
         return cases.page(projectId, keyword, domain, priority, reviewStatus, capability,
-                safetyLevel, page, size);
+                safetyLevel, paging);
+    }
+
+    /** 兼容入口：未指定排序时按 id DESC（FR-3.2-02）。 */
+    public PageResult<TestCase> page(long projectId, String keyword, String domain, String priority,
+                                     String reviewStatus, String capability, String safetyLevel,
+                                     int page, int size) {
+        return page(projectId, keyword, domain, priority, reviewStatus, capability,
+                safetyLevel, PageQuery.of(page, size));
     }
 
     public CaseDetail get(long projectId, long id) {
@@ -122,6 +158,7 @@ public class TestCaseService {
                 resolveSafetyLevel(command.safetyLevel(), null)), TenantContext.userId());
         saveSteps(id, command.steps());
         audit.record("case.create", "test_case", String.valueOf(id), "code=" + code);
+        invalidateCapabilities(projectId);
         return get(projectId, id);
     }
 
@@ -142,6 +179,7 @@ public class TestCaseService {
             saveSteps(id, command.steps());
         }
         audit.record("case.update", "test_case", String.valueOf(id), "code=" + code);
+        invalidateCapabilities(projectId);
         return get(projectId, id);
     }
 
@@ -154,6 +192,7 @@ public class TestCaseService {
         cases.delete(projectId, id);
         audit.recordChange("case:delete", "test_case", String.valueOf(id),
                 "code=" + existing.caseCode() + "; title=" + existing.title(), null);
+        invalidateCapabilities(projectId);
     }
 
     /** 提交评审：draft / rejected → pending。 */
@@ -234,16 +273,35 @@ public class TestCaseService {
 
         // batch 标识进审计 detail（FR-v0.2-39）：不动表结构，同批次可反查
         String batchTag = "batch=" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
+        boolean undoable = UNDOABLE_ACTIONS.contains(action);
         List<BatchItemResult> items = new ArrayList<>(ids.size());
+        List<ReviewSnapshot> snapshots = new ArrayList<>(ids.size());
         for (long id : ids) {
-            if (tx != null) {
-                items.add(tx.execute(status -> applyOne(projectId, id, action, request, batchTag)));
-            } else {
-                items.add(applyOne(projectId, id, action, request, batchTag));
+            // 快照必须在动作前读取；只收集成功条目，避免撤销把失败条目也“恢复”成旧值
+            Optional<ReviewSnapshot> before = undoable
+                    ? cases.reviewSnapshot(projectId, id) : Optional.empty();
+            BatchItemResult result = tx != null
+                    ? tx.execute(status -> applyOne(projectId, id, action, request, batchTag))
+                    : applyOne(projectId, id, action, request, batchTag);
+            items.add(result);
+            if (result != null && result.ok() && before.isPresent()) {
+                snapshots.add(before.get());
             }
         }
         int succeeded = (int) items.stream().filter(BatchItemResult::ok).count();
-        return new BatchResult(items.size(), succeeded, items.size() - succeeded, items);
+        if (succeeded > 0) {
+            invalidateCapabilities(projectId);
+        }
+        String undoToken = undoRecorder == null || !undoable
+                ? null : undoRecorder.record(projectId, action, snapshots);
+        return new BatchResult(items.size(), succeeded, items.size() - succeeded, items, undoToken);
+    }
+
+    /** 用例写成功后让能力索引缓存失效：保证变更后第一次读就回源（EW32-03）。 */
+    private void invalidateCapabilities(long projectId) {
+        if (capabilityCache != null) {
+            capabilityCache.invalidate(projectId);
+        }
     }
 
     /** 单条处理：异常转逐条结果，绝不向上抛（部分成功语义）。 */

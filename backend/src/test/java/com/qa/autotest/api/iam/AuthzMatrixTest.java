@@ -587,8 +587,18 @@ class AuthzMatrixTest {
 
     private TestCaseRepository caseRepository() {
         return stub(TestCaseRepository.class, (name, args) -> switch (name) {
-            case "page" -> new PageResult<>(List.copyOf(cases.values()), cases.size(),
-                    (Integer) args[7], (Integer) args[8]);
+            case "page" -> {
+                int page = 1;
+                int size = 20;
+                if (args[7] instanceof com.qa.autotest.common.query.PageQuery paging) {
+                    page = paging.page();
+                    size = paging.size();
+                } else {
+                    page = (Integer) args[7];
+                    size = (Integer) args[8];
+                }
+                yield new PageResult<>(List.copyOf(cases.values()), cases.size(), page, size);
+            }
             case "find" -> Optional.ofNullable(cases.get(((Number) args[1]).longValue()));
             case "insert" -> {
                 TestCase draft = (TestCase) args[0];

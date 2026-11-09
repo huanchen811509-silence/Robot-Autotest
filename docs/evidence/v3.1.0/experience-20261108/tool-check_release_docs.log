@@ -1,0 +1,49 @@
+﻿==============================================================================
+版本开发流程机检（docs/process/版本开发流程.md §8）
+==============================================================================
+
+[IDLE] v0.1-foundation   FR=22 TC=60 WBS=9
+   INFO  未启动流程（缺 2 项，含 00-RESEARCH / 01-ASSESSMENT），按 §9 不计为违规
+
+[IDLE] v0.2-ledger   FR=63 TC=55 WBS=18
+   INFO  未启动流程（缺 2 项，含 00-RESEARCH / 01-ASSESSMENT），按 §9 不计为违规
+
+[IDLE] v0.3-editor   FR=27 TC=41 WBS=11
+   INFO  未启动流程（缺 2 项，含 00-RESEARCH / 01-ASSESSMENT），按 §9 不计为违规
+
+[IDLE] v0.4-execution   FR=34 TC=49 WBS=10
+   INFO  未启动流程（缺 2 项，含 00-RESEARCH / 01-ASSESSMENT），按 §9 不计为违规
+
+[IDLE] v0.5-report   FR=35 TC=66 WBS=7
+   INFO  未启动流程（缺 2 项，含 00-RESEARCH / 01-ASSESSMENT），按 §9 不计为违规
+
+[IDLE] v0.6-automation   FR=21 TC=52 WBS=4
+   INFO  未启动流程（缺 2 项，含 00-RESEARCH / 01-ASSESSMENT），按 §9 不计为违规
+
+[IDLE] v1.0-ga   FR=25 TC=43 WBS=4
+   INFO  未启动流程（缺 2 项，含 00-RESEARCH / 01-ASSESSMENT），按 §9 不计为违规
+
+[PASS] v2.0-platform   FR=61 TC=67 WBS=0
+
+[IDLE] v2.1-platform   FR=26 TC=32 WBS=0
+   INFO  未启动流程（缺 3 项，含 00-RESEARCH / 01-ASSESSMENT），按 §9 不计为违规
+
+[IDLE] v2.2-experience   FR=0 TC=0 WBS=0
+   INFO  未启动流程（缺 3 项，含 00-RESEARCH / 01-ASSESSMENT），按 §9 不计为违规
+
+[IDLE] v2.3-ui-theme   FR=0 TC=0 WBS=0
+   INFO  未启动流程（缺 3 项，含 00-RESEARCH / 01-ASSESSMENT），按 §9 不计为违规
+
+[IDLE] v2.4-cli-agents   FR=0 TC=0 WBS=0
+   INFO  未启动流程（缺 3 项，含 00-RESEARCH / 01-ASSESSMENT），按 §9 不计为违规
+
+[PASS] v2.5-ai-config   FR=11 TC=18 WBS=0
+
+[PASS] v2.6-assistant-ux   FR=8 TC=24 WBS=0
+
+[PASS] v2.7-dual-kernel-demo   FR=6 TC=12 WBS=0
+
+------------------------------------------------------------------------------
+合计：15 个版本  |  FAIL 0 项  |  WARN 0 项  |  未启动 11 个
+未启动的版本：正式开工前须先走 ① 调研 → ② 评估，再写 PRD。
+==============================================================================

@@ -1,11 +1,11 @@
 package com.qa.autotest.application.iam;
 
 import com.qa.autotest.application.repository.AuditRepository;
+import com.qa.autotest.common.async.BoundedExecutor;
 import com.qa.autotest.common.tenant.TenantContext;
 import com.qa.autotest.domain.iam.AuditEntry;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -50,9 +50,16 @@ public class AuditService {
     private final AuditRepository audit;
     private final Executor executor;
 
+    /** 生产装配：共用一个有界执行器，队列满降级同步、停机排空（EW32-04）。 */
     @Autowired
+    public AuditService(AuditRepository audit, BoundedExecutor executor) {
+        this.audit = audit;
+        this.executor = executor;
+    }
+
+    /** 测试装配：同步执行，保证断言时审计已落库。 */
     public AuditService(AuditRepository audit) {
-        this(audit, CompletableFuture.delayedExecutor(0, java.util.concurrent.TimeUnit.MILLISECONDS));
+        this(audit, Runnable::run);
     }
 
     /** 测试可注入同步执行器（{@code Runnable::run}）以避免等待异步线程。 */

@@ -16,6 +16,8 @@
 对每个 .vue 文件，收集模板里出现的 `<PascalCase ...>` 标签，逐个要求在 script 里能找到：
   - 默认导入：`import Foo from '...'`
   - 具名导入：`import { Foo } from '...'` / `import { Foo as Bar }`
+  - 本地异步组件：`const Foo = defineAsyncComponent(...)`（EW32-06 编辑器懒加载写法，
+    组件确实是 `<script setup>` 的本地绑定，不是漏 import）
 命中任一即通过。以下白名单不检查：
   - Vue 内置：Teleport / Transition / TransitionGroup / KeepAlive / Suspense / Component
   - vue-router 全局注册：RouterView / RouterLink
@@ -74,6 +76,14 @@ def imported_names(script: str) -> set[str]:
             local = item.split(" as ")[-1].strip()
             if local:
                 names.add(local)
+    # const Foo = defineAsyncComponent(...)，按本地组件绑定处理
+    names.update(
+        re.findall(
+            r"^\s*const\s+([A-Z][A-Za-z0-9]*)\s*=\s*defineAsyncComponent\s*\(",
+            script,
+            re.M,
+        )
+    )
     return names
 
 

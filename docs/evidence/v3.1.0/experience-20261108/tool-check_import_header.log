@@ -1,0 +1,8 @@
+﻿python.exe : usage: check_import_header.py [-h] [--java JAVA] [--sheet SHEET] excel
+所在位置 行:15 字符: 1310
++ ... okens','check_output_metadata')){ & python "tools\$s.py" 2>&1 | Tee-O ...
++                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (usage: check_im...et SHEET] excel:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+check_import_header.py: error: the following arguments are required: excel

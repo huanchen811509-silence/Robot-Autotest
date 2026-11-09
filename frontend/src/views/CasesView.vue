@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { computed, h, onBeforeUnmount, reactive, ref, watch } from 'vue'
+import { computed, h, nextTick, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   NButton,
   NCheckbox,
   NInput,
   NInputNumber,
+  NModal,
   NPagination,
+  NPopover,
   NRadioButton,
   NRadioGroup,
   NSelect,
@@ -28,9 +30,24 @@ import CaseDetailPanel from '@/components/CaseDetailPanel.vue'
 import SelectionBar from '@/components/SelectionBar.vue'
 import ErrorLineView from '@/components/ErrorLine.vue'
 import StatusTag from '@/components/StatusTag.vue'
+import AppIcon from '@/components/AppIcon.vue'
+import PageHeader from '@/components/ui/PageHeader.vue'
+import PageToolbar from '@/components/ui/PageToolbar.vue'
+import FilterBar from '@/components/ui/FilterBar.vue'
+import ColumnSettingsDialog from '@/components/ui/ColumnSettingsDialog.vue'
+import { reconcileColumns, visibleKeys, type ColumnOption } from '@/components/ui/columnSettings'
+import {
+  applyViewState,
+  canDeleteView,
+  loadLocalColumns,
+  saveLocalColumns,
+  useSavedViews,
+} from '@/composables/useSavedViews'
+import type { CaseViewPayload, SavedView } from '@/api/views'
 import { localizeError, type ErrorLine } from '@/utils/errors'
 import { EMPTY } from '@/utils/format'
 import { useSelection } from '@/composables/useSelection'
+import { useDraft, isDraftDirty } from '@/composables/useDraft'
 import { confirmAction } from '@/composables/useConfirm'
 import {
   PRIORITIES,
@@ -53,7 +70,8 @@ const reviewStatus = ref('')
 const domain = ref('')
 const safetyLevel = ref('')
 const page = ref(1)
-const size = 10
+// 页大小进入视图 payload 后必须可回填，不能再是常量
+const size = ref(10)
 const total = ref(0)
 const loading = ref(false)
 const error = ref<ErrorLine | null>(null)
@@ -80,6 +98,8 @@ const {
   clear: clearSelection,
 } = selection
 const batchResult = ref<BatchResult | null>(null)
+/** 最近一次批量动作名：SelectionBar 据此判断是否可撤销（删除等不可逆动作不显示）。 */
+const batchAction = ref<string | null>(null)
 const batchLoading = ref(false)
 const batchPriority = ref('P1')
 const batchDomain = ref('')
@@ -96,26 +116,162 @@ const runTestTimeout = ref(0)
 const runTag = ref('')
 const runError = ref<ErrorLine | null>(null)
 
-const form = reactive({
-  caseCode: '',
-  title: '',
-  category: '',
-  priority: 'P2',
-  // 新建即「未判定」：安全级是需要人工判断的结论，不能默认给个 L1 蒙过去（ADR-0013）
-  safetyLevel: 'LX',
-  domainTag: '',
-  capability: '',
-  precondition: '',
-  expected: '',
-  description: '',
-})
+/** 用例表单字段（新建与编辑共用）；草稿也按同一结构落盘。 */
+interface CaseForm {
+  caseCode: string
+  title: string
+  category: string
+  priority: string
+  safetyLevel: string
+  domainTag: string
+  capability: string
+  precondition: string
+  expected: string
+  description: string
+}
+
+function emptyForm(): CaseForm {
+  return {
+    caseCode: '',
+    title: '',
+    category: '',
+    priority: 'P2',
+    // 新建即「未判定」：安全级是需要人工判断的结论，不能默认给个 L1 蒙过去（ADR-0013）
+    safetyLevel: 'LX',
+    domainTag: '',
+    capability: '',
+    precondition: '',
+    expected: '',
+    description: '',
+  }
+}
+
+const form = reactive<CaseForm>(emptyForm())
+/** 打开表单时的快照：草稿脏值判断与「没改就不保存」都以此为基准。 */
+let formInitial: CaseForm = emptyForm()
+
+/** 编辑中的用例 id；null 表示新建。 */
+const editingId = ref<number | null>(null)
+const draftOpen = ref(false)
+const draftSavedAt = ref<number | null>(null)
+const pendingDraft = ref<CaseForm | null>(null)
+
+const caseDraft = useDraft<CaseForm>(() => ({
+  projectId: projectId.value,
+  formKey: 'case',
+  recordId: editingId.value,
+}))
+
+let draftTimer: ReturnType<typeof setTimeout> | undefined
+
+function snapshotForm(): CaseForm {
+  return { ...form }
+}
+
+function resetForm(next: CaseForm = emptyForm()): void {
+  Object.assign(form, next)
+  formInitial = { ...next }
+}
+
+function clearDraftTimer(): void {
+  if (draftTimer) {
+    clearTimeout(draftTimer)
+    draftTimer = undefined
+  }
+}
+
+/** 编辑中每 1.5 秒防抖保存；没改动过就不写，避免打开表单也留下一份空草稿。 */
+watch(
+  form,
+  () => {
+    if (!showForm.value) return
+    clearDraftTimer()
+    draftTimer = setTimeout(() => {
+      if (!showForm.value) return
+      if (!isDraftDirty(snapshotForm(), formInitial)) return
+      caseDraft.save(snapshotForm())
+    }, 1500)
+  },
+  { deep: true },
+)
+
+function draftTimeLabel(): string {
+  if (!draftSavedAt.value) return ''
+  return new Date(draftSavedAt.value).toLocaleString()
+}
+
+/** 同一记录再次打开：有比初始值更新的草稿才提示，纯空草稿直接丢掉。 */
+function promptRestoreDraft(): void {
+  const draft = caseDraft.read()
+  if (!draft || !isDraftDirty(draft.value, formInitial)) {
+    if (draft) caseDraft.clear()
+    return
+  }
+  pendingDraft.value = draft.value
+  draftSavedAt.value = draft.savedAt
+  draftOpen.value = true
+}
+
+function restoreDraft(): void {
+  if (pendingDraft.value) Object.assign(form, pendingDraft.value)
+  pendingDraft.value = null
+  draftOpen.value = false
+  message.value = t('draft.restored')
+}
+
+function discardDraft(): void {
+  caseDraft.clear()
+  pendingDraft.value = null
+  draftOpen.value = false
+  draftSavedAt.value = null
+}
+
+function openCreateForm(): void {
+  editingId.value = null
+  resetForm()
+  showForm.value = true
+  error.value = null
+  message.value = ''
+  promptRestoreDraft()
+}
+
+function openEditForm(item: TestCase): void {
+  editingId.value = item.id
+  resetForm({
+    caseCode: item.caseCode,
+    title: item.title,
+    category: item.category ?? '',
+    priority: item.priority,
+    safetyLevel: item.safetyLevel,
+    domainTag: item.domainTag ?? '',
+    capability: item.capability ?? '',
+    precondition: item.precondition ?? '',
+    expected: item.expected ?? '',
+    description: item.description ?? '',
+  })
+  showForm.value = true
+  error.value = null
+  message.value = ''
+  promptRestoreDraft()
+}
+
+/** 关闭表单保留草稿：有改动就立即落盘并提示，不把用户输入静默丢掉。 */
+function closeForm(): void {
+  clearDraftTimer()
+  if (showForm.value && isDraftDirty(snapshotForm(), formInitial)) {
+    caseDraft.save(snapshotForm())
+    message.value = t('draft.savedHint')
+  }
+  showForm.value = false
+  editingId.value = null
+}
 
 const importFile = ref<File | null>(null)
 const preview = ref<ImportPreview | null>(null)
 const importMessage = ref('')
 
 const projectId = computed(() => auth.projectId ?? 0)
-const pageCount = computed(() => Math.max(1, Math.ceil(total.value / size)))
+const pageCount = computed(() => Math.max(1, Math.ceil(total.value / size.value)))
 
 // 下拉项首项 valueless 的「全部」用空串表示，与 AuditView 保持一致（不引入 null 语义）
 const priorityOptions = computed(() => [
@@ -162,6 +318,212 @@ const blockedCodes = computed(() =>
   blockedSelected.value.map((item) => `${item.caseCode}(${item.safetyLevel})`).join('、'),
 )
 
+// ---- 保存视图 / 列设置（v3.1.0「顺手」）----
+const CASE_COLUMN_KEYS = [
+  'caseCode',
+  'title',
+  'priority',
+  'safetyLevel',
+  'reviewStatus',
+  'domainTag',
+  'capability',
+] as const
+type CaseColumnKey = (typeof CASE_COLUMN_KEYS)[number]
+
+const CASE_COLUMN_LABELS: Record<CaseColumnKey, () => string> = {
+  caseCode: () => t('cases.caseCode'),
+  title: () => t('cases.title'),
+  priority: () => t('cases.priority'),
+  safetyLevel: () => t('cases.safetyLevel'),
+  reviewStatus: () => t('cases.status'),
+  domainTag: () => t('cases.domain'),
+  capability: () => t('cases.capability'),
+}
+
+const columnOrder = ref<CaseColumnKey[]>([...CASE_COLUMN_KEYS])
+const hiddenColumns = ref<CaseColumnKey[]>([])
+const showColumns = ref(false)
+
+const columnOptions = computed<ColumnOption[]>(() =>
+  columnOrder.value.map((key) => ({
+    key,
+    label: CASE_COLUMN_LABELS[key](),
+    visible: !hiddenColumns.value.includes(key),
+  })),
+)
+
+function defaultColumnOptions(): ColumnOption[] {
+  return CASE_COLUMN_KEYS.map((key) => ({
+    key,
+    label: CASE_COLUMN_LABELS[key](),
+    visible: true,
+  }))
+}
+
+/** 把「可见列 + 顺序」一次性写进状态；不传 keys 表示恢复默认（全可见）。 */
+function applyColumnKeys(keys: string[] | null): void {
+  const reconciled = reconcileColumns(defaultColumnOptions(), keys)
+  columnOrder.value = reconciled.map((column) => column.key as CaseColumnKey)
+  hiddenColumns.value = reconciled
+    .filter((column) => !column.visible)
+    .map((column) => column.key as CaseColumnKey)
+}
+
+const savedViews = useSavedViews(() => projectId.value, 'case')
+const views = savedViews.views
+const viewsLoading = savedViews.loading
+const activeViewId = ref<number | null>(null)
+const activeView = computed(
+  () => views.value.find((view) => view.id === activeViewId.value) ?? null,
+)
+const showViewMenu = ref(false)
+const showSaveView = ref(false)
+const viewName = ref('')
+const viewDefault = ref(false)
+const viewError = ref('')
+const filtersCollapsed = ref(false)
+
+const activeFilterCount = computed(
+  () => [keyword, priority, reviewStatus, domain, safetyLevel]
+    .filter((field) => field.value.trim() !== '').length,
+)
+
+let viewsSeq = 0
+/** 应用视图时由页面自己 load 一次，阻止筛选 watcher 再发一遍相同请求 */
+let skipFilterReload = false
+
+function currentPayload(): CaseViewPayload {
+  return {
+    keyword: keyword.value,
+    domain: domain.value,
+    priority: priority.value,
+    reviewStatus: reviewStatus.value,
+    safetyLevel: safetyLevel.value,
+    size: size.value,
+    columns: columnOrder.value.filter((key) => !hiddenColumns.value.includes(key)),
+    sort: null,
+  }
+}
+
+function isOwnView(view: SavedView): boolean {
+  return canDeleteView(view, auth.user?.id)
+}
+
+/** 应用视图：回填筛选/页大小/列，page 归 1（不改后端分页语义）。 */
+function applySavedView(view: SavedView): void {
+  const payload = savedViews.resolve(view)
+  const state = applyViewState(payload)
+  skipFilterReload = true
+  keyword.value = state.keyword
+  domain.value = state.domain
+  priority.value = state.priority
+  reviewStatus.value = state.reviewStatus
+  safetyLevel.value = state.safetyLevel
+  size.value = state.size
+  applyColumnKeys(state.columns)
+  page.value = state.page
+  activeViewId.value = view.id
+  showViewMenu.value = false
+  viewError.value = ''
+  void load()
+  void nextTick(() => {
+    skipFilterReload = false
+  })
+}
+
+function applyDefaultView(items: SavedView[]): void {
+  if (activeViewId.value !== null) return
+  const defaultView = items.find((view) => view.isDefault)
+  if (defaultView) applySavedView(defaultView)
+}
+
+async function loadViews(): Promise<void> {
+  const seq = ++viewsSeq
+  const items = await savedViews.load()
+  if (seq !== viewsSeq) return
+  applyDefaultView(items)
+}
+
+function restoreLocalColumns(): void {
+  applyColumnKeys(loadLocalColumns(projectId.value, 'case'))
+}
+
+function clearFilters(): void {
+  keyword.value = ''
+  domain.value = ''
+  priority.value = ''
+  reviewStatus.value = ''
+  safetyLevel.value = ''
+  activeViewId.value = null
+}
+
+function openSaveView(): void {
+  showViewMenu.value = false
+  viewName.value = ''
+  viewDefault.value = false
+  viewError.value = ''
+  showSaveView.value = true
+}
+
+async function submitView(): Promise<void> {
+  viewError.value = ''
+  const result = await savedViews.save(viewName.value, currentPayload(), viewDefault.value)
+  if (!result.ok) {
+    if (result.reason === 'empty') viewError.value = t('views.emptyName')
+    else if (result.reason === 'conflict') {
+      viewError.value = t('views.conflict', { name: viewName.value.trim() })
+    } else {
+      viewError.value = t('views.saveFailed')
+      error.value = localizeError(result.error ?? savedViews.error.value)
+    }
+    return
+  }
+  activeViewId.value = result.view.id
+  showSaveView.value = false
+  message.value = t('views.saved')
+}
+
+async function deleteView(view: SavedView): Promise<void> {
+  if (!(await confirmAction(t('views.confirmDelete', { name: view.name }), { tone: 'danger' }))) {
+    return
+  }
+  const ok = await savedViews.remove(view.id)
+  if (!ok) {
+    error.value = localizeError(savedViews.error.value)
+    return
+  }
+  if (activeViewId.value === view.id) activeViewId.value = null
+  message.value = t('views.deleted')
+}
+
+async function setDefaultView(view: SavedView): Promise<void> {
+  const ok = await savedViews.makeDefault(view.id)
+  if (!ok) {
+    error.value = localizeError(savedViews.error.value)
+    return
+  }
+  message.value = t('views.defaultSaved')
+}
+
+/** 列设置确定：有当前视图就写回 payload，否则只存本机（projectId + scope）。 */
+async function onColumnsConfirm(options: ColumnOption[]): Promise<void> {
+  applyColumnKeys(visibleKeys(options))
+  const view = activeView.value
+  if (view && isOwnView(view)) {
+    const ok = await savedViews.updatePayload(view.id, currentPayload())
+    if (!ok) {
+      error.value = localizeError(savedViews.error.value)
+      return
+    }
+    message.value = t('views.columnsSaved')
+    return
+  }
+  saveLocalColumns(projectId.value, 'case', columnOrder.value.filter(
+    (key) => !hiddenColumns.value.includes(key),
+  ))
+  message.value = t('views.columnsSavedLocal')
+}
+
 /**
  * 用例列定义（UX-04b 逐页迁移）。
  *
@@ -170,6 +532,59 @@ const blockedCodes = computed(() =>
  * （FR-v0.2-35）。所以这里自己渲染 `NCheckbox`，状态仍由 `useSelection` 持有，
  * 表头半选态也照旧从 `pageIndeterminate` 派生。
  */
+const dataColumns = computed<Record<CaseColumnKey, DataTableColumns<TestCase>[number]>>(() => ({
+  caseCode: {
+    title: t('cases.caseCode'),
+    key: 'caseCode',
+    width: 120,
+    ellipsis: { tooltip: true },
+  },
+  title: {
+    title: t('cases.title'),
+    key: 'title',
+    minWidth: 220,
+    ellipsis: { tooltip: true },
+  },
+  priority: {
+    title: t('cases.priority'),
+    key: 'priority',
+    width: 90,
+    render: (row) => priorityLabel(row.priority),
+  },
+  safetyLevel: {
+    title: t('cases.safetyLevel'),
+    key: 'safetyLevel',
+    width: 120,
+    render: (row) =>
+      h(StatusTag, {
+        label: safetyLevelLabel(row.safetyLevel),
+        tone: safetyLevelTone(row.safetyLevel),
+      }),
+  },
+  reviewStatus: {
+    title: t('cases.status'),
+    key: 'reviewStatus',
+    width: 110,
+    render: (row) =>
+      h(StatusTag, {
+        label: reviewStatusLabel(row.reviewStatus),
+        tone: reviewStatusTone(row.reviewStatus),
+      }),
+  },
+  domainTag: {
+    title: t('cases.domain'),
+    key: 'domainTag',
+    width: 120,
+    render: (row) => row.domainTag || EMPTY,
+  },
+  capability: {
+    title: t('cases.capability'),
+    key: 'capability',
+    width: 140,
+    render: (row) => row.capability || EMPTY,
+  },
+}))
+
 const columns = computed<DataTableColumns<TestCase>>(() => [
   {
     // W0.8 / N14：行内展开详情（前置条件/步骤/预期），按需拉 GET /cases/{id}。
@@ -197,62 +612,25 @@ const columns = computed<DataTableColumns<TestCase>>(() => [
         onUpdateChecked: () => toggle(row.id),
       }),
   },
-  {
-    title: t('cases.caseCode'),
-    key: 'caseCode',
-    width: 120,
-    ellipsis: { tooltip: true },
-  },
-  {
-    title: t('cases.title'),
-    key: 'title',
-    minWidth: 220,
-    ellipsis: { tooltip: true },
-  },
-  {
-    title: t('cases.priority'),
-    key: 'priority',
-    width: 90,
-    render: (row) => priorityLabel(row.priority),
-  },
-  {
-    title: t('cases.safetyLevel'),
-    key: 'safetyLevel',
-    width: 120,
-    render: (row) =>
-      h(StatusTag, {
-        label: safetyLevelLabel(row.safetyLevel),
-        tone: safetyLevelTone(row.safetyLevel),
-      }),
-  },
-  {
-    title: t('cases.status'),
-    key: 'reviewStatus',
-    width: 110,
-    render: (row) =>
-      h(StatusTag, {
-        label: reviewStatusLabel(row.reviewStatus),
-        tone: reviewStatusTone(row.reviewStatus),
-      }),
-  },
-  {
-    title: t('cases.domain'),
-    key: 'domainTag',
-    width: 120,
-    render: (row) => row.domainTag || EMPTY,
-  },
-  {
-    title: t('cases.capability'),
-    key: 'capability',
-    width: 140,
-    render: (row) => row.capability || EMPTY,
-  },
+  ...columnOrder.value
+    .filter((key) => !hiddenColumns.value.includes(key))
+    .map((key) => dataColumns.value[key]),
   {
     title: t('common.actions'),
     key: 'actions',
     width: 240,
     render: (row) =>
       h('div', { class: 'row-actions' }, [
+        (row.reviewStatus === 'draft' || row.reviewStatus === 'rejected') &&
+          h(
+            NButton,
+            {
+              text: true,
+              size: 'small',
+              onClick: () => openEditForm(row),
+            },
+            { default: () => t('common.edit') },
+          ),
         (row.reviewStatus === 'draft' || row.reviewStatus === 'rejected') &&
           h(
             NButton,
@@ -318,7 +696,7 @@ async function load(): Promise<void> {
         domain: domain.value,
         safetyLevel: safetyLevel.value,
         page: page.value,
-        size,
+        size: size.value,
       }),
       caseApi.capabilities(projectId.value),
     ])
@@ -339,14 +717,21 @@ watch([projectId], () => {
   page.value = 1
   showForm.value = false
   showImport.value = false
+  clearDraftTimer()
+  editingId.value = null
   preview.value = null
   // 切项目后选择集合里的 id 属于旧项目，必须清空，否则批量动作会打到错误项目
   clearSelection()
   batchResult.value = null
+  batchAction.value = null
+  activeViewId.value = null
+  restoreLocalColumns()
+  void loadViews()
   void load()
 }, { immediate: true })
 
-watch([keyword, priority, reviewStatus, domain, safetyLevel], () => {
+watch([keyword, priority, reviewStatus, domain, safetyLevel, size], () => {
+  if (skipFilterReload) return
   page.value = 1
   void load()
 })
@@ -487,6 +872,7 @@ async function runBatch(action: BatchAction): Promise<void> {
       safetyLevel: action === 'setSafetyLevel' ? batchSafety.value : undefined,
     })
     batchResult.value = result
+    batchAction.value = action
     // 失败项保留选中：重试只作用于它们（FR-v0.2-36）
     retain(result.items.filter((i) => !i.ok).map((i) => i.id))
     await load()
@@ -497,6 +883,17 @@ async function runBatch(action: BatchAction): Promise<void> {
   }
 }
 
+function onSelectionClear(): void {
+  clearSelection()
+  batchResult.value = null
+  batchAction.value = null
+}
+
+/** 撤销成功后后端已恢复数据，重新拉列表，避免页面继续显示被撤掉的状态。 */
+function onUndone(): void {
+  void load()
+}
+
 async function createCase(): Promise<void> {
   error.value = null
   message.value = ''
@@ -504,24 +901,32 @@ async function createCase(): Promise<void> {
     error.value = { summary: t('cases.requiredCodeTitle'), detail: null }
     return
   }
+  const command = {
+    caseCode: form.caseCode.trim(),
+    title: form.title.trim(),
+    category: form.category,
+    priority: form.priority,
+    safetyLevel: form.safetyLevel,
+    domainTag: form.domainTag,
+    capability: form.capability,
+    precondition: form.precondition,
+    expected: form.expected,
+    description: form.description,
+  }
   try {
-    await caseApi.create(projectId.value, {
-      caseCode: form.caseCode.trim(),
-      title: form.title.trim(),
-      category: form.category,
-      priority: form.priority,
-      safetyLevel: form.safetyLevel,
-      domainTag: form.domainTag,
-      capability: form.capability,
-      precondition: form.precondition,
-      expected: form.expected,
-      description: form.description,
-    })
-    message.value = t('common.saved')
-    form.caseCode = ''
-    form.title = ''
+    if (editingId.value !== null) {
+      await caseApi.update(projectId.value, editingId.value, command)
+    } else {
+      await caseApi.create(projectId.value, command)
+    }
+    // 提交成功即清除草稿：留着只会在下次打开时提示恢复一份已经生效的内容
+    clearDraftTimer()
+    caseDraft.clear()
     showForm.value = false
+    editingId.value = null
+    resetForm()
     await load()
+    message.value = t('common.saved')
   } catch (e) {
     error.value = localizeError(e)
   }
@@ -594,53 +999,155 @@ async function runCommit(): Promise<void> {
 
 <template>
   <div class="page">
-    <div class="page-head">
-      <h1 class="page-title">{{ t('menu.cases') }}</h1>
-    </div>
+    <PageHeader :title="t('menu.cases')" />
 
-    <div class="toolbar">
-      <NInput
-        v-model:value="keyword"
-        clearable
-        style="width: 200px"
-        :placeholder="t('common.searchPlaceholder')"
-        :aria-label="t('common.searchPlaceholder')"
-        @keyup.enter="load"
-      />
-      <NSelect
-        v-model:value="priority"
-        :options="priorityOptions"
-        style="width: 140px"
-        :aria-label="t('cases.priority')"
-      />
-      <NSelect
-        v-model:value="reviewStatus"
-        :options="reviewOptions"
-        style="width: 140px"
-        :aria-label="t('cases.status')"
-      />
-      <NSelect
-        v-model:value="safetyLevel"
-        :options="safetyOptions"
-        style="width: 140px"
-        :aria-label="t('cases.safetyLevel')"
-      />
-      <NInput
-        v-model:value="domain"
-        clearable
-        style="width: 140px"
-        :placeholder="t('cases.domain')"
-        :aria-label="t('cases.domain')"
-      />
-      <NButton :type="showForm ? 'default' : 'primary'" @click="showForm = !showForm">
-        {{ showForm ? t('common.cancel') : t('common.create') }}
-      </NButton>
-      <NButton quaternary @click="showImport = !showImport">{{ t('cases.import.title') }}</NButton>
-      <RouterLink v-slot="{ navigate }" to="/cases/sets" custom>
-        <NButton quaternary @click="navigate">{{ t('caseSets.title') }}</NButton>
-      </RouterLink>
-      <NButton quaternary :loading="loading" @click="load">{{ t('common.refresh') }}</NButton>
-    </div>
+    <PageToolbar>
+      <template #filters>
+        <FilterBar
+          :count="activeFilterCount"
+          :collapsed="filtersCollapsed"
+          @update:collapsed="filtersCollapsed = $event"
+          @clear="clearFilters"
+        >
+          <NInput
+            v-model:value="keyword"
+            clearable
+            style="width: 200px"
+            :placeholder="t('common.searchPlaceholder')"
+            :aria-label="t('common.searchPlaceholder')"
+            @keyup.enter="load"
+          />
+          <NSelect
+            v-model:value="priority"
+            :options="priorityOptions"
+            style="width: 140px"
+            :aria-label="t('cases.priority')"
+          />
+          <NSelect
+            v-model:value="reviewStatus"
+            :options="reviewOptions"
+            style="width: 140px"
+            :aria-label="t('cases.status')"
+          />
+          <NSelect
+            v-model:value="safetyLevel"
+            :options="safetyOptions"
+            style="width: 140px"
+            :aria-label="t('cases.safetyLevel')"
+          />
+          <NInput
+            v-model:value="domain"
+            clearable
+            style="width: 140px"
+            :placeholder="t('cases.domain')"
+            :aria-label="t('cases.domain')"
+          />
+        </FilterBar>
+      </template>
+
+      <template #actions>
+        <NPopover
+          v-model:show="showViewMenu"
+          trigger="click"
+          placement="bottom-start"
+          style="max-width: 320px"
+        >
+          <template #trigger>
+            <NButton quaternary>
+              {{ t('views.label') }}
+              <AppIcon name="chevronDown" :size="16" />
+            </NButton>
+          </template>
+          <div class="views-menu">
+            <p v-if="viewsLoading" class="views-hint">{{ t('common.loading') }}</p>
+            <p v-else-if="views.length === 0" class="views-hint">{{ t('views.empty') }}</p>
+            <ul v-else class="views-list">
+              <li
+                v-for="view in views"
+                :key="view.id"
+                class="views-item"
+                :class="{ 'views-item--active': view.id === activeViewId }"
+              >
+                <button type="button" class="views-apply" @click="applySavedView(view)">
+                  <span class="views-name">
+                    <AppIcon v-if="view.id === activeViewId" name="check" :size="16" />
+                    {{ view.name }}
+                  </span>
+                  <span v-if="view.isDefault" class="views-badge">{{ t('views.default') }}</span>
+                </button>
+                <button
+                  v-if="isOwnView(view) && !view.isDefault"
+                  type="button"
+                  class="views-icon"
+                  :title="t('views.setDefault')"
+                  :aria-label="t('views.setDefault')"
+                  @click="setDefaultView(view)"
+                >
+                  ☆
+                </button>
+                <button
+                  v-if="isOwnView(view)"
+                  type="button"
+                  class="views-icon views-icon--danger"
+                  :title="t('views.delete')"
+                  :aria-label="t('views.delete')"
+                  @click="deleteView(view)"
+                >
+                  <AppIcon name="trash" :size="16" />
+                </button>
+              </li>
+            </ul>
+            <div class="views-menu__foot">
+              <NButton size="small" type="primary" @click="openSaveView">
+                {{ t('views.saveCurrent') }}
+              </NButton>
+            </div>
+          </div>
+        </NPopover>
+
+        <NButton quaternary @click="showColumns = true">
+          <AppIcon name="sliders" :size="16" />
+          {{ t('ui.columnSettings') }}
+        </NButton>
+        <NButton
+          :type="showForm ? 'default' : 'primary'"
+          @click="showForm ? closeForm() : openCreateForm()"
+        >
+          {{ showForm ? t('common.cancel') : t('common.create') }}
+        </NButton>
+        <NButton quaternary @click="showImport = !showImport">{{ t('cases.import.title') }}</NButton>
+        <RouterLink v-slot="{ navigate }" to="/cases/sets" custom>
+          <NButton quaternary @click="navigate">{{ t('caseSets.title') }}</NButton>
+        </RouterLink>
+        <NButton quaternary :loading="loading" @click="load">{{ t('common.refresh') }}</NButton>
+      </template>
+    </PageToolbar>
+
+    <NModal v-model:show="showSaveView">
+      <div class="view-dialog" role="dialog" aria-modal="true" :aria-label="t('views.saveTitle')">
+        <h2 class="view-dialog__title">{{ t('views.saveTitle') }}</h2>
+        <p class="view-dialog__label">{{ t('views.name') }}</p>
+        <NInput
+          v-model:value="viewName"
+          :placeholder="t('views.namePlaceholder')"
+          @keyup.enter="submitView"
+        />
+        <NCheckbox v-model:checked="viewDefault" class="view-dialog__default">
+          {{ t('views.setNameDefault') }}
+        </NCheckbox>
+        <p v-if="viewError" class="view-dialog__error" role="alert">{{ viewError }}</p>
+        <div class="view-dialog__actions">
+          <NButton quaternary @click="showSaveView = false">{{ t('ui.cancel') }}</NButton>
+          <NButton type="primary" @click="submitView">{{ t('views.saveCurrent') }}</NButton>
+        </div>
+      </div>
+    </NModal>
+
+    <ColumnSettingsDialog
+      v-model:show="showColumns"
+      :columns="columnOptions"
+      @confirm="onColumnsConfirm"
+    />
 
     <ErrorLineView v-if="error" :error="error" />
     <p v-if="message" class="text-ok">{{ message }}</p>
@@ -691,6 +1198,20 @@ async function runCommit(): Promise<void> {
       <NButton type="primary" attr-type="submit">{{ t('common.save') }}</NButton>
     </form>
 
+    <NModal v-model:show="draftOpen">
+      <div class="view-dialog" role="dialog" aria-modal="true" :aria-label="t('draft.found')">
+        <h2 class="view-dialog__title">{{ t('draft.found') }}</h2>
+        <p class="view-dialog__label">
+          {{ t('draft.restoreHint', { time: draftTimeLabel() }) }}
+        </p>
+        <div class="view-dialog__actions">
+          <NButton quaternary @click="draftOpen = false">{{ t('common.cancel') }}</NButton>
+          <NButton quaternary @click="discardDraft">{{ t('draft.discard') }}</NButton>
+          <NButton type="primary" @click="restoreDraft">{{ t('draft.restore') }}</NButton>
+        </div>
+      </div>
+    </NModal>
+
     <div v-if="showImport" class="card import-card">
       <h2 class="card-title">{{ t('cases.import.title') }}</h2>
       <p class="muted">{{ t('cases.import.hint') }}</p>
@@ -717,12 +1238,15 @@ async function runCommit(): Promise<void> {
     </div>
 
     <SelectionBar
-      v-if="selectedCount > 0"
+      v-if="selectedCount > 0 || batchResult !== null"
       :count="selectedCount"
       :cross-page="crossPageCount"
       :result="batchResult"
       :loading="batchLoading"
-      @clear="clearSelection(); batchResult = null"
+      :project-id="projectId"
+      :action="batchAction"
+      @clear="onSelectionClear"
+      @undone="onUndone"
     >
       <NButton
         type="primary"
@@ -859,5 +1383,152 @@ async function runCommit(): Promise<void> {
 :deep(.row-actions) {
   display: flex;
   gap: var(--space-2);
+}
+
+.views-menu {
+  min-width: 240px;
+}
+
+.views-hint {
+  margin: 0;
+  padding: var(--space-2);
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+.views-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 45vh;
+  overflow: auto;
+}
+
+.views-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  border-radius: var(--radius-md);
+}
+
+.views-item:hover {
+  background: var(--surface-hover);
+}
+
+.views-item--active {
+  background: var(--accent-soft);
+}
+
+.views-apply {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: var(--space-2);
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  text-align: left;
+  cursor: pointer;
+}
+
+.views-name {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.views-badge {
+  flex: none;
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: var(--font-size-xs);
+}
+
+.views-icon {
+  flex: none;
+  padding: 4px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font: inherit;
+}
+
+.views-icon:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}
+
+.views-icon--danger:hover {
+  color: var(--fail);
+}
+
+.views-icon:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.views-menu__foot {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+}
+
+.view-dialog {
+  width: min(400px, calc(100vw - 32px));
+  padding: var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: var(--shadow);
+}
+
+.view-dialog__title {
+  margin: 0 0 var(--space-4);
+  font-size: var(--font-size-md);
+}
+
+.view-dialog__label {
+  margin: 0 0 var(--space-1);
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+.view-dialog__default {
+  margin-top: var(--space-3);
+}
+
+.view-dialog__error {
+  margin: var(--space-3) 0 0;
+  font-size: var(--font-size-sm);
+  color: var(--fail);
+}
+
+.view-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-5);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .views-item {
+    transition: none;
+  }
 }
 </style>

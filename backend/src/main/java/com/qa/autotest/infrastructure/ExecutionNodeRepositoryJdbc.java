@@ -148,6 +148,23 @@ public class ExecutionNodeRepositoryJdbc implements ExecutionNodeRepository {
     }
 
     @Override
+    public java.util.Map<Long, Long> latestProjectByNode() {
+        return jdbc.query("""
+                SELECT r.node_id, r.project_id
+                  FROM run r
+                  JOIN (SELECT node_id, MAX(id) AS mid
+                          FROM run WHERE node_id IS NOT NULL GROUP BY node_id) t
+                    ON r.id = t.mid
+                """, rs -> {
+            java.util.Map<Long, Long> latest = new java.util.HashMap<>();
+            while (rs.next()) {
+                latest.put(rs.getLong("node_id"), rs.getLong("project_id"));
+            }
+            return latest;
+        });
+    }
+
+    @Override
     public List<Long> findStaleOnlineIds(Instant staleBefore) {
         return jdbc.queryForList("""
                 SELECT id FROM execution_node

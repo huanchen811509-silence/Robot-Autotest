@@ -1,0 +1,180 @@
+{
+  "generatedAt": "2026-11-08T16:05:48.687871+00:00",
+  "engine": "grounded-answer-factory",
+  "realCli": false,
+  "fakeCliContract": true,
+  "entry": "http://127.0.0.1:8001",
+  "projectId": 29,
+  "runId": "RUN-20261108214107-800018",
+  "checksPassed": 20,
+  "checksTotal": 20,
+  "scores": {
+    "factConsistencyPct": 100.0,
+    "factTargetPct": 95.0,
+    "severeHallucinations": 0,
+    "citationCoveragePct": 100.0,
+    "firstTokenMs": 33,
+    "firstTokenBudgetMs": 3000
+  },
+  "cases": [
+    {
+      "case": "triage",
+      "elapsedMs": 39,
+      "checks": [
+        {
+          "name": "triage.mode",
+          "pass": true,
+          "detail": "GROUNDED"
+        },
+        {
+          "name": "triage.facts_label",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "triage.verification",
+          "pass": true,
+          "detail": "unsupported=[] missing=[]"
+        },
+        {
+          "name": "triage.citations",
+          "pass": true,
+          "detail": "citationCount=5"
+        },
+        {
+          "name": "triage.no_hallucinated_number",
+          "pass": true,
+          "detail": "[]"
+        }
+      ],
+      "pass": true
+    },
+    {
+      "case": "narrative",
+      "elapsedMs": 32,
+      "checks": [
+        {
+          "name": "narrative.conclusion",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "narrative.verification",
+          "pass": true,
+          "detail": "unsupported=[] missing=[]"
+        },
+        {
+          "name": "narrative.citations",
+          "pass": true,
+          "detail": "citationCount=5"
+        },
+        {
+          "name": "narrative.no_hallucinated_number",
+          "pass": true,
+          "detail": "[]"
+        }
+      ],
+      "pass": true
+    },
+    {
+      "case": "log_explain",
+      "elapsedMs": 41,
+      "checks": [
+        {
+          "name": "log_explain.mode",
+          "pass": true,
+          "detail": "GROUNDED"
+        },
+        {
+          "name": "log_explain.citations",
+          "pass": true,
+          "detail": "citationCount=5"
+        }
+      ],
+      "pass": true
+    },
+    {
+      "case": "refusal",
+      "elapsedMs": 23,
+      "checks": [
+        {
+          "name": "refusal.mode",
+          "pass": true,
+          "detail": "NO_EVIDENCE"
+        },
+        {
+          "name": "refusal.explicit",
+          "pass": true,
+          "detail": "当前上下文没有可用证据，无法给出有据结论。\n请在问题里附带运行编号（RUN-…）、用例编号或报告链接，我会基于报告与失败明细回答。"
+        }
+      ],
+      "pass": true
+    },
+    {
+      "case": "case_draft",
+      "elapsedMs": 24,
+      "checks": [
+        {
+          "name": "case_draft.mode",
+          "pass": true,
+          "detail": "DRAFT"
+        },
+        {
+          "name": "case_draft.review_notice",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "case_draft.requires_review",
+          "pass": true,
+          "detail": "40001 必须逐条人工审阅后才能保存草稿"
+        }
+      ],
+      "pass": true
+    },
+    {
+      "case": "stream",
+      "streamId": "9032662f-be0b-4a44-bf58-c7a2f4466078",
+      "elapsedMs": 91,
+      "firstTokenMs": 33,
+      "events": [
+        "meta",
+        "citations",
+        "delta",
+        "delta",
+        "delta",
+        "done"
+      ],
+      "done": {
+        "firstTokenMs": 1,
+        "citationCount": 0,
+        "elapsedMs": 38,
+        "mode": "NO_EVIDENCE"
+      },
+      "checks": [
+        {
+          "name": "stream.sequence",
+          "pass": true,
+          "detail": "meta,citations,delta...delta,done"
+        },
+        {
+          "name": "stream.first_token",
+          "pass": true,
+          "detail": "firstDeltaMs=33 budget=3000"
+        },
+        {
+          "name": "stream.done",
+          "pass": true,
+          "detail": "{\"firstTokenMs\": 1, \"citationCount\": 0, \"elapsedMs\": 38, \"mode\": \"NO_EVIDENCE\"}"
+        },
+        {
+          "name": "stream.deltas",
+          "pass": true,
+          "detail": "deltas=4"
+        }
+      ],
+      "pass": true
+    }
+  ],
+  "verdict": "PASS"
+}

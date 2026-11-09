@@ -19,7 +19,9 @@ public final class TenantGuard {
     public static final Set<String> WHITELIST_TABLES = Set.of(
             "flyway_schema_history", "app_user", "role", "system_setting", "audit_log",
             // 令牌按哈希精确命中，查询发生在租户上下文建立之前（PLN-03）
-            "api_token");
+            "api_token",
+            // v3.3.0：发布记录是平台级时间线，不属于某个项目（FR-3.3-11）
+            "release_record");
 
     /** 必须带租户条件的业务表。新增业务表默认加进这里。 */
     public static final Set<String> TENANT_TABLES = Set.of(
@@ -40,7 +42,16 @@ public final class TenantGuard {
             "resource_lease", "resource_lease_history", "run_artifact", "run_attempt",
             "run_metadata", "ci_trigger",
             // v2.2 W2：运行分片（按 project_id 隔离）
-            "execution_shard");
+            "execution_shard",
+            // v3.1 EXPX：保存视图 / 批量撤销 / 站内通知与订阅 / 按用户隔离的已读记录
+            "saved_view", "batch_undo", "notification", "notification_preference",
+            "notification_read",
+            // v3.3.0：AI 工作台与运维闭环（项目级配置 / 模板 / 消息 / 告警 / SLO）
+            "ai_project_config", "ai_prompt_template", "ai_message", "ai_session", "ai_action",
+            "alert_channel", "alert_rule", "alert_event", "slo_daily",
+            // v3.4.0：归档保留（策略与冷表都按项目隔离）
+            "archive_policy", "archived_run", "archived_test_result",
+            "archived_keyword_result");
 
     private TenantGuard() {
     }

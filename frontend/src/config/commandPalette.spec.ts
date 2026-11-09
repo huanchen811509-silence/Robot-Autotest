@@ -1,12 +1,14 @@
-/** 命令面板纯逻辑（NAV-04 / FR-v2.0-09）：中英文搜索、最近 5 条、收藏、折叠持久化。 */
+/** 命令面板纯逻辑（NAV-04 / FR-v2.0-09）：中英文搜索、最近 10 条、收藏、作用域/折叠持久化。 */
 import { beforeEach, describe, expect, it } from 'vitest'
 import {
   RECENT_LIMIT,
   loadExpanded,
   loadFavorites,
+  loadPaletteScope,
   loadRecent,
   pushRecent,
   saveExpanded,
+  savePaletteScope,
   searchEntries,
   toggleFavorite,
   type PaletteEntry,
@@ -38,14 +40,24 @@ describe('中英文搜索', () => {
 })
 
 describe('最近访问与收藏', () => {
-  it('最近访问去重保序，最多 5 条', () => {
+  it('最近访问去重保序，最多 10 条', () => {
     let recent = pushRecent('reports', [])
     recent = pushRecent('overview', recent)
     recent = pushRecent('reports', recent)
     expect(recent).toEqual(['reports', 'overview'])
-    for (let i = 0; i < 8; i += 1) recent = pushRecent(`key-${i}`, recent)
-    expect(recent).toHaveLength(RECENT_LIMIT)
+    for (let i = 0; i < 12; i += 1) recent = pushRecent(`key-${i}`, recent)
+    expect(RECENT_LIMIT).toBe(10)
+    expect(recent).toHaveLength(10)
+    expect(recent[0]).toBe('key-11')
     expect(loadRecent()).toEqual(recent)
+  })
+
+  it('旧版只存 5 条时仍可直接读取（key 结构不变）', () => {
+    localStorage.setItem(
+      'robot.palette.recent',
+      JSON.stringify(['overview', 'reports', 'settings', 'cases', 'runs']),
+    )
+    expect(loadRecent()).toEqual(['overview', 'reports', 'settings', 'cases', 'runs'])
   })
 
   it('收藏可加可去，刷新后仍在', () => {
@@ -55,6 +67,16 @@ describe('最近访问与收藏', () => {
     expect(second).toEqual([])
     const third = toggleFavorite('overview', second)
     expect(loadFavorites()).toEqual(third)
+  })
+})
+
+describe('实体搜索作用域持久化', () => {
+  it('默认当前项目，切换后记住；脏值回落 current', () => {
+    expect(loadPaletteScope()).toBe('current')
+    savePaletteScope('all')
+    expect(loadPaletteScope()).toBe('all')
+    localStorage.setItem('robot.palette.scope', 'invalid')
+    expect(loadPaletteScope()).toBe('current')
   })
 })
 

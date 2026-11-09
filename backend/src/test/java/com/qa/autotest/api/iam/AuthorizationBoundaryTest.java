@@ -522,7 +522,19 @@ class AuthorizationBoundaryTest {
         AtomicReference<TestCase> storedCase = new AtomicReference<>(new TestCase(1L, ALPHA, "TC-SEED",
                 "种子用例", "功能", "P2", null, null, null, "draft", "manual", null, null, "L1"));
         TestCaseRepository caseRepository = stub(TestCaseRepository.class, (name, args) -> switch (name) {
-            case "page" -> PageResult.<TestCase>empty((Integer) args[7], (Integer) args[8]);
+            case "page" -> {
+                // 仓储有两个重载：PageQuery 版（args[7] 是对象）与兼容的 int/int 版
+                int page = 1;
+                int size = 20;
+                if (args[7] instanceof com.qa.autotest.common.query.PageQuery paging) {
+                    page = paging.page();
+                    size = paging.size();
+                } else {
+                    page = (Integer) args[7];
+                    size = (Integer) args[8];
+                }
+                yield PageResult.<TestCase>empty(page, size);
+            }
             case "find" -> {
                 TestCase current = storedCase.get();
                 yield current != null && current.projectId() == ((Number) args[0]).longValue()

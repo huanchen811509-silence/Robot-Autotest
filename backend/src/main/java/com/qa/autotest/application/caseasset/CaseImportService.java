@@ -169,6 +169,14 @@ public class CaseImportService {
     private final AccessControlService access;
     private final AuditService audit;
 
+    /** 导入成功后让能力索引缓存失效（EW32-03）；测试装配入口不注入时为 null。 */
+    private CapabilityCache capabilityCache;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setCapabilityCache(CapabilityCache capabilityCache) {
+        this.capabilityCache = capabilityCache;
+    }
+
     public CaseImportService(TestCaseRepository cases, AccessControlService access,
                              AuditService audit) {
         this.cases = cases;
@@ -471,6 +479,9 @@ public class CaseImportService {
                     "并发导入冲突：编号已被另一批次占用，请重新预览后再提交");
         }
         audit.record("case.import", "test_case", String.valueOf(projectId), "imported=" + imported);
+        if (capabilityCache != null) {
+            capabilityCache.invalidate(projectId);
+        }
         return new ImportResult(imported, 0);
     }
 

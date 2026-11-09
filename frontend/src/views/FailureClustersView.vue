@@ -17,7 +17,9 @@ import { computed, h, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { DataTableColumns } from 'naive-ui'
 import DataTable from '@/components/DataTable.vue'
+import AiAnswerCard from '@/components/AiAnswerCard.vue'
 import { failureClusterApi, type FailureCluster, type FailureClusterView } from '@/api/failureClusters'
+import { aiWorkbenchApi, type AiResult } from '@/api/aiWorkbench'
 import { ApiError } from '@/api/http'
 import { useAuthStore } from '@/stores/auth'
 
@@ -39,6 +41,10 @@ const view = ref<FailureClusterView | null>(null)
 const loading = ref(false)
 const errorText = ref('')
 const notice = ref('')
+/** v3.3.0：AI 分诊结果与真实运行编号绑定；跨轮视图没有单轮编号，按钮不出现。 */
+const triage = ref<AiResult | null>(null)
+const triageBusy = ref(false)
+const triageError = ref('')
 
 const total = computed(() => view.value?.total ?? 0)
 
@@ -47,6 +53,8 @@ async function load(): Promise<void> {
   loading.value = true
   errorText.value = ''
   notice.value = ''
+  triage.value = null
+  triageError.value = ''
   try {
     view.value = isRecent.value
       ? await failureClusterApi.recent(projectId.value, recentRuns.value)
@@ -66,6 +74,8 @@ function switchMode(next: 'run' | 'recent'): void {
   view.value = null
   notice.value = ''
   errorText.value = ''
+  triage.value = null
+  triageError.value = ''
   void load()
 }
 
@@ -87,6 +97,21 @@ function percent(ratio: number): string {
 
 function handle(error: unknown): void {
   errorText.value = error instanceof ApiError ? error.message : t('failureClusters.unknownError')
+}
+
+/** AI 分诊：把当前运行的失败簇交给证据装配器，输出事实 / 推测 / 建议三段。 */
+async function runTriage(): Promise<void> {
+  if (isRecent.value || !runId.value.trim()) return
+  triageBusy.value = true
+  triageError.value = ''
+  try {
+    triage.value = await aiWorkbenchApi.triage(projectId.value, runId.value.trim())
+  } catch (error) {
+    triage.value = null
+    triageError.value = error instanceof ApiError ? error.message : t('failureAi.failed')
+  } finally {
+    triageBusy.value = false
+  }
 }
 
 /**
@@ -218,7 +243,24 @@ function rowProps(): Record<string, unknown> {
       <button class="btn" type="submit" :disabled="loading">
         {{ t('failureClusters.query') }}
       </button>
+      <button
+        v-if="!isRecent"
+        class="btn btn-ghost"
+        type="button"
+        data-testid="ai-triage"
+        :disabled="triageBusy || !runId.trim()"
+        @click="runTriage"
+      >
+        {{ t('failureAi.triage') }}
+      </button>
     </form>
+
+    <AiAnswerCard
+      v-if="!isRecent && (triage || triageBusy || triageError)"
+      :result="triage"
+      :loading="triageBusy"
+      :error="triageError"
+    />
 
     <p v-if="notice" class="notice" data-testid="notice">{{ notice }}</p>
     <p v-if="errorText" class="error" data-testid="error">{{ errorText }}</p>

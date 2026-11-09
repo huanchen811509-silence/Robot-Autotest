@@ -105,18 +105,20 @@ describe('顶栏四段排版（FR-UI-18）', () => {
   it('Tab 顺序与视觉顺序一致（DOM 顺序即焦点顺序）', async () => {
     const root = await mountHeader()
     const order = interactive(root).map((el) => el.tagName.toLowerCase())
-    // 项目下拉 → 检索 → AI → 外观 → 主题 → 语言 → 登出
-    expect(order).toEqual(['select', 'button', 'button', 'button', 'button', 'select', 'button'])
+    // 项目下拉 → 检索 → 快捷键帮助 → 通知 → AI → 外观 → 主题 → 语言 → 登出
+    expect(order).toEqual([
+      'select', 'button', 'button', 'button', 'button', 'button', 'button', 'select', 'button',
+    ])
   })
 
   it('AI 未启用时不渲染 AI 按钮，控件数相应少 1（不占位、不留空壳）', async () => {
     const withAi = await mountHeader(true)
-    expect(interactive(withAi)).toHaveLength(7)
+    expect(interactive(withAi)).toHaveLength(9)
     app?.unmount()
     host?.remove()
 
     const withoutAi = await mountHeader(false)
-    expect(interactive(withoutAi)).toHaveLength(6)
+    expect(interactive(withoutAi)).toHaveLength(8)
   })
 })
 

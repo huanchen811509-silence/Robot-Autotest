@@ -2192,7 +2192,7 @@ const mr = { class: "keyword-palette" }, gr = { class: "palette-header" }, vr = 
       ])
     ]));
   }
-}), fi = /* @__PURE__ */ ze(pi, [["__scopeId", "data-v-504d2430"]]), mi = { class: "kw-autocomplete" }, gi = ["value", "placeholder"], vi = ["aria-selected", "onMouseenter", "onMousedown"], hi = { class: "kw-autocomplete-name" }, yi = { class: "kw-autocomplete-lib" }, bi = /* @__PURE__ */ qe({
+}), fi = /* @__PURE__ */ ze(pi, [["__scopeId", "data-v-a8ed7b26"]]), mi = { class: "kw-autocomplete" }, gi = ["value", "placeholder"], vi = ["aria-selected", "onMouseenter", "onMousedown"], hi = { class: "kw-autocomplete-name" }, yi = { class: "kw-autocomplete-lib" }, bi = /* @__PURE__ */ qe({
   __name: "KeywordAutocompleteInput",
   props: {
     value: {},
@@ -2478,7 +2478,7 @@ const mr = { class: "keyword-palette" }, gr = { class: "palette-header" }, vr = 
       _: 1
     }, 8, ["model-value", "title"]));
   }
-}), Ui = /* @__PURE__ */ ze(xi, [["__scopeId", "data-v-737ea011"]]), Bi = /* @__PURE__ */ new Set(["text", "css", "role", "aria"]);
+}), Ui = /* @__PURE__ */ ze(xi, [["__scopeId", "data-v-a75d4fa6"]]), Bi = /* @__PURE__ */ new Set(["text", "css", "role", "aria"]);
 function Ki(e) {
   return e.includes(">> nth=") || e.includes(":nth-match(") || e.includes(":nth-of-type(") || e.includes(">>>") || e.includes(">>");
 }
@@ -6280,7 +6280,7 @@ const Jc = { class: "flow-editor" }, ed = { class: "flow-section-bar" }, td = { 
       ]);
     };
   }
-}), Wf = /* @__PURE__ */ ze(If, [["__scopeId", "data-v-b19bd9b2"]]), jf = { class: "read-only-banner__msg" }, qf = ["href"], zf = /* @__PURE__ */ qe({
+}), Wf = /* @__PURE__ */ ze(If, [["__scopeId", "data-v-a6829e74"]]), jf = { class: "read-only-banner__msg" }, qf = ["href"], zf = /* @__PURE__ */ qe({
   __name: "ReadOnlyBanner",
   props: {
     role: {},
