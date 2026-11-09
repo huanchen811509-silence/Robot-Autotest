@@ -2,7 +2,7 @@
 
 | 项 | 内容 |
 |---|---|
-| 文档 | `05-TEST-REPORT.md` ｜ v3.7 ｜ B0 初始状态（未执行） |
+| 文档 | `05-TEST-REPORT.md` ｜ v3.7 ｜ 实测回写 |
 | 结论口径 | `PASS` 才算通过；`PARTIAL` 与 `BLOCKED` 均不得读作通过 |
 | 证据根 | `docs/evidence/v3.7.0/` |
 
@@ -10,22 +10,22 @@
 
 | TC | 用例 | 状态 | 结论 / 阻塞原因 | 证据 |
 |---|---|---|---|---|
-| TC-v3.7-001 | 新能力运营化 | BLOCKED | B0 阶段尚未执行，待 B1–B6 实测后逐条回写；不编造结果 | `docs/evidence/v3.7.0/EW37-01/` |
-| TC-v3.7-002 | 韧性测试 | BLOCKED | B0 阶段尚未执行，待 B1–B6 实测后逐条回写；不编造结果 | `docs/evidence/v3.7.0/EW37-02/` |
-| TC-v3.7-003 | 安全与依赖治理 | BLOCKED | B0 阶段尚未执行，待 B1–B6 实测后逐条回写；不编造结果 | `docs/evidence/v3.7.0/EW37-03/` |
-| TC-v3.7-004 | 变更管理与 DORA | BLOCKED | B0 阶段尚未执行，待 B1–B6 实测后逐条回写；不编造结果 | `docs/evidence/v3.7.0/EW37-04/` |
-| TC-v3.7-005 | 容量与成本 | BLOCKED | B0 阶段尚未执行，待 B1–B6 实测后逐条回写；不编造结果 | `docs/evidence/v3.7.0/EW37-05/` |
-| TC-v3.7-006 | 可观测性深化 | BLOCKED | B0 阶段尚未执行，待 B1–B6 实测后逐条回写；不编造结果 | `docs/evidence/v3.7.0/EW37-06/` |
-| TC-v3.7-007 | 测试体系进阶 | BLOCKED | B0 阶段尚未执行，待 B1–B6 实测后逐条回写；不编造结果 | `docs/evidence/v3.7.0/EW37-07/` |
-| TC-v3.7-008 | 备份恢复与 DR | BLOCKED | B0 阶段尚未执行，待 B1–B6 实测后逐条回写；不编造结果 | `docs/evidence/v3.7.0/EW37-08/` |
+| TC-v3.7-001 | 新能力运营化 | PARTIAL | 8 场景运行手册与四类默认值/成本清单成文；高风险演练需维护窗口 | `docs/evidence/v3.7.0/EW37-01/` |
+| TC-v3.7-002 | 韧性测试 | PARTIAL | 六类注入计划与判据成文；DB/磁盘/重启/积压四类高风险注入未执行 | `docs/evidence/v3.7.0/EW37-02/` |
+| TC-v3.7-003 | 安全与依赖治理 | PARTIAL | ASVS 14 域 + LLM Top 10 逐条自评成文、门禁 25 高危 0；medium=1 浮动依赖与轮换演练未闭环 | `docs/evidence/v3.7.0/EW37-03/` |
+| TC-v3.7-004 | 变更管理与 DORA | PARTIAL | DORA 五项中 3 项建近似读数、2 项如实「未测量」；发布记录含版本戳与回滚点；灰度/回滚演练未执行 | `docs/evidence/v3.7.0/EW37-04/` |
+| TC-v3.7-005 | 容量与成本 | PASS | 门禁 26 步真实输出 RTO=20s RPO=0s tables=76、projected=410MB budget=2048MB；现场规模属外推已标注 | `docs/evidence/v3.7.0/EW37-05/` |
+| TC-v3.7-006 | 可观测性深化 | PARTIAL | traceId / SLO / 告警能力在库且机检留证；全链样例、日志脱敏抽检与 MTTD 演练未完成 | `docs/evidence/v3.7.0/EW37-06/` |
+| TC-v3.7-007 | 测试体系进阶 | PARTIAL | REG 扩容 + flaky 闭环（1 条，复跑→定位→修复→回归并入）；Jacoco diff 覆盖与变异/视觉进 CI 未落地 | `docs/evidence/v3.7.0/EW37-07/` |
+| TC-v3.7-008 | 备份恢复与 DR | PASS | 隔离库恢复演练 PASS（RTO=20s RPO=0s）；季度正式演练需维护窗口，正式 RPO 由备份计划决定 | `docs/evidence/v3.7.0/EW37-08/` |
 
 ## 2. 汇总
 
 | 状态 | 条数 | 说明 |
 |---|---:|---|
-| PASS | 0 | 机检 / 命令实测通过，证据齐 |
-| PARTIAL | 0 | 工具与机检部分已落地，缺真人样本或全量复测 |
-| BLOCKED | 8 | 缺用户样本 / 真机 DUT / runner / 单独授权，逐条原因见 §1 |
+| PASS | 2 | 机检 / 命令实测通过，证据齐 |
+| PARTIAL | 6 | 工具与机检部分已落地，缺真人样本或全量复测 |
+| BLOCKED | 0 | 缺用户样本 / 真机 DUT / runner / 单独授权，逐条原因见 §1 |
 | FAIL | 0 | 无 |
 
 ## 3. 差异与遗留

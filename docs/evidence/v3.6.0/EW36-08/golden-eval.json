@@ -1,0 +1,19 @@
+{
+  "source": "docs/evidence/v3.6.0/EW36-08/golden-100.json",
+  "scope": "离线契约评测（字段 / 无凭据 / 锚点 / 拒答规则 / 判定列未预填）",
+  "sample_size": 100,
+  "category_distribution": {
+    "事实问答": 30,
+    "无证据拒答": 20,
+    "引用可跳转": 20,
+    "用例草稿审阅": 15,
+    "提示注入": 10,
+    "无界消耗": 5
+  },
+  "field_completeness": "100%",
+  "contract_result": "PASS",
+  "fails": [],
+  "end_to_end_factuality": "未测量",
+  "human_review": "未测量",
+  "conclusion": "PARTIAL：100 条样本集契约完整，但事实一致性 ≥95%、严重幻觉 0、用户采纳率 ≥70% 需真实端点评测与人工复核，不得用离线契约分代替"
+}

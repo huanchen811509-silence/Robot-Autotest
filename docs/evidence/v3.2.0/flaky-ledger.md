@@ -38,6 +38,16 @@ BUILD SUCCESS
   另修正门禁脚本过期期望：根路由默认落地页 v3.1 起为 `/workbench`（原写 `/overview`）。
   处置未改断言、未跳过步骤，当前 0 复现。
 
+## 3.1 2026-11-09 新增记录（v3.5+ B1 门禁）
+
+| 首次日期 | 用例 | 现象 | 根因 | 处置 | 当前状态 |
+|---|---|---|---|---|---|
+| 2026-11-09 | `frontend/src/views/AdminView.spec.ts > 渲染用户行，空邮箱显示统一占位` | 27 步全量门禁第 02 步 `Test timed out in 5000ms`，同批 492/493 通过 | 73 个 spec 文件并发 collect（日志 collect 111.99s）时该用例的 `mountView()` 被调度拖过 5s 默认边界；**非断言失败、非产品缺陷** | ① 按 §4 连续 2 次单文件复跑：`npx vitest run src/views/AdminView.spec.ts` 两次均 `8 passed (8)`，该用例 598ms；② 在 `frontend/vite.config.ts` 的 test 段设 `testTimeout=10000` / `hookTimeout=10000`，**只放宽超时余量，未改断言、未删用例、未跳过步骤**；③ 重跑 27 步全量门禁，02 与 19 同步转绿 | 已消除（待同批次汇总确认） |
+
+**连锁影响说明**：第 19 步 `check_test_baseline.py` 从 `02-frontend_test.log` 解析 `Tests N passed (N)`；
+02 出现 1 条失败时日志格式变为 `Tests 1 failed | 492 passed (493)`，解析器取不到有效读数而判红。
+因此 19 的 FAIL 是 02 的**下游连锁**，不是独立的基线倒退；修 02 后须用同批次汇总复核两处。
+
 ## 4. 复跑策略
 
 1. 单元/契约测试：`mvn -Dtest=<Class> test` 连续 2 次；

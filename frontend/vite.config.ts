@@ -9,6 +9,11 @@ const test = {
   environment: 'happy-dom',
   include: ['src/**/*.spec.ts'],
   setupFiles: ['src/test-setup.ts'],
+  // 2026-11-09 B1：全量 73 文件并发时组件挂载偶发越过默认 5s 边界
+  // （单跑该用例 598ms，两次单文件复跑 8/8 全绿）。只放大超时余量，
+  // 不改任何断言、不跳过用例；根因与复跑证据见 v3.2.0/flaky-ledger.md §3.1。
+  testTimeout: 10000,
+  hookTimeout: 10000,
 }
 
 // 开发期把 /api 代理到本地后端（默认 :8081），生产由同域静态服务承载，前端不直连任何外部服务（N13）

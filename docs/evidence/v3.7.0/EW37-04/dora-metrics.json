@@ -1,0 +1,42 @@
+{
+  "generated_at": "2026-11-09T10:47:46+08:00",
+  "scope": "本仓 git 历史 + 同批次门禁汇总 + flaky 台账",
+  "caveat": "近似口径，非标准 DORA 定义值；只建读数、不设目标、不用于考核",
+  "metrics": {
+    "deployment_frequency": {
+      "value": 1.6667,
+      "unit": "版本条目/天（CHANGELOG 版本数 / 提交时间跨度）",
+      "basis": "CHANGELOG 版本条目 10 条，历史跨度 6 天"
+    },
+    "lead_time_for_changes": {
+      "value": 0.0387,
+      "unit": "天/提交（提交间隔均值，近似）",
+      "basis": "155 个提交 / 6 天"
+    },
+    "change_failure_rate": {
+      "value": null,
+      "unit": "需发布失败记录，当前无发布",
+      "basis": "本轮不产生发布；门禁失败不冒充部署失败",
+      "status": "未测量"
+    },
+    "time_to_restore": {
+      "value": null,
+      "unit": "需真实故障与恢复事件",
+      "basis": "本轮 B1 的 02/19 连锁失败已修复，但不是生产故障恢复事件",
+      "status": "未测量"
+    },
+    "reliability": {
+      "value": 1.0,
+      "unit": "门禁步骤通过率（同批次汇总）",
+      "basis": "PASS=26 FAIL=0 FAILS=0"
+    }
+  },
+  "release_record": {
+    "baseline_sha": "2278fb92fa7e3785abc4324137929fa39caf2a01",
+    "version": "3.4.0",
+    "rollback_point": "上一提交 4dea84a608bc712693b30aca04239f9a8a21c080",
+    "note": "版本戳 / 迁移版本 / 回滚点齐；本轮未发版、未申请 G 门"
+  },
+  "flaky_ledger_rows": 8,
+  "conclusion": "PARTIAL：五项读数中 3 项建立近似值、2 项如实标「未测量」；灰度与回滚演练未执行"
+}

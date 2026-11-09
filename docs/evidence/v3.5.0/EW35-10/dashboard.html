@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>v3.5+ 度量看板 v1 · Robot-Autotest</title>
+<style>
+:root{--bg:#f6f8fb;--card:#fff;--ink:#172033;--sub:#5b6b85;--line:#e2e8f2;
+--ok:#137a52;--warn:#b26a00;--block:#8a4a9e;--na:#75839b;--accent:#2b5fd9}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);
+font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif;padding:28px}
+h1{font-size:22px;margin:0 0 6px}h2{font-size:15px;margin:26px 0 12px;color:var(--sub)}
+.meta{color:var(--sub);font-size:13px;margin-bottom:20px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;
+box-shadow:0 1px 3px rgba(20,40,80,.04)}
+.card h3{margin:0 0 10px;font-size:14px}.k{font-size:12px;color:var(--sub);margin:7px 0 3px}
+.v{font-size:17px;font-weight:600}.tag{display:inline-block;font-size:11px;padding:2px 8px;
+border-radius:20px;margin-left:6px;vertical-align:2px}
+.pass{background:#e4f5ec;color:var(--ok)}.part{background:#fff2dc;color:var(--warn)}
+.block{background:#f3e8f7;color:var(--block)}.na{background:#eef1f6;color:var(--na)}
+.note{background:#fff;border:1px solid var(--line);border-left:3px solid var(--accent);
+border-radius:8px;padding:14px;font-size:13px;line-height:1.75;margin-top:22px}
+code{background:#eef2f8;padding:1px 5px;border-radius:4px;font-size:12px}
+footer{margin-top:26px;color:var(--sub);font-size:12px}
+</style>
+</head>
+<body>
+<h1>v3.5+ 度量看板 v1</h1>
+<div class="meta">Robot-Autotest ｜ 基线 v3.4.0 ｜ 生成时点 2026-11-09 ｜ 数据字典 <code>docs/evidence/v3.5.0/EW35-03/metrics-dictionary.md</code></div>
+
+<div class="grid">
+  <div class="card"><h3>体验</h3>
+    <div class="k">Top 8 成功率 / 耗时降幅</div><div class="v">未测量 <span class="tag block">BLOCKED</span></div>
+    <div class="k">SUS / UMUX-Lite</div><div class="v">未测量 <span class="tag block">BLOCKED</span></div>
+    <div class="k">搜索 Top3 命中率（50 查询集）</div><div class="v">未测量 <span class="tag part">PARTIAL</span></div>
+    <div class="k">WCAG 2.2 目标尺寸</div><div class="v">18 处 &lt;24×24 <span class="tag part">待整改</span></div>
+    <div class="k">WCAG 2.2 目标尺寸</div><div class="v">18 处 &lt;24×24 <span class="tag part">待整改</span></div>
+    <div class="k">说明</div><div class="k">缺 8–10 名内部用户与人工判定；脚本与查询集已冻结</div>
+  </div>
+  <div class="card"><h3>性能</h3>
+    <div class="k">API p95 / p99（规模数据）</div><div class="v">预算已建 <span class="tag pass">门禁 22</span></div>
+    <div class="k">主入口 / 单路由包体</div><div class="v">≤300 / ≤150 KiB <span class="tag pass">门禁 21</span></div>
+    <div class="k">长列表 1 万行</div><div class="v">58.5 fps <span class="tag pass">v3.2 实测</span></div>
+    <div class="k">LCP / INP / CLS（p75 实验室）</div><div class="v">148ms / 16ms / 0.015 <span class="tag part">PARTIAL</span></div>
+  </div>
+  <div class="card"><h3>运行</h3>
+    <div class="k">业务表 / 迁移</div><div class="v">87 张 / 57 支 <span class="tag pass">db-audit</span></div>
+    <div class="k">门禁</div><div class="v">27 步 FAILS=0 <span class="tag pass">同批次汇总</span></div>
+    <div class="k">可用性 / MTTR / MTTD</div><div class="v">未测量 <span class="tag part">PARTIAL</span></div>
+    <div class="k">契约端点 / 路径</div><div class="v">279 / 220 <span class="tag pass">门禁 20</span></div>
+  </div>
+  <div class="card"><h3>AI</h3>
+    <div class="k">黄金集事实一致性</div><div class="v">20/20 · 100% <span class="tag pass">门禁 24</span></div>
+    <div class="k">首字时延</div><div class="v">31 ms <span class="tag pass">门禁 24</span></div>
+    <div class="k">用户采纳率</div><div class="v">未测量 <span class="tag block">BLOCKED</span></div>
+    <div class="k">扩样 ≥100 条</div><div class="v">进行中 <span class="tag part">PARTIAL</span></div>
+  </div>
+  <div class="card"><h3>运维</h3>
+    <div class="k">安全扫描（高危 / 中危）</div><div class="v">0 / 1 <span class="tag part">门禁 25</span></div>
+    <div class="k">备份演练（隔离库）</div><div class="v">RTO 20s · RPO 0s <span class="tag pass">门禁 26</span></div>
+    <div class="k">i18n + 对比度</div><div class="v">14 组 280 项 <span class="tag pass">门禁 27</span></div>
+    <div class="k">DORA 五指标</div><div class="v">未测量 <span class="tag part">PARTIAL</span></div>
+  </div>
+</div>
+
+<div class="note">
+<b>口径说明</b><br>
+1. 「未测量」≠ 0：没有真实读数时一律显示「未测量」，绝不填 0 或推算值。<br>
+2. 机器预算（API p95、包体、黄金集）与用户体感（CWV、任务耗时、SUS）并列展示，<b>互不替代</b>。<br>
+3. 每个数字下钻到原始证据：<code>docs/evidence/gates/logs/</code>、<code>docs/evidence/v3.5.0/</code>、<code>docs/evidence/v3.2.0/EW32-10/</code>。<br>
+4. 门禁结论以同批次 <code>00-full-run.log</code> 为准（本轮 <b>FAILS=0</b>）；分步日志 PASS 不等于 27 步全绿。<br>
+   4b. CWV 为 CDP 实验室 p75 采样，不是真实用户 RUM；WCAG 探针不是 axe 全量审计，18 处小目标已列整改。<br>
+5. 发版门禁 G4/G5/G7/G8 未判、G6 观察钟未启动，本看板不产生发版判定与对外口径。
+</div>
+<footer>EW35-10 · 度量看板 v1 ｜ 数据字典与复现命令见 <code>docs/evidence/v3.5.0/EW35-10/README.md</code></footer>
+</body>
+</html>

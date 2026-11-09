@@ -2,7 +2,7 @@
 
 | 项 | 内容 |
 |---|---|
-| 文档 | `05-TEST-REPORT.md` ｜ v3.8 ｜ B0 初始状态（未执行） |
+| 文档 | `05-TEST-REPORT.md` ｜ v3.8 ｜ 实测回写 |
 | 结论口径 | `PASS` 才算通过；`PARTIAL` 与 `BLOCKED` 均不得读作通过 |
 | 证据根 | `docs/evidence/v3.8.0/` |
 
@@ -10,18 +10,18 @@
 
 | TC | 用例 | 状态 | 结论 / 阻塞原因 | 证据 |
 |---|---|---|---|---|
-| TC-v3.8-001 | 多节点与现场能力 | BLOCKED | B0 阶段尚未执行，待 B1–B6 实测后逐条回写；不编造结果 | `docs/evidence/v3.8.0/EW38-01/` |
-| TC-v3.8-002 | 跨浏览器矩阵与试点验收 | BLOCKED | B0 阶段尚未执行，待 B1–B6 实测后逐条回写；不编造结果 | `docs/evidence/v3.8.0/EW38-02/` |
-| TC-v3.8-003 | GA 检查单与对外口径准备 | BLOCKED | B0 阶段尚未执行，待 B1–B6 实测后逐条回写；不编造结果 | `docs/evidence/v3.8.0/EW38-03/` |
-| TC-v3.8-004 | 与既有发版门禁配合 | BLOCKED | B0 阶段尚未执行，待 B1–B6 实测后逐条回写；不编造结果 | `docs/evidence/v3.8.0/EW38-04/` |
+| TC-v3.8-001 | 多节点与现场能力 | BLOCKED | 6 个现场包入台账标 BLOCKED；缺真机 DUT / runner，ADR-0013 禁跑令有效 | `docs/evidence/v3.8.0/EW38-01/` |
+| TC-v3.8-002 | 跨浏览器矩阵与试点验收 | BLOCKED | Chrome 157 回归 48 项全绿；缺 Firefox / Edge 浏览器与 8 条 UAT 签字 | `docs/evidence/v3.8.0/EW38-02/` |
+| TC-v3.8-003 | GA 检查单与对外口径准备 | BLOCKED | GA 检查单模板成文、不预填 PASS；本轮不产生对外发布与口径 | `docs/evidence/v3.8.0/EW38-03/` |
+| TC-v3.8-004 | 与既有发版门禁配合 | PASS | G4/G5/G7/G8 未判、G6 观察钟未启动如实记录；本轮不代判、不申请 | `docs/evidence/v3.8.0/EW38-04/` |
 
 ## 2. 汇总
 
 | 状态 | 条数 | 说明 |
 |---|---:|---|
-| PASS | 0 | 机检 / 命令实测通过，证据齐 |
+| PASS | 1 | 机检 / 命令实测通过，证据齐 |
 | PARTIAL | 0 | 工具与机检部分已落地，缺真人样本或全量复测 |
-| BLOCKED | 4 | 缺用户样本 / 真机 DUT / runner / 单独授权，逐条原因见 §1 |
+| BLOCKED | 3 | 缺用户样本 / 真机 DUT / runner / 单独授权，逐条原因见 §1 |
 | FAIL | 0 | 无 |
 
 ## 3. 差异与遗留

@@ -1,0 +1,25 @@
+{
+  "version": "1.0",
+  "generated_by": "tools/ux_metrics.py",
+  "privacy": {
+    "telemetry_enabled": false,
+    "client_events_enabled": false,
+    "field_policy": "白名单 + 禁止字段 + 凭据特征三重校验"
+  },
+  "metrics": {
+    "task_success_rate": "未测量",
+    "task_duration_median": "未测量",
+    "task_step_count": "未测量",
+    "search_top3_hit_rate": "未测量",
+    "search_zero_result_rate": "未测量",
+    "sus_score": "未测量",
+    "form_first_submit_rate": "未测量",
+    "error_recoverable_rate": "未测量",
+    "ai_adoption_rate": "未测量",
+    "lcp_p75": "未测量",
+    "inp_p75": "未测量",
+    "cls_p75": "未测量"
+  },
+  "note": "无真实样本时一律显示「未测量」而非 0；机器预算与用户体感互不替代",
+  "status": "DISABLED"
+}

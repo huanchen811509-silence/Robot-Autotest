@@ -409,3 +409,14 @@ FROM export_record ORDER BY id DESC LIMIT 10;"
 | 验证备份 | §5.3 恢复到 `*_restore_check` 并比对行数 |
 | 磁盘满 | §7.3 先 `dryRun=true` 再 `false` |
 | 回滚 | `docs/ROLLBACK.md` |
+
+## v3.5+ 增量：运行手册 8 场景与默认值（2026-11-09）
+
+| 项 | 位置 | 状态 |
+|---|---|---|
+| 8 个运行手册场景（现象 / 判据 / 诊断命令 / 处置 / 回滚 / 验证） | `docs/evidence/v3.7.0/EW37-01/runbook-8-scenarios.md` | 成文；高风险演练需维护窗口 |
+| 归档 / 准入 / AI 配额 / 告警四类默认值、开关、降级、成本 | `docs/evidence/v3.7.0/EW37-01/defaults-and-cost.md` | 已记录；归档 `enabled=false` 未擅自开启 |
+| 六类韧性注入计划与「注入必红」判据 | `docs/evidence/v3.7.0/EW37-02/resilience-inject-plan.md` | 成文；4 类高风险注入未执行 |
+| 特性开关清单（默认关闭、可关闭、最小字段） | `docs/release/v3.5.0/FEATURE-FLAGS.md` | 已冻结 |
+
+> 所有演练记录 `PASS` 必须有原始命令输出；未执行的一律标 `BLOCKED` 并写阻塞原因与所需条件。

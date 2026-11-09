@@ -1,0 +1,269 @@
+{
+  "generated_at": "2026-11-09T02:45:01.525Z",
+  "browser": "HeadlessChrome/157.0.8103.38",
+  "method": "CDP 真实 DOM 几何 + 计算样式（非 axe 全量审计）",
+  "items": {
+    "目标尺寸 24x24": {
+      "status": "FAIL",
+      "small_total": 18,
+      "note": "任一可见交互元素宽或高 <24 CSS px 即记缺陷"
+    },
+    "焦点外观": {
+      "status": "PASS",
+      "note": "抽检首个 button 的 outline / box-shadow"
+    },
+    "键盘可达": {
+      "status": "PARTIAL",
+      "note": "探针以 Tab 触发真实输入事件；Top 8 全键盘走查需真人，见 BLOCKED"
+    },
+    "200% 缩放无横滚": {
+      "status": "PASS",
+      "note": "视口 720 模拟 1440 的 200% 缩放"
+    },
+    "一致帮助": {
+      "status": "PASS",
+      "note": "帮助 / 快捷键入口存在性抽检；全站位置一致性需人工走查"
+    },
+    "拖曳替代": {
+      "status": "BLOCKED",
+      "note": "需真人逐页键盘走查，探针不推演"
+    },
+    "避免重复输入": {
+      "status": "BLOCKED",
+      "note": "需表单草稿任务测试，缺 8 名内部用户"
+    },
+    "可访问认证": {
+      "status": "PARTIAL",
+      "note": "登录页无认知功能测试（机检），人工走查未完成"
+    }
+  },
+  "per_route": [
+    {
+      "path": "/workbench",
+      "targetCount": 37,
+      "smallCount": 2,
+      "smallSamples": [
+        {
+          "tag": "SELECT",
+          "id": "",
+          "w": 128,
+          "h": 21,
+          "label": "选择项目演示项目-Pytest内核验证项"
+        },
+        {
+          "tag": "SELECT",
+          "id": "",
+          "w": 26,
+          "h": 21,
+          "label": "中文EN"
+        }
+      ],
+      "focus": {
+        "checked": true,
+        "hasVisibleOutline": true,
+        "outlineWidth": "2px",
+        "boxShadow": "none"
+      },
+      "helpEntryCount": 1,
+      "zoom200": {
+        "scrollWidth": 1440,
+        "viewport": 1440
+      }
+    },
+    {
+      "path": "/",
+      "check": "zoom200-no-hscroll",
+      "ok": true,
+      "scrollWidth": 720,
+      "viewport": 720
+    },
+    {
+      "path": "/runs",
+      "targetCount": 38,
+      "smallCount": 12,
+      "smallSamples": [
+        {
+          "tag": "SELECT",
+          "id": "",
+          "w": 128,
+          "h": 21,
+          "label": "选择项目演示项目-Pytest内核验证项"
+        },
+        {
+          "tag": "SELECT",
+          "id": "",
+          "w": 26,
+          "h": 21,
+          "label": "中文EN"
+        },
+        {
+          "tag": "BUTTON",
+          "id": "",
+          "w": 56,
+          "h": 14,
+          "label": "查看日志"
+        },
+        {
+          "tag": "BUTTON",
+          "id": "",
+          "w": 56,
+          "h": 14,
+          "label": "查看日志"
+        },
+        {
+          "tag": "BUTTON",
+          "id": "",
+          "w": 56,
+          "h": 14,
+          "label": "查看日志"
+        },
+        {
+          "tag": "BUTTON",
+          "id": "",
+          "w": 56,
+          "h": 14,
+          "label": "查看日志"
+        },
+        {
+          "tag": "BUTTON",
+          "id": "",
+          "w": 56,
+          "h": 14,
+          "label": "查看日志"
+        },
+        {
+          "tag": "BUTTON",
+          "id": "",
+          "w": 56,
+          "h": 14,
+          "label": "查看日志"
+        },
+        {
+          "tag": "BUTTON",
+          "id": "",
+          "w": 56,
+          "h": 14,
+          "label": "查看日志"
+        },
+        {
+          "tag": "BUTTON",
+          "id": "",
+          "w": 56,
+          "h": 14,
+          "label": "查看日志"
+        },
+        {
+          "tag": "BUTTON",
+          "id": "",
+          "w": 56,
+          "h": 14,
+          "label": "查看日志"
+        },
+        {
+          "tag": "BUTTON",
+          "id": "",
+          "w": 56,
+          "h": 14,
+          "label": "查看日志"
+        }
+      ],
+      "focus": {
+        "checked": true,
+        "hasVisibleOutline": true,
+        "outlineWidth": "2px",
+        "boxShadow": "none"
+      },
+      "helpEntryCount": 1,
+      "zoom200": {
+        "scrollWidth": 1440,
+        "viewport": 1440
+      }
+    },
+    {
+      "path": "/runs",
+      "check": "zoom200-no-hscroll",
+      "ok": true,
+      "scrollWidth": 720,
+      "viewport": 720
+    },
+    {
+      "path": "/assets",
+      "targetCount": 24,
+      "smallCount": 2,
+      "smallSamples": [
+        {
+          "tag": "SELECT",
+          "id": "",
+          "w": 128,
+          "h": 21,
+          "label": "选择项目演示项目-Pytest内核验证项"
+        },
+        {
+          "tag": "SELECT",
+          "id": "",
+          "w": 26,
+          "h": 21,
+          "label": "中文EN"
+        }
+      ],
+      "focus": {
+        "checked": true,
+        "hasVisibleOutline": true,
+        "outlineWidth": "2px",
+        "boxShadow": "none"
+      },
+      "helpEntryCount": 1,
+      "zoom200": {
+        "scrollWidth": 1440,
+        "viewport": 1440
+      }
+    },
+    {
+      "path": "/assets",
+      "check": "zoom200-no-hscroll",
+      "ok": true,
+      "scrollWidth": 720,
+      "viewport": 720
+    },
+    {
+      "path": "/nodes",
+      "targetCount": 35,
+      "smallCount": 2,
+      "smallSamples": [
+        {
+          "tag": "SELECT",
+          "id": "",
+          "w": 128,
+          "h": 21,
+          "label": "选择项目演示项目-Pytest内核验证项"
+        },
+        {
+          "tag": "SELECT",
+          "id": "",
+          "w": 26,
+          "h": 21,
+          "label": "中文EN"
+        }
+      ],
+      "focus": {
+        "checked": true,
+        "hasVisibleOutline": true,
+        "outlineWidth": "2px",
+        "boxShadow": "none"
+      },
+      "helpEntryCount": 1,
+      "zoom200": {
+        "scrollWidth": 1440,
+        "viewport": 1440
+      }
+    },
+    {
+      "path": "/nodes",
+      "check": "zoom200-no-hscroll",
+      "ok": true,
+      "scrollWidth": 720,
+      "viewport": 720
+    }
+  ],
+  "axes_note": "本探针不是 axe 全量审计；WCAG 2.2 严重项最终结论需 axe + 人工键盘/读屏走查，缺真人资源记 BLOCKED"
+}
