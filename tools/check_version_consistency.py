@@ -42,6 +42,64 @@ def first_version(text):
     return m.group(1) if m else None
 
 
+def release_section(text, version):
+    """取出指定版本的 `## vX.Y.Z` 小节正文（到下一个 `## ` 前）。
+
+    规范化：去掉 `<!-- current -->` 标记、去行尾空白、丢弃空行，
+    只比「这一版到底写了什么」，不因排版差异误报。
+    """
+    if not text:
+        return None
+    lines = text.split("\n")
+    start = None
+    for i, line in enumerate(lines):
+        m = re.match(r"^##\s+v?([\d.]+)", line)
+        if m and m.group(1) == version:
+            start = i + 1
+            break
+    if start is None:
+        return None
+    end = len(lines)
+    for j in range(start, len(lines)):
+        if re.match(r"^##\s+", lines[j]):
+            end = j
+            break
+    kept = []
+    for line in lines[start:end]:
+        # 只摘掉 current 标记；`<!-- added -->` 这类小节锚点必须留着，
+        # 后面的 section_items 靠它定位，一起删掉会导致「四类小节全缺」的假红。
+        cleaned = re.sub(r"<!--\s*current\s*-->", "", line).rstrip()
+        if cleaned.strip():
+            kept.append(cleaned)
+    return "\n".join(kept)
+
+
+def section_items(section, key):
+    """取某一类小节（`### ... <!-- added -->`）下的 `- ` 条目。
+
+    小节不存在返回 None，存在但没条目返回 []——两者语义不同：
+    「漏写小节」和「写了但空着」都要报，但提示语不一样。
+    """
+    if not section:
+        return None
+    marker = "<!-- %s -->" % key
+    lines = section.split("\n")
+    start = None
+    for i, line in enumerate(lines):
+        if line.startswith("### ") and marker in line:
+            start = i + 1
+            break
+    if start is None:
+        return None
+    items = []
+    for line in lines[start:]:
+        if line.startswith("### "):
+            break
+        if line.strip().startswith("- "):
+            items.append(line.strip())
+    return items
+
+
 def main():
     args = set(sys.argv[1:])
     errors = []
@@ -69,6 +127,32 @@ def main():
             errors.append("%s 首条版本=%s，应=%s" % (path, first, version))
         elif path == "CHANGELOG.md" and "<!-- current -->" not in text.split("\n## ", 1)[1][:200]:
             errors.append("CHANGELOG.md 的 %s 条目缺 <!-- current --> 标记" % version)
+
+    # 3.1 版本迭代页内容一致性（3.9.0 / FR-v3.9-17 加固）
+    # 为什么只比「首条版本小节」而不是全文：CHANGELOG 尾部允许留未发版工作记录（引用块），
+    # 那部分本来就不该进对外页面。旧逻辑只比首条**版本号**，于是出现过
+    # 「版本小节改了、public 副本没同步，页面还是旧内容，门禁却全绿」——
+    # 版本迭代页正是读 public 副本渲染的，必须按小节内容比对。
+    root_sec = release_section(read("CHANGELOG.md") or "", version)
+    pub_sec = release_section(read("frontend/public/CHANGELOG.md") or "", version)
+    if root_sec is None:
+        errors.append("CHANGELOG.md 找不到 v%s 的版本小节" % version)
+    else:
+        if pub_sec is None:
+            errors.append("frontend/public/CHANGELOG.md 找不到 v%s 的版本小节（版本迭代页会缺这一版）"
+                          % version)
+        elif pub_sec != root_sec:
+            errors.append("frontend/public/CHANGELOG.md 的 v%s 小节与根 CHANGELOG.md 不一致"
+                          "（版本迭代页显示旧内容；先跑 scripts/build.sh 或手工同步）" % version)
+
+        # 3.2 版本小节必须写得出内容：四类小节齐全且「新增/变更/修复」各有条目。
+        # 空小节 = 关于页与版本迭代页对这一版说不出任何东西，等于没更新。
+        for key in ("added", "changed", "fixed", "breaking"):
+            body = section_items(root_sec, key)
+            if body is None:
+                errors.append("CHANGELOG.md 的 v%s 缺 <!-- %s --> 小节" % (version, key))
+            elif key != "breaking" and not body:
+                errors.append("CHANGELOG.md 的 v%s 的 %s 小节没有任何条目" % (version, key))
 
     # 4. OpenAPI 快照
     raw = read("docs/contracts/openapi.json")

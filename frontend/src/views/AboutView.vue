@@ -16,12 +16,40 @@ import type { DataTableColumns } from 'naive-ui'
 import DataTable from '@/components/DataTable.vue'
 import AppIcon from '@/components/AppIcon.vue'
 import { settingsApi, type BuildInfo } from '@/api/settings'
+import { parseChangelog, type ChangelogRelease } from '@/config/changelog'
 
 const { t } = useI18n()
 const info = ref<BuildInfo | null>(null)
 const error = ref('')
 const updatedAt = ref('')
 const refreshing = ref(false)
+
+/**
+ * 3.9.0 / FR-v3.9-17：关于页要能直接回答「这一版改了什么」。
+ *
+ * 数据源与版本迭代页**同一份**（`/CHANGELOG.md` → parseChangelog），不另建一份摘要，
+ * 否则两处口径迟早对不上。只取首条（当前版本）的前几条，完整历史仍由版本迭代页承担。
+ */
+const latestRelease = ref<ChangelogRelease | null>(null)
+const changelogError = ref('')
+
+const latestItems = computed(() => {
+  const release = latestRelease.value
+  if (!release) return []
+  return release.sections.flatMap((section) => section.items).slice(0, 4)
+})
+
+async function loadChangelog(): Promise<void> {
+  try {
+    const response = await fetch('/CHANGELOG.md')
+    if (!response.ok) throw new Error(`HTTP ${response.status}`)
+    latestRelease.value = parseChangelog(await response.text())[0] ?? null
+    changelogError.value = ''
+  } catch (e) {
+    // 失败只降级这一块，不影响版本号与自检信息（它们来自后端接口）
+    changelogError.value = e instanceof Error ? e.message : String(e)
+  }
+}
 
 /** 自动刷新间隔：够快能看到版本变化，又不至于把接口打出噪音。 */
 const REFRESH_MS = 30_000
@@ -81,6 +109,7 @@ async function load(manual = false): Promise<void> {
 
 onMounted(() => {
   void load()
+  void loadChangelog()
   timer = setInterval(() => {
     if (document.visibilityState === 'visible') void load()
   }, REFRESH_MS)
@@ -127,9 +156,27 @@ onUnmounted(() => {
         </dl>
       </section>
 
+      <!-- 3.9.0 / FR-v3.9-17：版本开发完成后，「关于」与「版本迭代」必须同步生效。
+           这里直接复用版本迭代页的数据源，让关于页能自证这一版改了什么。 -->
       <section class="panel">
-        <h2>{{ t('aboutPage.ports') }}</h2>
-        <dl class="kv">
+        <h2 class="panel-head">
+          <span>{{ t('aboutPage.recentChanges') }}</span>
+          <RouterLink class="link" to="/changelog">{{ t('aboutPage.viewAllChangelog') }}</RouterLink>
+        </h2>
+        <p v-if="changelogError" class="notice">
+          {{ t('aboutPage.changelogFailed') }}：{{ changelogError }}
+        </p>
+        <p v-else-if="!latestRelease" class="muted">{{ t('aboutPage.noChanges') }}</p>
+        <template v-else>
+          <p class="muted small release-title">{{ latestRelease.title }}</p>
+          <ul class="changes">
+            <li v-for="(item, index) in latestItems" :key="index">{{ item }}</li>
+          </ul>
+        </template>
+      </section>
+
+      <section class="panel">
+        <h2>{{ t('aboutPage.ports') }}</h2>        <dl class="kv">
           <dt>{{ t('aboutPage.entryPort') }}</dt><dd>{{ info.entryPort }}</dd>
           <dt>{{ t('aboutPage.backendPort') }}</dt><dd>{{ info.backendPort }}</dd>
           <dt>{{ t('aboutPage.devPort') }}</dt><dd>{{ info.devPort }}</dd>
@@ -169,6 +216,11 @@ onUnmounted(() => {
 .head-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
 .panel { border: 1px solid color-mix(in srgb, currentColor 16%, transparent); border-radius: 10px; padding: 18px; }
 .panel h2 { margin: 0 0 14px; font-size: 16px; }
+.panel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.link { font-size: 13px; font-weight: 400; color: var(--accent); text-decoration: none; }
+.link:hover { text-decoration: underline; }
+.release-title { margin: 0 0 10px; font-family: var(--font-mono, monospace); }
+.changes { margin: 0; padding-left: 20px; display: grid; gap: 6px; font-size: 13px; line-height: 1.65; }
 .kv { display: grid; grid-template-columns: 180px 1fr; gap: 8px 16px; margin: 0; font-size: 13px; }
 .kv dt { opacity: .65; }
 .kv dd { margin: 0; font-family: var(--font-mono, monospace); }

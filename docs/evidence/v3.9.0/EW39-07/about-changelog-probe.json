@@ -1,0 +1,66 @@
+{
+  "generatedAt": "2026-11-09T03:52:18.168Z",
+  "selfcheck": false,
+  "version": "HeadlessChrome/157.0.8103.38",
+  "about": {
+    "version": "3.4.0",
+    "found": true,
+    "releaseTitle": "v3.4.0-scale-archive（2026-11-08）",
+    "items": [
+      "**归档与保留**：`V11_22` 新增 `archive_policy` / `archived_run` / `archived_test_result` /",
+      "**并发准入与背压**：`RunAdmissionService` 三层上限（全局 50 / 单项目 20 / 单节点 10）、",
+      "**安全加固**：`SecurityHeadersFilter` 恒定发送 nosniff / DENY / no-referrer / CSP，",
+      "**新增门禁步骤**：24 AI 黄金集评测、25 安全扫描（密钥 / SAST / 危险依赖，高危必须 0）、"
+    ],
+    "linkText": "查看完整版本迭代",
+    "linkHref": "/changelog"
+  },
+  "changelog": {
+    "count": 10,
+    "firstTitle": "v3.4.0-scale-archive（2026-11-08）",
+    "headings": [
+      "v3.4.0-scale-archive（2026-11-08）",
+      "新增",
+      "变更"
+    ],
+    "bodyChars": 670
+  },
+  "rows": [
+    {
+      "name": "关于页存在「最近更新」区块",
+      "ok": true,
+      "detail": "found=true version=3.4.0"
+    },
+    {
+      "name": "最近更新列出至少 1 条",
+      "ok": true,
+      "detail": "items=4"
+    },
+    {
+      "name": "最近更新首条版本 = 关于页显示版本",
+      "ok": true,
+      "detail": "releaseTitle=v3.4.0-scale-archive（2026-11-08） version=3.4.0"
+    },
+    {
+      "name": "存在「查看完整版本迭代」链接且指向 /changelog",
+      "ok": true,
+      "detail": "href=/changelog text=查看完整版本迭代"
+    },
+    {
+      "name": "版本迭代页渲染出至少 1 个版本",
+      "ok": true,
+      "detail": "count=10 first=v3.4.0-scale-archive（2026-11-08）"
+    },
+    {
+      "name": "版本迭代页首条版本 = 关于页显示版本",
+      "ok": true,
+      "detail": "first=v3.4.0-scale-archive（2026-11-08） version=3.4.0"
+    },
+    {
+      "name": "版本迭代页首条有正文内容",
+      "ok": true,
+      "detail": "bodyChars=670"
+    }
+  ],
+  "fails": 0
+}
