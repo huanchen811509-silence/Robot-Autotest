@@ -1,0 +1,24 @@
+# AIDC AutoTest 交付包 · 统一入口 systemd --user unit 样例
+# 与源码树的 deploy/robot-autotest-entry.service 不同：产物在 app/frontend、入口脚本在 entry/，
+# 所以必须显式给 ENTRY_DIST，否则 serve-entry.mjs 会回退到 frontend/dist 并报「dist not built」。
+[Unit]
+Description=AIDC AutoTest unified entry (:8001)
+After=network-online.target
+Wants=network-online.target
+Wants=robot-autotest-backend.service
+After=robot-autotest-backend.service
+
+[Service]
+Type=simple
+WorkingDirectory=%h/robot-autotest
+Environment=ENTRY_PORT=8001
+Environment=ENTRY_BACKEND=http://127.0.0.1:8081
+Environment=ENTRY_DIST=%h/robot-autotest/app/frontend
+ExecStart=/usr/bin/node %h/robot-autotest/entry/serve-entry.mjs
+Restart=always
+RestartSec=3
+StandardOutput=append:%h/robot-autotest/logs/entry.log
+StandardError=append:%h/robot-autotest/logs/entry.log
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,14 @@
+[ops] 交付包    /tmp/tmp.Kp0XHkm87h/unpack/robot-autotest-3.11.0-d4ad9d5-linux-x64
+[ops] 版本      3.11.0
+[ops] 目标目录  /tmp/tmp.Kp0XHkm87h/installed
+[ops] 布局      bundle / --apply=1 / --upgrade=0 / --systemd=0
+[ops] 将执行：
+[ops]   1) 创建目录 /tmp/tmp.Kp0XHkm87h/installed 及 logs/ var/ backups/
+[ops]   2) 复制交付包内容（app/ entry/ db/ deploy/ docs/ bin/ MANIFEST.json …）
+[ops]   3) 凭据模板：若 /home/evergreen/.config/robot-autotest/env 不存在，从 deploy/env.example 复制（口令留空，需人工填）
+[ops]   4) 跳过 systemd（unit 样例留在 /tmp/tmp.Kp0XHkm87h/installed/deploy/，可稍后手工安装）
+[ops] 不执行：建库 / 迁移 / 启动服务 / 写口令。后续命令见 docs/DELIVERY-GUIDE.md
+[ops] 沿用既有凭据文件 /home/evergreen/.config/robot-autotest/env（内容未读取、未打印）
+[ops] PASS  安装完成：/tmp/tmp.Kp0XHkm87h/installed
+[ops] 下一步：编辑 /home/evergreen/.config/robot-autotest/env → bin/db-migrate.sh --apply（仅空库）→ bin/ctl.sh start
+INSTALL PASS prefix=/tmp/tmp.Kp0XHkm87h/installed version=3.11.0

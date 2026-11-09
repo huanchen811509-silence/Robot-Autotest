@@ -1,0 +1,131 @@
+name: delivery-bundle
+
+# AIDC AutoTest 交付包流水线（v3.11.0-delivery / FR-v3.11-D05）。
+#
+# 与既有 pr.yml 的关系：
+#   - pr.yml 依赖未注册的 self-hosted runner `rf-lab` + 真 MySQL，GitHub 侧一直排队/取消；
+#   - 本流水线用 GitHub-hosted ubuntu-latest，只做「构建 → 静态机检 → 打包 → 解包自检 → 上传」，
+#     不连数据库、不跑全量门禁、不判发版。全量门禁仍在 WSL 权威副本跑。
+# 产物：robot-autotest-<VERSION>-<SHA>-linux-x64.tar.gz（含 bin/ 运维脚本），
+#       Actions artifact 名 robot-autotest-linux-x64，可用 `gh run download` 取回。
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'VERSION'
+      - 'CHANGELOG.md'
+      - 'backend/**'
+      - 'frontend/**'
+      - 'packages/editor/**'
+      - 'db/**'
+      - 'deploy/**'
+      - 'scripts/**'
+      - 'tools/check_delivery_bundle.py'
+      - 'docs/DELIVERY-GUIDE.md'
+      - '.github/workflows/delivery.yml'
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: '触发原因（只记录，不影响构建）'
+        required: false
+        default: 'manual'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: delivery-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bundle:
+    name: build linux-x64 delivery bundle
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout (full history for VERSION / commit)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: |
+            packages/editor/package-lock.json
+            frontend/package-lock.json
+
+      # 与 WSL 权威副本完全同一条命令；build.sh 内部锁死「编辑器 → 前端 → 后端」顺序，
+      # 并同步根 CHANGELOG.md 到 frontend/public（版本迭代页数据源）。
+      - name: Build (editor -> frontend -> backend)
+        run: bash scripts/build.sh
+
+      - name: Delivery contract check (static)
+        run: python3 tools/check_delivery_bundle.py
+
+      - name: Preflight (build artifacts present)
+        run: bash scripts/package-release.sh --check
+
+      - name: Package tarball + MANIFEST + sha256
+        run: bash scripts/package-release.sh
+
+      - name: Verify unpacked bundle (dry-run install + doctor)
+        run: |
+          set -euo pipefail
+          tarball="$(ls -1 releases/*.tar.gz | head -1)"
+          (cd releases && sha256sum -c "$(basename "$tarball").sha256")
+          work="$(mktemp -d)"
+          tar -xzf "$tarball" -C "$work"
+          bundle="$(find "$work" -mindepth 1 -maxdepth 1 -type d | head -1)"
+          test -x "$bundle/bin/doctor.sh"
+          test -x "$bundle/install.sh"
+          test -x "$bundle/uninstall.sh"
+          "$bundle/bin/doctor.sh" --ci
+          "$bundle/install.sh" --prefix "$work/target" --help >/dev/null
+          "$bundle/install.sh" --prefix "$work/target"
+          "$bundle/uninstall.sh" --prefix "$work/target" --help >/dev/null
+          python3 - "$bundle/MANIFEST.json" <<'PY'
+          import json, sys
+          m = json.load(open(sys.argv[1], encoding='utf-8'))
+          assert m['secrets'] == 'none', 'manifest must not carry secrets'
+          assert m['fileCount'] > 20, 'bundle looks incomplete'
+          assert 'install' in m['entrypoints'] and 'uninstall' in m['entrypoints']
+          print(f"[ci] MANIFEST ok version={m['version']} files={m['fileCount']}")
+          PY
+          echo "[ci] unpacked bundle verified: $bundle"
+
+      - name: Upload delivery artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: robot-autotest-linux-x64
+          path: |
+            releases/*.tar.gz
+            releases/*.tar.gz.sha256
+            releases/*.manifest.json
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Summary
+        if: always()
+        run: |
+          set -euo pipefail
+          {
+            echo '## AIDC AutoTest 交付包'
+            echo ''
+            echo "- VERSION: $(head -1 VERSION)"
+            echo "- commit: $(git rev-parse --short HEAD)"
+            echo "- artifact: robot-autotest-linux-x64（含 tar.gz / sha256 / manifest）"
+            echo ''
+            echo '下载：`gh run download <run-id> -n robot-autotest-linux-x64`'
+            echo '安装：见交付包内 `docs/DELIVERY-GUIDE.md`'
+            echo '说明：本流水线不连数据库、不判发版；全量门禁仍在 WSL 权威副本执行。'
+          } >> "$GITHUB_STEP_SUMMARY" || true

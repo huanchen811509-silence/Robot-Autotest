@@ -137,4 +137,15 @@ describe('AboutView 最近更新区块', () => {
     expect(panel!.textContent).toContain('变更记录读取失败')
     expect(panel!.querySelectorAll('.changes li').length).toBe(0)
   })
+
+  // v3.11.0-delivery：关于页必须能回答「这一版怎么装、怎么拆」，命令与随包 bin/ 同源。
+  it('展示交付与运维入口（安装 / 体检 / 运维 / 拆卸）', async () => {
+    const root = await mountView()
+    const panels = [...root.querySelectorAll<HTMLElement>('.panel')]
+    const panel = panels.find((p) => (p.querySelector('h2')?.textContent ?? '').includes('交付与运维'))
+    expect(panel).not.toBeNull()
+    expect(panel!.textContent).toContain('./install.sh --prefix')
+    expect(panel!.textContent).toContain('./uninstall.sh --prefix')
+    expect(panel!.querySelectorAll('code').length).toBeGreaterThanOrEqual(4)
+  })
 })

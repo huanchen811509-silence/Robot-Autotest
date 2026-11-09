@@ -12,13 +12,15 @@
 #   19 证据完整性（v2.2 CLOS-02：output.xml metadata 六必填 + 三处单测基线只增不减
 #      + AI 契约机检（AI-06：零 prompt 文件开关 / 零硬编码凭据 / 零 L4-L5 自动提交））
 #
-# 本脚本共 29 步：01–17 为 run 步，18 为末尾 structure_selfcheck 内联块，19 为证据完整性 run 步，
+# 本脚本共 30 步：01–17 为 run 步，18 为末尾 structure_selfcheck 内联块，19 为证据完整性 run 步，
 # 20–23 为 v3.2.0 的契约 / 包体 / 性能预算 / 版本一致性门禁。
 # 24–27 为 v3.3.0+v3.4.0 的 AI 评测 / 安全扫描 / 容量+备份演练 / i18n+对比度门禁。
 # 28 为 v3.9.0 的用例级命令契约（FR-v3.9-02：三列贯通 + 双内核真实 run 覆盖率 100%）。
 # 29 为 v3.11.0 的主机清单（FR-v3.11-01：10 类齐全 + 只读命令白名单 + 未采集必有原因）。
-# 结构自检：若步骤 13 / 14 / 17 / 19 / 20 / 21 / 22 / 23 / 24 / 25 / 26 / 27 / 28 / 29 被删除，
-# check_structure 必须变红（`--selfcheck` 会实证 13/14、20/23、24/27 与新增的 28、29）。
+# 30 为 v3.11.0 交付能力（FR-v3.11-D05）：安装/拆卸/运维脚本 + 交付包 + CI workflow 静态契约，
+#     并校验真实 tarball 或入库的 bundle-manifest.json 证据，二者皆无判红。
+# 结构自检：若步骤 13 / 14 / 17 / 19 / 20 / 21 / 22 / 23 / 24 / 25 / 26 / 27 / 28 / 29 / 30 被删除，
+# check_structure 必须变红（`--selfcheck` 会实证 13/14、20/23、24/27 与新增的 28、29、30）。
 #
 # 用法：
 #   bash scripts/gates.sh              # 全量门禁，0 = 全 PASS
@@ -68,6 +70,7 @@ check_structure() {
   grep -qE '^run 27 i18n_contrast ' "$file" || { echo "STRUCT_FAIL 缺少步骤 27 i18n_contrast"; bad=1; }
   grep -qE '^run 28 case_command ' "$file" || { echo "STRUCT_FAIL 缺少步骤 28 case_command"; bad=1; }
   grep -qE '^run 29 host_inventory ' "$file" || { echo "STRUCT_FAIL 缺少步骤 29 host_inventory"; bad=1; }
+  grep -qE '^run 30 delivery_bundle ' "$file" || { echo "STRUCT_FAIL 缺少步骤 30 delivery_bundle"; bad=1; }
   return "$bad"
 }
 
@@ -97,6 +100,14 @@ if [ "${1:-}" = "--selfcheck" ]; then
   else
     echo 'SELFCHECK 29 FAIL（主机清单判据失灵）'; FAILS=$((FAILS + 1))
   fi
+  # 30 的判据负向自证：删脚本 / 去 --apply 护栏 / 拆卸出现 DROP / CI 换回 self-hosted /
+  # 凭据模板塞明文 / 入口 unit 丢 ENTRY_DIST / ctl 丢托管标记 / 产物与证据都缺失，
+  # 八类脏数据必须红、干净骨架必须绿。
+  if python3 tools/check_delivery_bundle.py --self-check; then
+    echo 'SELFCHECK 30 PASS（八类脏数据均判红、干净骨架判绿）'
+  else
+    echo 'SELFCHECK 30 FAIL（交付包判据失灵）'; FAILS=$((FAILS + 1))
+  fi
   tmp="$(mktemp -d)"
   sed '/^run 13 /d' "$SELF" > "$tmp/no13.sh"
   sed '/^run 14 /d' "$SELF" > "$tmp/no14.sh"
@@ -107,6 +118,7 @@ if [ "${1:-}" = "--selfcheck" ]; then
   sed '/^run 27 /d' "$SELF" > "$tmp/no27.sh"
   sed '/^run 28 /d' "$SELF" > "$tmp/no28.sh"
   sed '/^run 29 /d' "$SELF" > "$tmp/no29.sh"
+  sed '/^run 30 /d' "$SELF" > "$tmp/no30.sh"
   if check_structure "$tmp/no13.sh"; then
     echo 'SELFCHECK 删步骤 13 FAIL（删了仍然绿）'; FAILS=$((FAILS + 1))
   else
@@ -151,6 +163,11 @@ if [ "${1:-}" = "--selfcheck" ]; then
     echo 'SELFCHECK 删步骤 29 FAIL（删了仍然绿）'; FAILS=$((FAILS + 1))
   else
     echo 'SELFCHECK 删步骤 29 PASS（删了变红）'
+  fi
+  if check_structure "$tmp/no30.sh"; then
+    echo 'SELFCHECK 删步骤 30 FAIL（删了仍然绿）'; FAILS=$((FAILS + 1))
+  else
+    echo 'SELFCHECK 删步骤 30 PASS（删了变红）'
   fi
   rm -rf "$tmp"
   printf '\nSELFCHECK_RESULT FAILS=%s\n' "$FAILS"
@@ -271,6 +288,11 @@ run 28 case_command "python3 tools/check_case_command.py"
 #    证据由 bash scripts/host-inventory-contract.sh 产出；没有一次真实采集就判红，
 #    因为「10 类齐全」这句话只能由真机输出证明，不能由单测夹具代替。
 run 29 host_inventory "python3 tools/check_host_inventory.py"
+
+# 30 交付包（v3.11.0 / FR-v3.11-D05）：安装/拆卸/运维脚本 + CI workflow 静态契约，
+#    并以真实 tarball 或入库的 bundle-manifest.json 作证据；两者皆无判红，
+#    避免「脚本写了、门禁没接线、包根本没打出来」的假绿。
+run 30 delivery_bundle "python3 tools/check_delivery_bundle.py"
 
 printf '\nGATES_RESULT FAILS=%s\n' "$FAILS"
 exit "$FAILS"

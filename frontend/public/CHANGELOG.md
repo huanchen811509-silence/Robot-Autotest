@@ -486,8 +486,9 @@
 > **未发版工作记录（2026-11-09，3.5+ 存量打磨）** —— 本段为引用块，
 > 不使用 `## ` 标题，避免被 `frontend/src/config/changelog.ts` 解析成新版本 release。
 
-> 本段是**工作记录，不是版本发布**。`VERSION` 仍为 `3.4.0`；G4/G5/G7/G8 未判、G6 观察钟未启动，
-> 本轮不产生对外口径、不申请发版门禁判定。
+> 本段是**历史工作记录，不是版本发布**；其中「`VERSION` 仍为 `3.4.0`」是 **2026-11-09 当时**的读数，
+> 当前 `VERSION` 已是 `3.11.0`。G4/G5/G7/G8 未判、G6 观察钟未启动，
+> 该轮不产生对外口径、不申请发版门禁判定。
 
 | 批次 | 内容 | 结论 |
 |---|---|---|
@@ -500,3 +501,29 @@
 
 新增工具：`tools/ux_metrics.py`、`check_ledger.py`、`check_reg_catalog.py`、`ai_golden_eval.py`、
 `dora_metrics.py`、`scripts/ux-probe.mjs`；新增 ADR-35-01..10 与特性开关清单。
+
+---
+
+> **未发版工作记录（2026-11-09，交付与运维辅助能力）** —— 同样是引用块，
+> 不使用 `## ` 标题，避免被 `frontend/src/config/changelog.ts` 解析成新版本 release。
+
+> 本轮**不 bump 版本号、不创建 GitHub Release、不产生对外发版口径**：`VERSION` 仍为 `3.11.0`，
+> 当前版本标题仍是 `v3.11.0-asset-pages`。G4/G5/G7/G8 依旧未判。
+
+| 类别 | 内容 | 结论 / 证据 |
+|---|---|---|
+| 新增 | `scripts/ops/` 九个同源脚本 | `doctor` / `install` / `uninstall` / `ctl` / `status` / `logs` / `backup` / `db-migrate` / `common`；写操作默认 dry-run |
+| 新增 | `scripts/package-release.sh` | 产出 linux-x64 tarball + `.sha256` + 逐文件 `MANIFEST.json`，不含凭据 / 日志 / 依赖目录 |
+| 新增 | `.github/workflows/delivery.yml` | GitHub-hosted `ubuntu-latest` 构建 → 机检 → 打包 → 解包自检 → 上传 Actions artifact |
+| 新增 | `tools/check_delivery_bundle.py` | 静态契约 + 产物实证 + 七类脏数据自校验；接入**门禁第 30 步**（29 → 30） |
+| 新增 | `docs/DELIVERY-GUIDE.md` / `scripts/ops/README.md` | 安装 / 拆卸 / 运维 / 排障全流程与命令矩阵 |
+| 新增 | `deploy/env.example` / `deploy/release/` 两个 unit 样例 | 凭据模板无明文；入口 unit 显式给 `ENTRY_DIST` |
+| 变更 | `README.md` 重排 | 原「能做什么」单行数百字宽表拆成 4 张分组表；状态区更新到 3.11.0 / 30 步 / 88 表 / 284 endpoints |
+| 变更 | 「关于」页与「版本迭代」页 | 关于页新增「交付与运维」入口卡；版本迭代页新增交付提示；文案全部走 i18n |
+| 变更 | `docs/plan/` 下一轮三份文档 | `v3.12+交付运维演进` 的调研评估 / PRD / 开发与测试计划 |
+| 修复 | 顶层 `install.sh` 找不到 `common.sh` | 解包自检实测：改为薄 wrapper 转调 `bin/install.sh`，不再复制第二份实现 |
+| 修复 | 停服务会误停全局 systemd unit | 真拆卸实测：加 `var/systemd-managed` 托管标记，`ctl.sh` / `uninstall.sh` 无标记只动本安装根 pid 文件 |
+| 口径 | 门禁步骤数 29 → **30** | 脚本化解析 `gates.sh` 输出的外部流水线需同步步骤号（与 v3.9.0 同类变更） |
+
+> 未做（按评估 §3.2）：公开 Release 与匿名下载、deb/rpm、Docker 镜像、Windows 原生安装包、
+> CI 内跑真 MySQL / 真浏览器 / 全量门禁、改动既有 `pr.yml`。这些留待大师拍板或下一轮。

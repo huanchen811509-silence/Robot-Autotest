@@ -1,0 +1,27 @@
+[pkg] PASS  frontend/dist/index.html
+[pkg] PASS  frontend/dist/CHANGELOG.md
+[pkg] PASS  scripts/serve-entry.mjs
+[pkg] PASS  scripts/ops/common.sh
+[pkg] PASS  scripts/ops/doctor.sh
+[pkg] PASS  scripts/ops/install.sh
+[pkg] PASS  scripts/ops/uninstall.sh
+[pkg] PASS  scripts/ops/ctl.sh
+[pkg] PASS  scripts/ops/status.sh
+[pkg] PASS  scripts/ops/backup.sh
+[pkg] PASS  scripts/ops/logs.sh
+[pkg] PASS  scripts/ops/db-migrate.sh
+[pkg] PASS  scripts/ops/README.md
+[pkg] PASS  deploy/env.example
+[pkg] PASS  deploy/release/robot-autotest-backend.service
+[pkg] PASS  deploy/release/robot-autotest-entry.service
+[pkg] PASS  docs/DELIVERY-GUIDE.md
+[pkg] PASS  docs/OPS-MANUAL.md
+[pkg] PASS  docs/ROLLBACK.md
+[pkg] PASS  VERSION
+[pkg] PASS  CHANGELOG.md
+[pkg] PASS  README.md
+[pkg] PASS  db/migration/V*.sql
+[pkg] MANIFEST files=282 bytes=57269744
+[pkg] tarball releases/robot-autotest-3.11.0-d4ad9d5-linux-x64.tar.gz (48102649 bytes)
+[pkg] sha256  69148d6c4f24367b7237e93edfdca5ab35bbcf43fb996a50f51ec447a28809f7
+PACKAGE PASS name=robot-autotest-3.11.0-d4ad9d5-linux-x64 files=282

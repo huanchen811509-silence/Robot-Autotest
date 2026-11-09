@@ -41,6 +41,8 @@ onMounted(async () => {
     <header class="page-head">
       <h1>{{ t('changelog.title') }}</h1>
       <p class="muted">{{ t('changelog.subtitle') }}</p>
+      <!-- v3.11.0-delivery：版本迭代页要能回答「这一版的交付包去哪拿、怎么装」。 -->
+      <p class="muted small delivery-hint">{{ t('changelog.deliveryHint') }}</p>
     </header>
     <p v-if="error" class="notice">{{ t('changelog.loadFailed') }}：{{ error }}</p>
     <p v-else-if="releases.length === 0" class="muted">{{ t('changelog.empty') }}</p>

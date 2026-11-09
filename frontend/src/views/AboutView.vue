@@ -175,6 +175,23 @@ onUnmounted(() => {
         </template>
       </section>
 
+      <!-- v3.11.0-delivery：交付包能力要在「关于」里看得见，命令与随包 bin/README.md 同源。
+           命令文本是工程标识而非自然语言，故不进 i18n；说明文案一律走语言包。 -->
+      <section class="panel">
+        <h2>{{ t('aboutPage.delivery') }}</h2>
+        <p class="muted small">{{ t('aboutPage.deliveryHint') }}</p>
+        <dl class="kv">
+          <dt>{{ t('aboutPage.deliveryInstall') }}</dt>
+          <dd><code>./install.sh --prefix &lt;dir&gt; --apply</code></dd>
+          <dt>{{ t('aboutPage.deliveryDoctor') }}</dt>
+          <dd><code>bin/doctor.sh --ci</code></dd>
+          <dt>{{ t('aboutPage.deliveryOps') }}</dt>
+          <dd><code>bin/status.sh</code> · <code>bin/backup.sh --apply</code></dd>
+          <dt>{{ t('aboutPage.deliveryUninstall') }}</dt>
+          <dd><code>./uninstall.sh --prefix &lt;dir&gt; --apply</code></dd>
+        </dl>
+      </section>
+
       <section class="panel">
         <h2>{{ t('aboutPage.ports') }}</h2>        <dl class="kv">
           <dt>{{ t('aboutPage.entryPort') }}</dt><dd>{{ info.entryPort }}</dd>

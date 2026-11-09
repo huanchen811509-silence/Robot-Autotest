@@ -1,0 +1,26 @@
+# AIDC AutoTest 交付包 · 后端 systemd --user unit 样例
+# 打包脚本会把它放进交付包 deploy/；install.sh --systemd 把 %h/robot-autotest 渲染成实际 --prefix。
+#
+# 注意：开发机上已安装的 ~/.config/systemd/user/robot-autotest-backend.service 不受本样例影响。
+# 启用（二选一，交付指南有完整步骤）：
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now robot-autotest-backend
+#   loginctl enable-linger "$USER"     # 需要开机自启时
+[Unit]
+Description=AIDC AutoTest backend API (:8081)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/robot-autotest
+EnvironmentFile=%h/.config/robot-autotest/env
+Environment=SERVER_PORT=8081
+ExecStart=/usr/bin/java -jar %h/robot-autotest/app/backend/robot-autotest.jar --planning.scheduler-enabled=true
+Restart=always
+RestartSec=3
+StandardOutput=append:%h/robot-autotest/logs/backend.log
+StandardError=append:%h/robot-autotest/logs/backend.log
+
+[Install]
+WantedBy=default.target

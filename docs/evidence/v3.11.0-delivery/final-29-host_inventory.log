@@ -1,0 +1,13 @@
+HOST_INVENTORY PASS
+  命令白名单 10 类，全部只读；接口自述与源码逐字一致
+  真实采集 localhost status=PARTIAL 9/10 项有值
+    OS      有值
+    KERNEL  有值
+    CPU     有值
+    MEMORY  有值
+    DISK    有值
+    GPU     未采集到 | 未采集到 GPU 信息：sh: 1: nvidia-smi: not found
+    NIC     有值
+    IP      有值
+    ROCE    有值
+    ROUTE   有值

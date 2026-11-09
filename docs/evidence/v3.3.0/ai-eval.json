@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-09T08:54:49.070340+00:00",
+  "generatedAt": "2026-11-09T09:45:32.455899+00:00",
   "engine": "grounded-answer-factory",
   "realCli": false,
   "fakeCliContract": true,
@@ -13,13 +13,13 @@
     "factTargetPct": 95.0,
     "severeHallucinations": 0,
     "citationCoveragePct": 100.0,
-    "firstTokenMs": 30,
+    "firstTokenMs": 33,
     "firstTokenBudgetMs": 3000
   },
   "cases": [
     {
       "case": "triage",
-      "elapsedMs": 48,
+      "elapsedMs": 50,
       "checks": [
         {
           "name": "triage.mode",
@@ -51,7 +51,7 @@
     },
     {
       "case": "narrative",
-      "elapsedMs": 41,
+      "elapsedMs": 46,
       "checks": [
         {
           "name": "narrative.conclusion",
@@ -78,7 +78,7 @@
     },
     {
       "case": "log_explain",
-      "elapsedMs": 42,
+      "elapsedMs": 46,
       "checks": [
         {
           "name": "log_explain.mode",
@@ -95,7 +95,7 @@
     },
     {
       "case": "refusal",
-      "elapsedMs": 32,
+      "elapsedMs": 28,
       "checks": [
         {
           "name": "refusal.mode",
@@ -112,7 +112,7 @@
     },
     {
       "case": "case_draft",
-      "elapsedMs": 32,
+      "elapsedMs": 25,
       "checks": [
         {
           "name": "case_draft.mode",
@@ -134,9 +134,9 @@
     },
     {
       "case": "stream",
-      "streamId": "e915ce58-e32b-4810-9845-8007ce872da6",
-      "elapsedMs": 108,
-      "firstTokenMs": 30,
+      "streamId": "7ec7b7e2-bca0-47be-9c99-d81d967c1531",
+      "elapsedMs": 87,
+      "firstTokenMs": 33,
       "events": [
         "meta",
         "citations",
@@ -160,7 +160,7 @@
         {
           "name": "stream.first_token",
           "pass": true,
-          "detail": "firstDeltaMs=30 budget=3000"
+          "detail": "firstDeltaMs=33 budget=3000"
         },
         {
           "name": "stream.done",

@@ -1,0 +1,29 @@
+bundle=robot-autotest-3.11.0-d4ad9d5-linux-x64
+exec-bit OK
+[ops] PASS java                   /usr/bin/java
+[ops] PASS node                   /home/evergreen/.local/bin/node
+[ops] PASS curl                   /usr/bin/curl
+[ops] PASS tar                    /usr/bin/tar
+[ops] PASS backend-jar            robot-autotest.jar
+[ops] PASS frontend-dist          /tmp/tmp.QdHlGXjGOq/robot-autotest-3.11.0-d4ad9d5-linux-x64/app/frontend/index.html
+[ops] PASS entry-script           serve-entry.mjs
+[ops] PASS db-migrations          61 个迁移脚本
+[ops] PASS systemd-unit           样例齐备
+[ops] PASS delivery-guide         随包文档齐备
+[ops] PASS manifest               MANIFEST.json / layout=bundle
+[ops] PASS version                3.11.0 / layout=bundle / root=/tmp/tmp.QdHlGXjGOq/robot-autotest-3.11.0-d4ad9d5-linux-x64
+[ops] 体检结束 PASS=12 WARN=0 FAIL=0（WARN 不算通过，也不算致命）
+DOCTOR PASS fails=0
+[ops] 交付包    /tmp/tmp.QdHlGXjGOq/robot-autotest-3.11.0-d4ad9d5-linux-x64
+[ops] 版本      3.11.0
+[ops] 目标目录  /tmp/tmp.QdHlGXjGOq/target
+[ops] 布局      bundle / --apply=0 / --upgrade=0 / --systemd=0
+[ops] 将执行：
+[ops]   1) 创建目录 /tmp/tmp.QdHlGXjGOq/target 及 logs/ var/ backups/
+[ops]   2) 复制交付包内容（app/ entry/ db/ deploy/ docs/ bin/ MANIFEST.json …）
+[ops]   3) 凭据模板：若 /home/evergreen/.config/robot-autotest/env 不存在，从 deploy/env.example 复制（口令留空，需人工填）
+[ops]   4) 跳过 systemd（unit 样例留在 /tmp/tmp.QdHlGXjGOq/target/deploy/，可稍后手工安装）
+[ops] 不执行：建库 / 迁移 / 启动服务 / 写口令。后续命令见 docs/DELIVERY-GUIDE.md
+[ops] dry-run：未写任何文件。确认后加 --apply。
+uninstall --help OK
+MANIFEST version=3.11.0 files=282 bytes=57269744
