@@ -28,13 +28,16 @@ public class ReportLogService {
     private final ReportReadRepository read;
     private final ReportArtifactLocator locator;
     private final LogXmlReader reader;
+    private final JsonlLogReader jsonlReader;
     private final AccessControlService access;
 
     public ReportLogService(ReportReadRepository read, ReportArtifactLocator locator,
-                            LogXmlReader reader, AccessControlService access) {
+                            LogXmlReader reader, JsonlLogReader jsonlReader,
+                            AccessControlService access) {
         this.read = read;
         this.locator = locator;
         this.reader = reader;
+        this.jsonlReader = jsonlReader;
         this.access = access;
     }
 
@@ -85,9 +88,16 @@ public class ReportLogService {
         if (relativeStart >= total) {
             return new LogPage(List.of(), total, null);
         }
-        Path file = locator.locateOutputXml(projectId, runId);
-        List<LogXmlReader.LogXmlLine> raw = reader.read(file,
-                span.start() + relativeStart, span.start() + relativeEnd);
+        // v3.9.0 / FR-v3.9-03：日志源按内核分派——RF 是 output.xml，pytest 是入库时
+        // 摊平的 case-log.jsonl（同一套 seq 口径）。定位不到时给可读 404，不返回空页
+        // 冒充「这条用例没日志」。
+        Path file = locator.locateCaseLog(projectId, runId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND,
+                        "未找到用例日志文件：run 产物不完整，无法读取日志"));
+        boolean jsonl = file.getFileName().toString().endsWith(".jsonl");
+        List<LogXmlReader.LogXmlLine> raw = jsonl
+                ? jsonlReader.read(file, span.start() + relativeStart, span.start() + relativeEnd)
+                : reader.read(file, span.start() + relativeStart, span.start() + relativeEnd);
         List<LogLineView> lines = raw.stream()
                 .map(line -> new LogLineView(line.seq() - span.start(),
                         line.level(), line.keyword(), line.message()))

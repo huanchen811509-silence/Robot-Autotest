@@ -40,6 +40,12 @@ const props = withDefaults(
     minScrollX?: number
     /** 超过此高度表体内滚、表头吸顶；传 `null` 表示不限制（整页滚动） */
     maxHeight?: string | number | null
+    /**
+     * 撑满父容器高度（v3.9.0 / FR-v3.9-04）。列表页把表格区设成 flex:1 之后，
+     * 表格必须跟着长高，否则记录少时分页条上方会留一大片空白。
+     * 与 `maxHeight` 互斥：给了 flex-height 就不再限高，高度由父容器决定。
+     */
+    flexHeight?: boolean
     /** 骨架行数：加载中且无数据时显示 */
     skeletonRows?: number
     emptyTitle?: string
@@ -73,6 +79,7 @@ const props = withDefaults(
     emptyIllustration: 'no-data',
     error: false,
     virtualScroll: undefined,
+    flexHeight: false,
   },
 )
 
@@ -140,7 +147,7 @@ const skeletonData = computed<T[]>(() =>
 </script>
 
 <template>
-  <div class="data-table" :aria-busy="loading ? 'true' : 'false'">
+  <div class="data-table" :class="{ 'is-flex': flexHeight }" :aria-busy="loading ? 'true' : 'false'">
     <NDataTable
       v-if="showSkeleton"
       class="data-table__skeleton"
@@ -148,7 +155,8 @@ const skeletonData = computed<T[]>(() =>
       :data="skeletonData"
       :row-key="resolvedRowKey"
       :scroll-x="scrollX"
-      :max-height="maxHeight ?? undefined"
+      :max-height="flexHeight ? undefined : (maxHeight ?? undefined)"
+      :flex-height="flexHeight"
       :bordered="false"
       size="small"
       :aria-label="t('common.loading')"
@@ -163,7 +171,8 @@ const skeletonData = computed<T[]>(() =>
       :row-class-name="rowClassName"
       :row-props="rowProps"
       :scroll-x="scrollX"
-      :max-height="maxHeight ?? undefined"
+      :max-height="flexHeight ? undefined : (maxHeight ?? undefined)"
+      :flex-height="flexHeight"
       :virtual-scroll="virtualScroll"
       :bordered="false"
       size="small"
@@ -186,6 +195,19 @@ const skeletonData = computed<T[]>(() =>
 <style scoped>
 .data-table {
   width: 100%;
+}
+
+/* flex-height 模式下容器必须先有确定高度，naive-ui 才能把表体按剩余空间算 */
+.data-table.is-flex {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.data-table.is-flex :deep(.n-data-table) {
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 /*

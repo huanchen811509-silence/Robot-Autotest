@@ -50,13 +50,15 @@ public class ReportIngestService {
     private final RunMetadataRepository runMetadata;
     /** v2.7 FR-02：pytest run 的逐用例解析路由到 PytestKernel.normalize；旧构造为 null → 仅 RF。 */
     private final com.qa.autotest.application.kernel.PytestKernel pytestKernel;
+    /** v3.9.0 FR-v3.9-03：pytest 用例日志落盘；旧构造为 null → 不生成日志（RF 不受影响）。 */
+    private final PytestLogPersister pytestLogs;
 
     public ReportIngestService(RunRepository runs,
                                RunArtifactRepository artifacts,
                                ReportRepository reports,
                                AccessControlService access,
                                OutputXmlParser parser) {
-        this(runs, artifacts, reports, access, parser, null, null, null);
+        this(runs, artifacts, reports, access, parser, null, null, null, null);
     }
 
     public ReportIngestService(RunRepository runs,
@@ -65,7 +67,7 @@ public class ReportIngestService {
                                AccessControlService access,
                                OutputXmlParser parser,
                                CiTriggerRepository ciTriggers) {
-        this(runs, artifacts, reports, access, parser, ciTriggers, null, null);
+        this(runs, artifacts, reports, access, parser, ciTriggers, null, null, null);
     }
 
     @Autowired
@@ -76,7 +78,8 @@ public class ReportIngestService {
                                OutputXmlParser parser,
                                CiTriggerRepository ciTriggers,
                                RunMetadataRepository runMetadata,
-                               com.qa.autotest.application.kernel.PytestKernel pytestKernel) {
+                               com.qa.autotest.application.kernel.PytestKernel pytestKernel,
+                               PytestLogPersister pytestLogs) {
         this.runs = runs;
         this.artifacts = artifacts;
         this.reports = reports;
@@ -85,6 +88,7 @@ public class ReportIngestService {
         this.ciTriggers = ciTriggers;
         this.runMetadata = runMetadata;
         this.pytestKernel = pytestKernel;
+        this.pytestLogs = pytestLogs;
     }
 
     /**
@@ -148,6 +152,10 @@ public class ReportIngestService {
                     "pytest 内核未装配，无法解析 pytest run 的报告");
         }
         Path artifactDir = resolvePytestArtifactDir(projectId, run);
+        // 先摊平日志：区间要随 test_result 一起入库，抽屉才能按偏移切片。
+        PytestLogPersister.Spans spans = pytestLogs == null
+                ? new PytestLogPersister.Spans(java.util.Map.of())
+                : pytestLogs.persist(artifactDir);
         com.qa.autotest.domain.kernel.NormalizedRun normalized =
                 pytestKernel.normalize(artifactDir, run.runId());
         java.util.List<com.qa.autotest.domain.report.CaseNode> cases = new java.util.ArrayList<>();
@@ -164,9 +172,11 @@ public class ReportIngestService {
             String message = "FAIL".equals(status)
                     ? item.message() == null ? "pytest: " + item.status() : item.message()
                     : null;
+            // v3.9.0 / FR-v3.9-02：命令三列随用例一起入库，报告页才有「下发了什么」可看。
             cases.add(new com.qa.autotest.domain.report.CaseNode(item.name(), status,
                     Math.round(item.durationSeconds() * 1000.0), message,
-                    java.util.List.of()));
+                    java.util.List.of(), spans.offsetOf(item.nodeId()), spans.spanOf(item.nodeId()),
+                    item.commandText(), item.commandSource(), item.commandExitCode()));
         }
         String rootStatus = fail > 0 ? "FAIL" : pass + skip == cases.size() ? "PASS" : "UNKNOWN";
         com.qa.autotest.domain.report.SuiteNode root =

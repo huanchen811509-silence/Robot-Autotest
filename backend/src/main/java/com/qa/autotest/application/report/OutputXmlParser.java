@@ -251,8 +251,12 @@ public class OutputXmlParser {
     private static CaseNode toCaseNode(CaseBuilder builder) {
         List<KeywordNode> keywords = builder.keywords.stream().map(OutputXmlParser::toKeywordNode).toList();
         String failure = builder.failureMessages.isEmpty() ? null : String.join("\n", builder.failureMessages);
+        // v3.9.0 / FR-v3.9-02：这里就把「下发命令」定下来，不留给报告页现算。
+        // 现算会让同一份 output.xml 在不同版本页面显示不同结果，且无法进库审计。
+        CaseCommandExtractor.Extracted command = CaseCommandExtractor.fromRobotKeywords(keywords);
         return new CaseNode(builder.name, normalizeStatus(builder.status),
-                builder.durationMs, failure, keywords, builder.logOffset(), builder.logSpan());
+                builder.durationMs, failure, keywords, builder.logOffset(), builder.logSpan(),
+                command.text(), command.source(), command.exitCode());
     }
 
     private static KeywordNode toKeywordNode(KeywordBuilder builder) {

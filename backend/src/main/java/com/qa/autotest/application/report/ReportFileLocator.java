@@ -57,4 +57,38 @@ public final class ReportFileLocator implements ReportArtifactLocator {
         throw new BusinessException(ErrorCode.NOT_FOUND,
                 "未找到 output.xml：run_artifact 未登记且产物目录不存在，无法读取日志");
     }
+
+    /**
+     * 用例日志文件（v3.9.0 / FR-v3.9-03）：pytest 的 case-log.jsonl 优先，其次 output.xml。
+     *
+     * <p>顺序不能反：pytest run 的产物里那条 {@code kind=output_xml} 记录实际指向
+     * {@code pytest-report.json}（v2.7 的既有约定），按 output.xml 推导会拿 JSON 当 XML 读。
+     * {@code case-log.jsonl} 只由 pytest 入库时生成，存在即说明是 pytest run，判据唯一。
+     */
+    @Override
+    public java.util.Optional<Path> locateCaseLog(long projectId, String runId) {
+        RunRecord run = runs.findByRunId(projectId, runId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "运行不存在: " + runId));
+        if (run.artifactsDir() != null && !run.artifactsDir().isBlank()) {
+            Path runDir = ExecutionPaths.resolve(run.artifactsDir());
+            // pytest 产物固定在 kernel-pytest-0 下；并列再试 run 根目录，兼容单分片布局。
+            Path[] candidates = {
+                    runDir.resolve("kernel-pytest-0").resolve(PytestLogPersister.LOG_FILE),
+                    runDir.resolve(PytestLogPersister.LOG_FILE),
+            };
+            for (Path candidate : candidates) {
+                if (Files.isRegularFile(candidate)) {
+                    return java.util.Optional.of(candidate);
+                }
+            }
+        }
+        try {
+            Path xml = locateOutputXml(projectId, runId);
+            return xml.getFileName().toString().endsWith(".xml")
+                    ? java.util.Optional.of(xml)
+                    : java.util.Optional.empty();
+        } catch (RuntimeException notXml) {
+            return java.util.Optional.empty();
+        }
+    }
 }

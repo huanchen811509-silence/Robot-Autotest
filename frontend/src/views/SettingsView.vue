@@ -187,7 +187,9 @@ watch(projectId, load)
 .field input, .field select {
   padding: 8px 10px; border-radius: 6px; font: inherit;
   border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
-  background: transparent; color: inherit;
+  /* v3.9.0 / FR-v3.9-01：原来是 transparent，暗色下 <select> 的原生弹层会回落成白底浅字。
+     改成不透明的面板色（与全局兜底同源），输入框与下拉外观保持一致。 */
+  background-color: var(--panel); color: inherit;
 }
 .field input[readonly] { opacity: .6; }
 .panel-foot { display: flex; align-items: center; gap: 12px; margin-top: 16px; }

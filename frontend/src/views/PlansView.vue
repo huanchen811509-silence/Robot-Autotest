@@ -17,6 +17,7 @@ import { ApiError } from '@/api/http'
 import { caseSetApi, type TestSet } from '@/api/cases'
 import { useAuthStore } from '@/stores/auth'
 import DataTable from '@/components/DataTable.vue'
+import { useListPageSize, type PageSize } from '@/composables/useListPageSize'
 import ErrorLineView from '@/components/ErrorLine.vue'
 import FormField from '@/components/FormField.vue'
 import StatusTag from '@/components/StatusTag.vue'
@@ -29,6 +30,23 @@ const { t, te } = useI18n()
 const auth = useAuthStore()
 
 const plans = ref<ExecutionPlan[]>([])
+
+/* 展示分页（FR-v3.9-04）。
+ * 这里刻意做**前端切片**而不是改后端分页参数：计划名在冲突面板里被按 id 反查
+ * （见 planName()），只加载当前页会让跨页计划显示成 `#12`。
+ * 取数仍一次 100 条（与后端上限一致），单页最多 50 行只约束**渲染**。 */
+const planPage = ref(1)
+const { size: planPageSize, pageSizes: planPageSizeAll } = useListPageSize()
+// 计划页上限 50：一次渲染 55 行 + 行内 4 个操作是「一屏 244 个控件」的直接来源
+const planPageSizes = planPageSizeAll.filter((option) => option <= 50)
+const planRowsPerPage = computed(() => Math.min(planPageSize.value, 50))
+const planPageCount = computed(() =>
+  Math.max(1, Math.ceil(plans.value.length / planRowsPerPage.value)),
+)
+const visiblePlans = computed(() => {
+  const start = (planPage.value - 1) * planRowsPerPage.value
+  return plans.value.slice(start, start + planRowsPerPage.value)
+})
 const testSets = ref<TestSet[]>([])
 const loading = ref(false)
 const error = ref<ErrorLine | null>(null)
@@ -447,6 +465,18 @@ async function load(): Promise<void> {
   }
 }
 
+/** 翻页：纯前端切片，不发请求。 */
+function turnPlanPage(next: number): void {
+  if (next < 1 || next > planPageCount.value) return
+  planPage.value = next
+}
+
+/** 改档位：回到第 1 页，避免停在「第 3 页但只有 1 页」的空表。 */
+function changePlanPageSize(next: number): void {
+  planPageSize.value = next as PageSize
+  planPage.value = 1
+}
+
 function resetForm(): void {
   form.value = emptyForm()
   editingId.value = null
@@ -632,13 +662,26 @@ void load()
 
     <DataTable
       :columns="columns"
-      :data="plans"
+      :data="visiblePlans"
       :loading="loading"
       :row-key="(row: ExecutionPlan) => row.id"
       :empty-title="t('plans.empty')"
       :empty-description="projectId ? undefined : t('overview.noProject')"
       empty-icon="runs"
       :error="Boolean(error)"
+    />
+
+    <NPagination
+      v-if="plans.length > planRowsPerPage"
+      class="pager"
+      :page="planPage"
+      :page-count="planPageCount"
+      :page-slot="7"
+      :page-size="planRowsPerPage"
+      :page-sizes="planPageSizes"
+      show-size-picker
+      @update:page="turnPlanPage"
+      @update:page-size="changePlanPageSize"
     />
 
     <div class="card conflict-card" data-testid="plan-conflicts">

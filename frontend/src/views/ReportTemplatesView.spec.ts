@@ -112,9 +112,72 @@ describe('ReportTemplatesView', () => {
     const root = await mountView()
 
     const boxes = [...root.querySelectorAll<HTMLInputElement>('[data-testid="available-fields"] input')]
-    expect(boxes.map((box) => box.dataset.field)).toEqual(AVAILABLE)
+    // 分类卡片会重排渲染顺序，所以比对集合而不是顺序（顺序由分类决定，见下一条用例）
+    expect(boxes.map((box) => box.dataset.field).sort()).toEqual([...AVAILABLE].sort())
     // 平台级模板带了 swBuild，但它不在 /fields 清单里 → 不可勾选
     expect(boxes.map((box) => box.dataset.field)).not.toContain('swBuild')
+  })
+
+  it('21 个字段归入分类卡片，一张卡片内不跨类（FR-v3.9-05）', async () => {
+    const root = await mountView()
+
+    const cards = [...root.querySelectorAll<HTMLElement>('[data-testid="available-fields"] [data-category]')]
+    const byCategory = new Map(
+      cards.map((card) => [
+        card.dataset.category,
+        [...card.querySelectorAll<HTMLInputElement>('input')].map((box) => box.dataset.field),
+      ]),
+    )
+    // 夹具只给了 8 个字段，全都应有明确归属，不该落到「其他」
+    expect(byCategory.has('other')).toBe(false)
+    expect(byCategory.get('identity')).toEqual(['reportId', 'title', 'version', 'frozenAt'])
+    // 卡片内顺序跟随分类定义（结论在前、统计在后），不是 /fields 的返回顺序
+    expect(byCategory.get('stats')).toEqual(['conclusion', 'passRate'])
+    expect(byCategory.get('compliance')).toEqual(['disclaimer', 'watermark'])
+    // 合起来仍然等于 /fields，不多不少
+    const flat = [...byCategory.values()].flat()
+    expect(flat.sort()).toEqual([...AVAILABLE].sort())
+  })
+
+  it('套用预置模板只选白名单内的字段，必填项一个不落（FR-v3.9-05）', async () => {
+    const root = await mountView()
+    await tick()
+
+    // 先切到可编辑的项目模板
+    root.querySelector<HTMLButtonElement>('[data-testid="pick-2"]')!.click()
+    await tick()
+    root.querySelector<HTMLButtonElement>('[data-testid="preset-full"]')!.click()
+    await tick()
+
+    const rows = [...root.querySelectorAll<HTMLElement>('[data-testid="selected-fields"] li')]
+    const keys = rows.map((row) => row.dataset.field!)
+    // 「完整」= 全部可用字段；不能用预置里的静态清单硬覆盖（swBuild 不在 /fields 就该缺席）
+    expect(keys.sort()).toEqual([...AVAILABLE].sort())
+    for (const key of REQUIRED) {
+      expect(keys).toContain(key)
+    }
+  })
+
+  it('预置模板在只读平台模板上禁用，不会偷偷改别人的导出格式', async () => {
+    const root = await mountView()
+    await tick()
+
+    // 首屏默认选中平台级模板（只读）
+    const preset = root.querySelector<HTMLButtonElement>('[data-testid="preset-brief"]')!
+    expect(preset.disabled).toBe(true)
+  })
+
+  it('已选区标题编辑器默认收起，点字段名才展开（压高度）', async () => {
+    const root = await mountView()
+    await tick()
+    root.querySelector<HTMLButtonElement>('[data-testid="pick-2"]')!.click()
+    await tick()
+
+    const input = root.querySelector<HTMLInputElement>('[data-title="passRate"]')!
+    expect(input.style.display).toBe('none')
+    root.querySelector<HTMLButtonElement>('[data-toggle-title="passRate"]')!.click()
+    await tick()
+    expect(input.style.display).not.toBe('none')
   })
 
   it('必填字段勾选框禁用，其余可选', async () => {
@@ -144,7 +207,8 @@ describe('ReportTemplatesView', () => {
     await tick()
 
     const row = root.querySelector<HTMLElement>('[data-testid="selected-fields"] li[data-field="passRate"]')!
-    row.querySelector<HTMLButtonElement>('button')!.click() // 第一个按钮是 ↑
+    // 用 data-action 定位而不是「第一个按钮」：行内按钮顺序会随布局调整
+    row.querySelector<HTMLButtonElement>('[data-action="up"]')!.click()
     await tick()
 
     root.querySelector<HTMLButtonElement>('[data-testid="save"]')!.click()

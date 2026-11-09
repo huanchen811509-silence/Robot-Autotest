@@ -6,6 +6,7 @@ import { NButton, NPagination, type DataTableColumns } from 'naive-ui'
 import { reportsApi, type ReportListItem, type RetentionResult } from '@/api/reports'
 import { useAuthStore } from '@/stores/auth'
 import DataTable from '@/components/DataTable.vue'
+import { useListPageSize, type PageSize } from '@/composables/useListPageSize'
 import ErrorLineView from '@/components/ErrorLine.vue'
 import StatusTag from '@/components/StatusTag.vue'
 import AppIcon from '@/components/AppIcon.vue'
@@ -21,7 +22,8 @@ const router = useRouter()
 const items = ref<ReportListItem[]>([])
 const total = ref(0)
 const page = ref(1)
-const size = 10
+// FR-v3.9-04：档位化 + 记忆 + 视口估算
+const { size, pageSizes } = useListPageSize()
 const loading = ref(false)
 const error = ref<ErrorLine | null>(null)
 
@@ -33,7 +35,7 @@ const retention = ref<RetentionResult | null>(null)
 const retentionDone = ref<RetentionResult | null>(null)
 
 const projectId = computed(() => auth.projectId ?? 0)
-const pageCount = computed(() => Math.max(1, Math.ceil(total.value / size)))
+const pageCount = computed(() => Math.max(1, Math.ceil(total.value / size.value)))
 
 /**
  * 报告列表列定义（UX-04b 逐页迁移）。
@@ -105,7 +107,7 @@ async function load(): Promise<void> {
   }
   loading.value = true
   try {
-    const result = await reportsApi.page(projectId.value, page.value, size)
+    const result = await reportsApi.page(projectId.value, page.value, size.value)
     items.value = result.items
     total.value = result.total
   } catch (e) {
@@ -113,6 +115,13 @@ async function load(): Promise<void> {
   } finally {
     loading.value = false
   }
+}
+
+/** 页大小切换（FR-v3.9-04）：改档位即回到第 1 页重新取数。 */
+function changePageSize(next: number): void {
+  size.value = next as PageSize
+  page.value = 1
+  void load()
 }
 
 function turnPage(next: number): void {
@@ -173,7 +182,7 @@ watch(
 </script>
 
 <template>
-  <div class="page">
+  <div class="page is-list">
   <div class="w2-entry">
     <button class="btn" type="button" @click="router.push('/test-reports')">
       {{ t('testReports.open') }}
@@ -258,16 +267,19 @@ watch(
 
     <ErrorLineView v-if="error" :error="error" />
 
-    <DataTable
-      :columns="columns"
-      :data="items"
-      :loading="loading"
-      :row-key="(row: ReportListItem) => row.runId"
-      :empty-title="t('common.noData')"
-      :empty-description="projectId ? undefined : t('overview.noProject')"
-      empty-icon="reports"
-      :error="Boolean(error)"
-    />
+    <div class="list-fill">
+      <DataTable
+        :columns="columns"
+        :data="items"
+        :loading="loading"
+        :row-key="(row: ReportListItem) => row.runId"
+        :empty-title="t('common.noData')"
+        :empty-description="projectId ? undefined : t('overview.noProject')"
+        empty-icon="reports"
+        :error="Boolean(error)"
+        flex-height
+      />
+    </div>
 
     <NPagination
       v-if="total > 0"
@@ -275,6 +287,10 @@ watch(
       :page="page"
       :page-count="pageCount"
       :page-slot="7"
+      :page-size="size"
+      :page-sizes="pageSizes"
+      show-size-picker
+      @update:page-size="changePageSize"
       @update:page="turnPage"
     />
   </div>

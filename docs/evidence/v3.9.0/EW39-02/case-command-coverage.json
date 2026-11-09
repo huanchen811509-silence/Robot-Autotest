@@ -1,0 +1,154 @@
+{
+  "generatedAt": "2026-11-09T13:32:38+08:00",
+  "database": "robot_dev",
+  "allowedSources": [
+    "RF_KEYWORD",
+    "PYTEST_MARK",
+    "STDOUT_EXTRACT",
+    "NONE"
+  ],
+  "runs": [
+    {
+      "kernel": "RF",
+      "runId": "RUN-20261109133212-b70000",
+      "projectId": 1,
+      "total": 7,
+      "withCommand": 7,
+      "explicitNone": 0,
+      "nullLegacy": 0,
+      "coveragePct": 100.0,
+      "sources": {
+        "RF_KEYWORD": 7
+      },
+      "samples": [
+        {
+          "caseKey": "CMD-001 内核版本",
+          "commandText": "uname -r",
+          "commandSource": "RF_KEYWORD",
+          "commandExitCode": 0,
+          "logOffset": 0,
+          "logSpan": "0:8"
+        },
+        {
+          "caseKey": "CMD-002 网卡列表",
+          "commandText": "ip -o link show",
+          "commandSource": "RF_KEYWORD",
+          "commandExitCode": 0,
+          "logOffset": 8,
+          "logSpan": "8:16"
+        },
+        {
+          "caseKey": "CMD-003 退出码为三",
+          "commandText": "exit 3",
+          "commandSource": "RF_KEYWORD",
+          "commandExitCode": 3,
+          "logOffset": 16,
+          "logSpan": "16:24"
+        },
+        {
+          "caseKey": "CMD-004 当前用户",
+          "commandText": "id -un",
+          "commandSource": "RF_KEYWORD",
+          "commandExitCode": 0,
+          "logOffset": 24,
+          "logSpan": "24:32"
+        },
+        {
+          "caseKey": "CMD-005 磁盘使用",
+          "commandText": "df -h /",
+          "commandSource": "RF_KEYWORD",
+          "commandExitCode": 0,
+          "logOffset": 32,
+          "logSpan": "32:40"
+        },
+        {
+          "caseKey": "CMD-006 带管道与引号的命令",
+          "commandText": "ip -o link show | wc -l",
+          "commandSource": "RF_KEYWORD",
+          "commandExitCode": 0,
+          "logOffset": 40,
+          "logSpan": "40:48"
+        },
+        {
+          "caseKey": "CMD-007 超长命令（验证折叠）",
+          "commandText": "echo v39-command-contract-fold-check && uname -r && id -un && df -h / && ip -o link show | wc -l",
+          "commandSource": "RF_KEYWORD",
+          "commandExitCode": 0,
+          "logOffset": 48,
+          "logSpan": "48:56"
+        }
+      ]
+    },
+    {
+      "kernel": "PYTEST",
+      "runId": "RUN-20261109133212-b70001",
+      "projectId": 80,
+      "total": 7,
+      "withCommand": 7,
+      "explicitNone": 0,
+      "nullLegacy": 0,
+      "coveragePct": 100.0,
+      "sources": {
+        "STDOUT_EXTRACT": 7
+      },
+      "samples": [
+        {
+          "caseKey": "v39/test_command_demo.py::test_CMD_001_内核版本",
+          "commandText": "uname -r",
+          "commandSource": "STDOUT_EXTRACT",
+          "commandExitCode": 0,
+          "logOffset": 0,
+          "logSpan": "0:3"
+        },
+        {
+          "caseKey": "v39/test_command_demo.py::test_CMD_002_网卡列表",
+          "commandText": "ip -o link show",
+          "commandSource": "STDOUT_EXTRACT",
+          "commandExitCode": 0,
+          "logOffset": 3,
+          "logSpan": "3:18"
+        },
+        {
+          "caseKey": "v39/test_command_demo.py::test_CMD_003_退出码为三",
+          "commandText": "exit 3",
+          "commandSource": "STDOUT_EXTRACT",
+          "commandExitCode": 3,
+          "logOffset": 18,
+          "logSpan": "18:20"
+        },
+        {
+          "caseKey": "v39/test_command_demo.py::test_CMD_004_当前用户",
+          "commandText": "id -un",
+          "commandSource": "STDOUT_EXTRACT",
+          "commandExitCode": 0,
+          "logOffset": 20,
+          "logSpan": "20:23"
+        },
+        {
+          "caseKey": "v39/test_command_demo.py::test_CMD_005_磁盘使用",
+          "commandText": "df -h /",
+          "commandSource": "STDOUT_EXTRACT",
+          "commandExitCode": 0,
+          "logOffset": 23,
+          "logSpan": "23:27"
+        },
+        {
+          "caseKey": "v39/test_command_demo.py::test_CMD_006_带管道与引号的命令",
+          "commandText": "ip -o link show | wc -l",
+          "commandSource": "STDOUT_EXTRACT",
+          "commandExitCode": 0,
+          "logOffset": 27,
+          "logSpan": "27:30"
+        },
+        {
+          "caseKey": "v39/test_command_demo.py::test_CMD_007_超长命令验证折叠",
+          "commandText": "echo v39-command-contract-fold-check && uname -r && id -un && df -h / && ip -o link show | wc -l",
+          "commandSource": "STDOUT_EXTRACT",
+          "commandExitCode": 0,
+          "logOffset": 30,
+          "logSpan": "30:38"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+rf http=200 size=4024
+py http=200 size=3908
+--- /tmp/ew39-03/export/rf-report.docx ---
+/tmp/ew39-03/export/rf-report.docx
+  HIT  '下发命令'
+  HIT  'uname -r'
+  HIT  'ip -o link show'
+  HIT  'exit 3'
+  HIT  '[exit=0]'
+  HIT  '[exit=3]'
+  MISS '本用例未下发外部命令'
+--- /tmp/ew39-03/export/pytest-report.docx ---
+/tmp/ew39-03/export/pytest-report.docx
+  HIT  '下发命令'
+  HIT  'uname -r'
+  HIT  'ip -o link show'
+  HIT  'exit 3'
+  HIT  '[exit=0]'
+  HIT  '[exit=3]'
+  MISS '本用例未下发外部命令'

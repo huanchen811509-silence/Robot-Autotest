@@ -459,3 +459,86 @@ describe('PlansView 依赖跳过事件（PLN-02）', () => {
     })
   })
 })
+
+/**
+ * FR-v3.9-04 判据④：计划页要真接分页，且单页 ≤ 50 行。
+ *
+ * 为什么单独立一组：真实探针在演示项目上只看到 0 行（该项目没有计划），
+ * 而分页条是 `v-if="plans.length > planRowsPerPage"` ——「没计划所以没分页」和
+ * 「没实现分页」在 DOM 上长得一模一样。这一组用 60 条计划把两条判据都钉住。
+ */
+describe('PlansView 分页（FR-v3.9-04 判据④）', () => {
+  function manyPlans(count: number) {
+    return Array.from({ length: count }, (_, index) => ({
+      id: index + 1,
+      projectId: 1,
+      name: `计划-${String(index + 1).padStart(2, '0')}`,
+      testSetId: null,
+      environmentId: null,
+      suitePaths: ['suites/roce'],
+      includeTag: null,
+      concurrency: 1,
+      timeoutSeconds: 600,
+      cron: '0 0 2 * * *',
+      timezone: 'Asia/Shanghai',
+      status: 'enabled',
+      overlapPolicy: 'skip',
+      lastFireAt: null,
+      nextFireAt: null,
+      nextFireTimes: [],
+      dependencyIds: [],
+      lastRunId: null,
+      lastRunState: null,
+      lastRunFinishedAt: null,
+      createdBy: null,
+      createdAt: null,
+    }))
+  }
+
+  it('计划超过一页时分页条出现，且单页不超过 50 行', async () => {
+    // 故意记住最大档 100：判据要求单页 ≤50，实现里必须再取一次 min(.,50)
+    window.localStorage.setItem('robot.list.pageSize', '100')
+    vi.mocked(planApi.page).mockResolvedValueOnce({
+      items: manyPlans(60),
+      total: 60,
+      page: 1,
+      size: 100,
+    } as never)
+
+    const root = await mountView()
+    window.localStorage.clear()
+
+    expect(rows(root).length).toBe(50)
+    expect(root.querySelector('.pager')).not.toBeNull()
+    // 50 条/页 + 60 条 → 2 页
+    expect(root.textContent).toContain('计划-50')
+    expect(root.textContent).not.toContain('计划-51')
+  })
+
+  it('翻到第 2 页时数据跟着换（不是只换页码）', async () => {
+    window.localStorage.setItem('robot.list.pageSize', '100')
+    vi.mocked(planApi.page).mockResolvedValueOnce({
+      items: manyPlans(60),
+      total: 60,
+      page: 1,
+      size: 100,
+    } as never)
+
+    const root = await mountView()
+    window.localStorage.clear()
+
+    const pager = root.querySelector('.pager')
+    if (!pager) throw new Error('pager not found')
+    const page2 = [...pager.querySelectorAll<HTMLElement>('.n-pagination-item')].find(
+      (el) => (el.textContent ?? '').trim() === '2',
+    )
+    if (!page2) throw new Error('page 2 button not found')
+    page2.click()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    await nextTick()
+
+    const first = rows(root)[0].textContent ?? ''
+    expect(first).toContain('计划-51')
+    expect(rows(root).length).toBe(10)
+  })
+})

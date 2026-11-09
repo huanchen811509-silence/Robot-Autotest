@@ -1,5 +1,6 @@
 package com.qa.autotest.application.report;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -96,6 +97,55 @@ class DocxExporterTest {
         assertTrue(xml.contains("自动化测试运行报告"));
         assertTrue(xml.contains("二、套件树"));
         assertTrue(xml.contains("断言失败"));
+    }
+
+    /**
+     * FR-v3.9-03 ③：导出件必须含命令列。
+     *
+     * 导出件是对外交付面——报告页看得到、PDF/Word 里没有，等于对外仍然说不清
+     * 「这条用例对设备发了什么」。所以这里钉表头 + 命令原文 + 无命令文案三件事。
+     */
+    @Test
+    @DisplayName("用例表含「下发命令」列：有命令写原文，无命令写明确文案")
+    void writesCommandColumn() throws IOException {
+        ReportTreeService.TreeCase withCommand = new ReportTreeService.TreeCase(
+                "suites/a.robot.case-cmd", "用例-有命令", "PASS", 12L, null,
+                "ipmitool raw 0x30 0x93", "RF_KEYWORD", 0, List.of());
+        ReportTreeService.TreeCase withoutCommand = new ReportTreeService.TreeCase(
+                "suites/a.robot.case-none", "用例-无命令", "PASS", 8L, null,
+                "NONE", "NONE", null, List.of());
+        ReportTreeService.TreeSuite suite = new ReportTreeService.TreeSuite(
+                "a.robot", "PASS", List.of(), List.of(withCommand, withoutCommand));
+        ReportRecord report = new ReportRecord(7L, RUN_ID, "finished", true, List.of(),
+                fullMetadata(), 2, 0, 0, NOW.minusSeconds(60), NOW);
+        byte[] bytes = exporter.render(new ExportDocument(
+                report, new ReportTreeService.TreeSuite(RUN_ID, "PASS", List.of(suite), List.of()),
+                ExportMode.EXTERNAL, NOW, "tester"));
+        String xml = zipEntry(bytes, "word/document.xml");
+
+        assertTrue(xml.contains("下发命令"), "导出件缺「下发命令」表头");
+        assertTrue(xml.contains("ipmitool raw 0x30 0x93"), "命令原文必须落盘");
+        assertTrue(xml.contains("[exit=0]"), "退出码要与命令同格");
+        assertTrue(xml.contains(DocxExporter.NO_COMMAND_TEXT), "无命令必须是明确文案而非空单元格");
+    }
+
+    @Test
+    @DisplayName("命令列三态文案：未采集 / 未下发 / 原文，互不混淆")
+    void commandTextThreeStates() {
+        assertEquals("未采集（v3.9.0 之前的报告）", DocxExporter.commandText(null, null));
+        assertEquals(DocxExporter.NO_COMMAND_TEXT, DocxExporter.commandText("NONE", null));
+        assertEquals(DocxExporter.NO_COMMAND_TEXT, DocxExporter.commandText("  ", null));
+        assertEquals("ls -l　[exit=1]", DocxExporter.commandText("ls -l", 1));
+        assertEquals("ls -l", DocxExporter.commandText("ls -l", null));
+    }
+
+    @Test
+    @DisplayName("超长命令截断并注明原长度，不做静默裁剪")
+    void longCommandIsTruncated() {
+        String command = "x".repeat(DocxExporter.COMMAND_MAX_CHARS + 50);
+        String text = DocxExporter.commandText(command, null);
+        assertTrue(text.startsWith("x".repeat(DocxExporter.COMMAND_MAX_CHARS)));
+        assertTrue(text.contains("已截断，原长度 " + command.length() + " 字符"));
     }
 
     private static ExportDocument document(Map<String, String> metadata, ExportMode mode,

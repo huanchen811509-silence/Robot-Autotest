@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Robot-Autotest API（构建期静态快照）",
-    "version": "3.4.0",
+    "version": "3.9.0",
     "description": "由 tools/gen_api_contract.py 从控制器源码生成；字段级契约由契约测试保证。"
   },
   "servers": [

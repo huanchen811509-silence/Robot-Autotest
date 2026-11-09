@@ -1,0 +1,17 @@
+[drill] 环境 DB_NAME=robot_dev 不是集成库，本次改用 robot_it
+[drill] target=robot@127.0.0.1:3306/robot_it migration=V11_24__v3_9_case_command
+[drill] 提示：mysql 的 'Using a password on the command line' 是既有告警，可忽略
+===== 0. 演练前 =====
+command_text	text	YES
+command_source	varchar(24)	YES
+command_exit_code	int	YES
+[drill] test_result 行数=0
+===== 1. down =====
+[drill] down OK；残留 command* 列（应为空）：
+===== 2. up =====
+[drill] up OK；command* 列（应为 3 行）：
+command_text	text	YES
+command_source	varchar(24)	YES
+command_exit_code	int	YES
+[drill] test_result 行数=0（应等于 0）
+[drill] DONE

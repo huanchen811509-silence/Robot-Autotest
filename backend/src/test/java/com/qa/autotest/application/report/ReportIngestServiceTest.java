@@ -129,7 +129,7 @@ class ReportIngestServiceTest {
         overrides.put("CASE_KIND", "metadata-patch");
         ReportIngestService withPatch = new ReportIngestService(runs, new FakeArtifacts(), reports,
                 new AccessControlService(adminUsers(), emptyProjects()), new OutputXmlParser(),
-                null, new FakeRunMetadata(overrides), null);
+                null, new FakeRunMetadata(overrides), null, null);
 
         ReportRecord record = withPatch.parseAndIngest(PROJECT, RUN_ID, fixture("ok.xml").toString());
 

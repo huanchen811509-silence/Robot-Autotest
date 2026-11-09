@@ -16,8 +16,14 @@ import { homedir } from 'node:os'
 const CDP = process.env.CDP_BASE ?? 'http://127.0.0.1:9222'
 const APP = process.env.APP_BASE ?? 'http://localhost:8001'
 const USER = process.env.QA_USER ?? 'qa-e2e-admin'
-const ROUTES = (process.env.DARK_PROBE_ROUTES ?? '/,/settings,/plans,/runs').split(',')
+// 默认覆盖「有下拉控件」的全部一级落点，而不是只看 4 个页：
+// 少了这些路由，Q1 修复后仍可能漏掉某个业务页的 select。
+const ROUTES = (process.env.DARK_PROBE_ROUTES
+  ?? '/,/settings,/plans,/runs,/assets,/cases,/reports,/test-reports,/admin,/imports,/plans/groups,/runs/failure-clusters').split(',')
 const SELFCHECK = process.argv.includes('--selfcheck')
+// 主题可切换：亮色回归必须能自动跑（PRD FR-v3.9-01 判据 ⑤「亮色主题不回归」）。
+// PROBE_THEME=light 时输出 light-select-probe.json，判据不变（不透明底 + 对比 ≥4.5）。
+const THEME = process.env.PROBE_THEME ?? 'dark'
 
 function envValue(key) {
   if (process.env[key]) return process.env[key]
@@ -126,6 +132,10 @@ const SELECT_EXPR = `(() => {
     }
     const opt = el.querySelector('option')
     const os = opt ? getComputedStyle(opt) : null
+    // option 的弹层底色取自身 computed 值；未显式设置时 Chromium 会回落到 UA 默认（白底）。
+    // 只有 alpha > 0.95 才算「显式给了不透明底」——半透明仍会被 UA 白底透出来。
+    const obg = os ? parse(os.backgroundColor) : [0, 0, 0, 0]
+    const ofg = os ? parse(os.color) : [0, 0, 0, 0]
     return {
       id: el.id || '', name: el.getAttribute('name') || '', cls: el.className || '',
       options: el.options.length,
@@ -137,6 +147,8 @@ const SELECT_EXPR = `(() => {
       contrast: Number(((eff[3] > 0.95) ? ratio(fg, eff) : 0).toFixed(2)),
       optionBg: os ? os.backgroundColor : null,
       optionFg: os ? os.color : null,
+      optionBgTransparent: os ? !(obg[3] > 0.95) : false,
+      optionContrast: os && obg[3] > 0.95 ? Number(ratio(ofg, obg).toFixed(2)) : 0,
     }
   })
   return { path: location.pathname + location.search, theme: document.documentElement.getAttribute('data-theme'),
@@ -147,16 +159,19 @@ function judge(sel) {
   const flags = []
   if (sel.bgTransparent) flags.push('背景透明')
   if (sel.contrast > 0 && sel.contrast < 4.5) flags.push(`对比 ${sel.contrast}:1`)
+  // 弹层（option）单独判一次：select 底色修好了，option 仍可能落回 UA 白底。
+  if (sel.optionBgTransparent) flags.push('option 背景透明')
+  if (sel.optionContrast > 0 && sel.optionContrast < 4.5) flags.push(`option 对比 ${sel.optionContrast}:1`)
   return flags
 }
 
 async function main() {
   const version = await (await fetch(`${CDP}/json/version`)).json()
-  console.log(`[cdp] ${version.Browser}  [app] ${APP}  theme=dark  routes=${ROUTES.join(',')}\n`)
+  console.log(`[cdp] ${version.Browser}  [app] ${APP}  theme=${THEME}  routes=${ROUTES.join(',')}\n`)
   const { session: s, targetId } = await openSession()
   try {
     await goto(s, `${APP}/login`, 1440)
-    await s.evaluate(`localStorage.setItem('theme', 'dark')`)
+    await s.evaluate(`localStorage.setItem('theme', ${JSON.stringify(THEME)})`)
     const login = await s.evaluate(`(async () => {
       const resp = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: ${JSON.stringify(USER)}, password: ${JSON.stringify(PASS)} }) })
@@ -176,13 +191,13 @@ async function main() {
     const prefPut = await s.evaluate(`(async () => {
       const r = await fetch('/api/users/me/preferences', { method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + localStorage.getItem('auth_token') },
-        body: JSON.stringify({ theme: 'dark' }) })
+        body: JSON.stringify({ theme: ${JSON.stringify(THEME)} }) })
       return r.ok
     })()`)
-    if (!prefPut) throw new Error('写入 theme=dark 偏好失败')
+    if (!prefPut) throw new Error(`写入 theme=${THEME} 偏好失败`)
     cdpPrefBackup = prefBefore
-    await s.evaluate(`localStorage.setItem('theme', 'dark')`)
-    console.log(`[auth] 登录成功；已写偏好 theme=dark（原 theme=${prefBefore.theme ?? 'unset'}，跑完还原）\n`)
+    await s.evaluate(`localStorage.setItem('theme', ${JSON.stringify(THEME)})`)
+    console.log(`[auth] 登录成功；已写偏好 theme=${THEME}（原 theme=${prefBefore.theme ?? 'unset'}，跑完还原）\n`)
 
     if (SELFCHECK) {
       await goto(s, `${APP}/`, 1440)
@@ -218,7 +233,7 @@ async function main() {
       pages.push(m)
       console.log(`[page] ${m.path} theme=${m.theme} colorScheme=${m.rootColorScheme} selects=${m.selects.length}`)
       for (const sel of m.selects) {
-        console.log(`   - #${sel.id || '(no-id)'} .${String(sel.cls).slice(0, 28)} bg=${sel.bg} fg=${sel.fg} scheme=${sel.colorScheme} contrast=${sel.contrast} ${sel.red ? '[RED] ' + sel.flags.join(' / ') : '[ok]'}`)
+        console.log(`   - #${sel.id || '(no-id)'} .${String(sel.cls).slice(0, 28)} bg=${sel.bg} fg=${sel.fg} scheme=${sel.colorScheme} contrast=${sel.contrast} option=${sel.optionBg}/${sel.optionContrast} ${sel.red ? '[RED] ' + sel.flags.join(' / ') : '[ok]'}`)
       }
     }
 
@@ -230,11 +245,15 @@ async function main() {
       summary: { pages: pages.length, selects: totalSelects, flagged },
       pages,
     }
-    const out = 'docs/evidence/v3.9.0/EW39-01/dark-select-probe.json'
+    const out = THEME === 'dark'
+      ? 'docs/evidence/v3.9.0/EW39-01/dark-select-probe.json'
+      : `docs/evidence/v3.9.0/EW39-01/${THEME}-select-probe.json`
     const { mkdirSync, writeFileSync } = await import('node:fs')
     mkdirSync(out.split('/').slice(0, -1).join('/'), { recursive: true })
     writeFileSync(out, JSON.stringify(result, null, 2), 'utf8')
     console.log(`\nDARK_SELECT_PROBE selects=${totalSelects} flagged=${flagged} -> ${out}`)
+    // 判红即非 0 退出：否则接进门禁也只是打印一行，红不红没人管。
+    if (flagged > 0) process.exitCode = 1
   } finally {
     if (cdpPrefBackup) {
       const restore = cdpPrefBackup.theme ?? 'system'

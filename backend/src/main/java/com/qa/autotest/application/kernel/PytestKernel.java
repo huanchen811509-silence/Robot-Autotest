@@ -111,8 +111,15 @@ public class PytestKernel implements ExecutionKernel {
                 String nodeId = test.path("nodeid").asText("unknown");
                 String outcome = test.path("outcome").asText("error");
                 double duration = test.path("duration").asDouble(0.0);
+                // v3.9.0 / FR-v3.9-02：命令从 stage 文本里取（约定行 `$ <命令>`），
+                // 取不到就显式 NONE。json-report 的 keywords 只有标记名、没有标记参数，
+                // 所以 @pytest.mark.commandline 也只能靠 stdout 里的约定行落地。
+                com.qa.autotest.application.report.CaseCommandExtractor.Extracted command =
+                        com.qa.autotest.application.report.CaseCommandExtractor
+                                .fromPytestStdout(stageText(test));
                 cases.add(new NormalizedCaseResult(nodeId, nodeId,
-                        CaseStatus.fromPytest(outcome), duration, outcome));
+                        CaseStatus.fromPytest(outcome), duration, outcome,
+                        command.text(), command.source(), command.exitCode()));
             }
             // N3：pytest-metadata 由 --metadata / conftest 写入 json-report。
             // json-report 1.5.0 的 metadata 落在 **environment** 键（v2.7 实测），
@@ -124,6 +131,30 @@ public class PytestKernel implements ExecutionKernel {
         } catch (Exception e) {
             throw new IllegalStateException("pytest json-report 解析失败: " + path, e);
         }
+    }
+
+    /**
+     * 把一个用例各阶段（setup / call / teardown）的 stdout、stderr、longrepr 拼成一段文本。
+     *
+     * <p>json-report 把输出放在 stage 对象里，而不是用例顶层 —— 只读顶层会一条命令都取不到。
+     * 顺序固定 setup → call → teardown，与 pytest 真实执行顺序一致；
+     * longrepr 放在最后，因为它通常是失败回溯（里面也可能出现 `$ cmd` 的上下文行）。
+     */
+    private static String stageText(JsonNode test) {
+        StringBuilder sb = new StringBuilder();
+        for (String stage : new String[] {"setup", "call", "teardown"}) {
+            JsonNode node = test.path(stage);
+            if (!node.isObject()) {
+                continue;
+            }
+            for (String key : new String[] {"stdout", "stderr", "longrepr"}) {
+                JsonNode value = node.path(key);
+                if (value.isValueNode() && !value.isNull()) {
+                    sb.append(value.asText()).append('\n');
+                }
+            }
+        }
+        return sb.toString();
     }
 
     private NormalizedRun fromJunit(Path path, String runId) {

@@ -1,0 +1,96 @@
+{
+  "total": 10,
+  "mismatches": 0,
+  "rows": [
+    {
+      "kernel": "RF",
+      "runId": "RUN-20261109133212-b70000",
+      "caseKey": "CMD-001 内核版本",
+      "dbCommandText": "uname -r",
+      "logLine": "$ uname -r",
+      "logCommandText": "uname -r",
+      "match": true
+    },
+    {
+      "kernel": "RF",
+      "runId": "RUN-20261109133212-b70000",
+      "caseKey": "CMD-002 网卡列表",
+      "dbCommandText": "ip -o link show",
+      "logLine": "$ ip -o link show",
+      "logCommandText": "ip -o link show",
+      "match": true
+    },
+    {
+      "kernel": "RF",
+      "runId": "RUN-20261109133212-b70000",
+      "caseKey": "CMD-003 退出码为三",
+      "dbCommandText": "exit 3",
+      "logLine": "$ exit 3",
+      "logCommandText": "exit 3",
+      "match": true
+    },
+    {
+      "kernel": "RF",
+      "runId": "RUN-20261109133212-b70000",
+      "caseKey": "CMD-004 当前用户",
+      "dbCommandText": "id -un",
+      "logLine": "$ id -un",
+      "logCommandText": "id -un",
+      "match": true
+    },
+    {
+      "kernel": "RF",
+      "runId": "RUN-20261109133212-b70000",
+      "caseKey": "CMD-005 磁盘使用",
+      "dbCommandText": "df -h /",
+      "logLine": "$ df -h /",
+      "logCommandText": "df -h /",
+      "match": true
+    },
+    {
+      "kernel": "RF",
+      "runId": "RUN-20261109133212-b70000",
+      "caseKey": "CMD-006 带管道与引号的命令",
+      "dbCommandText": "ip -o link show | wc -l",
+      "logLine": "$ ip -o link show | wc -l",
+      "logCommandText": "ip -o link show | wc -l",
+      "match": true
+    },
+    {
+      "kernel": "RF",
+      "runId": "RUN-20261109133212-b70000",
+      "caseKey": "CMD-007 超长命令（验证折叠）",
+      "dbCommandText": "echo v39-command-contract-fold-check && uname -r && id -un && df -h / && ip -o link show | wc -l",
+      "logLine": "$ echo v39-command-contract-fold-check && uname -r && id -un && df -h / && ip -o link show | wc -l",
+      "logCommandText": "echo v39-command-contract-fold-check && uname -r && id -un && df -h / && ip -o link show | wc -l",
+      "match": true
+    },
+    {
+      "kernel": "PYTEST",
+      "runId": "RUN-20261109133212-b70001",
+      "caseKey": "v39/test_command_demo.py::test_CMD_001_内核版本",
+      "dbCommandText": "uname -r",
+      "logLine": "$ uname -r",
+      "logCommandText": "uname -r",
+      "match": true
+    },
+    {
+      "kernel": "PYTEST",
+      "runId": "RUN-20261109133212-b70001",
+      "caseKey": "v39/test_command_demo.py::test_CMD_002_网卡列表",
+      "dbCommandText": "ip -o link show",
+      "logLine": "$ ip -o link show",
+      "logCommandText": "ip -o link show",
+      "match": true
+    },
+    {
+      "kernel": "PYTEST",
+      "runId": "RUN-20261109133212-b70001",
+      "caseKey": "v39/test_command_demo.py::test_CMD_003_退出码为三",
+      "dbCommandText": "exit 3",
+      "logLine": "$ exit 3",
+      "logCommandText": "exit 3",
+      "match": true
+    }
+  ]
+}

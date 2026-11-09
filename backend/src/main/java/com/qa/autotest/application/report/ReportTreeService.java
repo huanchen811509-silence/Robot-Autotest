@@ -40,9 +40,22 @@ public class ReportTreeService {
                             List<TreeSuite> suites, List<TreeCase> cases) {
     }
 
-    /** 用例节点。 */
+    /**
+     * 用例节点。
+     *
+     * <p>v3.9.0 追加命令三列（FR-v3.9-03）：{@code commandText} 为 {@code NONE} 表示
+     * 本用例未下发外部命令，前端据此显示「本用例未下发外部命令」而不是空白；
+     * 历史行（v3.9.0 之前入库）三列为 null，前端按「未采集」提示，二者语义不同。
+     */
     public record TreeCase(String caseKey, String name, String verdict, long durationMs,
-                           String failureMsg, List<TreeKeyword> keywords) {
+                           String failureMsg, String commandText, String commandSource,
+                           Integer commandExitCode, List<TreeKeyword> keywords) {
+
+        /** 兼容 v3.9.0 之前的六参写法（命令三列按「历史未采集」留 null）。 */
+        public TreeCase(String caseKey, String name, String verdict, long durationMs,
+                        String failureMsg, List<TreeKeyword> keywords) {
+            this(caseKey, name, verdict, durationMs, failureMsg, null, null, null, keywords);
+        }
     }
 
     /** 关键字步骤节点。 */
@@ -95,7 +108,8 @@ public class ReportTreeService {
                 node = node.child(segment);
             }
             node.cases.add(new TreeCase(caseKey, caseName, row.verdict(), row.durationMs(),
-                    row.failureMsg(), keywordTree(keywordsByCase.get(caseKey))));
+                    row.failureMsg(), row.commandText(), row.commandSource(),
+                    row.commandExitCode(), keywordTree(keywordsByCase.get(caseKey))));
         }
         return root.build();
     }

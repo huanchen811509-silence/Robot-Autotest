@@ -67,6 +67,9 @@ vi.mock('@/api/reports', async (importOriginal) => {
             verdict: 'PASS',
             durationMs: 1200,
             failureMsg: null,
+            commandText: 'ipmitool raw 0x30 0x93',
+            commandSource: 'RF_KEYWORD',
+            commandExitCode: 0,
             keywords: [],
           },
           {
@@ -75,6 +78,9 @@ vi.mock('@/api/reports', async (importOriginal) => {
             verdict: 'FAIL',
             durationMs: 8000,
             failureMsg: 'expected 190 got 120',
+            commandText: 'NONE',
+            commandSource: 'NONE',
+            commandExitCode: null,
             keywords: [],
           },
         ],
@@ -170,12 +176,23 @@ vi.mock('@/components/ProjectPicker.vue', () => ({
   default: { name: 'ProjectPicker', template: '<div />' },
 }))
 
-/** 套件树与折线图有自己的测试，这里只关心「详情页把数据交出去了」。 */
+/**
+ * 套件树与折线图有自己的测试，这里只关心「详情页把数据交出去了」。
+ *
+ * 桩里把 `commandText` 也渲染出来（不是空 div）：命令列的三个字段要从
+ * `reportsApi.tree` 一路穿过详情页进到树组件，字段名对不上时（后端 `commandText`
+ * ↔ 前端 `command_text`）只有打通这一段才看得见——组件单测拿假数据照样绿。
+ */
 vi.mock('@/components/report/SuiteTree.vue', () => ({
   default: {
     name: 'SuiteTree',
     props: { node: { type: Object, default: null }, depth: { type: Number, default: 0 } },
-    template: '<div class="suite-tree" />',
+    template: `<div class="suite-tree">
+      <span v-for="c in ((node && node.cases) || [])" :key="c.caseKey"
+            class="stub-case"
+            :data-case-key="c.caseKey"
+            :data-command="c.commandText">{{ c.commandText }}</span>
+    </div>`,
   },
 }))
 
@@ -249,6 +266,24 @@ describe('ReportDetailView 元数据表', () => {
     // th 是「键」的语义，NDataTable 渲染不出这一层；这条断言就是防止有人把它塞进表格组件
     expect(table!.querySelectorAll('th').length).toBe(10)
     expect(root.textContent).toContain('REG-ROCE-001')
+  })
+})
+
+/**
+ * FR-v3.9-03 ①④：报告页的命令字段必须从接口一路传到树组件。
+ *
+ * 这条走整页挂载而不是只测 `SuiteTree`：接口字段名对不上（后端 `commandText` ↔
+ * 前端 `command_text`）时，组件单测照样绿，只有打通 `reportsApi.tree` 才能发现。
+ * 命令的**渲染**（折叠/复制/三态文案）由 `SuiteTree.spec.ts` 覆盖，这里只钉数据通路。
+ */
+describe('ReportDetailView 下发命令列', () => {
+  it('用例行的命令字段原样传给套件树：有命令 / 显式 NONE 各自到位', async () => {
+    const root = await mountView()
+    const stubs = [...root.querySelectorAll<HTMLElement>('.stub-case')]
+    expect(stubs.length).toBe(2)
+    const byKey = new Map(stubs.map((el) => [el.dataset.caseKey, el.dataset.command]))
+    expect(byKey.get('TC-001')).toBe('ipmitool raw 0x30 0x93')
+    expect(byKey.get('TC-002')).toBe('NONE')
   })
 })
 

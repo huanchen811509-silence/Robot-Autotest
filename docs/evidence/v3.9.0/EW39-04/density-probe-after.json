@@ -1,0 +1,178 @@
+{
+  "generated_at": "2026-11-09T05:35:51.990Z",
+  "browser": "HeadlessChrome/157.0.8103.38",
+  "lists": [
+    {
+      "path": "/cases",
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      },
+      "docScrollHeight": 900,
+      "mainScrollHeight": 847,
+      "tableCount": 2,
+      "visibleRows": 12,
+      "tableHeight": 528,
+      "tableBottom": 843,
+      "pagerBottom": 864,
+      "unusedBelowPager": 36,
+      "pagerText": "120 / page",
+      "scrollerCount": 1,
+      "scrollerMaxHeight": [
+        "none"
+      ]
+    },
+    {
+      "path": "/runs",
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      },
+      "docScrollHeight": 900,
+      "mainScrollHeight": 847,
+      "tableCount": 2,
+      "visibleRows": 6,
+      "tableHeight": 264,
+      "tableBottom": 465,
+      "pagerBottom": 864,
+      "unusedBelowPager": 36,
+      "pagerText": "120 / page",
+      "scrollerCount": 0,
+      "scrollerMaxHeight": []
+    },
+    {
+      "path": "/assets?tab=devices",
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      },
+      "docScrollHeight": 900,
+      "mainScrollHeight": 1194,
+      "tableCount": 2,
+      "visibleRows": 1,
+      "tableHeight": 44,
+      "tableBottom": 311,
+      "pagerBottom": 1211,
+      "unusedBelowPager": 0,
+      "pagerText": "120 / page",
+      "scrollerCount": 1,
+      "scrollerMaxHeight": [
+        "none"
+      ]
+    }
+  ],
+  "plans": {
+    "path": "/plans",
+    "buttonCount": 22,
+    "cardCount": 2,
+    "buttonTexts": [
+      "工作台",
+      "执行与报告",
+      "测试用例",
+      "测试资产",
+      "环境与拓扑",
+      "维护与恢复",
+      "系统设置",
+      "33 条未读通知",
+      "退出登录",
+      "新建计划",
+      "刷新",
+      "计划组",
+      "依赖图",
+      "返回运行列表",
+      "重新检测",
+      "查看依赖跳过事件"
+    ],
+    "duplicateTexts": [],
+    "docScrollHeight": 900,
+    "mainScrollHeight": 847,
+    "viewportH": 900
+  },
+  "template": {
+    "path": "/reports/templates",
+    "fieldCount": 21,
+    "availableRows": 21,
+    "cardCount": 4,
+    "cards": [
+      {
+        "key": "identity",
+        "fields": [
+          "reportId",
+          "title",
+          "version",
+          "frozenAt"
+        ]
+      },
+      {
+        "key": "stats",
+        "fields": [
+          "conclusion",
+          "passCount",
+          "failCount",
+          "skipCount",
+          "passRate",
+          "caseTotal",
+          "caseCovered",
+          "coverageRate",
+          "failureDistribution",
+          "trend"
+        ]
+      },
+      {
+        "key": "env",
+        "fields": [
+          "projectName",
+          "swBuild",
+          "caseKind",
+          "startedAt",
+          "finishedAt"
+        ]
+      },
+      {
+        "key": "compliance",
+        "fields": [
+          "disclaimer",
+          "watermark"
+        ]
+      }
+    ],
+    "presetCount": 4,
+    "presets": [
+      "简版",
+      "标准",
+      "完整",
+      "审计"
+    ],
+    "lockedFields": [
+      "reportId",
+      "title",
+      "version",
+      "frozenAt",
+      "conclusion",
+      "passCount",
+      "failCount",
+      "skipCount",
+      "passRate",
+      "caseTotal",
+      "caseCovered",
+      "coverageRate",
+      "failureDistribution",
+      "trend",
+      "projectName",
+      "swBuild",
+      "caseKind",
+      "startedAt",
+      "finishedAt",
+      "disclaimer",
+      "watermark"
+    ],
+    "readonlyTemplate": true,
+    "selectedRows": 21,
+    "availHeight": 244,
+    "selHeight": 232,
+    "docScrollHeight": 900,
+    "mainScrollHeight": 847,
+    "viewportH": 900,
+    "scrollScreens": 0.94
+  }
+}

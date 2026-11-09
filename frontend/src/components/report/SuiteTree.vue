@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { ReportSuiteNode } from '@/api/reports'
+import type { ReportCaseNode, ReportSuiteNode } from '@/api/reports'
 import StatusTag from '@/components/StatusTag.vue'
 import { verdictTone } from '@/utils/statusLabels'
+import { copyText } from '@/composables/useClipboard'
 import KeywordSteps from './KeywordSteps.vue'
 
 /**
@@ -26,6 +27,15 @@ import KeywordSteps from './KeywordSteps.vue'
  * 而这里的行高是 21px。一个套件里几十条用例，换成库按钮会让整棵树凭空高出一倍；
  * 而这行本质是**展开/收起控件**（disclosure），不是设计系统意义上的"按钮"。
  * 保留原生元素 + 显式声明三态，比为了"统一"付出密度代价更合适。
+ *
+ * <p>v3.9.0 追加「下发命令」行（FR-v3.9-03）：在用例名下方单列一行，与「查看日志」联动。
+ * 三种状态分别显示，绝不共用空白：
+ * - `null` → 「未采集（v3.9.0 之前的报告）」——历史数据，说明白比装作没有好；
+ * - `'NONE'` → 「本用例未下发外部命令」——PRD 判据 ④ 指定文案；
+ * - 其余 → 命令原文，超长折叠为一行，可展开全文 / 复制 / 定位日志。
+ *
+ * 命令留在树里而不是另开抽屉：现场看报告的动作是「这条用例挂了，它到底跑了什么」，
+ * 让命令和结论同屏比再点一次更省事；全文仍可展开，密度只多一行。
  */
 const props = defineProps<{
   node: ReportSuiteNode
@@ -37,6 +47,15 @@ const emit = defineEmits<{ (event: 'open-logs', caseKey: string): void }>()
 const { t } = useI18n()
 const open = ref(props.depth === 0)
 const expanded = ref<Set<string>>(new Set())
+/** 已展开全文的命令行（按 caseKey）。 */
+const cmdExpanded = ref<Set<string>>(new Set())
+/** 刚复制成功的 caseKey，用于 1.5s 内的「已复制」反馈。 */
+const copied = ref('')
+/** 复制失败提示（现场 http 内网地址 + 权限被拒时才会走到）。 */
+const copyFailed = ref('')
+
+/** 超过这个长度的命令默认折叠成一行：一行放不下，展开才有意义。 */
+const FOLD_THRESHOLD = 72
 
 function toggleSuite(): void {
   open.value = !open.value
@@ -51,12 +70,76 @@ function toggleCase(caseKey: string): void {
   }
   expanded.value = next
 }
+
+/** 三态归一的命令展示模型：hasCommand=false 时 text 是解释性文案。 */
+function commandOf(test: ReportCaseNode): {
+  hasCommand: boolean
+  text: string
+  foldable: boolean
+} {
+  const raw = test.commandText
+  if (raw === null || raw === undefined) {
+    return { hasCommand: false, text: t('reports.command.notCollected'), foldable: false }
+  }
+  const trimmed = raw.trim()
+  if (!trimmed || trimmed.toUpperCase() === 'NONE') {
+    return { hasCommand: false, text: t('reports.command.none'), foldable: false }
+  }
+  return { hasCommand: true, text: trimmed, foldable: trimmed.length > FOLD_THRESHOLD }
+}
+
+function isCmdExpanded(caseKey: string): boolean {
+  return cmdExpanded.value.has(caseKey)
+}
+
+function toggleCmd(caseKey: string): void {
+  const next = new Set(cmdExpanded.value)
+  if (next.has(caseKey)) {
+    next.delete(caseKey)
+  } else {
+    next.add(caseKey)
+  }
+  cmdExpanded.value = next
+}
+
+async function copyCommand(test: ReportCaseNode): Promise<void> {
+  const model = commandOf(test)
+  if (!model.hasCommand) return
+  const ok = await copyText(model.text)
+  if (!ok) {
+    copyFailed.value = t('reports.command.copyFailed')
+    return
+  }
+  copyFailed.value = ''
+  copied.value = test.caseKey
+  window.setTimeout(() => {
+    if (copied.value === test.caseKey) copied.value = ''
+  }, 1500)
+}
+
+/** 来源标签：认不出来的来源不硬猜，原样显示后端给的值。 */
+function sourceLabel(source: string | null): string {
+  switch ((source ?? '').toUpperCase()) {
+    case 'RF_KEYWORD':
+      return t('reports.command.sourceRf')
+    case 'PYTEST_MARK':
+      return t('reports.command.sourceMark')
+    // 后端常量是 STDOUT_EXTRACT；STDOUT 是早期别名，一并认下
+    case 'STDOUT_EXTRACT':
+    case 'STDOUT':
+      return t('reports.command.sourceStdout')
+    case 'NONE':
+      return t('reports.command.sourceNone')
+    default:
+      return source ?? ''
+  }
+}
 </script>
 
 <template>
   <div class="suite" :class="{ nested: depth > 0 }">
     <div class="suite-head">
-      <button class="tree-toggle" type="button" @click="toggleSuite">
+      <button class="tree-toggle" type="button" :data-suite-name="node.name" @click="toggleSuite">
         <span class="caret">{{ open ? '▾' : '▸' }}</span>
         <span class="suite-name">{{ node.name }}</span>
         <StatusTag :label="node.status" :tone="verdictTone(node.status)" />
@@ -66,7 +149,12 @@ function toggleCase(caseKey: string): void {
     <div v-if="open" class="suite-body">
       <div v-for="test in node.cases" :key="test.caseKey" class="case-block">
         <div class="case-head">
-          <button class="tree-toggle" type="button" @click="toggleCase(test.caseKey)">
+          <button
+            class="tree-toggle"
+            type="button"
+            :data-case-key="test.caseKey"
+            @click="toggleCase(test.caseKey)"
+          >
             <span class="caret">{{ expanded.has(test.caseKey) ? '▾' : '▸' }}</span>
             <span class="case-name">{{ test.name }}</span>
             <StatusTag :label="test.verdict" :tone="verdictTone(test.verdict)" />
@@ -74,6 +162,57 @@ function toggleCase(caseKey: string): void {
           </button>
           <button class="link-btn" type="button" @click="emit('open-logs', test.caseKey)">
             {{ t('reports.viewLog') }}
+          </button>
+        </div>
+
+        <div class="case-cmd" :data-command="commandOf(test).hasCommand ? 'present' : 'absent'">
+          <span class="cmd-label">{{ t('reports.command.label') }}</span>
+          <span v-if="commandOf(test).hasCommand" class="cmd-source">
+            {{ sourceLabel(test.commandSource) }}
+          </span>
+          <code
+            v-if="commandOf(test).hasCommand"
+            class="cmd-text"
+            :class="{ 'is-expanded': isCmdExpanded(test.caseKey) }"
+          >{{ commandOf(test).text }}</code>
+          <span v-else class="cmd-none">{{ commandOf(test).text }}</span>
+          <span
+            v-if="test.commandExitCode !== null && test.commandExitCode !== undefined"
+            class="cmd-exit"
+          >
+            {{ t('reports.command.exitCode', { code: test.commandExitCode }) }}
+          </span>
+          <button
+            v-if="commandOf(test).foldable"
+            class="link-btn cmd-action"
+            type="button"
+            :data-action="isCmdExpanded(test.caseKey) ? 'collapse' : 'expand'"
+            @click="toggleCmd(test.caseKey)"
+          >
+            {{
+              isCmdExpanded(test.caseKey)
+                ? t('reports.command.collapse')
+                : t('reports.command.expand')
+            }}
+          </button>
+          <button
+            v-if="commandOf(test).hasCommand"
+            class="link-btn cmd-action"
+            type="button"
+            data-action="copy"
+            :aria-label="t('reports.command.copy')"
+            @click="copyCommand(test)"
+          >
+            {{ copied === test.caseKey ? t('reports.command.copied') : t('reports.command.copy') }}
+          </button>
+          <button
+            v-if="commandOf(test).hasCommand"
+            class="link-btn cmd-action"
+            type="button"
+            data-action="locate-log"
+            @click="emit('open-logs', test.caseKey)"
+          >
+            {{ t('reports.command.locateLog') }}
           </button>
         </div>
 
@@ -93,6 +232,8 @@ function toggleCase(caseKey: string): void {
         @open-logs="(caseKey: string) => emit('open-logs', caseKey)"
       />
     </div>
+
+    <p v-if="copyFailed" class="cmd-copy-error" role="status">{{ copyFailed }}</p>
   </div>
 </template>
 
@@ -176,5 +317,76 @@ function toggleCase(caseKey: string): void {
   padding: 8px 10px;
   background: var(--surface-2);
   border-radius: 6px;
+}
+
+/*
+ * ── 下发命令行（FR-v3.9-03）─────────────────────────────────────────
+ * 单行排布：标签 / 来源 / 命令 / 退出码 / 操作。命令默认一行截断，
+ * 展开后允许换行并按任意字符断行（命令里常没有空格可断）。
+ */
+.case-cmd {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 2px 0 4px 20px;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.cmd-label {
+  color: var(--text-muted);
+  flex: none;
+}
+
+.cmd-source {
+  flex: none;
+  padding: 0 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.cmd-text {
+  flex: 1 1 320px;
+  min-width: 0;
+  display: block;
+  padding: 1px 6px;
+  background: var(--surface-2);
+  border-radius: 4px;
+  color: var(--text);
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Consolas, monospace);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cmd-text.is-expanded {
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.cmd-none {
+  flex: 1 1 auto;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.cmd-exit {
+  flex: none;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.cmd-action {
+  flex: none;
+}
+
+.cmd-copy-error {
+  margin: 2px 0 0 20px;
+  font-size: 12px;
+  color: var(--fail);
 }
 </style>

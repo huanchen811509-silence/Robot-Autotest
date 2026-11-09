@@ -26,6 +26,7 @@ import {
 import { useAuthStore } from '@/stores/auth'
 import { executionApi, type BlockedCase, type SafetyPrecheck } from '@/api/execution'
 import DataTable from '@/components/DataTable.vue'
+import { useListPageSize, type PageSize } from '@/composables/useListPageSize'
 import CaseDetailPanel from '@/components/CaseDetailPanel.vue'
 import SelectionBar from '@/components/SelectionBar.vue'
 import ErrorLineView from '@/components/ErrorLine.vue'
@@ -70,8 +71,9 @@ const reviewStatus = ref('')
 const domain = ref('')
 const safetyLevel = ref('')
 const page = ref(1)
-// 页大小进入视图 payload 后必须可回填，不能再是常量
-const size = ref(10)
+// 页大小进入视图 payload 后必须可回填，不能再是常量；
+// 同时要跨页记忆 + 按视口估算（FR-v3.9-04），统一走 useListPageSize。
+const { size, pageSizes } = useListPageSize()
 const total = ref(0)
 const loading = ref(false)
 const error = ref<ErrorLine | null>(null)
@@ -419,7 +421,7 @@ function applySavedView(view: SavedView): void {
   priority.value = state.priority
   reviewStatus.value = state.reviewStatus
   safetyLevel.value = state.safetyLevel
-  size.value = state.size
+  size.value = state.size as PageSize
   applyColumnKeys(state.columns)
   page.value = state.page
   activeViewId.value = view.id
@@ -776,6 +778,15 @@ async function loadPrecheck(): Promise<void> {
   }
 }
 
+/**
+ * 页大小切换（FR-v3.9-04）。
+ * 不改页码也能用：`watch([... size])` 会把 page 归 1 再 load，
+ * 所以这里只写值，避免同一动作发两次请求。
+ */
+function changePageSize(next: number): void {
+  size.value = next as PageSize
+}
+
 function turnPage(next: number): void {
   if (next < 1 || next > pageCount.value) return
   page.value = next
@@ -998,7 +1009,7 @@ async function runCommit(): Promise<void> {
 </script>
 
 <template>
-  <div class="page">
+  <div class="page is-list">
     <PageHeader :title="t('menu.cases')" />
 
     <PageToolbar>
@@ -1346,17 +1357,20 @@ async function runCommit(): Promise<void> {
       <ErrorLineView v-if="runError" :error="runError" />
     </div>
 
-    <DataTable
-      :columns="columns"
-      :data="cases"
-      :loading="loading"
-      :row-key="(row: TestCase) => row.id"
-      :empty-title="t('common.noData')"
-      :empty-description="projectId ? undefined : t('overview.noProject')"
-      empty-icon="cases"
-      :error="Boolean(error)"
-      :empty-illustration="keyword ? 'no-result' : 'no-data'"
-    />
+    <div class="list-fill">
+      <DataTable
+        :columns="columns"
+        :data="cases"
+        :loading="loading"
+        :row-key="(row: TestCase) => row.id"
+        :empty-title="t('common.noData')"
+        :empty-description="projectId ? undefined : t('overview.noProject')"
+        empty-icon="cases"
+        :error="Boolean(error)"
+        :empty-illustration="keyword ? 'no-result' : 'no-data'"
+        flex-height
+      />
+    </div>
 
     <NPagination
       v-if="total > 0"
@@ -1364,7 +1378,11 @@ async function runCommit(): Promise<void> {
       :page="page"
       :page-count="pageCount"
       :page-slot="7"
+      :page-size="size"
+      :page-sizes="pageSizes"
+      show-size-picker
       @update:page="turnPage"
+      @update:page-size="changePageSize"
     />
 
     <section v-if="capabilities.length" class="card">

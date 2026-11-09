@@ -1,0 +1,12 @@
+CASE_COMMAND PASS
+  RF      RUN-20261109133212-b70000 total=7 coverage=100.0% with=7 none=0
+  PYTEST  RUN-20261109133212-b70001 total=7 coverage=100.0% with=7 none=0
+exit=0
+  SELFCHECK 干净数据: PASS（符合预期）
+  SELFCHECK 覆盖率不足: RED（符合预期）
+  SELFCHECK 非法来源: RED（符合预期）
+  SELFCHECK 缺一个内核: RED（符合预期）
+  SELFCHECK 历史 NULL 行: RED（符合预期）
+  SELFCHECK 抽样命令为空: RED（符合预期）
+  SELFCHECK 静态缺片段: RED（符合预期）
+SELFCHECK_RESULT FAILS=0

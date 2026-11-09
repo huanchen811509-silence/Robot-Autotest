@@ -36,6 +36,12 @@ public class DocxExporter {
     /** 失败消息超过该长度即截断（字符数）。 */
     public static final int FAILURE_MAX_CHARS = 500;
 
+    /** 导出件里命令列的长度上限：报告正文是给人读的，全文留在报告页看。 */
+    public static final int COMMAND_MAX_CHARS = 300;
+
+    /** 无命令时的导出文案（与报告页一致，不用空白冒充）。 */
+    public static final String NO_COMMAND_TEXT = "本用例未下发外部命令";
+
     /** 内部版页眉红字文案。 */
     public static final String INTERNAL_HEADER = "内部版 · 含缺失项，不可对外";
 
@@ -172,12 +178,13 @@ public class DocxExporter {
         if (cases == null || cases.isEmpty()) {
             return;
         }
-        XWPFTable table = document.createTable(cases.size() + 1, 4);
+        XWPFTable table = document.createTable(cases.size() + 1, 5);
         XWPFTableRow header = table.getRow(0);
         fillCell(header.getCell(0), "用例", true, null);
         fillCell(header.getCell(1), "结论", true, null);
         fillCell(header.getCell(2), "耗时(ms)", true, null);
-        fillCell(header.getCell(3), "失败消息", true, null);
+        fillCell(header.getCell(3), "下发命令", true, null);
+        fillCell(header.getCell(4), "失败消息", true, null);
 
         for (int i = 0; i < cases.size(); i++) {
             ReportTreeService.TreeCase test = cases.get(i);
@@ -186,10 +193,33 @@ public class DocxExporter {
             fillCell(row.getCell(1), test.verdict(), false,
                     "FAIL".equalsIgnoreCase(test.verdict()) ? "FF0000" : null);
             fillCell(row.getCell(2), Long.toString(test.durationMs()), false, null);
+            fillCell(row.getCell(3), commandText(test.commandText(), test.commandExitCode()),
+                    false, null);
             String failure = failureText(test.failureMsg());
-            fillCell(row.getCell(3), failure, false,
+            fillCell(row.getCell(4), failure, false,
                     "FAIL".equalsIgnoreCase(test.verdict()) ? "FF0000" : null);
         }
+    }
+
+    /**
+     * 导出件命令列文案（FR-v3.9-03 ③）：超长截断并注明原长度，退出码拼在命令后面。
+     *
+     * <p>三种取值语义不同，导出件里必须分得清：null = v3.9.0 之前入库、还没采集；
+     * {@code NONE} = 本来就没下发；其余 = 命令原文。留空会让评审以为「丢了」。
+     */
+    public static String commandText(String command, Integer exitCode) {
+        if (command == null) {
+            return "未采集（v3.9.0 之前的报告）";
+        }
+        if (command.isBlank() || "NONE".equalsIgnoreCase(command.trim())) {
+            return NO_COMMAND_TEXT;
+        }
+        String text = command.trim();
+        if (text.length() > COMMAND_MAX_CHARS) {
+            text = text.substring(0, COMMAND_MAX_CHARS)
+                    + "（已截断，原长度 " + command.length() + " 字符）";
+        }
+        return exitCode == null ? text : text + "　[exit=" + exitCode + "]";
     }
 
     /** 失败消息截断：超过 {@link #FAILURE_MAX_CHARS} 字符截断并注明原长度。 */

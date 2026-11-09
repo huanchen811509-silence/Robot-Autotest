@@ -29,6 +29,7 @@ import { caseSetApi, type TestSet } from '@/api/cases'
 import { deviceApi, type Device } from '@/api/asset'
 import { useAuthStore } from '@/stores/auth'
 import DataTable from '@/components/DataTable.vue'
+import { useListPageSize, type PageSize } from '@/composables/useListPageSize'
 import ErrorLineView from '@/components/ErrorLine.vue'
 import FormField from '@/components/FormField.vue'
 import StatusTag from '@/components/StatusTag.vue'
@@ -46,7 +47,8 @@ const auth = useAuthStore()
 const runs = ref<ExecutionRun[]>([])
 const total = ref(0)
 const page = ref(1)
-const size = 10
+// FR-v3.9-04：档位化 + 记忆 + 视口估算
+const { size, pageSizes } = useListPageSize()
 const stateFilter = ref('')
 const loading = ref(false)
 const error = ref<ErrorLine | null>(null)
@@ -72,7 +74,7 @@ const socketState = ref<'idle' | 'connecting' | 'open' | 'closed'>('idle')
 const logPanel = ref<HTMLElement | null>(null)
 
 const projectId = computed(() => auth.projectId ?? 0)
-const pageCount = computed(() => Math.max(1, Math.ceil(total.value / size)))
+const pageCount = computed(() => Math.max(1, Math.ceil(total.value / size.value)))
 
 const PHASE_KEYS: Record<string, string> = {
   queued: 'execution.phaseQueued',
@@ -408,7 +410,7 @@ async function load(): Promise<void> {
     const result = await executionApi.page(projectId.value, {
       state: stateFilter.value,
       page: page.value,
-      size,
+      size: size.value,
     })
     runs.value = result.items
     total.value = result.total
@@ -688,6 +690,13 @@ async function cancelRun(run: ExecutionRun): Promise<void> {
   }
 }
 
+/** 页大小切换（FR-v3.9-04）：改档位即回到第 1 页重新取数。 */
+function changePageSize(next: number): void {
+  size.value = next as PageSize
+  page.value = 1
+  void load()
+}
+
 function turnPage(next: number): void {
   if (next < 1 || next > pageCount.value) return
   page.value = next
@@ -727,7 +736,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="page">
+  <div class="page is-list">
     <div class="page-head">
       <h1 class="page-title">{{ t('menu.runs') }}</h1>
     </div>
@@ -868,17 +877,20 @@ onBeforeUnmount(() => {
       </div>
     </NModal>
 
-    <DataTable
-      :columns="columns"
-      :data="runs"
-      :loading="loading"
-      :row-key="(row: ExecutionRun) => row.id"
-      :row-class-name="rowClassName"
-      :empty-title="t('common.noData')"
-      :empty-description="projectId ? undefined : t('overview.noProject')"
-      empty-icon="runs"
-      :error="Boolean(error)"
-    />
+    <div class="list-fill">
+      <DataTable
+        :columns="columns"
+        :data="runs"
+        :loading="loading"
+        :row-key="(row: ExecutionRun) => row.id"
+        :row-class-name="rowClassName"
+        :empty-title="t('common.noData')"
+        :empty-description="projectId ? undefined : t('overview.noProject')"
+        empty-icon="runs"
+        :error="Boolean(error)"
+        flex-height
+      />
+    </div>
 
     <NPagination
       v-if="total > 0"
@@ -886,7 +898,11 @@ onBeforeUnmount(() => {
       :page="page"
       :page-count="pageCount"
       :page-slot="7"
+      :page-size="size"
+      :page-sizes="pageSizes"
+      show-size-picker
       @update:page="turnPage"
+      @update:page-size="changePageSize"
     />
 
     <div v-if="selected" class="card log-card">

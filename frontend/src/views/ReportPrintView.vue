@@ -54,6 +54,22 @@ const failedCases = computed(() => {
   return out
 })
 
+/**
+ * 命令列文案（FR-v3.9-03 ③「导出件含命令列」）：三态分开写，不留空。
+ *
+ * 打印页是给别人看的，空白单元格会被读成「这里本来就没有」，而实际可能是
+ * 「还没采集」（v3.9.0 之前的报告）——两种结论完全不同，必须写出来。
+ */
+function commandText(item: ReportCaseNode): string {
+  const raw = item.commandText
+  if (raw === null || raw === undefined) return t('reports.command.notCollected')
+  const trimmed = raw.trim()
+  if (!trimmed || trimmed.toUpperCase() === 'NONE') return t('reports.command.none')
+  return item.commandExitCode === null || item.commandExitCode === undefined
+    ? trimmed
+    : `${trimmed}（exit=${item.commandExitCode}）`
+}
+
 function metadataMissing(key: string): boolean {
   return data.value?.metadataMissing.includes(key) ?? false
 }
@@ -162,6 +178,7 @@ onUnmounted(() => {
                 <th>{{ t('reports.print.case') }}</th>
                 <th>{{ t('reports.print.verdict') }}</th>
                 <th>{{ t('reports.print.duration') }}</th>
+                <th>{{ t('reports.command.label') }}</th>
                 <th>{{ t('reports.print.failureMsg') }}</th>
               </tr>
             </thead>
@@ -172,6 +189,7 @@ onUnmounted(() => {
                   {{ item.verdict }}
                 </td>
                 <td>{{ item.durationMs }}</td>
+                <td class="print-command">{{ commandText(item) }}</td>
                 <td class="print-failure">{{ item.failureMsg ?? '' }}</td>
               </tr>
             </tbody>
@@ -294,16 +312,29 @@ h3 {
   text-align: left;
 }
 
+/* 五列（v3.9.0 追加命令列）：用例 22% / 结论 8% / 耗时 8% / 命令 32% / 失败消息 30%。 */
 .print-case-table th:nth-child(1) {
-  width: 28%;
+  width: 22%;
 }
 
 .print-case-table th:nth-child(2) {
-  width: 10%;
+  width: 8%;
 }
 
 .print-case-table th:nth-child(3) {
-  width: 12%;
+  width: 8%;
+}
+
+.print-case-table th:nth-child(4) {
+  width: 32%;
+}
+
+/* 命令用等宽字体：打印件里要能逐字对得上日志原文。 */
+.print-command {
+  font-family: 'JetBrains Mono', 'Cascadia Code', ui-monospace, monospace;
+  font-size: 9pt;
+  white-space: pre-wrap;
+  word-break: break-all;
 }
 
 .print-missing {

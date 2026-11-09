@@ -25,6 +25,7 @@ import {
 import { executionApi, type LeaseView } from '@/api/execution'
 import { useAuthStore } from '@/stores/auth'
 import DataTable from '@/components/DataTable.vue'
+import { useListPageSize, type PageSize } from '@/composables/useListPageSize'
 import ErrorLineView from '@/components/ErrorLine.vue'
 import StatusTag from '@/components/StatusTag.vue'
 import { localizeError, type ErrorLine } from '@/utils/errors'
@@ -60,7 +61,8 @@ function tabFromQuery(): Tab {
 const tab = ref<Tab>(tabFromQuery())
 const keyword = ref('')
 const page = ref(1)
-const size = 10
+// FR-v3.9-04：档位化 + 记忆 + 视口估算
+const { size, pageSizes } = useListPageSize()
 const total = ref(0)
 const loading = ref(false)
 const error = ref<ErrorLine | null>(null)
@@ -249,7 +251,7 @@ const credentialForm = reactive({
 })
 
 const projectId = computed(() => auth.projectId ?? 0)
-const pageCount = computed(() => Math.max(1, Math.ceil(total.value / size)))
+const pageCount = computed(() => Math.max(1, Math.ceil(total.value / size.value)))
 
 /**
  * 凭据在后端没有分页也没有关键词参数（`GET /credentials` 只按项目全量返回），
@@ -624,7 +626,7 @@ async function load(): Promise<void> {
           keyword: keyword.value,
           domain: domainFilter.value,
           page: page.value,
-          size,
+          size: size.value,
         }),
         deviceApi.domains(projectId.value),
         deviceApi.page(projectId.value, { page: 1, size: 200 }),
@@ -635,7 +637,7 @@ async function load(): Promise<void> {
       deviceOptions.value = options.items
     } else if (tab.value === 'links') {
       const [result, options] = await Promise.all([
-        linkApi.page(projectId.value, { keyword: keyword.value, page: page.value, size }),
+        linkApi.page(projectId.value, { keyword: keyword.value, page: page.value, size: size.value }),
         deviceApi.page(projectId.value, { page: 1, size: 200 }),
       ])
       links.value = result.items
@@ -691,6 +693,13 @@ watch(
 // 首次进入若是裸 `/assets`，把默认页签写回 URL，菜单的「设备」子项才会点亮
 if (route.query.tab !== tab.value) {
   void router.replace({ query: { ...route.query, tab: tab.value } })
+}
+
+/** 页大小切换（FR-v3.9-04）：改档位即回到第 1 页重新取数。 */
+function changePageSize(next: number): void {
+  size.value = next as PageSize
+  page.value = 1
+  void load()
 }
 
 function turnPage(next: number): void {
@@ -902,7 +911,7 @@ async function forceRelease(lease: LeaseView): Promise<void> {
 </script>
 
 <template>
-  <div class="page">
+  <div class="page is-list">
     <div class="page-head">
       <h1 class="page-title">{{ t('menu.assets') }}</h1>
     </div>
@@ -1059,18 +1068,21 @@ async function forceRelease(lease: LeaseView): Promise<void> {
       <span class="muted">{{ t('assets.credential.noEcho') }}</span>
     </form>
 
-    <DataTable
-      v-if="tab === 'devices'"
-      :columns="deviceColumns"
-      :data="devices"
-      :loading="loading"
-      :row-key="(row: Device) => row.id"
-      :empty-title="t('common.noData')"
-      :empty-description="projectId ? undefined : t('overview.noProject')"
-      empty-icon="boxes"
-      :error="Boolean(error)"
-      :empty-illustration="keyword ? 'no-result' : 'no-data'"
-    />
+    <div class="list-fill">
+      <DataTable
+        v-if="tab === 'devices'"
+        :columns="deviceColumns"
+        :data="devices"
+        :loading="loading"
+        :row-key="(row: Device) => row.id"
+        :empty-title="t('common.noData')"
+        :empty-description="projectId ? undefined : t('overview.noProject')"
+        empty-icon="boxes"
+        :error="Boolean(error)"
+        :empty-illustration="keyword ? 'no-result' : 'no-data'"
+        flex-height
+      />
+    </div>
 
     <div v-if="tab === 'devices' && portsDevice" class="card port-card">
       <div class="port-head">
@@ -1104,18 +1116,21 @@ async function forceRelease(lease: LeaseView): Promise<void> {
       </form>
     </div>
 
-    <DataTable
-      v-if="tab === 'links' && !topologyMode"
-      :columns="linkColumns"
-      :data="links"
-      :loading="loading"
-      :row-key="(row: Link) => row.id"
-      :empty-title="t('common.noData')"
-      :empty-description="projectId ? undefined : t('overview.noProject')"
-      empty-icon="boxes"
-      :error="Boolean(error)"
-      :empty-illustration="keyword ? 'no-result' : 'no-data'"
-    />
+    <div class="list-fill">
+      <DataTable
+        v-if="tab === 'links' && !topologyMode"
+        :columns="linkColumns"
+        :data="links"
+        :loading="loading"
+        :row-key="(row: Link) => row.id"
+        :empty-title="t('common.noData')"
+        :empty-description="projectId ? undefined : t('overview.noProject')"
+        empty-icon="boxes"
+        :error="Boolean(error)"
+        :empty-illustration="keyword ? 'no-result' : 'no-data'"
+        flex-height
+      />
+    </div>
 
     <div v-if="tab === 'links' && topologyMode" class="topology">
       <p v-if="links.length === 0" class="muted">{{ t('assets.link.topologyEmpty') }}</p>
@@ -1142,34 +1157,40 @@ async function forceRelease(lease: LeaseView): Promise<void> {
       </div>
     </div>
 
-    <DataTable
-      v-if="tab === 'credentials'"
-      :columns="credentialColumns"
-      :data="credentialRows"
-      :loading="loading"
-      :row-key="(row: Credential) => row.id"
-      :empty-title="t('common.noData')"
-      :empty-description="projectId ? undefined : t('overview.noProject')"
-      empty-icon="boxes"
-      :error="Boolean(error)"
-      :empty-illustration="keyword ? 'no-result' : 'no-data'"
-    />
+    <div class="list-fill">
+      <DataTable
+        v-if="tab === 'credentials'"
+        :columns="credentialColumns"
+        :data="credentialRows"
+        :loading="loading"
+        :row-key="(row: Credential) => row.id"
+        :empty-title="t('common.noData')"
+        :empty-description="projectId ? undefined : t('overview.noProject')"
+        empty-icon="boxes"
+        :error="Boolean(error)"
+        :empty-illustration="keyword ? 'no-result' : 'no-data'"
+        flex-height
+      />
+    </div>
 
     <!--
       租约只读（FR-v0.4-09）：搜索框与「新建」在这一页无意义——后端没有关键词参数，
       租约也只能由执行产生，所以工具栏里两个控件都隐掉，只留刷新。
     -->
-    <DataTable
-      v-if="tab === 'leases'"
-      :columns="leaseColumns"
-      :data="leases"
-      :loading="loading"
-      :row-key="(row: LeaseView) => row.resourceKey"
-      :empty-title="t('common.noData')"
-      :empty-description="projectId ? t('assets.lease.emptyHint') : t('overview.noProject')"
-      empty-icon="boxes"
-      :error="Boolean(error)"
-    />
+    <div class="list-fill">
+      <DataTable
+        v-if="tab === 'leases'"
+        :columns="leaseColumns"
+        :data="leases"
+        :loading="loading"
+        :row-key="(row: LeaseView) => row.resourceKey"
+        :empty-title="t('common.noData')"
+        :empty-description="projectId ? t('assets.lease.emptyHint') : t('overview.noProject')"
+        empty-icon="boxes"
+        :error="Boolean(error)"
+        flex-height
+      />
+    </div>
 
     <NPagination
       v-if="tab !== 'credentials' && tab !== 'leases' && total > 0"
@@ -1177,6 +1198,10 @@ async function forceRelease(lease: LeaseView): Promise<void> {
       :page="page"
       :page-count="pageCount"
       :page-slot="7"
+      :page-size="size"
+      :page-sizes="pageSizes"
+      show-size-picker
+      @update:page-size="changePageSize"
       @update:page="turnPage"
     />
   </div>

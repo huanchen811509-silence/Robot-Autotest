@@ -23,15 +23,33 @@ public record CaseNode(String name,
                        String failureMessage,
                        List<KeywordNode> keywords,
                        long logOffset,
-                       String logSpan) {
+                       String logSpan,
+                       String commandText,
+                       String commandSource,
+                       Integer commandExitCode) {
+
+    /** 无命令时的显式取值：报告页据此显示「本用例未下发外部命令」。 */
+    public static final String NO_COMMAND = "NONE";
 
     public CaseNode {
         keywords = keywords == null ? List.of() : List.copyOf(keywords);
+        // 三列都补齐成显式值：NULL 会被读成「还没采集」，而 NONE 是「本来就没有」。
+        // 历史数据才会是 NULL（v3.9.0 之前入库的行），新写入一律显式。
+        commandText = commandText == null || commandText.isBlank() ? NO_COMMAND : commandText;
+        commandSource = commandSource == null || commandSource.isBlank() ? NO_COMMAND : commandSource;
     }
 
     /** 兼容 RPT-01 的五参写法（无日志定位时使用）。 */
     public CaseNode(String name, String status, long durationMs,
                     String failureMessage, List<KeywordNode> keywords) {
-        this(name, status, durationMs, failureMessage, keywords, -1L, null);
+        this(name, status, durationMs, failureMessage, keywords, -1L, null,
+                NO_COMMAND, NO_COMMAND, null);
+    }
+
+    /** 兼容 RPT-02 的七参写法（v3.9.0 之前没有命令三列）。 */
+    public CaseNode(String name, String status, long durationMs, String failureMessage,
+                    List<KeywordNode> keywords, long logOffset, String logSpan) {
+        this(name, status, durationMs, failureMessage, keywords, logOffset, logSpan,
+                NO_COMMAND, NO_COMMAND, null);
     }
 }

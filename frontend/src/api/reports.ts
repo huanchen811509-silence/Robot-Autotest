@@ -53,13 +53,27 @@ export interface ReportKeywordNode {
   children: ReportKeywordNode[]
 }
 
-/** 用例节点；caseKey 是日志接口的 testKey。 */
+/**
+ * 用例节点；caseKey 是日志接口的 testKey。
+ *
+ * `commandText` 三列是 v3.9.0 追加（FR-v3.9-02/03），语义必须分清：
+ * - `null`：v3.9.0 之前入库的报告，**还没采集**；
+ * - `'NONE'`：本用例本来就没下发外部命令；
+ * - 其余：命令原文。
+ * 前端把前两种显示成不同文案，不能都当空白。
+ */
 export interface ReportCaseNode {
   caseKey: string
   name: string
   verdict: string
   durationMs: number
   failureMsg: string | null
+  /** 命令原文 / `NONE` / null（历史未采集）。 */
+  commandText: string | null
+  /** 来源：RF_KEYWORD / PYTEST_MARK / STDOUT / NONE / null。 */
+  commandSource: string | null
+  /** 退出码，未知为 null。 */
+  commandExitCode: number | null
   keywords: ReportKeywordNode[]
 }
 

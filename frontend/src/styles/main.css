@@ -10,6 +10,18 @@ body {
   font-family: var(--font-sans);
 }
 
+/* 表单控件默认不继承字体（UA 用 Arial）：中文按钮/输入框会比正文换一套字，
+ * 在没有系统中文字体的环境（无头 Chrome 截图、精简容器）里直接渲染成空白方块。
+ * 组件里各写一遍 font: inherit 容易漏，统一在这里兜底。 */
+button,
+input,
+select,
+textarea,
+optgroup {
+  font-family: inherit;
+  font-size: inherit;
+}
+
 /* RUN_ID / IP / 耗时等需逐位对齐的字段；tabular-nums 避免数字宽度跳动 */
 .mono,
 .mono td {
@@ -148,6 +160,13 @@ body {
 
 .app-body {
   padding: 20px;
+  /* 与 .app-main 的 flex 列配合：内容区成为可分配的确定高度，
+     列表页才能用 flex:1 铺满（见 .page.is-list）。非列表页 flex-basis:auto，
+     内容多高就多高，不受影响。 */
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   /* 内容区最大宽度（D13）：1920 屏上原来表格被拉成 1900px 宽，一行要横着扫两遍才读完。
      1440 是阅读舒适上限，超出部分留白居中，而不是把内容摊满。 */
   width: 100%;
@@ -810,6 +829,41 @@ textarea:focus-visible {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus-ring) 24%, transparent);
 }
 
+/* ---- 下拉控件主题兜底（v3.9.0 / FR-v3.9-01 / ADR-39-01） ----
+ * 原生 <select> 一旦继承到透明底，浏览器在暗色主题下会把弹层回落成默认亮色
+ * （白底 + 浅灰字），实测 10/10 个 select 全部中招。
+ * 这里用元素选择器统一兜底：不透明面板底色 + 显式 color-scheme（继承根节点，
+ * 保证原生弹层跟随明暗），各页面不再各自写，未来新增的 select 自动受约束。
+ * 不用 !important：页面若确有特殊视觉需求，仍可用更具体的类覆盖。 */
+select {
+  background-color: var(--panel);
+  color: var(--text);
+  /* 根节点已按 data-theme 声明 color-scheme，这里显式继承并把弹层钉在同侧 */
+  color-scheme: inherit;
+}
+
+/* <option> 必须显式给前景与背景：Chromium 里 option 不认继承色，
+ * 弹层底色取 option 自身，不写就会落到 UA 默认白底 + 系统字色。 */
+select option,
+select optgroup {
+  background-color: var(--panel);
+  color: var(--text);
+}
+
+/* 选中项单独钉死：不写的话 Chromium 会按系统高亮色现算（实测 rgb(34,49,66)，
+ * 对比 4.67:1 刚好压线），换个浏览器版本就可能跌破 4.5。用主题令牌锁住。 */
+select option:checked {
+  background-color: var(--surface-selected);
+  color: var(--text);
+}
+
+/* 禁用态：保持可辨识的低对比，但不低于非文本元素 3:1 的口径 */
+select:disabled,
+select option:disabled {
+  background-color: var(--surface-hover);
+  color: var(--text-muted);
+}
+
 /* ---- 侧栏导航 ---- */
 
 .app-nav-item {
@@ -1050,6 +1104,32 @@ textarea:focus-visible {
 .page { grid-template-columns: minmax(0, 1fr); }
 .page > * { min-width: 0; }
 
+/* ---- 列表页撑满工作区（v3.9.0 / FR-v3.9-04 / ADR-39-05） ----
+ * .app-main 是高度确定的内容区（grid 行 minmax(0,1fr) + 自身 overflow-y:auto）。
+ * 列表页用 flex 列铺满它，表格区吃剩余空间、分页条自然落在视口底部——
+ * 记录少时空白被表格吃掉，而不是堆在分页条下面（实测 /cases 曾空 337px）。
+ * 只对显式标了 .is-list 的页面生效：表单页/看板页有自己的纵向节奏，不该被拉伸。 */
+.page.is-list {
+  display: flex;
+  flex-direction: column;
+  /* 作为 .app-body 的 flex 子项吃掉剩余高度；min-height:0 才能让内部表格自己滚，
+     否则 min-height:auto 会把整个内容区顶高、整页滚动、空白照旧留着。 */
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.page.is-list > .list-fill {
+  flex: 1 1 auto;
+  min-height: 240px;          /* 空态也不塌陷：再低就成了「一条线」 */
+  display: flex;
+  flex-direction: column;
+}
+
+.page.is-list > .list-fill > .data-table {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 /* ============ v2.3 / UI-04：顶栏四段 + 28px 栅格 ============ */
 /* 这一段解决的是「10 个元素等距平铺、读不出亲疏关系」：旧顶栏统一 gap:10px，
    而  在样式里**没有任何定义**——模板靠双写 class="app-project app-lang"
@@ -1127,7 +1207,9 @@ textarea:focus-visible {
   appearance: none;
   max-width: 140px;
   min-width: 0;
-  background: transparent;
+  /* v3.9.0 / FR-v3.9-01：原来写 transparent，暗色下弹层会回落成白底。
+     父级 .app-project 本身就是 var(--panel)，改成同色不改变观感。 */
+  background-color: var(--panel);
   border: none;
   color: inherit;
   font: inherit;
@@ -1155,7 +1237,8 @@ textarea:focus-visible {
 
 .app-lang-select {
   appearance: none;
-  background: transparent;
+  /* 同上：透明底会让暗色弹层回落白底 */
+  background-color: var(--panel);
   border: none;
   color: inherit;
   font: inherit;

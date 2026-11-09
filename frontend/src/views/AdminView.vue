@@ -20,6 +20,7 @@ import {
 } from '@/api/iam'
 import { useAuthStore } from '@/stores/auth'
 import DataTable from '@/components/DataTable.vue'
+import { useListPageSize, type PageSize } from '@/composables/useListPageSize'
 import ErrorLineView from '@/components/ErrorLine.vue'
 import StatusTag from '@/components/StatusTag.vue'
 import { localizeError, type ErrorLine } from '@/utils/errors'
@@ -38,7 +39,8 @@ const users = ref<UserSummary[]>([])
 const roles = ref<Role[]>([])
 const keyword = ref('')
 const page = ref(1)
-const size = 10
+// FR-v3.9-04：档位化 + 记忆 + 视口估算
+const { size, pageSizes } = useListPageSize()
 const total = ref(0)
 const loading = ref(false)
 const error = ref<ErrorLine | null>(null)
@@ -69,7 +71,7 @@ const selectedProject = computed(
   () => auth.projects.find((p) => p.id === memberProjectId.value) ?? null,
 )
 
-const pageCount = computed(() => Math.max(1, Math.ceil(total.value / size)))
+const pageCount = computed(() => Math.max(1, Math.ceil(total.value / size.value)))
 
 const roleOptions = computed(() =>
   roles.value.map((role) => ({ label: `${role.code} · ${role.name}`, value: role.id })))
@@ -322,7 +324,7 @@ const roleColumns = computed<DataTableColumns<Role>>(() => [
 async function loadUsers(): Promise<void> {
   loading.value = true
   try {
-    const result = await userApi.page({ keyword: keyword.value, page: page.value, size })
+    const result = await userApi.page({ keyword: keyword.value, page: page.value, size: size.value })
     users.value = result.items
     total.value = result.total
   } catch (e) {
@@ -356,6 +358,13 @@ onMounted(async () => {
     await loadMembers()
   }
 })
+
+/** 页大小切换（FR-v3.9-04）：改档位即回到第 1 页重新取数。 */
+function changePageSize(next: number): void {
+  size.value = next as PageSize
+  page.value = 1
+  void loadUsers()
+}
 
 function turnPage(next: number): void {
   if (next < 1 || next > pageCount.value) return
@@ -597,6 +606,10 @@ async function removeMember(member: ProjectMember): Promise<void> {
         :page="page"
         :page-count="pageCount"
         :page-slot="7"
+        :page-size="size"
+        :page-sizes="pageSizes"
+        show-size-picker
+        @update:page-size="changePageSize"
         @update:page="turnPage"
       />
     </section>

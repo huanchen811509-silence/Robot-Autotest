@@ -3,6 +3,7 @@ package com.qa.autotest.infrastructure;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.qa.autotest.application.report.CaseCommandExtractor;
 import com.qa.autotest.application.repository.ReportRepository;
 import com.qa.autotest.application.repository.RunMetadataRepository;
 import com.qa.autotest.common.BusinessException;
@@ -68,8 +69,9 @@ public class ReportRepositoryJdbc implements ReportRepository {
 
     private static final String INSERT_TEST_RESULT = """
             INSERT INTO test_result (run_id, case_id, case_key, round_no, verdict,
-                                     duration_ms, failure_msg, log_offset, log_span, failure_kind)
-            VALUES (?, NULL, ?, 1, ?, ?, ?, ?, ?, NULL)
+                                     duration_ms, failure_msg, log_offset, log_span, failure_kind,
+                                     command_text, command_source, command_exit_code)
+            VALUES (?, NULL, ?, 1, ?, ?, ?, ?, ?, NULL, ?, ?, ?)
             """;
 
     private static final String INSERT_KEYWORD_RESULT = """
@@ -187,6 +189,11 @@ public class ReportRepositoryJdbc implements ReportRepository {
             ps.setString(5, test.failureMessage());
             ps.setObject(6, test.logOffset() < 0 ? null : test.logOffset(), Types.BIGINT);
             ps.setString(7, test.logSpan());
+            // v3.9.0 / FR-v3.9-02：命令原文按 4KB 截断（CaseCommandExtractor 已截过，
+            // 这里再按列口径兜一次，防止别处绕过提取器直接构造 CaseNode 写超长内容）
+            ps.setString(8, fit(test.commandText(), CaseCommandExtractor.MAX_COMMAND_LENGTH + 32));
+            ps.setString(9, fit(test.commandSource(), 24));
+            ps.setObject(10, test.commandExitCode(), Types.INTEGER);
             return ps;
         }, keyHolder);
         Long testResultId = keyHolder.getKey() == null ? null : keyHolder.getKey().longValue();

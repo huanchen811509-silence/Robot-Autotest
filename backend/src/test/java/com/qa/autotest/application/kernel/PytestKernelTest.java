@@ -1,6 +1,7 @@
 package com.qa.autotest.application.kernel;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -132,5 +133,31 @@ class PytestKernelTest {
         NormalizedRun run = kernel.normalize(dir, "RUN-PY-3");
         assertEquals("PY-B2-003", run.metadata().get("CASE_ID"));
         assertTrue(!run.exportable());
+    }
+
+    /**
+     * FR-v3.9-02：命令从 **stage** 里的 stdout 取，不是用例顶层。
+     *
+     * json-report 把输出放在 setup/call/teardown 三个 stage 对象里，只读顶层会得到空串；
+     * 这条用例把命令刻意放在 call 段，就是钉住「必须递归到 stage」这一点。
+     */
+    @Test
+    void commandExtractedFromStageStdout(@TempDir Path dir) throws Exception {
+        String json = """
+                {"tests":[
+                  {"nodeid":"t.py::test_cmd","outcome":"passed","duration":0.1,
+                   "call":{"stdout":"$ iperf3 -c 192.0.2.10 -t 5\\nexit=0\\n","stderr":""}},
+                  {"nodeid":"t.py::test_plain","outcome":"passed","duration":0.1,
+                   "call":{"stdout":"no command here\\n"}}
+                ]}""";
+        Files.writeString(dir.resolve("pytest-report.json"), json);
+        NormalizedRun run = kernel.normalize(dir, "RUN-PY-CMD");
+
+        assertEquals("iperf3 -c 192.0.2.10 -t 5", run.cases().get(0).commandText());
+        assertEquals("STDOUT_EXTRACT", run.cases().get(0).commandSource());
+        assertEquals(0, run.cases().get(0).commandExitCode(), "exit=0 是有效退出码，不是未知");
+        assertEquals("NONE", run.cases().get(1).commandText(), "无命令必须显式 NONE");
+        assertEquals("NONE", run.cases().get(1).commandSource());
+        assertNull(run.cases().get(1).commandExitCode());
     }
 }

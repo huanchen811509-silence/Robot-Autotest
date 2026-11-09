@@ -52,7 +52,8 @@ class ReportLogServiceTest {
                 .getResource("fixtures/output-xml/pabot-merged.xml").toURI());
         read = new FakeReadRepository();
         service = new ReportLogService(read, (projectId, runId) -> fixture,
-                new LogXmlReader(), new AccessControlService(adminUsers(), emptyProjects()));
+                new LogXmlReader(), new JsonlLogReader(new com.fasterxml.jackson.databind.ObjectMapper()),
+                new AccessControlService(adminUsers(), emptyProjects()));
     }
 
     @AfterEach
