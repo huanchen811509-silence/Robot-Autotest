@@ -2,9 +2,11 @@ package com.qa.autotest.application.report;
 
 import com.qa.autotest.application.repository.ReportTemplateRepository;
 import com.qa.autotest.application.repository.TestReportRepository;
+import com.qa.autotest.application.repository.TestSetRepository;
 import com.qa.autotest.common.BusinessException;
 import com.qa.autotest.common.ErrorCode;
 import com.qa.autotest.domain.report.ReportSnapshot;
+import com.qa.autotest.domain.report.ReportSourceType;
 import com.qa.autotest.domain.report.ReportState;
 import com.qa.autotest.domain.report.ReportTemplate;
 import com.qa.autotest.domain.report.TestReport;
@@ -25,16 +27,19 @@ public class TestReportService {
     private final ReportExportService exports;
     private final ReportQueryService queries;
     private final ReportTemplateRepository templates;
+    private final TestSetRepository caseSets;
 
     public TestReportService(TestReportRepository repository, ReportSnapshotService snapshots,
                              ReportViewRenderer renderer, ReportExportService exports,
-                             ReportQueryService queries, ReportTemplateRepository templates) {
+                             ReportQueryService queries, ReportTemplateRepository templates,
+                             TestSetRepository caseSets) {
         this.repository = repository;
         this.snapshots = snapshots;
         this.renderer = renderer;
         this.exports = exports;
         this.queries = queries;
         this.templates = templates;
+        this.caseSets = caseSets;
     }
 
     public TestReport find(long id) {
@@ -50,10 +55,48 @@ public class TestReportService {
         if (runId == null || runId.isBlank()) {
             throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "runId 不能为空");
         }
+        return createInternal(projectId, runId, ReportSourceType.RUN, null, title);
+    }
+
+    /**
+     * 按用例集建草稿（FR-v3.10-03）。
+     *
+     * <p>「按用例集」与「按执行记录」在执行层没有区别：这里先把意图解析成**唯一一条 run**
+     * （该集最近一次，或用户指定的那一次），后续建快照 / 冻结 / 渲染完全复用旧链路。
+     * 这样做的直接好处是——判据「旧路径零回归」不需要另写回归套件，两条路径共用同一段代码。
+     *
+     * <p>三种失败都要给出可执行提示，而不是 500：
+     * ① 用例集不存在 → 404（可能已被删）；
+     * ② 用例集从未执行过 → 409「先跑一次」（建报告要有数据可写，不能建空报告）；
+     * ③ 指定的 run 不属于该集 → 400（否则报告标题写着 A 集、内容来自 B 集）。
+     */
+    public TestReport createFromCaseSet(long projectId, long caseSetId, String preferredRunId,
+                                        String title) {
+        caseSets.find(projectId, caseSetId).orElseThrow(
+                () -> new BusinessException(ErrorCode.NOT_FOUND, "用例集不存在: " + caseSetId));
+        String runId = resolveRun(projectId, caseSetId, preferredRunId);
+        return createInternal(projectId, runId, ReportSourceType.CASE_SET, caseSetId, title);
+    }
+
+    private String resolveRun(long projectId, long caseSetId, String preferredRunId) {
+        if (preferredRunId != null && !preferredRunId.isBlank()) {
+            if (!caseSets.containsRun(projectId, caseSetId, preferredRunId)) {
+                throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                        "执行记录 " + preferredRunId + " 不属于该用例集");
+            }
+            return preferredRunId;
+        }
+        return caseSets.latestRunId(projectId, caseSetId).orElseThrow(
+                () -> new BusinessException(ErrorCode.CONFLICT,
+                        "该用例集还没有执行记录，先跑一次再建报告"));
+    }
+
+    private TestReport createInternal(long projectId, String runId, ReportSourceType sourceType,
+                                      Long caseSetId, String title) {
         int version = repository.maxVersion(projectId, runId) + 1;
         ReportSnapshot snapshot = snapshots.build(queries.detail(projectId, runId), version,
                 defaultTemplate(projectId));
-        long id = repository.insert(projectId, runId,
+        long id = repository.insert(projectId, runId, sourceType, caseSetId,
                 title == null || title.isBlank() ? "报告 " + runId : title, version, snapshot);
         repository.audit(id, "CREATE", null, ReportState.DRAFT.name(), null);
         return find(id);
@@ -64,11 +107,16 @@ public class TestReportService {
      *
      * <p>创建（DRAFT）时也会按当次默认模板物化一份，但那份只是草稿预览；
      * 口径以冻结这一份为准——只有冻结件才是对外交付物。
+     *
+     * <p>版本号按 **run 全局**分配（{@code maxVersion + 1}），而不是「本报告版本 + 1」：
+     * 唯一键是 {@code uk_report_run_version (project_id, run_id, version)}，同一个 run 上
+     * 可以有多份报告（按执行记录建的、按用例集建的）。用「本报告 +1」时，先冻结第 1 份
+     * 会占掉第 2 份刚用过的版本号，直接撞唯一键 500（2026-11-09 契约验证实测到）。
      */
     public TestReport freeze(long id) {
         TestReport report = find(id);
         require(report.state().canTransitionTo(ReportState.FROZEN), "只有 DRAFT 可以冻结");
-        int version = report.version() + 1;
+        int version = repository.maxVersion(report.projectId(), report.runId()) + 1;
         ReportSnapshot snapshot = snapshots.build(
                 queries.detail(report.projectId(), report.runId()), version,
                 defaultTemplate(report.projectId()));

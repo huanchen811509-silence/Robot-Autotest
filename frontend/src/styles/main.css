@@ -228,6 +228,13 @@ optgroup {
   font-size: 13px;
 }
 
+/* v3.10 计划页冲突区收起提示：有冲突但面板收起时，用告警色把数字说出来，
+   免得「收起来」变成「看不见」。 */
+.text-warn {
+  color: var(--warn);
+  font-size: 13px;
+}
+
 /* ---- v0.2 台账页 ---- */
 
 .app-header-right {

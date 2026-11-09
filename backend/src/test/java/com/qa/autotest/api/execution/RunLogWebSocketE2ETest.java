@@ -73,6 +73,11 @@ class RunLogWebSocketE2ETest {
             return null;
         }
 
+        /** 丢弃已收帧：把「补发 / 探针」与「待测的增量批次」隔开。 */
+        void clear() {
+            frames.clear();
+        }
+
         List<JsonNode> parsed(ObjectMapper mapper) {
             List<JsonNode> out = new ArrayList<>();
             for (String frame : frames) {
@@ -146,6 +151,14 @@ class RunLogWebSocketE2ETest {
         String runId = "RUN-WS-02";
         Collector collector = connect(runId);
         await("连接建立后订阅应就绪", () -> collector.socket != null && !collector.socket.isOutputClosed());
+
+        // 客户端 WS 已连上 != 服务端 subscribe 已完成。若此刻就发 120 行，服务端随后的
+        // reconnect(200) 会把它们当「补发」一帧推回（补发帧最多 200 行），判据就变成
+        // 在验补发而不是验增量 —— 负载高时偶发「单帧 120 行」假红（B5 门禁实测）。
+        // 先发一行探针并等它真正到达，确认订阅与发送水位都就绪，再清空已收帧专测增量。
+        logs.publish(runId, "stdout", "ws-probe-ready");
+        await("探针行到达说明服务端订阅已就绪", () -> collector.lineCount(json) >= 1);
+        collector.clear();
 
         for (int i = 1; i <= 120; i++) {
             logs.publish(runId, "stdout", "inc-" + i);

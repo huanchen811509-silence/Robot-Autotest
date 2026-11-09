@@ -40,4 +40,21 @@ public interface TestSetRepository {
     void reorder(long projectId, long testSetId, List<Long> caseIds, Long operatorId);
 
     boolean codeExists(long projectId, String setCode, Long excludeId);
+
+    /**
+     * 该用例集**最近一次执行**的 runId（FR-v3.10-03）。
+     *
+     * <p>排序键 `COALESCE(finished_at, started_at, enqueued_at)` 与前端 `RunPicker` 一致：
+     * 运行中的 run 还没有结束时间，但用户心里的「最近一次」是它，不是上一条跑完的。
+     * 用例集从未执行过时返回 {@link Optional#empty()}，由调用方给可读提示。
+     */
+    Optional<String> latestRunId(long projectId, long testSetId);
+
+    /**
+     * 指定 run 是否属于该用例集（FR-v3.10-03 判据②）。
+     *
+     * <p>用于「用户指定一次执行」这条路径：不校验就会出现「按 A 集建报告、实际取到 B 集的 run」，
+     * 报告标题写着 A 集、内容是 B 集，事后无法从数据上发现。
+     */
+    boolean containsRun(long projectId, long testSetId, String runId);
 }

@@ -1,0 +1,225 @@
+{
+  "generatedAt": "2026-11-09T07:50:19.524Z",
+  "app": "http://localhost:8001",
+  "projectId": "29",
+  "checks": [
+    {
+      "name": "采集页命令白名单 10 类可见",
+      "ok": true,
+      "detail": "实际 10 条"
+    },
+    {
+      "name": "采集须二次确认（点一次不写、出现确认态）",
+      "ok": true,
+      "detail": "confirming=true 写请求=0"
+    },
+    {
+      "name": "建快照须二次确认（点一次不写）",
+      "ok": true,
+      "detail": "写请求=0"
+    },
+    {
+      "name": "principles 打到自己的真实数据接口",
+      "ok": true,
+      "detail": "GET 7 条，期望接口全部命中"
+    },
+    {
+      "name": "principles 关键控件可见",
+      "ok": true,
+      "detail": "1/1 个必现控件可见"
+    },
+    {
+      "name": "principles 加载期不写",
+      "ok": true,
+      "detail": "0 个写请求"
+    },
+    {
+      "name": "principles 只读口径（无执行/采集类写路径）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "records 打到自己的真实数据接口",
+      "ok": true,
+      "detail": "GET 6 条，期望接口全部命中"
+    },
+    {
+      "name": "records 关键控件可见",
+      "ok": true,
+      "detail": "1/1 个必现控件可见"
+    },
+    {
+      "name": "records 加载期不写",
+      "ok": true,
+      "detail": "0 个写请求"
+    },
+    {
+      "name": "records 只读口径（无执行/采集类写路径）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "recover 打到自己的真实数据接口",
+      "ok": true,
+      "detail": "GET 6 条，期望接口全部命中"
+    },
+    {
+      "name": "recover 关键控件可见",
+      "ok": true,
+      "detail": "3/3 个必现控件可见"
+    },
+    {
+      "name": "recover 加载期不写",
+      "ok": true,
+      "detail": "0 个写请求"
+    },
+    {
+      "name": "recover 只读口径（无执行/采集类写路径）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "只读找回检索只发 GET /search，不产生新 run",
+      "ok": true,
+      "detail": "GET /search=true 写请求=0"
+    }
+  ],
+  "pages": [
+    {
+      "page": "principles",
+      "path": "/maintenance/principles",
+      "dom": {
+        "principles-settings": true,
+        "principles-empty": false,
+        "principles-failed": false,
+        "path": "/maintenance/principles",
+        "bodyHasEmpty": false,
+        "commandRows": 0,
+        "tableRows": 11
+      },
+      "requests": [
+        {
+          "method": "GET",
+          "url": "/api/ai/state?projectId=29"
+        },
+        {
+          "method": "GET",
+          "url": "/api/notifications/unread-count?projectId=29"
+        },
+        {
+          "method": "GET",
+          "url": "/api/auth/me"
+        },
+        {
+          "method": "GET",
+          "url": "/api/projects"
+        },
+        {
+          "method": "GET",
+          "url": "/api/projects/29/settings"
+        },
+        {
+          "method": "GET",
+          "url": "/api/system/settings"
+        },
+        {
+          "method": "GET",
+          "url": "/api/users/me/preferences"
+        }
+      ],
+      "writes": [],
+      "getCount": 7
+    },
+    {
+      "page": "records",
+      "path": "/maintenance/records",
+      "dom": {
+        "records-scanned": true,
+        "records-empty": true,
+        "records-failed": false,
+        "path": "/maintenance/records",
+        "bodyHasEmpty": true,
+        "commandRows": 0,
+        "tableRows": 0
+      },
+      "requests": [
+        {
+          "method": "GET",
+          "url": "/api/ai/state?projectId=29"
+        },
+        {
+          "method": "GET",
+          "url": "/api/notifications/unread-count?projectId=29"
+        },
+        {
+          "method": "GET",
+          "url": "/api/auth/me"
+        },
+        {
+          "method": "GET",
+          "url": "/api/projects"
+        },
+        {
+          "method": "GET",
+          "url": "/api/audit?projectId=29&size=50"
+        },
+        {
+          "method": "GET",
+          "url": "/api/users/me/preferences"
+        }
+      ],
+      "writes": [],
+      "getCount": 6
+    },
+    {
+      "page": "recover",
+      "path": "/maintenance/recover",
+      "dom": {
+        "recover-keyword": true,
+        "recover-search": true,
+        "recover-hint": true,
+        "recover-empty": false,
+        "recover-failed": false,
+        "path": "/maintenance/recover",
+        "bodyHasEmpty": false,
+        "commandRows": 0,
+        "tableRows": 20
+      },
+      "requests": [
+        {
+          "method": "GET",
+          "url": "/api/ai/state?projectId=29"
+        },
+        {
+          "method": "GET",
+          "url": "/api/notifications/unread-count?projectId=29"
+        },
+        {
+          "method": "GET",
+          "url": "/api/auth/me"
+        },
+        {
+          "method": "GET",
+          "url": "/api/projects"
+        },
+        {
+          "method": "GET",
+          "url": "/api/search?q=RUN-&projectId=29&scope=current&types=run&limit=20"
+        },
+        {
+          "method": "GET",
+          "url": "/api/users/me/preferences"
+        }
+      ],
+      "writes": [],
+      "getCount": 6,
+      "searchRequests": [
+        {
+          "method": "GET",
+          "url": "/api/search?q=RUN-2026&projectId=29&scope=current&types=run&limit=20"
+        }
+      ]
+    }
+  ],
+  "fails": 0
+}

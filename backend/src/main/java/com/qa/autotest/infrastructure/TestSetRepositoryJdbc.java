@@ -290,4 +290,30 @@ public class TestSetRepositoryJdbc implements TestSetRepository {
                 excludeId == null ? -1L : excludeId);
         return count != null && count > 0;
     }
+
+    @Override
+    public Optional<String> latestRunId(long projectId, long testSetId) {
+        // 排序键与前端 RunPicker / 报告下拉一致：运行中的 run 没有 finished_at 也要排在前面，
+        // 否则「最近一次」会指向一条更早的已完成 run，用户选完发现内容不对。
+        // 尾随 id DESC 只为让同毫秒的两条有确定顺序（否则同一请求两次可能给出不同结果）。
+        String sql = """
+                SELECT run_id FROM run
+                 WHERE project_id = ? AND test_set_id = ?
+                 ORDER BY COALESCE(finished_at, started_at, enqueued_at) DESC, id DESC
+                 LIMIT 1
+                """;
+        TenantGuard.requireProjectScope(sql, "run");
+        return jdbc.queryForList(sql, String.class, projectId, testSetId).stream().findFirst();
+    }
+
+    @Override
+    public boolean containsRun(long projectId, long testSetId, String runId) {
+        String sql = """
+                SELECT COUNT(*) FROM run
+                 WHERE project_id = ? AND test_set_id = ? AND run_id = ?
+                """;
+        TenantGuard.requireProjectScope(sql, "run");
+        Integer count = jdbc.queryForObject(sql, Integer.class, projectId, testSetId, runId);
+        return count != null && count > 0;
+    }
 }

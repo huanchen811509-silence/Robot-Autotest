@@ -1,0 +1,9 @@
+[PASS] 第 1 次真实采集 HTTP 200，id=6
+[PASS] 第 2 次真实采集 HTTP 200，id=7
+[PASS] 第 1 份真实快照 HTTP 200，id=5（环境 V311-PROBE-20261109154902）
+[PASS] 第 2 份真实快照 HTTP 200，id=6（环境 V311-PROBE-20261109154902）
+[PASS] 快照列表查到 2 份（按环境名）
+[PASS] 两份真实快照 diff 出 1 项变化（capturedAt）
+[PASS] 环境清单接口列出新环境（profiles GET 生效）
+[fixtures] -> docs/evidence/v3.11.0/EW311-02/fixtures.json
+RESULT PASS fails=0

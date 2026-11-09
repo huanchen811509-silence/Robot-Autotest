@@ -2,6 +2,7 @@ package com.qa.autotest.api.asset;
 
 import com.qa.autotest.application.asset.EnvProfileService;
 import com.qa.autotest.common.ApiResponse;
+import com.qa.autotest.domain.asset.EnvProfileSummary;
 import com.qa.autotest.domain.asset.EnvSnapshot;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,6 +29,18 @@ public class EnvController {
 
     public EnvController(EnvProfileService profiles) {
         this.profiles = profiles;
+    }
+
+    /**
+     * 环境名清单（FR-v3.11-02）。
+     *
+     * <p>放在 `/profiles` 而不是 `/`：根路径的 GET 已经被「按 name 查快照列表」占用，
+     * 不能靠 `name` 参数有没有传来切换语义——那会让「忘了传参」变成一个静默的
+     * 不同接口。它是纯 GET，不带任何写路径。
+     */
+    @GetMapping("/profiles")
+    public ApiResponse<List<EnvProfileSummary>> environments(@PathVariable long projectId) {
+        return ApiResponse.ok(profiles.environments(projectId));
     }
 
     @GetMapping

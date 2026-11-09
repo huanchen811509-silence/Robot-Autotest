@@ -1,0 +1,49 @@
+[drill] 环境 DB_NAME=robot_dev 不是集成库，本次改用 robot_it
+[drill] target=robot@127.0.0.1:3306/robot_it migration=V11_26__v3_11_host_inventory
+[drill] 模式=建表 目标表=device_host_spec（比全部列）
+[drill] 提示：mysql 的 'Using a password' 是既有告警，可忽略
+===== 0. 演练前 =====
+mysql: [Warning] Using a password on the command line interface can be insecure.
+id	bigint	NO
+project_id	bigint	NO
+device_id	bigint	YES
+host	varchar(128)	NO
+collected_at	datetime(3)	NO
+status	varchar(16)	NO
+spec_json	longtext	NO
+spec_hash	char(64)	YES
+nic_count	int	NO
+roce_ports	int	NO
+roce_max_gbps	int	YES
+created_by	bigint	YES
+created_at	datetime(3)	NO
+mysql: [Warning] Using a password on the command line interface can be insecure.
+mysql: [Warning] Using a password on the command line interface can be insecure.
+[drill] device_host_spec 行数=0
+===== 1. down =====
+mysql: [Warning] Using a password on the command line interface can be insecure.
+mysql: [Warning] Using a password on the command line interface can be insecure.
+[drill] down OK；残留结构（应为空）：
+
+===== 2. up =====
+mysql: [Warning] Using a password on the command line interface can be insecure.
+mysql: [Warning] Using a password on the command line interface can be insecure.
+[drill] up OK；表列清单（应与演练前一致）：
+id	bigint	NO
+project_id	bigint	NO
+device_id	bigint	YES
+host	varchar(128)	NO
+collected_at	datetime(3)	NO
+status	varchar(16)	NO
+spec_json	longtext	NO
+spec_hash	char(64)	YES
+nic_count	int	NO
+roce_ports	int	NO
+roce_max_gbps	int	YES
+created_by	bigint	YES
+created_at	datetime(3)	NO
+mysql: [Warning] Using a password on the command line interface can be insecure.
+mysql: [Warning] Using a password on the command line interface can be insecure.
+[drill] device_host_spec 行数=0（应等于 0）
+[drill] RESULT PASS fails=0
+[drill] DONE

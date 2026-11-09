@@ -6,6 +6,7 @@ import com.qa.autotest.application.report.TestReportService;
 import com.qa.autotest.common.ApiResponse;
 import com.qa.autotest.common.BusinessException;
 import com.qa.autotest.common.ErrorCode;
+import com.qa.autotest.domain.report.ReportSourceType;
 import com.qa.autotest.domain.report.TestReport;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +46,20 @@ public class TestReportController {
             throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "projectId 不能为空");
         }
         access.requireProjectAccess(request.projectId());
+        ReportSourceType sourceType;
+        try {
+            sourceType = ReportSourceType.parse(request.sourceType());
+        } catch (IllegalArgumentException e) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT, e.getMessage());
+        }
+        if (sourceType == ReportSourceType.CASE_SET) {
+            if (request.caseSetId() == null) {
+                throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                        "按用例集建报告时 caseSetId 不能为空");
+            }
+            return ApiResponse.ok(reports.createFromCaseSet(request.projectId(),
+                    request.caseSetId(), request.runId(), request.title()));
+        }
         return ApiResponse.ok(reports.create(request.projectId(), request.runId(), request.title()));
     }
 
@@ -107,7 +122,17 @@ public class TestReportController {
         return ApiResponse.ok(reports.exports(id));
     }
 
-    /** 创建请求体：只收项目 / run / 标题，不接受任何外部传入的快照内容。 */
-    public record CreateRequest(Long projectId, String runId, String title) {
+    /**
+     * 创建请求体：只收项目 / 来源 / run / 标题，不接受任何外部传入的快照内容。
+     *
+     * <p>v3.10.0 起多了两个来源字段（FR-v3.10-03）：
+     * <ul>
+     *   <li>{@code sourceType}：`run`（默认，旧客户端不发这个字段）或 `case_set`；</li>
+     *   <li>{@code caseSetId}：按用例集建时必填。</li>
+     * </ul>
+     * `runId` 在按用例集建时**可空**（空 = 取该集最近一次执行），非空则必须属于该集。
+     */
+    public record CreateRequest(Long projectId, String runId, String title,
+                                String sourceType, Long caseSetId) {
     }
 }

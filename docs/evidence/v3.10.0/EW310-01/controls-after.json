@@ -1,0 +1,68 @@
+{
+  "generated_at": "2026-11-09T06:26:39.213Z",
+  "method": "CDP：按区域排除导航/行内/分页后计页面级主操作",
+  "limit": 8,
+  "projectId": "29",
+  "page": {
+    "path": "/plans",
+    "viewport": {
+      "w": 800,
+      "h": 600
+    },
+    "totalControls": 30,
+    "primaryCount": 5,
+    "primaryLabels": [
+      "新建计划",
+      "刷新",
+      "更多",
+      "编排冲突（2）",
+      "查看依赖跳过事件"
+    ],
+    "rowCount": 10,
+    "rowControls": [
+      [
+        "更多操作"
+      ],
+      [
+        "更多操作"
+      ],
+      [
+        "更多操作"
+      ],
+      [
+        "更多操作"
+      ],
+      [
+        "更多操作"
+      ],
+      [
+        "更多操作"
+      ],
+      [
+        "更多操作"
+      ],
+      [
+        "更多操作"
+      ],
+      [
+        "更多操作"
+      ],
+      [
+        "更多操作"
+      ]
+    ],
+    "conflictCollapsed": true,
+    "skippedCollapsed": true,
+    "hasToolbarMore": true,
+    "screens": 1.18
+  },
+  "rowMenuChecked": true,
+  "rowMenuItems": [
+    "编辑",
+    "暂停",
+    "立即触发",
+    "删除"
+  ],
+  "fails": [],
+  "verdict": "PASS"
+}

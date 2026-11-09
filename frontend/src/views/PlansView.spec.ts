@@ -11,12 +11,23 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createApp, h, nextTick, type App, type Slots } from 'vue'
 import { createPinia, setActivePinia } from 'pinia'
+import { createMemoryHistory, createRouter, type Router } from 'vue-router'
 import { i18n } from '@/locales'
 import { useAuthStore } from '@/stores/auth'
 import PlansView from '@/views/PlansView.vue'
 import { planApi } from '@/api/plans'
 import { auditApi } from '@/api/audit'
 import { ApiError } from '@/api/http'
+
+/**
+ * 二次确认桩。
+ *
+ * 「立即触发」「删除」都先 `await confirmAction(...)`：把它留成真实实现，
+ * 单测里会挂在没有人点的弹窗上——请求当然一条都不会发，测试还以为自己过了。
+ * 用 vi.hoisted 是因为 vi.mock 的工厂会被提升到 import 之前，普通变量拿不到。
+ */
+const { confirmActionMock } = vi.hoisted(() => ({ confirmActionMock: vi.fn(async () => true) }))
+vi.mock('@/composables/useConfirm', () => ({ confirmAction: confirmActionMock }))
 
 vi.mock('@/api/plans', () => ({
   planApi: {
@@ -153,6 +164,27 @@ const RouterLinkStub = {
   },
 }
 
+/**
+ * 真实 router（memory history）。
+ *
+ * 为什么不再用空 RouterLink 桩：v3.10 起「计划组 / 依赖图 / 返回运行列表」是菜单项，
+ * 走 `router.push` 而不是 <RouterLink>。没有 router 时 `useRouter()` 会告警，
+ * 而且「点了菜单到底去没去那个页面」根本断言不了。
+ */
+function createTestRouter(): Router {
+  return createRouter({
+    history: createMemoryHistory(),
+    routes: [
+      { path: '/', component: { template: '<div />' } },
+      { path: '/plans', component: { template: '<div />' } },
+      { path: '/plans/groups', component: { template: '<div />' } },
+      { path: '/plans/graph', component: { template: '<div />' } },
+      { path: '/runs', component: { template: '<div />' } },
+    ],
+  })
+}
+
+let router: Router | null = null
 let app: App | null = null
 let host: HTMLElement | null = null
 let pinia: ReturnType<typeof createPinia> | null = null
@@ -161,8 +193,10 @@ async function mountView(): Promise<HTMLElement> {
   const root = document.createElement('div')
   document.body.appendChild(root)
   host = root
+  router = createTestRouter()
   app = createApp(PlansView)
   app.use(pinia!)
+  app.use(router)
   app.use(i18n)
   app.component('RouterLink', RouterLinkStub)
   app.mount(root)
@@ -175,12 +209,67 @@ function rows(root: HTMLElement): HTMLElement[] {
   return [...root.querySelectorAll<HTMLElement>('.n-data-table-tbody .n-data-table-tr')]
 }
 
-function rowButton(root: HTMLElement, rowIndex: number, text: string): HTMLButtonElement {
-  const button = [...rows(root)[rowIndex].querySelectorAll<HTMLButtonElement>('button')].find(
-    (item) => item.textContent?.trim() === text,
+/**
+ * 打开某一行的「更多」菜单（FR-v3.10-01 判据②）。
+ *
+ * 菜单内容是 naive-ui teleport 到 body 的，不在 root 里——所以先点行内触发点，
+ * 再去 `document.body` 里按文案取菜单项。用真实点击而不是直接调函数，
+ * 是为了顺带证明「菜单真的能点开」。
+ */
+async function openRowMenu(root: HTMLElement, rowIndex: number): Promise<void> {
+  const trigger = rows(root)[rowIndex].querySelector<HTMLElement>('.more-menu')
+  if (!trigger) throw new Error(`row ${rowIndex} has no more-menu trigger`)
+  trigger.click()
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  await nextTick()
+}
+
+/**
+ * 当前打开的菜单容器。
+ *
+ * naive-ui 把下拉 teleport 到 body，而 body 会**跨用例累积**（上一个用例的菜单节点
+ * 不会随组件卸载消失）。所以不能全局按文案找，必须只认最后打开的那一个，
+ * 否则会读到上一条用例的菜单——「暂停/恢复文案」用例就是被这个坑咬过。
+ */
+function activeMenu(): HTMLElement {
+  const menus = [...document.body.querySelectorAll<HTMLElement>('.n-dropdown')]
+  const last = menus[menus.length - 1]
+  if (!last) throw new Error('no dropdown is open')
+  return last
+}
+
+/** 当前菜单里的文案列表。 */
+function menuLabels(): string[] {
+  return [...activeMenu().querySelectorAll<HTMLElement>('.n-dropdown-option')].map((el) =>
+    (el.textContent ?? '').trim(),
   )
-  if (!button) throw new Error(`button not found in row ${rowIndex}: ${text}`)
-  return button
+}
+
+/**
+ * 点菜单项。
+ *
+ * 直接 `li.click()` 在 happy-dom 下不触发 naive-ui 的 select：它把 onClick 挂在
+ * 选项内部的 body 节点上，`li` 本身只负责布局。所以派发一个冒泡的 click 到 body 层，
+ * 让事件真的走一遍冒泡链——顺便验证「点菜单项」这条路径本身是通的。
+ */
+function clickMenuItem(text: string): void {
+  const item = menuItem(text)
+  const target =
+    item.querySelector<HTMLElement>('.n-dropdown-option-body__label') ?? item
+  // 真实点击是 mousedown → mouseup → click 三步：naive-ui 的选项在 mousedown 时记激活态，
+  // 只发 click 会在某些选项上「点不动」（早期版本就是这样漏掉了「立即触发」）
+  for (const type of ['mousedown', 'mouseup', 'click']) {
+    target.dispatchEvent(new MouseEvent(type, { bubbles: true, cancelable: true }))
+  }
+}
+
+/** 从当前打开的菜单里按文案取菜单项（选项节点是 li.n-dropdown-option）。 */
+function menuItem(text: string): HTMLElement {
+  const item = [...activeMenu().querySelectorAll<HTMLElement>('.n-dropdown-option')].find(
+    (el) => (el.textContent ?? '').trim() === text,
+  )
+  if (!item) throw new Error(`menu item not found: ${text}`)
+  return item
 }
 
 /** 顶栏按钮（新建 / 刷新 / 返回运行列表），不在表格行里。 */
@@ -201,9 +290,12 @@ beforeEach(() => {
 afterEach(() => {
   app?.unmount()
   host?.remove()
+  // 下拉是 teleport 到 body 的，组件卸载不会带走它：手动清，防止下一条用例读到上一条的菜单
+  document.body.querySelectorAll('.n-dropdown, .v-binder-follower-container').forEach((node) => node.remove())
   app = null
   host = null
   pinia = null
+  router = null
 })
 
 describe('PlansView 列表', () => {
@@ -238,13 +330,15 @@ describe('PlansView 列表', () => {
     const pauseText = i18n.global.t('plans.pause')
     const resumeText = i18n.global.t('plans.resume')
 
-    const firstTexts = [...rows(root)[0].querySelectorAll('button')].map((b) => b.textContent?.trim())
-    const secondTexts = [...rows(root)[1].querySelectorAll('button')].map((b) => b.textContent?.trim())
+    // 行内只剩一个「更多」，文案差异要在菜单里看：启用中的行给「暂停」，已暂停的行给「恢复」
+    await openRowMenu(root, 0)
+    expect(rows(root)[0].querySelectorAll('button')).toHaveLength(1)
+    expect(menuLabels()).toContain(pauseText)
+    expect(menuLabels()).not.toContain(resumeText)
 
-    expect(firstTexts).toContain(pauseText)
-    expect(firstTexts).not.toContain(resumeText)
-    expect(secondTexts).toContain(resumeText)
-    expect(secondTexts).not.toContain(pauseText)
+    await openRowMenu(root, 1)
+    expect(menuLabels()).toContain(resumeText)
+    expect(menuLabels()).not.toContain(pauseText)
   })
 })
 
@@ -253,7 +347,8 @@ describe('PlansView 编辑对话框', () => {
     const root = await mountView()
     expect(root.querySelector('.form-card')).toBeNull()
 
-    rowButton(root, 1, i18n.global.t('plans.edit')).click()
+    await openRowMenu(root, 1)
+    clickMenuItem(i18n.global.t('plans.edit'))
     await nextTick()
 
     const card = root.querySelector('.form-card')
@@ -278,7 +373,8 @@ describe('PlansView 编辑对话框', () => {
 
   it('依赖列表排除自己，勾选后写回 dependencyIds', async () => {
     const root = await mountView()
-    rowButton(root, 0, i18n.global.t('plans.edit')).click()
+    await openRowMenu(root, 0)
+    clickMenuItem(i18n.global.t('plans.edit'))
     await nextTick()
 
     const deps = [...root.querySelectorAll<HTMLElement>('.dep-list .n-checkbox')]
@@ -293,12 +389,25 @@ describe('PlansView 编辑对话框', () => {
 })
 
 describe('PlansView 编排冲突（W5）', () => {
+  /** 冲突区默认收起（FR-v3.10-01 判据③），要看内容先展开。 */
+  async function openConflicts(root: HTMLElement): Promise<void> {
+    const toggle = root.querySelector<HTMLElement>('[data-testid="conflict-toggle"]')
+    if (!toggle) throw new Error('conflict toggle not found')
+    toggle.click()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    await nextTick()
+  }
+
   it('冲突行用计划名展示涉及的计划，并标记严重级', async () => {
     vi.mocked(planApi.conflicts).mockResolvedValueOnce([
       { type: 'DUPLICATE_TARGET', severity: 'WARN', planIds: [1, 2], detail: '目标完全相同' },
     ])
     const root = await mountView()
+    // 收起态：只有入口按钮，不许把冲突行渲染出来
+    expect(root.querySelector('[data-testid="conflict-row"]')).toBeNull()
+    expect(root.querySelector('[data-testid="conflict-collapsed-hint"]')).not.toBeNull()
 
+    await openConflicts(root)
     const row = root.querySelector<HTMLElement>('[data-testid="conflict-row"]')
     expect(row).not.toBeNull()
     expect(row!.textContent).toContain(i18n.global.t('plans.conflictTypes.DUPLICATE_TARGET'))
@@ -309,7 +418,10 @@ describe('PlansView 编排冲突（W5）', () => {
 
   it('无冲突时显示空态，不显示批量按钮', async () => {
     const root = await mountView()
+    // 收起时连「未发现冲突」都不该出现——那会让人以为已经查过了
+    expect(root.querySelector('[data-testid="conflict-empty"]')).toBeNull()
 
+    await openConflicts(root)
     expect(root.querySelector('[data-testid="conflict-empty"]')?.textContent).toContain(
       i18n.global.t('plans.conflictEmpty'),
     )
@@ -327,6 +439,7 @@ describe('PlansView 编排冲突（W5）', () => {
       { planId: 3, changed: false, status: 'PAUSED', message: '已处于目标状态' },
     ])
     const root = await mountView()
+    await openConflicts(root)
 
     root.querySelector<HTMLElement>('.conflict-all')!.click()
     await nextTick()
@@ -540,5 +653,92 @@ describe('PlansView 分页（FR-v3.9-04 判据④）', () => {
     const first = rows(root)[0].textContent ?? ''
     expect(first).toContain('计划-51')
     expect(rows(root).length).toBe(10)
+  })
+})
+
+/**
+ * FR-v3.10-01 信息架构：一屏 244 个控件 → 分区 + 收敛操作。
+ *
+ * 判据①「首屏主操作 ≤ 8」只能数 DOM，不能靠肉眼；判据②「行内操作收进菜单」同理。
+ * 这里把两条都钉成断言，并补「菜单里的动作真的会发对应请求」——
+ * 否则「收进菜单」很可能收着收着就收丢了（这正是本版最怕的回归）。
+ */
+describe('PlansView 信息架构（FR-v3.10-01）', () => {
+  /**
+   * 首屏主操作：页面级可点控件。
+   * 排除项各有理由：表格行内（判据②单独约束「行内 1 个」）、分页器（翻页不是主操作）、
+   * 全局导航（在侧栏与顶栏，不属于本页）。
+   */
+  function primaryControls(root: HTMLElement): HTMLElement[] {
+    return [...root.querySelectorAll<HTMLElement>('button, [role="button"]')].filter((el) => {
+      if (el.closest('.n-data-table-tbody')) return false
+      if (el.closest('.n-pagination')) return false
+      if (el.closest('.app-side') || el.closest('.app-header')) return false
+      return true
+    })
+  }
+
+  it('首屏主操作不超过 8 个', async () => {
+    const root = await mountView()
+    const controls = primaryControls(root)
+    expect(controls.length).toBeGreaterThan(0)
+    expect(controls.length).toBeLessThanOrEqual(8)
+  })
+
+  it('行内只剩一个「更多」触发点，四个动作都在菜单里', async () => {
+    const root = await mountView()
+    expect(rows(root)[0].querySelectorAll('button')).toHaveLength(1)
+
+    await openRowMenu(root, 0)
+    expect(menuLabels()).toEqual([
+      i18n.global.t('plans.edit'),
+      i18n.global.t('plans.pause'),
+      i18n.global.t('plans.triggerNow'),
+      i18n.global.t('common.delete'),
+    ])
+  })
+
+  it('工具条「更多」保留三个离开本页的入口', async () => {
+    const root = await mountView()
+    const trigger = root.querySelector<HTMLElement>('[data-testid="plan-toolbar-more"]')
+    expect(trigger).not.toBeNull()
+    trigger!.click()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    await nextTick()
+
+    expect(menuLabels()).toEqual([
+      i18n.global.t('plans.groupsEntry'),
+      i18n.global.t('plans.graphEntry'),
+      i18n.global.t('plans.backToRuns'),
+    ])
+
+    // 点了要真的去：菜单化最容易出的问题就是「项还在、跳转没了」
+    clickMenuItem(i18n.global.t('plans.graphEntry'))
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(router!.currentRoute.value.path).toBe('/plans/graph')
+  })
+
+  it('菜单里的「暂停」真的发请求（收进菜单不等于收丢）', async () => {
+    vi.mocked(planApi.pause).mockResolvedValue(undefined as never)
+    const root = await mountView()
+
+    await openRowMenu(root, 0)
+    clickMenuItem(i18n.global.t('plans.pause'))
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(planApi.pause).toHaveBeenCalledWith(1, 1)
+  })
+
+  it('菜单里的「立即触发」真的发请求', async () => {
+    vi.mocked(planApi.triggerNow).mockResolvedValue({ runId: 'RUN-NEW' } as never)
+    const root = await mountView()
+
+    await openRowMenu(root, 0)
+    clickMenuItem(i18n.global.t('plans.triggerNow'))
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    // 「立即触发」会先要二次确认：确认弹过才算真发请求
+    expect(confirmActionMock).toHaveBeenCalled()
+    expect(planApi.triggerNow).toHaveBeenCalledWith(1, 1)
   })
 })

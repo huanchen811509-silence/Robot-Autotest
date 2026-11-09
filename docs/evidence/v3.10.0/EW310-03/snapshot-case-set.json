@@ -1,0 +1,142 @@
+{
+  "runId": "CT-20261109150513-NEW",
+  "projectId": 29,
+  "state": "finished",
+  "exportable": false,
+  "passCount": 0,
+  "failCount": 0,
+  "skipCount": 0,
+  "caseTotal": 0,
+  "passRate": 0.0,
+  "metadataMissing": [
+    "CASE_ID",
+    "RUN_ID",
+    "DUT",
+    "LINK",
+    "SW_BUILD",
+    "BASELINE",
+    "OPERATOR",
+    "STARTED_AT",
+    "CASE_KIND"
+  ],
+  "metadata": {
+    "QA_PROJECT": "v310-contract"
+  },
+  "startedAt": "2026-11-09T06:05:13.513Z",
+  "finishedAt": "2026-11-09T06:05:13.513Z",
+  "version": 3,
+  "templateId": 1,
+  "templateVersion": 1,
+  "template": {
+    "id": 1,
+    "version": 1,
+    "name": "DEFAULT",
+    "fields": [
+      {
+        "fieldKey": "reportId",
+        "sortOrder": 0,
+        "titleOverride": null
+      },
+      {
+        "fieldKey": "title",
+        "sortOrder": 1,
+        "titleOverride": null
+      },
+      {
+        "fieldKey": "version",
+        "sortOrder": 2,
+        "titleOverride": null
+      },
+      {
+        "fieldKey": "frozenAt",
+        "sortOrder": 3,
+        "titleOverride": null
+      },
+      {
+        "fieldKey": "conclusion",
+        "sortOrder": 4,
+        "titleOverride": null
+      },
+      {
+        "fieldKey": "passCount",
+        "sortOrder": 5,
+        "titleOverride": null
+      },
+      {
+        "fieldKey": "failCount",
+        "sortOrder": 6,
+        "titleOverride": null
+      },
+      {
+        "fieldKey": "skipCount",
+        "sortOrder": 7,
+        "titleOverride": null
+      },
+      {
+        "fieldKey": "passRate",
+        "sortOrder": 8,
+        "titleOverride": null
+      },
+      {
+        "fieldKey": "caseTotal",
+        "sortOrder": 9,
+        "titleOverride": null
+      },
+      {
+        "fieldKey": "caseCovered",
+        "sortOrder": 10,
+        "titleOverride": null
+      },
+      {
+        "fieldKey": "coverageRate",
+        "sortOrder": 11,
+        "titleOverride": null
+      },
+      {
+        "fieldKey": "failureDistribution",
+        "sortOrder": 12,
+        "titleOverride": null
+      },
+      {
+        "fieldKey": "trend",
+        "sortOrder": 13,
+        "titleOverride": null
+      },
+      {
+        "fieldKey": "projectName",
+        "sortOrder": 14,
+        "titleOverride": null
+      },
+      {
+        "fieldKey": "swBuild",
+        "sortOrder": 15,
+        "titleOverride": null
+      },
+      {
+        "fieldKey": "caseKind",
+        "sortOrder": 16,
+        "titleOverride": null
+      },
+      {
+        "fieldKey": "startedAt",
+        "sortOrder": 17,
+        "titleOverride": null
+      },
+      {
+        "fieldKey": "finishedAt",
+        "sortOrder": 18,
+        "titleOverride": null
+      },
+      {
+        "fieldKey": "disclaimer",
+        "sortOrder": 19,
+        "titleOverride": null
+      },
+      {
+        "fieldKey": "watermark",
+        "sortOrder": 20,
+        "titleOverride": null
+      }
+    ]
+  }
+}

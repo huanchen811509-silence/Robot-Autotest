@@ -1,6 +1,7 @@
 package com.qa.autotest.application.repository;
 
 import com.qa.autotest.domain.report.ReportSnapshot;
+import com.qa.autotest.domain.report.ReportSourceType;
 import com.qa.autotest.domain.report.ReportState;
 import com.qa.autotest.domain.report.TestReport;
 import com.qa.autotest.domain.report.TestReportExport;
@@ -17,7 +18,14 @@ public interface TestReportRepository {
 
     int maxVersion(long projectId, String runId);
 
-    long insert(long projectId, String runId, String title, int version, ReportSnapshot snapshot);
+    /**
+     * 建草稿写入一行。
+     *
+     * <p>{@code sourceType} / {@code caseSetId} 是**创建意图**（v3.10.0）：写入后不再参与渲染，
+     * 只供列表页展示来源。按用例集建的报告同样写解析出来的那一条 {@code runId}。
+     */
+    long insert(long projectId, String runId, ReportSourceType sourceType, Long caseSetId,
+                String title, int version, ReportSnapshot snapshot);
 
     void freeze(long id, ReportSnapshot snapshot);
 

@@ -1,0 +1,146 @@
+{
+  "generated_at": "2026-11-09T07:05:05.138Z",
+  "method": "CDP：页面内登录 → /test-reports → 打开下拉读选项 → 关键词过滤 → 选中 → 高级切换",
+  "projectId": "29",
+  "criteria": {
+    "①下拉列出本项目 run": {
+      "optionCount": 100,
+      "firstLabel": "RUN-20261109030001-300001 · 2026/11/09 03:00:35 · 失败 · 0 条用例",
+      "segments": 4
+    },
+    "②关键词与时间过滤": {
+      "keyword": "RUN-20261109030001-300001",
+      "filteredOptions": 1,
+      "filteredLabels": [
+        "RUN-20261109030001-300001 · 2026/11/09 03:00:35 · 失败 · 0 条用例"
+      ],
+      "missHintShown": true,
+      "rangeLabel": "全部时间",
+      "note": "本库全部 run 在最近 5 天内，7d/30d 切不出差异；时间档边界由 utils/runPicker.spec.ts 钉住"
+    },
+    "③选中自动带出标题": {
+      "titleAfterPick": "测试报告 RUN-20261109030001-300001"
+    },
+    "④手打入口降级": {
+      "mainPathManualInput": false,
+      "advancedManualInput": true,
+      "toggleLabel": "高级：手输 RUN_ID"
+    },
+    "FR-v3.10-03 来源切换": {
+      "sourceButtons": {
+        "run": true,
+        "caseSet": true
+      },
+      "caseSetPickerVisible": true,
+      "caseSetRunInputVisible": true,
+      "runPickerHiddenInCaseSet": true,
+      "backToRunOk": true
+    }
+  },
+  "states": {
+    "before": {
+      "path": "/test-reports",
+      "picker": true,
+      "keyword": true,
+      "range": true,
+      "rangeLabel": "全部时间",
+      "manualInput": false,
+      "titleInput": true,
+      "toggleLabel": "高级：手输 RUN_ID",
+      "toggleAdvanced": true,
+      "sourceRun": true,
+      "sourceCaseSet": true,
+      "caseSetPicker": false,
+      "caseSetRunInput": false,
+      "emptyHint": false,
+      "failedHint": false
+    },
+    "advanced": {
+      "path": "/test-reports",
+      "picker": false,
+      "keyword": false,
+      "range": false,
+      "rangeLabel": "",
+      "manualInput": true,
+      "titleInput": true,
+      "toggleLabel": "返回下拉选择",
+      "toggleAdvanced": true,
+      "sourceRun": true,
+      "sourceCaseSet": true,
+      "caseSetPicker": false,
+      "caseSetRunInput": false,
+      "emptyHint": false,
+      "failedHint": false
+    },
+    "back": {
+      "path": "/test-reports",
+      "picker": true,
+      "keyword": true,
+      "range": true,
+      "rangeLabel": "全部时间",
+      "manualInput": false,
+      "titleInput": true,
+      "toggleLabel": "高级：手输 RUN_ID",
+      "toggleAdvanced": true,
+      "sourceRun": true,
+      "sourceCaseSet": true,
+      "caseSetPicker": false,
+      "caseSetRunInput": false,
+      "emptyHint": false,
+      "failedHint": false
+    },
+    "miss": {
+      "path": "/test-reports",
+      "picker": true,
+      "keyword": true,
+      "range": true,
+      "rangeLabel": "全部时间",
+      "manualInput": false,
+      "titleInput": true,
+      "toggleLabel": "高级：手输 RUN_ID",
+      "toggleAdvanced": true,
+      "sourceRun": true,
+      "sourceCaseSet": true,
+      "caseSetPicker": false,
+      "caseSetRunInput": false,
+      "emptyHint": true,
+      "failedHint": false
+    },
+    "caseSet": {
+      "path": "/test-reports",
+      "picker": false,
+      "keyword": false,
+      "range": false,
+      "rangeLabel": "",
+      "manualInput": false,
+      "titleInput": true,
+      "toggleLabel": "",
+      "toggleAdvanced": false,
+      "sourceRun": true,
+      "sourceCaseSet": true,
+      "caseSetPicker": true,
+      "caseSetRunInput": true,
+      "emptyHint": false,
+      "failedHint": false
+    },
+    "backToRun": {
+      "path": "/test-reports",
+      "picker": true,
+      "keyword": true,
+      "range": true,
+      "rangeLabel": "全部时间",
+      "manualInput": false,
+      "titleInput": true,
+      "toggleLabel": "高级：手输 RUN_ID",
+      "toggleAdvanced": true,
+      "sourceRun": true,
+      "sourceCaseSet": true,
+      "caseSetPicker": false,
+      "caseSetRunInput": false,
+      "emptyHint": false,
+      "failedHint": false
+    }
+  },
+  "fails": [],
+  "verdict": "PASS"
+}

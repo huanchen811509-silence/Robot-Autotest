@@ -1,0 +1,14 @@
+[idx-drill] db=robot_it migration=V11_27 旧唯一键=uk_env_profile_project_name 新普通索引=idx_env_profile_project_name_time
+[idx-drill] 演练前行数=0
+[PASS] down 前新普通索引存在（1）
+[PASS] down 前旧唯一键不存在（0）
+===== down =====
+mysql: [Warning] Using a password on the command line interface can be insecure.
+[PASS] down 后新普通索引消失（0）
+[PASS] down 后旧唯一键恢复（1）
+===== up =====
+mysql: [Warning] Using a password on the command line interface can be insecure.
+[PASS] up 后新普通索引回来（1）
+[PASS] up 后旧唯一键再次消失（0）
+[PASS] 全程数据行数不变（0）
+[idx-drill] RESULT PASS fails=0

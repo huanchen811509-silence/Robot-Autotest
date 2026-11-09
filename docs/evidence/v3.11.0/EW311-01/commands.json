@@ -1,0 +1,12 @@
+{
+  "OS": "grep -m1 '^PRETTY_NAME=' /etc/os-release",
+  "KERNEL": "uname -r",
+  "CPU": "nproc; lscpu | grep -m1 'Model name'",
+  "MEMORY": "free -m | head -2",
+  "DISK": "df -P / | tail -1; echo ---; lsblk -d -o NAME,SIZE,ROTA 2>/dev/null",
+  "GPU": "nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader",
+  "NIC": "ip -br link; for i in /sys/class/net/*; do printf '%s %s\\n' \"$(basename $i)\" \"$(cat $i/speed 2>/dev/null)\"; done",
+  "IP": "ip -br addr",
+  "ROCE": "for p in /sys/class/infiniband/*/ports/*; do printf '%s|%s|%s\\n' \"$p\" \"$(cat $p/state 2>/dev/null)\" \"$(cat $p/rate 2>/dev/null)\"; done",
+  "ROUTE": "ip route show"
+}

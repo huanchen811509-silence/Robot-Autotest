@@ -1,0 +1,369 @@
+{
+  "generatedAt": "2026-11-09T07:50:19.523Z",
+  "app": "http://localhost:8001",
+  "projectId": "29",
+  "checks": [
+    {
+      "name": "overview 打到自己的真实数据接口",
+      "ok": true,
+      "detail": "GET 9 条，期望接口全部命中"
+    },
+    {
+      "name": "overview 关键控件可见",
+      "ok": true,
+      "detail": "4/4 个必现控件可见"
+    },
+    {
+      "name": "overview 加载期不写",
+      "ok": true,
+      "detail": "0 个写请求"
+    },
+    {
+      "name": "overview 只读口径（无执行/采集类写路径）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "collect 打到自己的真实数据接口",
+      "ok": true,
+      "detail": "GET 8 条，期望接口全部命中"
+    },
+    {
+      "name": "collect 关键控件可见",
+      "ok": true,
+      "detail": "3/3 个必现控件可见"
+    },
+    {
+      "name": "collect 加载期不写",
+      "ok": true,
+      "detail": "0 个写请求"
+    },
+    {
+      "name": "采集页命令白名单 10 类可见",
+      "ok": true,
+      "detail": "实际 10 条"
+    },
+    {
+      "name": "采集须二次确认（点一次不写、出现确认态）",
+      "ok": true,
+      "detail": "confirming=true 写请求=0"
+    },
+    {
+      "name": "topology 打到自己的真实数据接口",
+      "ok": true,
+      "detail": "GET 7 条，期望接口全部命中"
+    },
+    {
+      "name": "topology 关键控件可见",
+      "ok": true,
+      "detail": "3/3 个必现控件可见"
+    },
+    {
+      "name": "topology 加载期不写",
+      "ok": true,
+      "detail": "0 个写请求"
+    },
+    {
+      "name": "建快照须二次确认（点一次不写）",
+      "ok": true,
+      "detail": "写请求=0"
+    },
+    {
+      "name": "prepare 打到自己的真实数据接口",
+      "ok": true,
+      "detail": "GET 7 条，期望接口全部命中"
+    },
+    {
+      "name": "prepare 关键控件可见",
+      "ok": true,
+      "detail": "2/2 个必现控件可见"
+    },
+    {
+      "name": "prepare 加载期不写",
+      "ok": true,
+      "detail": "0 个写请求"
+    },
+    {
+      "name": "prepare 只读口径（无执行/采集类写路径）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "analysis 打到自己的真实数据接口",
+      "ok": true,
+      "detail": "GET 6 条，期望接口全部命中"
+    },
+    {
+      "name": "analysis 关键控件可见",
+      "ok": true,
+      "detail": "2/2 个必现控件可见"
+    },
+    {
+      "name": "analysis 加载期不写",
+      "ok": true,
+      "detail": "0 个写请求"
+    },
+    {
+      "name": "analysis 只读口径（无执行/采集类写路径）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "只读找回检索只发 GET /search，不产生新 run",
+      "ok": true,
+      "detail": "GET /search=true 写请求=0"
+    }
+  ],
+  "pages": [
+    {
+      "page": "overview",
+      "path": "/environment/overview",
+      "dom": {
+        "overview-devices": true,
+        "overview-envs": true,
+        "overview-latest": true,
+        "overview-missing": true,
+        "overview-empty": false,
+        "overview-failed": false,
+        "path": "/environment/overview",
+        "bodyHasEmpty": false,
+        "commandRows": 0,
+        "tableRows": 2
+      },
+      "requests": [
+        {
+          "method": "GET",
+          "url": "/api/ai/state?projectId=29"
+        },
+        {
+          "method": "GET",
+          "url": "/api/notifications/unread-count?projectId=29"
+        },
+        {
+          "method": "GET",
+          "url": "/api/auth/me"
+        },
+        {
+          "method": "GET",
+          "url": "/api/projects"
+        },
+        {
+          "method": "GET",
+          "url": "/api/projects/29/snapshots/profiles"
+        },
+        {
+          "method": "GET",
+          "url": "/api/projects/29/devices?page=1&size=1"
+        },
+        {
+          "method": "GET",
+          "url": "/api/asset-host-inventory?projectId=29&limit=20"
+        },
+        {
+          "method": "GET",
+          "url": "/api/users/me/preferences"
+        },
+        {
+          "method": "GET",
+          "url": "/api/asset-host-inventory/7?projectId=29"
+        }
+      ],
+      "writes": [],
+      "getCount": 9
+    },
+    {
+      "page": "collect",
+      "path": "/environment/collect",
+      "dom": {
+        "collect-commands": true,
+        "collect-confirm": true,
+        "collect-host": true,
+        "collect-history": true,
+        "collect-empty": false,
+        "collect-failed": false,
+        "path": "/environment/collect",
+        "bodyHasEmpty": true,
+        "commandRows": 10,
+        "tableRows": 10
+      },
+      "requests": [
+        {
+          "method": "GET",
+          "url": "/api/ai/state?projectId=29"
+        },
+        {
+          "method": "GET",
+          "url": "/api/notifications/unread-count?projectId=29"
+        },
+        {
+          "method": "GET",
+          "url": "/api/auth/me"
+        },
+        {
+          "method": "GET",
+          "url": "/api/projects"
+        },
+        {
+          "method": "GET",
+          "url": "/api/asset-host-inventory/commands?projectId=29"
+        },
+        {
+          "method": "GET",
+          "url": "/api/asset-host-inventory?projectId=29&limit=20"
+        },
+        {
+          "method": "GET",
+          "url": "/api/users/me/preferences"
+        },
+        {
+          "method": "GET",
+          "url": "/api/asset-host-inventory/7?projectId=29"
+        }
+      ],
+      "writes": [],
+      "getCount": 8
+    },
+    {
+      "page": "topology",
+      "path": "/environment/topology",
+      "dom": {
+        "topology-env": true,
+        "topology-empty": false,
+        "topology-diff": true,
+        "topology-confirm": true,
+        "topology-failed": false,
+        "path": "/environment/topology",
+        "bodyHasEmpty": true,
+        "commandRows": 0,
+        "tableRows": 2
+      },
+      "requests": [
+        {
+          "method": "GET",
+          "url": "/api/ai/state?projectId=29"
+        },
+        {
+          "method": "GET",
+          "url": "/api/notifications/unread-count?projectId=29"
+        },
+        {
+          "method": "GET",
+          "url": "/api/auth/me"
+        },
+        {
+          "method": "GET",
+          "url": "/api/projects"
+        },
+        {
+          "method": "GET",
+          "url": "/api/projects/29/snapshots/profiles"
+        },
+        {
+          "method": "GET",
+          "url": "/api/users/me/preferences"
+        },
+        {
+          "method": "GET",
+          "url": "/api/projects/29/snapshots?name=V311-PROBE-20261109154902"
+        }
+      ],
+      "writes": [],
+      "getCount": 7,
+      "diffRequests": [
+        {
+          "method": "POST",
+          "url": "/api/projects/29/snapshots/diff"
+        }
+      ]
+    },
+    {
+      "page": "prepare",
+      "path": "/environment/prepare",
+      "dom": {
+        "prepare-env": true,
+        "prepare-latest": true,
+        "prepare-empty": false,
+        "prepare-failed": false,
+        "path": "/environment/prepare",
+        "bodyHasEmpty": false,
+        "commandRows": 0,
+        "tableRows": 1
+      },
+      "requests": [
+        {
+          "method": "GET",
+          "url": "/api/ai/state?projectId=29"
+        },
+        {
+          "method": "GET",
+          "url": "/api/notifications/unread-count?projectId=29"
+        },
+        {
+          "method": "GET",
+          "url": "/api/auth/me"
+        },
+        {
+          "method": "GET",
+          "url": "/api/projects"
+        },
+        {
+          "method": "GET",
+          "url": "/api/projects/29/snapshots/profiles"
+        },
+        {
+          "method": "GET",
+          "url": "/api/users/me/preferences"
+        },
+        {
+          "method": "GET",
+          "url": "/api/projects/29/snapshots?name=V311-PROBE-20261109154902"
+        }
+      ],
+      "writes": [],
+      "getCount": 7
+    },
+    {
+      "page": "analysis",
+      "path": "/environment/analysis",
+      "dom": {
+        "analysis-trend": true,
+        "analysis-keyword": true,
+        "analysis-empty": false,
+        "analysis-failed": false,
+        "path": "/environment/analysis",
+        "bodyHasEmpty": false,
+        "commandRows": 0,
+        "tableRows": 4
+      },
+      "requests": [
+        {
+          "method": "GET",
+          "url": "/api/ai/state?projectId=29"
+        },
+        {
+          "method": "GET",
+          "url": "/api/notifications/unread-count?projectId=29"
+        },
+        {
+          "method": "GET",
+          "url": "/api/auth/me"
+        },
+        {
+          "method": "GET",
+          "url": "/api/projects"
+        },
+        {
+          "method": "GET",
+          "url": "/api/asset-host-inventory?projectId=29&limit=100"
+        },
+        {
+          "method": "GET",
+          "url": "/api/users/me/preferences"
+        }
+      ],
+      "writes": [],
+      "getCount": 6
+    }
+  ],
+  "fails": 0
+}

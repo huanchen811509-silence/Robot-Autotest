@@ -1,0 +1,21 @@
+  SELFCHECK 干净数据（10 类，GPU 未采到但给了原因）: PASS（符合预期）
+  SELFCHECK 10 类全采到（status=OK）: PASS（符合预期）
+  SELFCHECK 少一类（9 类）: RED（符合预期）
+  SELFCHECK 顺序错（GPU 与 DISK 对调）: RED（符合预期）
+  SELFCHECK 未采集却没有原因: RED（符合预期）
+  SELFCHECK 用 '-' 冒充采集结果: RED（符合预期）
+  SELFCHECK status 与项数不符: RED（符合预期）
+  SELFCHECK 记录的命令与源码不符: RED（符合预期）
+  SELFCHECK 缺 collectedAt: RED（符合预期）
+  SELFCHECK 有值却又带 reason（语义矛盾）: RED（符合预期）
+  SELFCHECK 只读命令 `ip -br addr`: PASS（符合预期）
+  SELFCHECK 带 2>/dev/null 的只读命令: PASS（符合预期）
+  SELFCHECK 重定向写文件: RED（符合预期）
+  SELFCHECK rm -rf: RED（符合预期）
+  SELFCHECK 就地改文件 sed -i: RED（符合预期）
+  SELFCHECK 用 ip 改地址: RED（符合预期）
+  SELFCHECK 装包: RED（符合预期）
+  SELFCHECK 未登记的可执行名: RED（符合预期）
+  SELFCHECK 接口命令与源码漂移: RED（符合预期）
+  SELFCHECK 接口命令与源码一致: PASS（符合预期）
+SELFCHECK_RESULT FAILS=0

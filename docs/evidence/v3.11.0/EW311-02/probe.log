@@ -1,0 +1,38 @@
+[PASS] overview 打到自己的真实数据接口 · GET 9 条，期望接口全部命中
+[PASS] overview 关键控件可见 · 4/4 个必现控件可见
+[PASS] overview 加载期不写 · 0 个写请求
+[PASS] overview 只读口径（无执行/采集类写路径）
+[PASS] collect 打到自己的真实数据接口 · GET 8 条，期望接口全部命中
+[PASS] collect 关键控件可见 · 3/3 个必现控件可见
+[PASS] collect 加载期不写 · 0 个写请求
+[PASS] 采集页命令白名单 10 类可见 · 实际 10 条
+[PASS] 采集须二次确认（点一次不写、出现确认态） · confirming=true 写请求=0
+[PASS] topology 打到自己的真实数据接口 · GET 7 条，期望接口全部命中
+[PASS] topology 关键控件可见 · 3/3 个必现控件可见
+[PASS] topology 加载期不写 · 0 个写请求
+[PASS] 建快照须二次确认（点一次不写） · 写请求=0
+[PASS] 两快照对比走真实 diff 并渲染差异表 · POST diff=true 表可见=true
+[PASS] prepare 打到自己的真实数据接口 · GET 7 条，期望接口全部命中
+[PASS] prepare 关键控件可见 · 2/2 个必现控件可见
+[PASS] prepare 加载期不写 · 0 个写请求
+[PASS] prepare 只读口径（无执行/采集类写路径）
+[PASS] analysis 打到自己的真实数据接口 · GET 6 条，期望接口全部命中
+[PASS] analysis 关键控件可见 · 2/2 个必现控件可见
+[PASS] analysis 加载期不写 · 0 个写请求
+[PASS] analysis 只读口径（无执行/采集类写路径）
+[PASS] principles 打到自己的真实数据接口 · GET 7 条，期望接口全部命中
+[PASS] principles 关键控件可见 · 1/1 个必现控件可见
+[PASS] principles 加载期不写 · 0 个写请求
+[PASS] principles 只读口径（无执行/采集类写路径）
+[PASS] records 打到自己的真实数据接口 · GET 6 条，期望接口全部命中
+[PASS] records 关键控件可见 · 1/1 个必现控件可见
+[PASS] records 加载期不写 · 0 个写请求
+[PASS] records 只读口径（无执行/采集类写路径）
+[PASS] recover 打到自己的真实数据接口 · GET 6 条，期望接口全部命中
+[PASS] recover 关键控件可见 · 3/3 个必现控件可见
+[PASS] recover 加载期不写 · 0 个写请求
+[PASS] recover 只读口径（无执行/采集类写路径）
+[PASS] 只读找回检索只发 GET /search，不产生新 run · GET /search=true 写请求=0
+[probe] docs/evidence/v3.11.0/EW311-02/env-pages.json（5 页）
+[probe] docs/evidence/v3.11.0/EW311-03/maintenance-pages.json（3 页）
+ENV_PAGES PASS FAILS=0

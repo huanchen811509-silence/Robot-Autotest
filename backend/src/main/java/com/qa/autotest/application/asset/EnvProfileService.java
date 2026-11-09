@@ -8,6 +8,7 @@ import com.qa.autotest.application.repository.EnvProfileRepository;
 import com.qa.autotest.common.BusinessException;
 import com.qa.autotest.common.ErrorCode;
 import com.qa.autotest.common.tenant.TenantContext;
+import com.qa.autotest.domain.asset.EnvProfileSummary;
 import com.qa.autotest.domain.asset.EnvSnapshot;
 import com.qa.autotest.domain.iam.PermissionAction;
 import com.qa.autotest.domain.iam.PermissionResource;
@@ -64,6 +65,13 @@ public class EnvProfileService {
             throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "环境名称不能为空");
         }
         return profiles.listSnapshots(projectId, name);
+    }
+
+    /** 环境名清单（FR-v3.11-02）：按最近快照时间倒序，供总览/准备/拓扑页选择环境。 */
+    public List<EnvProfileSummary> environments(long projectId) {
+        access.bindProject(projectId);
+        access.require(PermissionResource.ASSET, PermissionAction.READ);
+        return profiles.listEnvironments(projectId);
     }
 
     public EnvSnapshot latest(long projectId, String name) {

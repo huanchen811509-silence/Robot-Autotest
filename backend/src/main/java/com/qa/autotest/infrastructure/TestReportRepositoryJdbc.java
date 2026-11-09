@@ -3,6 +3,7 @@ package com.qa.autotest.infrastructure;
 import com.qa.autotest.application.repository.TestReportRepository;
 import com.qa.autotest.common.db.SlowQuery;
 import com.qa.autotest.domain.report.ReportSnapshot;
+import com.qa.autotest.domain.report.ReportSourceType;
 import com.qa.autotest.domain.report.ReportState;
 import com.qa.autotest.domain.report.TestReport;
 import com.qa.autotest.domain.report.TestReportExport;
@@ -25,8 +26,9 @@ import org.springframework.stereotype.Repository;
 public class TestReportRepositoryJdbc implements TestReportRepository {
 
     /** 显式投影（FR-3.2-02）：快照 JSON/HTML 体积大，列表页不允许顺手带出未用列。 */
-    private static final String REPORT_COLUMNS = "id, project_id, run_id, title, state, version, "
-            + "snapshot_hash, snapshot_json, snapshot_html, source_summary, created_at, frozen_at";
+    private static final String REPORT_COLUMNS = "id, project_id, run_id, source_type, case_set_id, "
+            + "title, state, version, snapshot_hash, snapshot_json, snapshot_html, source_summary, "
+            + "created_at, frozen_at";
     private static final String EXPORT_COLUMNS = "id, report_id, format, file_name, size_bytes, "
             + "watermark, created_at";
 
@@ -34,6 +36,8 @@ public class TestReportRepositoryJdbc implements TestReportRepository {
             rs.getLong("id"),
             rs.getLong("project_id"),
             rs.getString("run_id"),
+            ReportSourceType.parse(rs.getString("source_type")),
+            rs.getObject("case_set_id") == null ? null : rs.getLong("case_set_id"),
             rs.getString("title"),
             ReportState.parse(rs.getString("state")),
             rs.getInt("version"),
@@ -86,23 +90,29 @@ public class TestReportRepositoryJdbc implements TestReportRepository {
     }
 
     @Override
-    public long insert(long projectId, String runId, String title, int version,
-                       ReportSnapshot snapshot) {
+    public long insert(long projectId, String runId, ReportSourceType sourceType, Long caseSetId,
+                       String title, int version, ReportSnapshot snapshot) {
         KeyHolder keys = new GeneratedKeyHolder();
         jdbc.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(
-                    "INSERT INTO test_report (project_id, run_id, title, state, version, "
-                            + "snapshot_hash, snapshot_json, snapshot_html, source_summary) "
-                            + "VALUES (?, ?, ?, 'DRAFT', ?, ?, ?, ?, ?)",
+                    "INSERT INTO test_report (project_id, run_id, source_type, case_set_id, title, "
+                            + "state, version, snapshot_hash, snapshot_json, snapshot_html, source_summary) "
+                            + "VALUES (?, ?, ?, ?, ?, 'DRAFT', ?, ?, ?, ?, ?)",
                     Statement.RETURN_GENERATED_KEYS);
             ps.setLong(1, projectId);
             ps.setString(2, runId);
-            ps.setString(3, title);
-            ps.setInt(4, version);
-            ps.setString(5, snapshot.hash());
-            ps.setString(6, snapshot.json());
-            ps.setString(7, snapshot.html());
-            ps.setString(8, snapshot.sourceSummary());
+            ps.setString(3, sourceType.name());
+            if (caseSetId == null) {
+                ps.setNull(4, java.sql.Types.BIGINT);
+            } else {
+                ps.setLong(4, caseSetId);
+            }
+            ps.setString(5, title);
+            ps.setInt(6, version);
+            ps.setString(7, snapshot.hash());
+            ps.setString(8, snapshot.json());
+            ps.setString(9, snapshot.html());
+            ps.setString(10, snapshot.sourceSummary());
             return ps;
         }, keys);
         return keys.getKey() == null ? 0L : keys.getKey().longValue();

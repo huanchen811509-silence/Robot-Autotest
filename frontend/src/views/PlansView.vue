@@ -25,6 +25,8 @@ import { localizeError, type ErrorLine } from '@/utils/errors'
 import { EMPTY, formatDateTime } from '@/utils/format'
 import { runStatusLabel, type StatusTone } from '@/utils/statusLabels'
 import { confirmAction } from '@/composables/useConfirm'
+import MoreMenu, { type MoreMenuItem } from '@/components/MoreMenu.vue'
+import { useRouter } from 'vue-router'
 
 const { t, te } = useI18n()
 const auth = useAuthStore()
@@ -81,6 +83,13 @@ const skippedPageCount = computed(() => Math.max(1, Math.ceil(skippedTotal.value
  */
 const conflicts = ref<PlanConflict[]>([])
 const conflictLoading = ref(false)
+/* 冲突区默认收起（FR-v3.10-01 判据③）：只留一个带数字的入口按钮。
+   收起不等于不检测——冲突仍随列表一起刷新，数字就在按钮上。 */
+const conflictOpen = ref(false)
+
+function toggleConflicts(): void {
+  conflictOpen.value = !conflictOpen.value
+}
 const conflictError = ref<ErrorLine | null>(null)
 const selectedConflictKeys = ref<string[]>([])
 const batchApplying = ref(false)
@@ -411,32 +420,22 @@ const columns = computed<DataTableColumns<ExecutionPlan>>(() => [
       ]),
   },
   {
+    // FR-v3.10-01 判据②：行内只留 1 个「更多」，四个动作收进菜单。
+    // 宽度从 300 收到 96：省下的列宽还给名称与套件路径，长名字不再被截断成省略号。
     title: t('common.actions'),
     key: 'actions',
-    width: 300,
+    width: 96,
     render: (row) =>
-      h('div', { class: 'row-actions' }, [
-        h(
-          NButton,
-          { text: true, type: 'primary', size: 'small', onClick: () => openEdit(row) },
-          { default: () => t('plans.edit') },
-        ),
-        h(
-          NButton,
-          { text: true, size: 'small', onClick: () => void toggleStatus(row) },
-          { default: () => (row.status === 'paused' ? t('plans.resume') : t('plans.pause')) },
-        ),
-        h(
-          NButton,
-          { text: true, size: 'small', onClick: () => void triggerNow(row) },
-          { default: () => t('plans.triggerNow') },
-        ),
-        h(
-          NButton,
-          { text: true, type: 'error', size: 'small', onClick: () => void removePlan(row) },
-          { default: () => t('common.delete') },
-        ),
-      ]),
+      h(
+        MoreMenu,
+        {
+          label: t('plans.moreActions'),
+          testid: `plan-more-${row.id}`,
+          items: rowActions(row),
+          onSelect: (key: string) => onRowAction(row, key),
+        },
+        {},
+      ),
   },
 ])
 
@@ -622,6 +621,43 @@ async function removePlan(plan: ExecutionPlan): Promise<void> {
   }
 }
 
+/* 行内「更多」菜单的选项与派发（FR-v3.10-01）。
+ * 四个动作原本是四个文字按钮，一屏 50 行就是 200 个可点控件；
+ * 收进菜单后每行只剩 1 个触发点，危险项（删除）在菜单里单独标红。 */
+const router = useRouter()
+
+function rowActions(row: ExecutionPlan): MoreMenuItem[] {
+  return [
+    { key: 'edit', label: t('plans.edit') },
+    { key: 'toggle', label: row.status === 'paused' ? t('plans.resume') : t('plans.pause') },
+    { key: 'trigger', label: t('plans.triggerNow') },
+    { key: 'delete', label: t('common.delete'), danger: true },
+  ]
+}
+
+function onRowAction(row: ExecutionPlan, key: string): void {
+  if (key === 'edit') openEdit(row)
+  else if (key === 'toggle') void toggleStatus(row)
+  else if (key === 'trigger') void triggerNow(row)
+  else if (key === 'delete') void removePlan(row)
+}
+
+/* 工具条「更多」：计划组 / 依赖图 / 返回运行列表。
+ * 这三个都是「离开本页」的次级动作，留在工具条上会跟「新建计划」抢注意力。
+ * 用 router.push 而不是 <RouterLink>：菜单项是 naive-ui 渲染的虚拟节点，
+ * 塞不进自定义组件，硬塞会丢掉键盘可达性与点击关闭行为。 */
+const TOOLBAR_MORE = computed<MoreMenuItem[]>(() => [
+  { key: 'groups', label: t('plans.groupsEntry') },
+  { key: 'graph', label: t('plans.graphEntry') },
+  { key: 'runs', label: t('plans.backToRuns') },
+])
+
+function onToolbarMore(key: string): void {
+  const target = key === 'groups' ? '/plans/groups' : key === 'graph' ? '/plans/graph' : '/runs'
+  // 单测里没有装 router：缺路由时静默跳过，不让「点一下菜单」变成抛异常
+  void router?.push(target)
+}
+
 watch(projectId, () => {
   closeForm()
   resetSkipped()
@@ -640,21 +676,15 @@ void load()
     <div class="toolbar">
       <NButton type="primary" @click="openCreate">{{ t('plans.create') }}</NButton>
       <NButton quaternary :loading="loading" @click="load">{{ t('common.refresh') }}</NButton>
-      <!-- 计划组 / 依赖图（ORCH-01 / ORCH-02）是计划的子页面，入口放在这里：
-           没有入口的页面等于不存在，只能靠手输 URL 才能打开。 -->
-      <RouterLink v-slot="{ navigate }" to="/plans/groups" custom>
-        <NButton quaternary data-testid="entry-plan-groups" @click="navigate">
-          {{ t('plans.groupsEntry') }}
-        </NButton>
-      </RouterLink>
-      <RouterLink v-slot="{ navigate }" to="/plans/graph" custom>
-        <NButton quaternary data-testid="entry-plan-graph" @click="navigate">
-          {{ t('plans.graphEntry') }}
-        </NButton>
-      </RouterLink>
-      <RouterLink v-slot="{ navigate }" to="/runs" custom>
-        <NButton quaternary @click="navigate">{{ t('plans.backToRuns') }}</NButton>
-      </RouterLink>
+      <!-- 计划组 / 依赖图（ORCH-01 / ORCH-02）是计划的子页面，入口必须存在：
+           没有入口的页面等于不存在。但它们是次级动作，收进「更多」，
+           否则首屏四个同权重按钮里没人分得清主次（FR-v3.10-01 判据①）。 -->
+      <MoreMenu
+        :label="t('plans.more')"
+        testid="plan-toolbar-more"
+        :items="TOOLBAR_MORE"
+        @select="onToolbarMore"
+      />
     </div>
 
     <ErrorLineView v-if="error" :error="error" />
@@ -684,15 +714,41 @@ void load()
       @update:page-size="changePlanPageSize"
     />
 
+    <!-- FR-v3.10-01 判据③：冲突处理独立成区且**默认收起**。
+         收起时只占一个按钮，首屏主操作数才压得住；有冲突时标题就带数字，
+         不会因为「收起来了」而让人看不见。 -->
     <div class="card conflict-card" data-testid="plan-conflicts">
       <div class="conflict-head">
-        <h2 class="card-title">{{ t('plans.conflictTitle') }}</h2>
+        <NButton
+          quaternary
+          size="small"
+          data-testid="conflict-toggle"
+          :aria-expanded="conflictOpen"
+          @click="toggleConflicts"
+        >
+          {{ conflictOpen ? t('plans.conflictHide') : t('plans.conflictToggle', { n: conflicts.length }) }}
+        </NButton>
         <span class="muted small">{{ t('plans.conflictHint') }}</span>
-        <NButton quaternary size="small" :loading="conflictLoading" @click="loadConflicts">
+        <NButton
+          v-if="conflictOpen"
+          quaternary
+          size="small"
+          :loading="conflictLoading"
+          @click="loadConflicts"
+        >
           {{ t('plans.conflictRefresh') }}
         </NButton>
       </div>
 
+      <p
+        v-if="!conflictOpen && conflicts.length > 0"
+        class="text-warn small"
+        data-testid="conflict-collapsed-hint"
+      >
+        {{ t('plans.conflictToggle', { n: conflicts.length }) }}
+      </p>
+
+      <template v-if="conflictOpen">
       <ErrorLineView v-if="conflictError" :error="conflictError" />
       <p v-else-if="!conflictLoading && conflicts.length === 0" class="text-ok" data-testid="conflict-empty">
         {{ t('plans.conflictEmpty') }}
@@ -744,6 +800,7 @@ void load()
         </div>
       </template>
       <p v-if="batchNotice" class="text-ok" data-testid="conflict-batch-result">{{ batchNotice }}</p>
+      </template>
     </div>
 
     <div class="card skipped-card">

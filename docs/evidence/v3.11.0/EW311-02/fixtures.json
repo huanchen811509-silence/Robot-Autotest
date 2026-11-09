@@ -1,0 +1,14 @@
+{
+  "generatedAt": "2026-11-09T07:49:05.339804+00:00",
+  "environment": "V311-PROBE-20261109154902",
+  "collectIds": [
+    6,
+    7
+  ],
+  "snapshotIds": [
+    5,
+    6
+  ],
+  "diffItems": 1,
+  "source": "真实 POST /collect 与 POST /snapshots；快照内容取自真实 GET /devices 与 /links"
+}

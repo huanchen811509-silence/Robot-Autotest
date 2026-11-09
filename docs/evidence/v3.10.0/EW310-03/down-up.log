@@ -1,0 +1,25 @@
+[drill] 环境 DB_NAME=robot_dev 不是集成库，本次改用 robot_it
+[drill] target=robot@127.0.0.1:3306/robot_it migration=V11_25__v3_10_report_source
+[drill] 目标表=test_report 目标列=source_type,case_set_id（共 2 列）
+[drill] 提示：mysql 的 'Using a password on the command line' 是既有告警，可忽略
+===== 0. 演练前 =====
+mysql: [Warning] Using a password on the command line interface can be insecure.
+source_type	varchar(16)	NO
+case_set_id	bigint	YES
+mysql: [Warning] Using a password on the command line interface can be insecure.
+[drill] test_report 行数=0
+===== 1. down =====
+mysql: [Warning] Using a password on the command line interface can be insecure.
+mysql: [Warning] Using a password on the command line interface can be insecure.
+[drill] down OK；残留目标列（应为空）：
+
+===== 2. up =====
+mysql: [Warning] Using a password on the command line interface can be insecure.
+mysql: [Warning] Using a password on the command line interface can be insecure.
+[drill] up OK；目标列（应为 2 行）：
+source_type	varchar(16)	NO
+case_set_id	bigint	YES
+mysql: [Warning] Using a password on the command line interface can be insecure.
+[drill] test_report 行数=0（应等于 0）
+[drill] RESULT PASS fails=0
+[drill] DONE

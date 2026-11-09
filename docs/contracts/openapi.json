@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Robot-Autotest API（构建期静态快照）",
-    "version": "3.9.0",
+    "version": "3.11.0",
     "description": "由 tools/gen_api_contract.py 从控制器源码生成；字段级契约由契约测试保证。"
   },
   "servers": [
@@ -40,6 +40,9 @@
     },
     {
       "name": "group"
+    },
+    {
+      "name": "host"
     },
     {
       "name": "iam"
@@ -2152,6 +2155,157 @@
                 "title": "RunRequest"
               }
             }
+          }
+        }
+      }
+    },
+    "/api/asset-host-inventory": {
+      "get": {
+        "operationId": "HostInventoryController.list",
+        "tags": [
+          "host"
+        ],
+        "responses": {
+          "200": {
+            "description": "统一信封；业务错误码见 ErrorCode",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        }
+      }
+    },
+    "/api/asset-host-inventory/collect": {
+      "post": {
+        "operationId": "HostInventoryController.collect",
+        "tags": [
+          "host"
+        ],
+        "responses": {
+          "200": {
+            "description": "统一信封；业务错误码见 ErrorCode",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "title": "CollectRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/asset-host-inventory/commands": {
+      "get": {
+        "operationId": "HostInventoryController.commands",
+        "tags": [
+          "host"
+        ],
+        "responses": {
+          "200": {
+            "description": "统一信封；业务错误码见 ErrorCode",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        }
+      }
+    },
+    "/api/asset-host-inventory/{id:\\\\d+}": {
+      "get": {
+        "operationId": "HostInventoryController.detail",
+        "tags": [
+          "host"
+        ],
+        "responses": {
+          "200": {
+            "description": "统一信封；业务错误码见 ErrorCode",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
           }
         }
       }
@@ -8476,6 +8630,41 @@
     "/api/projects/{projectId}/snapshots/latest": {
       "get": {
         "operationId": "EnvController.latest",
+        "tags": [
+          "asset"
+        ],
+        "responses": {
+          "200": {
+            "description": "统一信封；业务错误码见 ErrorCode",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        }
+      }
+    },
+    "/api/projects/{projectId}/snapshots/profiles": {
+      "get": {
+        "operationId": "EnvController.environments",
         "tags": [
           "asset"
         ],

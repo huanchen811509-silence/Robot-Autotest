@@ -12,12 +12,13 @@
 #   19 证据完整性（v2.2 CLOS-02：output.xml metadata 六必填 + 三处单测基线只增不减
 #      + AI 契约机检（AI-06：零 prompt 文件开关 / 零硬编码凭据 / 零 L4-L5 自动提交））
 #
-# 本脚本共 28 步：01–17 为 run 步，18 为末尾 structure_selfcheck 内联块，19 为证据完整性 run 步，
+# 本脚本共 29 步：01–17 为 run 步，18 为末尾 structure_selfcheck 内联块，19 为证据完整性 run 步，
 # 20–23 为 v3.2.0 的契约 / 包体 / 性能预算 / 版本一致性门禁。
 # 24–27 为 v3.3.0+v3.4.0 的 AI 评测 / 安全扫描 / 容量+备份演练 / i18n+对比度门禁。
 # 28 为 v3.9.0 的用例级命令契约（FR-v3.9-02：三列贯通 + 双内核真实 run 覆盖率 100%）。
-# 结构自检：若步骤 13 / 14 / 17 / 19 / 20 / 21 / 22 / 23 / 24 / 25 / 26 / 27 / 28 被删除，
-# check_structure 必须变红（`--selfcheck` 会实证 13/14、20/23、24/27 与新增的 28）。
+# 29 为 v3.11.0 的主机清单（FR-v3.11-01：10 类齐全 + 只读命令白名单 + 未采集必有原因）。
+# 结构自检：若步骤 13 / 14 / 17 / 19 / 20 / 21 / 22 / 23 / 24 / 25 / 26 / 27 / 28 / 29 被删除，
+# check_structure 必须变红（`--selfcheck` 会实证 13/14、20/23、24/27 与新增的 28、29）。
 #
 # 用法：
 #   bash scripts/gates.sh              # 全量门禁，0 = 全 PASS
@@ -66,11 +67,12 @@ check_structure() {
   grep -qE '^run 26 capacity_backup ' "$file" || { echo "STRUCT_FAIL 缺少步骤 26 capacity_backup"; bad=1; }
   grep -qE '^run 27 i18n_contrast ' "$file" || { echo "STRUCT_FAIL 缺少步骤 27 i18n_contrast"; bad=1; }
   grep -qE '^run 28 case_command ' "$file" || { echo "STRUCT_FAIL 缺少步骤 28 case_command"; bad=1; }
+  grep -qE '^run 29 host_inventory ' "$file" || { echo "STRUCT_FAIL 缺少步骤 29 host_inventory"; bad=1; }
   return "$bad"
 }
 
 if [ "${1:-}" = "--selfcheck" ]; then
-  echo '== 13/14/28 负向自检 =='
+  echo '== 13/14/28/29 负向自检 =='
   if node scripts/browser-regression.mjs --selfcheck; then
     echo 'SELFCHECK 13 PASS（注入横滚被判红）'
   else
@@ -88,6 +90,13 @@ if [ "${1:-}" = "--selfcheck" ]; then
   else
     echo 'SELFCHECK 28 FAIL（命令契约判据失灵）'; FAILS=$((FAILS + 1))
   fi
+  # 29 的判据负向自证：10 类齐全 / 顺序对 / 每项带命令与时间 / 未采集必有原因 /
+  # 不填占位值 / status 与项数一致 / 只读命令白名单，七类脏数据必须红、干净数据必须绿。
+  if python3 tools/check_host_inventory.py --self-check; then
+    echo 'SELFCHECK 29 PASS（七类脏数据均判红、干净数据判绿）'
+  else
+    echo 'SELFCHECK 29 FAIL（主机清单判据失灵）'; FAILS=$((FAILS + 1))
+  fi
   tmp="$(mktemp -d)"
   sed '/^run 13 /d' "$SELF" > "$tmp/no13.sh"
   sed '/^run 14 /d' "$SELF" > "$tmp/no14.sh"
@@ -97,6 +106,7 @@ if [ "${1:-}" = "--selfcheck" ]; then
   sed '/^run 24 /d' "$SELF" > "$tmp/no24.sh"
   sed '/^run 27 /d' "$SELF" > "$tmp/no27.sh"
   sed '/^run 28 /d' "$SELF" > "$tmp/no28.sh"
+  sed '/^run 29 /d' "$SELF" > "$tmp/no29.sh"
   if check_structure "$tmp/no13.sh"; then
     echo 'SELFCHECK 删步骤 13 FAIL（删了仍然绿）'; FAILS=$((FAILS + 1))
   else
@@ -136,6 +146,11 @@ if [ "${1:-}" = "--selfcheck" ]; then
     echo 'SELFCHECK 删步骤 28 FAIL（删了仍然绿）'; FAILS=$((FAILS + 1))
   else
     echo 'SELFCHECK 删步骤 28 PASS（删了变红）'
+  fi
+  if check_structure "$tmp/no29.sh"; then
+    echo 'SELFCHECK 删步骤 29 FAIL（删了仍然绿）'; FAILS=$((FAILS + 1))
+  else
+    echo 'SELFCHECK 删步骤 29 PASS（删了变红）'
   fi
   rm -rf "$tmp"
   printf '\nSELFCHECK_RESULT FAILS=%s\n' "$FAILS"
@@ -248,6 +263,14 @@ run 27 i18n_contrast "python3 tools/check_i18n.py && python3 tools/check_contras
 #    + 证据 coverage.json（RF 与 pytest 各一条真实 run，覆盖率 100% 且无历史 NULL 行）。
 #    证据缺失判红而不是放行：没有真实 run 支撑的覆盖率不算数。
 run 28 case_command "python3 tools/check_case_command.py"
+
+# 29 主机清单（v3.11.0 / FR-v3.11-01）：10 类采集齐全 + 命令白名单只读 + 未采集必有原因。
+#    判据分三段：静态（采集器里的 COMMANDS 是唯一事实来源，含 10 类顺序与只读性质）
+#    + 接口自述一致（GET /commands 的响应必须与源码逐字相同）
+#    + 真实采集证据（docs/evidence/v3.11.0/EW311-01/host-inventory.json）。
+#    证据由 bash scripts/host-inventory-contract.sh 产出；没有一次真实采集就判红，
+#    因为「10 类齐全」这句话只能由真机输出证明，不能由单测夹具代替。
+run 29 host_inventory "python3 tools/check_host_inventory.py"
 
 printf '\nGATES_RESULT FAILS=%s\n' "$FAILS"
 exit "$FAILS"

@@ -1,0 +1,25 @@
+[contract] api=http://127.0.0.1:8081 db=robot_dev project=29 set=TS-V310-CT-20261109150513
+mysql: [Warning] Using a password on the command line interface can be insecure.
+mysql: [Warning] Using a password on the command line interface can be insecure.
+mysql: [Warning] Using a password on the command line interface can be insecure.
+mysql: [Warning] Using a password on the command line interface can be insecure.
+mysql: [Warning] Using a password on the command line interface can be insecure.
+mysql: [Warning] Using a password on the command line interface can be insecure.
+mysql: [Warning] Using a password on the command line interface can be insecure.
+mysql: [Warning] Using a password on the command line interface can be insecure.
+[PASS] ① 按用例集建草稿 HTTP 200
+[PASS] ① 默认取最近一次执行（CT-20261109150513-NEW）
+[PASS] ① 来源标为 CASE_SET
+[PASS] ② 指定执行记录生效（CT-20261109150513-OLD）
+[PASS] ③ 跨用例集的 run 被拒（400）
+[PASS] ④ 旧路径仍是 RUN / caseSetId=null
+[PASS] ⑤ 列表带 sourceType/caseSetId（命中 2 条）
+mysql: [Warning] Using a password on the command line interface can be insecure.
+mysql: [Warning] Using a password on the command line interface can be insecure.
+[PASS] ⑥ 冻结 HTTP 200（同 run 已有 2 份报告）
+[PASS] ⑥ 源 run 删除后渲染内容逐字不变（长度 566）
+mysql: [Warning] Using a password on the command line interface can be insecure.
+[PASS] ⑥ 快照里记住了源 runId（自包含的实质）
+mysql: [Warning] Using a password on the command line interface can be insecure.
+[contract] 快照样本 -> docs/evidence/v3.10.0/EW310-03/snapshot-case-set.json（2853 字节）
+RESULT PASS fails=0

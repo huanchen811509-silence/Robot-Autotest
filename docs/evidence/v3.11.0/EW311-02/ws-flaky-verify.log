@@ -1,0 +1,25 @@
+# B5 门禁 · RunLogWebSocketE2ETest 竞态修复验证（2026-11-09 GMT+8）
+
+现象：门禁第 5 步偶发 `incrementalPushArrives` FAIL（单帧不得超过 50 行，实测 120）；
+      第 19 步基线机检因后端日志缺 BUILD SUCCESS 级联判红。
+根因：客户端 WS 连上 != 服务端 subscribe 完成。先发 120 行时，服务端随后的
+      reconnect(200) 把它们当「补发」一帧推回（补发帧最多 200 行）；
+      LogBatcher.MAX_PER_FLUSH=50 与 drain(50) 的增量切片本身未变，生产代码零改动。
+修复：测试先 publish 一行探针并 await 其到达（确认订阅与水位就绪），
+      collector.clear() 隔离补发/探针帧，再发 120 行专测增量帧。
+命令：mvn -o -B test -Dtest=RunLogWebSocketE2ETest，连跑 3 次
+
+--- RUN 1 ---
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 14.80 s -- in com.qa.autotest.api.execution.RunLogWebSocketE2ETest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+--- RUN 2 ---
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 17.69 s -- in com.qa.autotest.api.execution.RunLogWebSocketE2ETest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+--- RUN 3 ---
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 15.95 s -- in com.qa.autotest.api.execution.RunLogWebSocketE2ETest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+
+结论：3 次均 4/4 通过、BUILD SUCCESS；竞态消除，判据未放宽（仍要求 120 行全收到 + 单帧 <=50 + 至少一帧）。

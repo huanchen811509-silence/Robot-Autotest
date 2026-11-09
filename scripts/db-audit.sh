@@ -39,8 +39,10 @@ check() {
 # archived_keyword_result），故 75 → 87；V11_23 只补审计列，不加表。
 # V11_2 首版曾建 TRIGGER，因 binlog + 无 SUPER 权限被实测推翻（Error 1419），
 # 已改为纯建表 + 应用层不可变约束，见该迁移文件头修订说明。
+# v3.9.0 V11_24 只加列；v3.10.0 V11_25 只加列；v3.11.0 V11_26 加 1 张
+# （device_host_spec：每次采集插一行、只增不改），V11_27 只改索引，故 87 → 88。
 # 此处期望值随迁移演进而更新，不是「表越多越好」的口径。
-check "业务表数 = 87" "87" \
+check "业务表数 = 88" "88" \
     "SELECT COUNT(*) FROM information_schema.tables
      WHERE table_schema='$DB_NAME' AND table_name<>'flyway_schema_history';"
 
@@ -65,15 +67,19 @@ check "缺审计四列的表的数量 = 0" "0" \
                                   -- v3.3 / v3.4 新增的 append-only 表：只增不改，
                                   -- 各自的时间语义见列注释（fired_at / archived_at / day）
                                   'ai_message','alert_event','slo_daily',
-                                  'release_record','archived_run')
+                                  'release_record','archived_run',
+                                  -- v3.11.0：采集结果只插不改，缺 updated_* 是设计而非漏列
+                                  'device_host_spec')
        GROUP BY t.table_name HAVING have < 4
      ) x;"
-# 这五张 append-only 表必须各有一个 created_at（5 张 → 期望 5，少一张就报）。
-check "append-only 历史表都有 created_at" "5" \
+# 这六张 append-only 表（含 v3.11.0 的 device_host_spec）必须各有一个 created_at
+# （6 张 → 期望 6，少一张就报）；v3.3/v3.4 那五张按各自时间列语义在上一判据豁免。
+check "append-only 历史表都有 created_at" "6" \
     "SELECT COUNT(DISTINCT table_name) FROM information_schema.columns
      WHERE table_schema='$DB_NAME'
        AND table_name IN ('resource_lease_history','run_attempt',
-                          'test_report_export','test_report_audit','ai_action')
+                          'test_report_export','test_report_audit','ai_action',
+                          'device_host_spec')
        AND column_name='created_at';"
 
 # 口径修正（2026-11-06）：原写法先筛 `column_name='id'` 再判它是否主键，

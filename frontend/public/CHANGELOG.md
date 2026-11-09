@@ -8,7 +8,57 @@
 > `<!-- current -->` 是给解析器用的语言无关标识（Markdown 渲染时不可见）。
 > 因此代码里不需要硬编码中文，界面显示文案一律走 i18n 语言包 `changelog.*`。
 
-## v3.9.0-traceability（2026-11-09） <!-- current -->
+## v3.11.0-asset-pages（2026-11-09） <!-- current -->
+
+### 新增 <!-- added -->
+- **测试资产主机清单**：`V11_26` 建 `device_host_spec`，10 类只读命令（OS / 内核 / CPU / 内存 / 磁盘 / GPU / 网卡 / IP / RoCE / 路由）原样存进 `spec_json`；采不到的项写「未采集到 + 原因」，不用 `0` / `-` / `未知` 占位；本机实测 `PARTIAL 9/10`，缺的 GPU 原因是 `sh: 1: nvidia-smi: not found`
+- **显式采集入口**：`POST /collect` 只挂在「立即采集」按钮且需二次确认，`GET /collect` 回 405；命令白名单 `GET /commands` 公开可查
+- **环境与拓扑 5 页接真实数据**：总览 / 采集 / 拓扑快照 / 环境准备 / 采集分析告别恒空占位；补 `GET /snapshots/profiles` 列出环境名
+- **维护与恢复 3 页接真实数据**：执行原则读真实设置、恢复记录读真实 `GET /audit` 的 `case.batch.undo.*`、只读找回走 `GET /search?types=run`；不取 `detail`、不展示命令正文、不产生新 run
+- **门禁第 29 步**：`tools/check_host_inventory.py` 校验 10 类白名单、未采到原因、接口自述与源码逐字一致，带 20 组正负样本自证
+- **V11_27**：`env_profile` 去掉同名唯一键改普通联合索引，同一环境可存多份快照，两快照 diff 才成立
+
+### 变更 <!-- changed -->
+- 只读页判据升级为「源码级无写函数 + 真浏览器录 `Network.requestWillBeSent`，加载期 0 个写请求」，交互期写操作必须二次确认
+- 门禁步骤 28 → **29**；OpenAPI 快照重生成 **284 endpoints / 225 paths**；i18n 中英各 **1680 键**
+- 8 页筛选控件统一用原生 `<select>`：happy-dom 下 `NSelect` 虚拟列表不渲染选项，取证不稳
+- 两份真实采集 + 两份真实资产快照均由真实 HTTP 写入，夹具不塞 SQL 假行
+
+### 修复 <!-- fixed -->
+- 主机清单列表 `specJson` 由空串改为 `null`，前端不再把「这一栏没查」当成「清单是空的」
+- `@GetMapping("/{id}")` 把 `GET /collect` 吃掉回 400 → 改 `{id:\d+}`，现正确回 405
+- 同名环境第二份快照因 `uk_env_profile_project_name` 唯一键 500 → 追加 `V11_27`
+- `http.ts` 对 GET 有短时缓存，只读找回同参复搜不发请求；探针改为先改关键字再判「只发 GET /search」
+- 详情路由、列表 null 等修复只在 WSL 权威副本改过才算数：首跑漏同步导致 jar 里仍是旧类，补同步后重建重启才生效
+
+### 破坏性变更 <!-- breaking -->
+- 无。`V11_26` 为新建表、`V11_27` 只改索引，两者均附 down 脚本并做过真实 down→up 演练。
+
+---
+
+## v3.10.0-pick-and-plan（2026-11-09）
+
+### 新增 <!-- added -->
+- **计划页信息架构**：首屏主操作 9 → 5、整页可点控件 64 → 30、每行 4 → 1（「更多」菜单 4 项）；冲突处理与跳过事件各成独立区域并默认收起；16 项原功能逐项有对照表
+- **报告草稿选执行记录**：`RunPicker` 下拉列最近 100 条 run（ID / 时间 / 结论 / 用例数四段文案），支持关键词与 7d/30d 时间档，选中自动带出标题；手打 `RUN_ID` 降级为「高级」
+- **报告草稿用例集来源**：`V11_25` 给 `test_report` 加 `source_type` / `case_set_id`，可选「按用例集」建草稿；冻结快照整段内联用例事实，删掉源 run 后渲染逐字不变（566 字节）
+- **迁移演练脚本参数化**：`migration-down-up-drill.sh` 从 up 脚本解析目标表/列并支持 `MODE=table`，不再拿硬编码的 `test_result` 去「通过」另一张表
+
+### 变更 <!-- changed -->
+- 计划页首屏高度 2.63 → 1.18 屏；报告草稿页由单来源改为「按执行记录 / 按用例集」双来源，旧 `create` 三参签名不动
+- 横向回归基线：前端 80 文件 / 567 条、后端 1262 条 / 0 失败 / 4 跳过；`vue-tsc` 无输出、i18n 1607 键、`vite build` 成功
+
+### 修复 <!-- fixed -->
+- 冻结版本号按「本报告 + 1」分配，同 run 两份报告会撞唯一键 `uk_report_run_version` → 改按 run 全局 `maxVersion + 1`，HTTP 500 消失
+- 迁移演练脚本首版对 `V11_25` 假 PASS（检查了错误的表）→ 重写为解析目标表/列并打印实际检查项
+- `RunPicker.spec` 的「未选项目不发请求」读到上一条用例的调用计数 → `vi.clearAllMocks()` 移到 `beforeEach` 首位
+
+### 破坏性变更 <!-- breaking -->
+- 无。`V11_25` 两列带 `DEFAULT 'run'` 回填旧行、均附 down 脚本与真实演练。
+
+---
+
+## v3.9.0-traceability（2026-11-09）
 
 ### 新增 <!-- added -->
 - **用例级「下发命令」贯通**：`V11_24` 给 `test_result` 增 `command_text` / `command_source` /

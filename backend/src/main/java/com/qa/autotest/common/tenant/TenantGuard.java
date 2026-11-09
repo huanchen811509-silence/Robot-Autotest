@@ -51,7 +51,9 @@ public final class TenantGuard {
             "alert_channel", "alert_rule", "alert_event", "slo_daily",
             // v3.4.0：归档保留（策略与冷表都按项目隔离）
             "archive_policy", "archived_run", "archived_test_result",
-            "archived_keyword_result");
+            "archived_keyword_result",
+            // v3.11.0：主机清单（按项目隔离；同一台设备可能被多个项目各自采集）
+            "device_host_spec");
 
     private TenantGuard() {
     }

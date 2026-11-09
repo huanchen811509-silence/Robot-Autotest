@@ -1,14 +1,18 @@
 <script setup lang="ts">
 /**
- * MENU-04：恢复记录（只读视图）。
+ * FR-v3.11-03 · 恢复记录（只读，不含恢复命令正文）。
  *
- * 本页只展示恢复记录的时间 / 对象 / 结果，不含恢复命令正文（命令原文一律不落前端、不展示）；
- * 不发起任何写请求，只读数据统一走 GET；行集恒为空、显示「0 条」，不编造业务数据。
+ * 数据源是**真实审计日志**：GET /audit 里 action 以 case.batch.undo. 开头的撤销/恢复动作。
+ * 只映射时间 / 对象 / 动作名 / 操作人四个字段；审计条目的 detail（可能含令牌与命令痕迹）
+ * 一律不取、不渲染——沿用 v2.2 的安全口径。0 条就是 0 条，不补造记录。
  */
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { DataTableColumns } from 'naive-ui'
+import { NButton, type DataTableColumns } from 'naive-ui'
 import DataTable from '@/components/DataTable.vue'
+import { useAuthStore } from '@/stores/auth'
+import { fetchRecoveryRecords } from '@/api/maintenance'
+import { formatDateTime } from '@/utils/format'
 
 interface RecoveryRow {
   id: number
@@ -19,8 +23,13 @@ interface RecoveryRow {
 }
 
 const { t } = useI18n()
+const auth = useAuthStore()
+const projectId = computed(() => auth.projectId ?? 0)
 
 const rows = ref<RecoveryRow[]>([])
+const scanned = ref(0)
+const loading = ref(false)
+const failed = ref(false)
 
 const columns = computed<DataTableColumns<RecoveryRow>>(() => [
   { title: t('maintenance.records.colTime'), key: 'occurredAt' },
@@ -28,6 +37,32 @@ const columns = computed<DataTableColumns<RecoveryRow>>(() => [
   { title: t('maintenance.records.colResult'), key: 'result' },
   { title: t('maintenance.records.colRemark'), key: 'remark' },
 ])
+
+async function load() {
+  if (!projectId.value) { rows.value = []; scanned.value = 0; return }
+  loading.value = true
+  failed.value = false
+  try {
+    const data = await fetchRecoveryRecords(projectId.value)
+    scanned.value = data.total
+    // 只搬这四个字段；detail / ip / summary 里可能有命令正文或凭据，不进视图模型。
+    rows.value = data.rows.map((r) => ({
+      id: r.id,
+      occurredAt: formatDateTime(r.occurredAt),
+      target: r.target,
+      result: r.action,
+      remark: r.operator ?? t('maintenance.common.notCollected'),
+    }))
+  } catch {
+    rows.value = []
+    failed.value = true
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(load)
+watch(projectId, load)
 </script>
 
 <template>
@@ -37,11 +72,23 @@ const columns = computed<DataTableColumns<RecoveryRow>>(() => [
       <p class="muted">{{ t('maintenance.records.subtitle') }}</p>
     </header>
     <p class="notice">{{ t('maintenance.records.notice') }}</p>
+    <p class="muted" data-testid="records-scanned">{{ t('maintenance.records.noCommand') }}</p>
+
+    <div v-if="failed" class="banner error" data-testid="records-failed">
+      {{ t('maintenance.common.loadFailed') }}
+      <NButton size="small" tertiary data-testid="records-retry" @click="load">
+        {{ t('maintenance.common.retry') }}
+      </NButton>
+    </div>
+
     <section class="panel">
       <h2>{{ t('maintenance.records.panel') }}</h2>
-      <DataTable :columns="columns" :data="rows" :row-key="(row: RecoveryRow) => row.id">
+      <p v-if="loading" class="muted" data-testid="records-loading">
+        {{ t('maintenance.common.loading') }}
+      </p>
+      <DataTable v-else :columns="columns" :data="rows" :row-key="(row: RecoveryRow) => row.id">
         <template #empty>
-          <p class="empty" data-testid="empty">{{ t('maintenance.common.empty') }}</p>
+          <p class="empty" data-testid="records-empty">{{ t('maintenance.common.empty') }}</p>
         </template>
       </DataTable>
     </section>
@@ -56,6 +103,6 @@ const columns = computed<DataTableColumns<RecoveryRow>>(() => [
 .panel { border: 1px solid color-mix(in srgb, currentColor 16%, transparent); border-radius: 10px; padding: 18px; }
 .panel h2 { margin: 0 0 12px; font-size: 15px; }
 .empty { font-size: 13px; opacity: .7; }
-.grid { width: 100%; border-collapse: collapse; font-size: 13px; }
-.grid th, .grid td { border: 1px solid color-mix(in srgb, currentColor 14%, transparent); padding: 6px 10px; text-align: left; }
+.banner { border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; gap: 12px; font-size: 13px; }
+.banner.error { border: 1px solid color-mix(in srgb, var(--fail) 50%, transparent); }
 </style>
