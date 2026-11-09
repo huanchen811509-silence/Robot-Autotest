@@ -1,0 +1,42 @@
+{
+  "workflow": "delivery-bundle",
+  "runId": 42595970100,
+  "jobId": 129088544961,
+  "event": "push",
+  "branch": "main",
+  "commit": "d6016b13ab1a5b876e74ca5a62b0fcd30ba7dc88",
+  "conclusion": "success",
+  "durationSeconds": 109,
+  "runner": "ubuntu-latest (GitHub-hosted)",
+  "steps": [
+    "Checkout (full history)",
+    "Setup JDK 21",
+    "Setup Node 22",
+    "Build (editor -> frontend -> backend)",
+    "Delivery contract check (static)",
+    "Preflight (build artifacts present)",
+    "Package tarball + MANIFEST + sha256",
+    "Verify unpacked bundle (dry-run install + doctor)",
+    "Upload delivery artifact",
+    "Summary"
+  ],
+  "stepsFailed": 0,
+  "artifact": {
+    "id": 13663192944,
+    "name": "robot-autotest-linux-x64",
+    "sizeBytes": 48130253,
+    "expired": false,
+    "retentionDays": 30,
+    "download": "gh run download 42595970100 -n robot-autotest-linux-x64"
+  },
+  "annotations": [
+    "actions/*@v4 target Node.js 20, forced onto Node.js 24 (warning only)",
+    "actions/setup-java@v4 deprecated, migrate to v5 (next round)",
+    "ubuntu-latest image migrates to Ubuntu 26; bundle has no native binaries so cross-Ubuntu use is unaffected"
+  ],
+  "notes": [
+    "PR workflow (self-hosted rf-lab) still queued: runner not registered, unchanged by this round",
+    "CI does not connect to MySQL, does not run browser/CDP probes, does not judge release gates"
+  ],
+  "verifiedAt": "2026-11-09T18:05:19+08:00"
+}

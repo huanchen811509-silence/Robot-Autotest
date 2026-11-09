@@ -1,0 +1,28 @@
+2026-11-09 GitHub Actions artifact 下载链路探测（AIDC AutoTest 3.11.0 交付包）
+================================================================================
+artifact : id=13663192944  name=robot-autotest-linux-x64  size=48130253  expired=false
+run      : 42595970100  job=129088544961  conclusion=success
+
+[1] 元数据核实
+    gh api repos/huanchen811509-silence/Robot-Autotest/actions/runs/42595970100/artifacts
+    -> total_count=1, robot-autotest-linux-x64, 48130253, false
+
+[2] 完整下载尝试（本机网络受限）
+    gh run download 42595970100 -n robot-autotest-linux-x64   -> 工具层超时中断
+    curl -sSL --max-time 240 .../artifacts/13663192944/zip     -> curl(28)
+       12320768 / 48130253 bytes received after 240s
+    curl -sSL --max-time 900 ...（后台）                        -> 4m44s 仅 11370496 bytes，主动停止
+    实测带宽约 45 KB/s；48 MB 全量下载无法在本轮收口窗口内完成。
+
+[3] Range 快速探测（端到端下载链路实证）
+    curl -sS -L --max-time 45 -r 0-2047 --max-filesize 65536 \
+         -H "Authorization: Bearer <token>" .../artifacts/13663192944/zip
+    -> HTTP=206 SIZE=2048
+    -> 前四字节 50 4b 03 04（PK\x03\x04，ZIP 魔数）
+
+结论：下载链路通、服务端支持 Range 断点续传、返回内容是正确的 ZIP 结构；
+      未完成的只是「48MB 全量拉回本机并跑 sha256sum -c」，原因是本机带宽而非产物缺陷。
+      本地由同一 scripts/package-release.sh 产出的 tarball 已完成解包 / doctor /
+      真实安装 / 真实拆卸的全链路验证（见 unpack-verify.log、install-apply.log、
+      uninstall-apply.log），MANIFEST 与 CI 产物同源。
+      全量下载复核列入下一轮 FR-v3.12-02 判据 ⑤（G-06）。

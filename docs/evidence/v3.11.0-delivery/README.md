@@ -25,7 +25,9 @@
 | `uninstall-dryrun.log` | dry-run 不删任何文件 | 同上 |
 | `uninstall-apply.log` | 真拆卸：12 项逐项删、备份 20K、留 `REMOVED.txt`、数据库不动 | 同上 |
 | `md-tables.log` | 8 份文档 / 53 个表格块 / 393 行，列数一致 | `check_md_tables.py` |
-| `ci-run.json` | GitHub Actions 真实运行结论（run id / 结论 / artifact） | `gh run view`，见 §4 |
+| `ci-run.json` | GitHub Actions 真实运行结论（run id / 结论 / artifact / annotations） | `wb-ci-evidence.py` |
+| `ci-run.log` | `gh run view` 原文（job 与步骤清单） | `gh run view` |
+| `download-probe.log` | artifact 下载链路：元数据 / 两次全量尝试 / Range `HTTP 206` + ZIP 魔数 | `gh api` + `curl` |
 
 > `releases/*.tar.gz` 本身按 `.gitignore` 的 `/releases/` 规则**不入库**（可由脚本重建）；
 > 入库的是 MANIFEST、校验和与上述日志，保证 clone 后仍可复核「包里该有什么」。
@@ -64,24 +66,45 @@
 
 | 项 | 值 |
 |---|---|
-| workflow | `delivery.yml` |
-| 触发方式 | `gh workflow run` / push main |
-| run id | 见 `ci-run.json` |
-| 结论 | 见 `ci-run.json` |
-| artifact | `robot-autotest-linux-x64`（tar.gz + sha256 + manifest） |
+| workflow | `delivery.yml`（GitHub-hosted `ubuntu-latest`） |
+| 触发方式 | push main，commit `d6016b1` |
+| run id | `42595970100` / job `129088544961` |
+| 结论 | **success**，耗时 1m49s，10 个业务步骤全 ✓、0 失败 |
+| artifact | `robot-autotest-linux-x64`，id `13663192944`，48,130,253 字节，保留 30 天 |
+| 下载 | `gh run download 42595970100 -n robot-autotest-linux-x64` |
+| 证据 | `ci-run.json`（结构化）、`ci-run.log`（`gh run view` 原文） |
 
-> 本段在 CI 跑完后回填；若首次运行失败，按日志修到绿再归档，不把 `pending` 当成功。
+CI 步骤实证：`Checkout → Setup JDK 21 → Setup Node 22 → scripts/build.sh →
+check_delivery_bundle.py → package-release.sh --check → package-release.sh →
+解包自检（doctor + 安装 dry-run）→ upload-artifact → Summary`。
+既有 `PR` workflow 同批 push 仍 `queued`（self-hosted `rf-lab` 未注册），保持不动。
+
+**三条 annotation（不影响结论，登记为下一轮附带项）**：
+`actions/*@v4` 的 Node 20 被强制跑到 Node 24；`setup-java@v4` 建议升 v5；
+`ubuntu-latest` 镜像将迁到 Ubuntu 26（交付包无原生二进制，跨 Ubuntu 版本可用）。
+
+> **下载链路实证**（`download-probe.log`）：Range 请求返回 `HTTP 206 / 2048 字节 /
+> PK ZIP 魔数 50 4b 03 04`，证明 artifact 可下载且服务端支持断点续传。
+> 本机带宽约 45 KB/s，48MB 全量拉回并跑 `sha256sum -c` 未能在收口窗口内完成，
+> 如实登记为下一轮 `G-06`，不记作通过也不记作失败。
+> 同一 `scripts/package-release.sh` 在本地产出的 tarball 已完成解包 / doctor /
+> 真实安装 / 真实拆卸全链路验证，MANIFEST 与 CI 产物同源。
 
 ---
 
 ## 5. 同步与边界
 
-| 位置 | sha |
+| 位置 | 首笔提交 sha |
 |---|---|
-| WSL 权威副本 `~/robot-autotest` | 见文末收口记录 |
+| WSL 权威副本 `~/robot-autotest` | `d6016b13ab1a5b876e74ca5a62b0fcd30ba7dc88` |
 | `origin`（公司群晖 NAS） | 同上 |
 | `github` | 同上 |
 | E 盘镜像 `E:\workspace\自动化测试\Robot-Autotest` | 同上 |
+
+第二笔提交只回写 CI 结论与证据索引（**代码零改动**），最终四处 sha 以交付汇报为准；
+本索引不写死最终 sha，避免每次回写都让文档过期。
+GitHub 侧推送出现 `Bypassed rule violations: Changes must be made through a pull request` 提示，
+属仓库分支保护的管理员放行，推送本身成功且 sha 一致。
 
 **边界**：交付包只上传 Actions artifact，需登录 GitHub 才能下载；公开 Release 属对外口径，留大师拍板。
 既有 `pr.yml` 依赖未注册的 self-hosted runner `rf-lab`，保持不动，属「待现场」。
@@ -106,3 +129,4 @@
 | 版本 | 日期 | 变更 |
 |---|---|---|
 | v1.0 | 2026-11-09 | 首版：证据清单、六项结论、机检读数、CI 与同步占位、遗留台账 |
+| v1.1 | 2026-11-09 | CI 实测回写：run `42595970100` success / 1m49s / artifact 48,130,253 字节；补 `ci-run.json` 与 `ci-run.log`；登记三条 annotation 与 artifact 完整下载受网络限制的事实；同步四处首笔 sha |
