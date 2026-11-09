@@ -1,0 +1,601 @@
+[lint] 密文扫描
+[secret-scan] 扫描明文口令赋值…
+[secret-scan] PASS（无命中，双向自检已过）
+[lint] frontend: npm run lint
+
+> robot-autotest-frontend@0.1.0 lint
+> eslint .
+
+[lint] backend: mvn -B -q checkstyle:check
+[lint] backend: mvn -B -DskipTests compile
+[lint] 前端静态守门（tools/check_*.py）
+[lint]   - tools/check_colors.py
+[PASS] 251 个文件无硬编码色值
+[lint]   - tools/check_contrast.py
+
+=== dark / accent=blue ===
+  [PASS] 15.27 : 1  (需 ≥4.5)  正文 / 页面底  #e6edf3 on #0f1720
+  [PASS] 12.97 : 1  (需 ≥4.5)  正文 / 卡片  #e6edf3 on #1a2634
+  [PASS] 14.10 : 1  (需 ≥4.5)  正文 / 次级底（日志面板、端口格）  #e6edf3 on #141f2b
+  [PASS]  6.37 : 1  (需 ≥4.5)  辅助文字 / 页面底  #8b9bb0 on #0f1720
+  [PASS]  5.41 : 1  (需 ≥4.5)  辅助文字 / 卡片  #8b9bb0 on #1a2634
+  [PASS]  7.30 : 1  (需 ≥4.5)  主按钮文字 / 按钮底  #06131f on #3fa7ff
+  [PASS]  5.97 : 1  (需 ≥4.5)  链接与强调文字 / 卡片  #3fa7ff on #1a2634
+  [PASS]  5.11 : 1  (需 ≥4.5)  强调文字 / 强调软底（徽标）  #3fa7ff on #17324d
+  [PASS]  6.63 : 1  (需 ≥4.5)  成功文字 / 卡片  #46c07a on #1a2634
+  [PASS]  6.18 : 1  (需 ≥4.5)  成功文字 / 成功软底（徽标、diff 行）  #46c07a on #12301f
+  [PASS]  5.42 : 1  (需 ≥4.5)  失败文字 / 卡片  #f27272 on #1a2634
+  [PASS]  5.53 : 1  (需 ≥4.5)  失败文字 / 失败软底  #f27272 on #3a1a1a
+  [PASS]  9.28 : 1  (需 ≥4.5)  告警文字 / 卡片  #f0c36b on #1a2634
+  [PASS]  8.21 : 1  (需 ≥4.5)  告警文字 / 告警软底（顶部横条）  #f0c36b on #3a2c14
+  [PASS]  3.58 : 1  (需 ≥3.0)  取消态色块 / 卡片（非文字，3:1 即可）  #6b7c90 on #1a2634
+  [PASS]  8.29 : 1  (需 ≥3.0)  图表系列 1 / 卡片  #7cc6fe on #1a2634
+  [PASS]  7.27 : 1  (需 ≥3.0)  图表系列 2 / 卡片  #b9a6ff on #1a2634
+  [PASS]  9.82 : 1  (需 ≥3.0)  图表系列 3 / 卡片  #7ee2b8 on #1a2634
+  [PASS]  8.99 : 1  (需 ≥3.0)  图表系列 4 / 卡片  #ffb86b on #1a2634
+  [PASS]  1.30 : 1  (需 ≥1.2)  边框 / 卡片（只要不是完全同色看不见）  #29394a on #1a2634
+
+=== dark / accent=crimson ===
+  [PASS] 15.27 : 1  (需 ≥4.5)  正文 / 页面底  #e6edf3 on #0f1720
+  [PASS] 12.97 : 1  (需 ≥4.5)  正文 / 卡片  #e6edf3 on #1a2634
+  [PASS] 14.10 : 1  (需 ≥4.5)  正文 / 次级底（日志面板、端口格）  #e6edf3 on #141f2b
+  [PASS]  6.37 : 1  (需 ≥4.5)  辅助文字 / 页面底  #8b9bb0 on #0f1720
+  [PASS]  5.41 : 1  (需 ≥4.5)  辅助文字 / 卡片  #8b9bb0 on #1a2634
+  [PASS]  6.75 : 1  (需 ≥4.5)  主按钮文字 / 按钮底  #06131f on #ff6b6b
+  [PASS]  5.52 : 1  (需 ≥4.5)  链接与强调文字 / 卡片  #ff6b6b on #1a2634
+  [PASS]  5.25 : 1  (需 ≥4.5)  强调文字 / 强调软底（徽标）  #ff6b6b on #35242c
+  [PASS]  6.63 : 1  (需 ≥4.5)  成功文字 / 卡片  #46c07a on #1a2634
+  [PASS]  6.18 : 1  (需 ≥4.5)  成功文字 / 成功软底（徽标、diff 行）  #46c07a on #12301f
+  [PASS]  5.42 : 1  (需 ≥4.5)  失败文字 / 卡片  #f27272 on #1a2634
+  [PASS]  5.53 : 1  (需 ≥4.5)  失败文字 / 失败软底  #f27272 on #3a1a1a
+  [PASS]  9.28 : 1  (需 ≥4.5)  告警文字 / 卡片  #f0c36b on #1a2634
+  [PASS]  8.21 : 1  (需 ≥4.5)  告警文字 / 告警软底（顶部横条）  #f0c36b on #3a2c14
+  [PASS]  3.58 : 1  (需 ≥3.0)  取消态色块 / 卡片（非文字，3:1 即可）  #6b7c90 on #1a2634
+  [PASS]  8.29 : 1  (需 ≥3.0)  图表系列 1 / 卡片  #7cc6fe on #1a2634
+  [PASS]  7.27 : 1  (需 ≥3.0)  图表系列 2 / 卡片  #b9a6ff on #1a2634
+  [PASS]  9.82 : 1  (需 ≥3.0)  图表系列 3 / 卡片  #7ee2b8 on #1a2634
+  [PASS]  8.99 : 1  (需 ≥3.0)  图表系列 4 / 卡片  #ffb86b on #1a2634
+  [PASS]  1.30 : 1  (需 ≥1.2)  边框 / 卡片（只要不是完全同色看不见）  #29394a on #1a2634
+
+=== dark / accent=default ===
+  [PASS] 15.27 : 1  (需 ≥4.5)  正文 / 页面底  #e6edf3 on #0f1720
+  [PASS] 12.97 : 1  (需 ≥4.5)  正文 / 卡片  #e6edf3 on #1a2634
+  [PASS] 14.10 : 1  (需 ≥4.5)  正文 / 次级底（日志面板、端口格）  #e6edf3 on #141f2b
+  [PASS]  6.37 : 1  (需 ≥4.5)  辅助文字 / 页面底  #8b9bb0 on #0f1720
+  [PASS]  5.41 : 1  (需 ≥4.5)  辅助文字 / 卡片  #8b9bb0 on #1a2634
+  [PASS]  7.30 : 1  (需 ≥4.5)  主按钮文字 / 按钮底  #06131f on #3fa7ff
+  [PASS]  5.97 : 1  (需 ≥4.5)  链接与强调文字 / 卡片  #3fa7ff on #1a2634
+  [PASS]  5.11 : 1  (需 ≥4.5)  强调文字 / 强调软底（徽标）  #3fa7ff on #17324d
+  [PASS]  6.63 : 1  (需 ≥4.5)  成功文字 / 卡片  #46c07a on #1a2634
+  [PASS]  6.18 : 1  (需 ≥4.5)  成功文字 / 成功软底（徽标、diff 行）  #46c07a on #12301f
+  [PASS]  5.42 : 1  (需 ≥4.5)  失败文字 / 卡片  #f27272 on #1a2634
+  [PASS]  5.53 : 1  (需 ≥4.5)  失败文字 / 失败软底  #f27272 on #3a1a1a
+  [PASS]  9.28 : 1  (需 ≥4.5)  告警文字 / 卡片  #f0c36b on #1a2634
+  [PASS]  8.21 : 1  (需 ≥4.5)  告警文字 / 告警软底（顶部横条）  #f0c36b on #3a2c14
+  [PASS]  3.58 : 1  (需 ≥3.0)  取消态色块 / 卡片（非文字，3:1 即可）  #6b7c90 on #1a2634
+  [PASS]  8.29 : 1  (需 ≥3.0)  图表系列 1 / 卡片  #7cc6fe on #1a2634
+  [PASS]  7.27 : 1  (需 ≥3.0)  图表系列 2 / 卡片  #b9a6ff on #1a2634
+  [PASS]  9.82 : 1  (需 ≥3.0)  图表系列 3 / 卡片  #7ee2b8 on #1a2634
+  [PASS]  8.99 : 1  (需 ≥3.0)  图表系列 4 / 卡片  #ffb86b on #1a2634
+  [PASS]  1.30 : 1  (需 ≥1.2)  边框 / 卡片（只要不是完全同色看不见）  #29394a on #1a2634
+
+=== dark / accent=gold ===
+  [PASS] 15.27 : 1  (需 ≥4.5)  正文 / 页面底  #e6edf3 on #0f1720
+  [PASS] 12.97 : 1  (需 ≥4.5)  正文 / 卡片  #e6edf3 on #1a2634
+  [PASS] 14.10 : 1  (需 ≥4.5)  正文 / 次级底（日志面板、端口格）  #e6edf3 on #141f2b
+  [PASS]  6.37 : 1  (需 ≥4.5)  辅助文字 / 页面底  #8b9bb0 on #0f1720
+  [PASS]  5.41 : 1  (需 ≥4.5)  辅助文字 / 卡片  #8b9bb0 on #1a2634
+  [PASS] 13.00 : 1  (需 ≥4.5)  主按钮文字 / 按钮底  #06131f on #ffd24a
+  [PASS] 10.63 : 1  (需 ≥4.5)  链接与强调文字 / 卡片  #ffd24a on #1a2634
+  [PASS]  8.78 : 1  (需 ≥4.5)  强调文字 / 强调软底（徽标）  #ffd24a on #3a3222
+  [PASS]  6.63 : 1  (需 ≥4.5)  成功文字 / 卡片  #46c07a on #1a2634
+  [PASS]  6.18 : 1  (需 ≥4.5)  成功文字 / 成功软底（徽标、diff 行）  #46c07a on #12301f
+  [PASS]  5.42 : 1  (需 ≥4.5)  失败文字 / 卡片  #f27272 on #1a2634
+  [PASS]  5.53 : 1  (需 ≥4.5)  失败文字 / 失败软底  #f27272 on #3a1a1a
+  [PASS]  9.28 : 1  (需 ≥4.5)  告警文字 / 卡片  #f0c36b on #1a2634
+  [PASS]  8.21 : 1  (需 ≥4.5)  告警文字 / 告警软底（顶部横条）  #f0c36b on #3a2c14
+  [PASS]  3.58 : 1  (需 ≥3.0)  取消态色块 / 卡片（非文字，3:1 即可）  #6b7c90 on #1a2634
+  [PASS]  8.29 : 1  (需 ≥3.0)  图表系列 1 / 卡片  #7cc6fe on #1a2634
+  [PASS]  7.27 : 1  (需 ≥3.0)  图表系列 2 / 卡片  #b9a6ff on #1a2634
+  [PASS]  9.82 : 1  (需 ≥3.0)  图表系列 3 / 卡片  #7ee2b8 on #1a2634
+  [PASS]  8.99 : 1  (需 ≥3.0)  图表系列 4 / 卡片  #ffb86b on #1a2634
+  [PASS]  1.30 : 1  (需 ≥1.2)  边框 / 卡片（只要不是完全同色看不见）  #29394a on #1a2634
+
+=== dark / accent=jade ===
+  [PASS] 15.27 : 1  (需 ≥4.5)  正文 / 页面底  #e6edf3 on #0f1720
+  [PASS] 12.97 : 1  (需 ≥4.5)  正文 / 卡片  #e6edf3 on #1a2634
+  [PASS] 14.10 : 1  (需 ≥4.5)  正文 / 次级底（日志面板、端口格）  #e6edf3 on #141f2b
+  [PASS]  6.37 : 1  (需 ≥4.5)  辅助文字 / 页面底  #8b9bb0 on #0f1720
+  [PASS]  5.41 : 1  (需 ≥4.5)  辅助文字 / 卡片  #8b9bb0 on #1a2634
+  [PASS]  9.75 : 1  (需 ≥4.5)  主按钮文字 / 按钮底  #06131f on #34d399
+  [PASS]  7.97 : 1  (需 ≥4.5)  链接与强调文字 / 卡片  #34d399 on #1a2634
+  [PASS]  6.87 : 1  (需 ≥4.5)  强调文字 / 强调软底（徽标）  #34d399 on #153533
+  [PASS]  6.63 : 1  (需 ≥4.5)  成功文字 / 卡片  #46c07a on #1a2634
+  [PASS]  6.18 : 1  (需 ≥4.5)  成功文字 / 成功软底（徽标、diff 行）  #46c07a on #12301f
+  [PASS]  5.42 : 1  (需 ≥4.5)  失败文字 / 卡片  #f27272 on #1a2634
+  [PASS]  5.53 : 1  (需 ≥4.5)  失败文字 / 失败软底  #f27272 on #3a1a1a
+  [PASS]  9.28 : 1  (需 ≥4.5)  告警文字 / 卡片  #f0c36b on #1a2634
+  [PASS]  8.21 : 1  (需 ≥4.5)  告警文字 / 告警软底（顶部横条）  #f0c36b on #3a2c14
+  [PASS]  3.58 : 1  (需 ≥3.0)  取消态色块 / 卡片（非文字，3:1 即可）  #6b7c90 on #1a2634
+  [PASS]  8.29 : 1  (需 ≥3.0)  图表系列 1 / 卡片  #7cc6fe on #1a2634
+  [PASS]  7.27 : 1  (需 ≥3.0)  图表系列 2 / 卡片  #b9a6ff on #1a2634
+  [PASS]  9.82 : 1  (需 ≥3.0)  图表系列 3 / 卡片  #7ee2b8 on #1a2634
+  [PASS]  8.99 : 1  (需 ≥3.0)  图表系列 4 / 卡片  #ffb86b on #1a2634
+  [PASS]  1.30 : 1  (需 ≥1.2)  边框 / 卡片（只要不是完全同色看不见）  #29394a on #1a2634
+
+=== dark / accent=orange ===
+  [PASS] 15.27 : 1  (需 ≥4.5)  正文 / 页面底  #e6edf3 on #0f1720
+  [PASS] 12.97 : 1  (需 ≥4.5)  正文 / 卡片  #e6edf3 on #1a2634
+  [PASS] 14.10 : 1  (需 ≥4.5)  正文 / 次级底（日志面板、端口格）  #e6edf3 on #141f2b
+  [PASS]  6.37 : 1  (需 ≥4.5)  辅助文字 / 页面底  #8b9bb0 on #0f1720
+  [PASS]  5.41 : 1  (需 ≥4.5)  辅助文字 / 卡片  #8b9bb0 on #1a2634
+  [PASS]  8.28 : 1  (需 ≥4.5)  主按钮文字 / 按钮底  #06131f on #fb923c
+  [PASS]  6.77 : 1  (需 ≥4.5)  链接与强调文字 / 卡片  #fb923c on #1a2634
+  [PASS]  6.09 : 1  (需 ≥4.5)  强调文字 / 强调软底（徽标）  #fb923c on #352b24
+  [PASS]  6.63 : 1  (需 ≥4.5)  成功文字 / 卡片  #46c07a on #1a2634
+  [PASS]  6.18 : 1  (需 ≥4.5)  成功文字 / 成功软底（徽标、diff 行）  #46c07a on #12301f
+  [PASS]  5.42 : 1  (需 ≥4.5)  失败文字 / 卡片  #f27272 on #1a2634
+  [PASS]  5.53 : 1  (需 ≥4.5)  失败文字 / 失败软底  #f27272 on #3a1a1a
+  [PASS]  9.28 : 1  (需 ≥4.5)  告警文字 / 卡片  #f0c36b on #1a2634
+  [PASS]  8.21 : 1  (需 ≥4.5)  告警文字 / 告警软底（顶部横条）  #f0c36b on #3a2c14
+  [PASS]  3.58 : 1  (需 ≥3.0)  取消态色块 / 卡片（非文字，3:1 即可）  #6b7c90 on #1a2634
+  [PASS]  8.29 : 1  (需 ≥3.0)  图表系列 1 / 卡片  #7cc6fe on #1a2634
+  [PASS]  7.27 : 1  (需 ≥3.0)  图表系列 2 / 卡片  #b9a6ff on #1a2634
+  [PASS]  9.82 : 1  (需 ≥3.0)  图表系列 3 / 卡片  #7ee2b8 on #1a2634
+  [PASS]  8.99 : 1  (需 ≥3.0)  图表系列 4 / 卡片  #ffb86b on #1a2634
+  [PASS]  1.30 : 1  (需 ≥1.2)  边框 / 卡片（只要不是完全同色看不见）  #29394a on #1a2634
+
+=== dark / accent=violet ===
+  [PASS] 15.27 : 1  (需 ≥4.5)  正文 / 页面底  #e6edf3 on #0f1720
+  [PASS] 12.97 : 1  (需 ≥4.5)  正文 / 卡片  #e6edf3 on #1a2634
+  [PASS] 14.10 : 1  (需 ≥4.5)  正文 / 次级底（日志面板、端口格）  #e6edf3 on #141f2b
+  [PASS]  6.37 : 1  (需 ≥4.5)  辅助文字 / 页面底  #8b9bb0 on #0f1720
+  [PASS]  5.41 : 1  (需 ≥4.5)  辅助文字 / 卡片  #8b9bb0 on #1a2634
+  [PASS]  6.89 : 1  (需 ≥4.5)  主按钮文字 / 按钮底  #06131f on #a78bfa
+  [PASS]  5.63 : 1  (需 ≥4.5)  链接与强调文字 / 卡片  #a78bfa on #1a2634
+  [PASS]  5.15 : 1  (需 ≥4.5)  强调文字 / 强调软底（徽标）  #a78bfa on #272a43
+  [PASS]  6.63 : 1  (需 ≥4.5)  成功文字 / 卡片  #46c07a on #1a2634
+  [PASS]  6.18 : 1  (需 ≥4.5)  成功文字 / 成功软底（徽标、diff 行）  #46c07a on #12301f
+  [PASS]  5.42 : 1  (需 ≥4.5)  失败文字 / 卡片  #f27272 on #1a2634
+  [PASS]  5.53 : 1  (需 ≥4.5)  失败文字 / 失败软底  #f27272 on #3a1a1a
+  [PASS]  9.28 : 1  (需 ≥4.5)  告警文字 / 卡片  #f0c36b on #1a2634
+  [PASS]  8.21 : 1  (需 ≥4.5)  告警文字 / 告警软底（顶部横条）  #f0c36b on #3a2c14
+  [PASS]  3.58 : 1  (需 ≥3.0)  取消态色块 / 卡片（非文字，3:1 即可）  #6b7c90 on #1a2634
+  [PASS]  8.29 : 1  (需 ≥3.0)  图表系列 1 / 卡片  #7cc6fe on #1a2634
+  [PASS]  7.27 : 1  (需 ≥3.0)  图表系列 2 / 卡片  #b9a6ff on #1a2634
+  [PASS]  9.82 : 1  (需 ≥3.0)  图表系列 3 / 卡片  #7ee2b8 on #1a2634
+  [PASS]  8.99 : 1  (需 ≥3.0)  图表系列 4 / 卡片  #ffb86b on #1a2634
+  [PASS]  1.30 : 1  (需 ≥1.2)  边框 / 卡片（只要不是完全同色看不见）  #29394a on #1a2634
+
+=== light / accent=blue ===
+  [PASS] 14.60 : 1  (需 ≥4.5)  正文 / 页面底  #1a2430 on #f4f7fb
+  [PASS] 15.68 : 1  (需 ≥4.5)  正文 / 卡片  #1a2430 on #ffffff
+  [PASS] 13.95 : 1  (需 ≥4.5)  正文 / 次级底（日志面板、端口格）  #1a2430 on #eef2f7
+  [PASS]  5.09 : 1  (需 ≥4.5)  辅助文字 / 页面底  #5b6b7c on #f4f7fb
+  [PASS]  5.47 : 1  (需 ≥4.5)  辅助文字 / 卡片  #5b6b7c on #ffffff
+  [PASS]  5.50 : 1  (需 ≥4.5)  主按钮文字 / 按钮底  #ffffff on #1567c9
+  [PASS]  5.50 : 1  (需 ≥4.5)  链接与强调文字 / 卡片  #1567c9 on #ffffff
+  [PASS]  4.83 : 1  (需 ≥4.5)  强调文字 / 强调软底（徽标）  #1567c9 on #e8f1fd
+  [PASS]  5.34 : 1  (需 ≥4.5)  成功文字 / 卡片  #1c7a4a on #ffffff
+  [PASS]  4.82 : 1  (需 ≥4.5)  成功文字 / 成功软底（徽标、diff 行）  #1c7a4a on #e8f7ee
+  [PASS]  5.44 : 1  (需 ≥4.5)  失败文字 / 卡片  #c0392b on #ffffff
+  [PASS]  4.76 : 1  (需 ≥4.5)  失败文字 / 失败软底  #c0392b on #fdecec
+  [PASS]  5.78 : 1  (需 ≥4.5)  告警文字 / 卡片  #8f5a08 on #ffffff
+  [PASS]  5.29 : 1  (需 ≥4.5)  告警文字 / 告警软底（顶部横条）  #8f5a08 on #fff4dc
+  [PASS]  3.62 : 1  (需 ≥3.0)  取消态色块 / 卡片（非文字，3:1 即可）  #7b8896 on #ffffff
+  [PASS]  4.13 : 1  (需 ≥3.0)  图表系列 1 / 卡片  #2b7fd4 on #ffffff
+  [PASS]  5.62 : 1  (需 ≥3.0)  图表系列 2 / 卡片  #6b4fd8 on #ffffff
+  [PASS]  4.35 : 1  (需 ≥3.0)  图表系列 3 / 卡片  #1a8a5a on #ffffff
+  [PASS]  4.34 : 1  (需 ≥3.0)  图表系列 4 / 卡片  #b5651d on #ffffff
+  [PASS]  1.29 : 1  (需 ≥1.2)  边框 / 卡片（只要不是完全同色看不见）  #dde3ea on #ffffff
+
+=== light / accent=crimson ===
+  [PASS] 14.60 : 1  (需 ≥4.5)  正文 / 页面底  #1a2430 on #f4f7fb
+  [PASS] 15.68 : 1  (需 ≥4.5)  正文 / 卡片  #1a2430 on #ffffff
+  [PASS] 13.95 : 1  (需 ≥4.5)  正文 / 次级底（日志面板、端口格）  #1a2430 on #eef2f7
+  [PASS]  5.09 : 1  (需 ≥4.5)  辅助文字 / 页面底  #5b6b7c on #f4f7fb
+  [PASS]  5.47 : 1  (需 ≥4.5)  辅助文字 / 卡片  #5b6b7c on #ffffff
+  [PASS]  5.74 : 1  (需 ≥4.5)  主按钮文字 / 按钮底  #ffffff on #c81e1e
+  [PASS]  5.74 : 1  (需 ≥4.5)  链接与强调文字 / 卡片  #c81e1e on #ffffff
+  [PASS]  4.86 : 1  (需 ≥4.5)  强调文字 / 强调软底（徽标）  #c81e1e on #fae8e8
+  [PASS]  5.34 : 1  (需 ≥4.5)  成功文字 / 卡片  #1c7a4a on #ffffff
+  [PASS]  4.82 : 1  (需 ≥4.5)  成功文字 / 成功软底（徽标、diff 行）  #1c7a4a on #e8f7ee
+  [PASS]  5.44 : 1  (需 ≥4.5)  失败文字 / 卡片  #c0392b on #ffffff
+  [PASS]  4.76 : 1  (需 ≥4.5)  失败文字 / 失败软底  #c0392b on #fdecec
+  [PASS]  5.78 : 1  (需 ≥4.5)  告警文字 / 卡片  #8f5a08 on #ffffff
+  [PASS]  5.29 : 1  (需 ≥4.5)  告警文字 / 告警软底（顶部横条）  #8f5a08 on #fff4dc
+  [PASS]  3.62 : 1  (需 ≥3.0)  取消态色块 / 卡片（非文字，3:1 即可）  #7b8896 on #ffffff
+  [PASS]  4.13 : 1  (需 ≥3.0)  图表系列 1 / 卡片  #2b7fd4 on #ffffff
+  [PASS]  5.62 : 1  (需 ≥3.0)  图表系列 2 / 卡片  #6b4fd8 on #ffffff
+  [PASS]  4.35 : 1  (需 ≥3.0)  图表系列 3 / 卡片  #1a8a5a on #ffffff
+  [PASS]  4.34 : 1  (需 ≥3.0)  图表系列 4 / 卡片  #b5651d on #ffffff
+  [PASS]  1.29 : 1  (需 ≥1.2)  边框 / 卡片（只要不是完全同色看不见）  #dde3ea on #ffffff
+
+=== light / accent=default ===
+  [PASS] 14.60 : 1  (需 ≥4.5)  正文 / 页面底  #1a2430 on #f4f7fb
+  [PASS] 15.68 : 1  (需 ≥4.5)  正文 / 卡片  #1a2430 on #ffffff
+  [PASS] 13.95 : 1  (需 ≥4.5)  正文 / 次级底（日志面板、端口格）  #1a2430 on #eef2f7
+  [PASS]  5.09 : 1  (需 ≥4.5)  辅助文字 / 页面底  #5b6b7c on #f4f7fb
+  [PASS]  5.47 : 1  (需 ≥4.5)  辅助文字 / 卡片  #5b6b7c on #ffffff
+  [PASS]  5.50 : 1  (需 ≥4.5)  主按钮文字 / 按钮底  #ffffff on #1567c9
+  [PASS]  5.50 : 1  (需 ≥4.5)  链接与强调文字 / 卡片  #1567c9 on #ffffff
+  [PASS]  4.83 : 1  (需 ≥4.5)  强调文字 / 强调软底（徽标）  #1567c9 on #e8f1fd
+  [PASS]  5.34 : 1  (需 ≥4.5)  成功文字 / 卡片  #1c7a4a on #ffffff
+  [PASS]  4.82 : 1  (需 ≥4.5)  成功文字 / 成功软底（徽标、diff 行）  #1c7a4a on #e8f7ee
+  [PASS]  5.44 : 1  (需 ≥4.5)  失败文字 / 卡片  #c0392b on #ffffff
+  [PASS]  4.76 : 1  (需 ≥4.5)  失败文字 / 失败软底  #c0392b on #fdecec
+  [PASS]  5.78 : 1  (需 ≥4.5)  告警文字 / 卡片  #8f5a08 on #ffffff
+  [PASS]  5.29 : 1  (需 ≥4.5)  告警文字 / 告警软底（顶部横条）  #8f5a08 on #fff4dc
+  [PASS]  3.62 : 1  (需 ≥3.0)  取消态色块 / 卡片（非文字，3:1 即可）  #7b8896 on #ffffff
+  [PASS]  4.13 : 1  (需 ≥3.0)  图表系列 1 / 卡片  #2b7fd4 on #ffffff
+  [PASS]  5.62 : 1  (需 ≥3.0)  图表系列 2 / 卡片  #6b4fd8 on #ffffff
+  [PASS]  4.35 : 1  (需 ≥3.0)  图表系列 3 / 卡片  #1a8a5a on #ffffff
+  [PASS]  4.34 : 1  (需 ≥3.0)  图表系列 4 / 卡片  #b5651d on #ffffff
+  [PASS]  1.29 : 1  (需 ≥1.2)  边框 / 卡片（只要不是完全同色看不见）  #dde3ea on #ffffff
+
+=== light / accent=gold ===
+  [PASS] 14.60 : 1  (需 ≥4.5)  正文 / 页面底  #1a2430 on #f4f7fb
+  [PASS] 15.68 : 1  (需 ≥4.5)  正文 / 卡片  #1a2430 on #ffffff
+  [PASS] 13.95 : 1  (需 ≥4.5)  正文 / 次级底（日志面板、端口格）  #1a2430 on #eef2f7
+  [PASS]  5.09 : 1  (需 ≥4.5)  辅助文字 / 页面底  #5b6b7c on #f4f7fb
+  [PASS]  5.47 : 1  (需 ≥4.5)  辅助文字 / 卡片  #5b6b7c on #ffffff
+  [PASS]  5.21 : 1  (需 ≥4.5)  主按钮文字 / 按钮底  #ffffff on #8f6500
+  [PASS]  5.21 : 1  (需 ≥4.5)  链接与强调文字 / 卡片  #8f6500 on #ffffff
+  [PASS]  4.71 : 1  (需 ≥4.5)  强调文字 / 强调软底（徽标）  #8f6500 on #fdf3d6
+  [PASS]  5.34 : 1  (需 ≥4.5)  成功文字 / 卡片  #1c7a4a on #ffffff
+  [PASS]  4.82 : 1  (需 ≥4.5)  成功文字 / 成功软底（徽标、diff 行）  #1c7a4a on #e8f7ee
+  [PASS]  5.44 : 1  (需 ≥4.5)  失败文字 / 卡片  #c0392b on #ffffff
+  [PASS]  4.76 : 1  (需 ≥4.5)  失败文字 / 失败软底  #c0392b on #fdecec
+  [PASS]  5.78 : 1  (需 ≥4.5)  告警文字 / 卡片  #8f5a08 on #ffffff
+  [PASS]  5.29 : 1  (需 ≥4.5)  告警文字 / 告警软底（顶部横条）  #8f5a08 on #fff4dc
+  [PASS]  3.62 : 1  (需 ≥3.0)  取消态色块 / 卡片（非文字，3:1 即可）  #7b8896 on #ffffff
+  [PASS]  4.13 : 1  (需 ≥3.0)  图表系列 1 / 卡片  #2b7fd4 on #ffffff
+  [PASS]  5.62 : 1  (需 ≥3.0)  图表系列 2 / 卡片  #6b4fd8 on #ffffff
+  [PASS]  4.35 : 1  (需 ≥3.0)  图表系列 3 / 卡片  #1a8a5a on #ffffff
+  [PASS]  4.34 : 1  (需 ≥3.0)  图表系列 4 / 卡片  #b5651d on #ffffff
+  [PASS]  1.29 : 1  (需 ≥1.2)  边框 / 卡片（只要不是完全同色看不见）  #dde3ea on #ffffff
+
+=== light / accent=jade ===
+  [PASS] 14.60 : 1  (需 ≥4.5)  正文 / 页面底  #1a2430 on #f4f7fb
+  [PASS] 15.68 : 1  (需 ≥4.5)  正文 / 卡片  #1a2430 on #ffffff
+  [PASS] 13.95 : 1  (需 ≥4.5)  正文 / 次级底（日志面板、端口格）  #1a2430 on #eef2f7
+  [PASS]  5.09 : 1  (需 ≥4.5)  辅助文字 / 页面底  #5b6b7c on #f4f7fb
+  [PASS]  5.47 : 1  (需 ≥4.5)  辅助文字 / 卡片  #5b6b7c on #ffffff
+  [PASS]  5.37 : 1  (需 ≥4.5)  主按钮文字 / 按钮底  #ffffff on #0d7a4f
+  [PASS]  5.37 : 1  (需 ≥4.5)  链接与强调文字 / 卡片  #0d7a4f on #ffffff
+  [PASS]  4.68 : 1  (需 ≥4.5)  强调文字 / 强调软底（徽标）  #0d7a4f on #e7f2ed
+  [PASS]  5.34 : 1  (需 ≥4.5)  成功文字 / 卡片  #1c7a4a on #ffffff
+  [PASS]  4.82 : 1  (需 ≥4.5)  成功文字 / 成功软底（徽标、diff 行）  #1c7a4a on #e8f7ee
+  [PASS]  5.44 : 1  (需 ≥4.5)  失败文字 / 卡片  #c0392b on #ffffff
+  [PASS]  4.76 : 1  (需 ≥4.5)  失败文字 / 失败软底  #c0392b on #fdecec
+  [PASS]  5.78 : 1  (需 ≥4.5)  告警文字 / 卡片  #8f5a08 on #ffffff
+  [PASS]  5.29 : 1  (需 ≥4.5)  告警文字 / 告警软底（顶部横条）  #8f5a08 on #fff4dc
+  [PASS]  3.62 : 1  (需 ≥3.0)  取消态色块 / 卡片（非文字，3:1 即可）  #7b8896 on #ffffff
+  [PASS]  4.13 : 1  (需 ≥3.0)  图表系列 1 / 卡片  #2b7fd4 on #ffffff
+  [PASS]  5.62 : 1  (需 ≥3.0)  图表系列 2 / 卡片  #6b4fd8 on #ffffff
+  [PASS]  4.35 : 1  (需 ≥3.0)  图表系列 3 / 卡片  #1a8a5a on #ffffff
+  [PASS]  4.34 : 1  (需 ≥3.0)  图表系列 4 / 卡片  #b5651d on #ffffff
+  [PASS]  1.29 : 1  (需 ≥1.2)  边框 / 卡片（只要不是完全同色看不见）  #dde3ea on #ffffff
+
+=== light / accent=orange ===
+  [PASS] 14.60 : 1  (需 ≥4.5)  正文 / 页面底  #1a2430 on #f4f7fb
+  [PASS] 15.68 : 1  (需 ≥4.5)  正文 / 卡片  #1a2430 on #ffffff
+  [PASS] 13.95 : 1  (需 ≥4.5)  正文 / 次级底（日志面板、端口格）  #1a2430 on #eef2f7
+  [PASS]  5.09 : 1  (需 ≥4.5)  辅助文字 / 页面底  #5b6b7c on #f4f7fb
+  [PASS]  5.47 : 1  (需 ≥4.5)  辅助文字 / 卡片  #5b6b7c on #ffffff
+  [PASS]  5.59 : 1  (需 ≥4.5)  主按钮文字 / 按钮底  #ffffff on #ad4a05
+  [PASS]  5.59 : 1  (需 ≥4.5)  链接与强调文字 / 卡片  #ad4a05 on #ffffff
+  [PASS]  4.85 : 1  (需 ≥4.5)  强调文字 / 强调软底（徽标）  #ad4a05 on #f7ede6
+  [PASS]  5.34 : 1  (需 ≥4.5)  成功文字 / 卡片  #1c7a4a on #ffffff
+  [PASS]  4.82 : 1  (需 ≥4.5)  成功文字 / 成功软底（徽标、diff 行）  #1c7a4a on #e8f7ee
+  [PASS]  5.44 : 1  (需 ≥4.5)  失败文字 / 卡片  #c0392b on #ffffff
+  [PASS]  4.76 : 1  (需 ≥4.5)  失败文字 / 失败软底  #c0392b on #fdecec
+  [PASS]  5.78 : 1  (需 ≥4.5)  告警文字 / 卡片  #8f5a08 on #ffffff
+  [PASS]  5.29 : 1  (需 ≥4.5)  告警文字 / 告警软底（顶部横条）  #8f5a08 on #fff4dc
+  [PASS]  3.62 : 1  (需 ≥3.0)  取消态色块 / 卡片（非文字，3:1 即可）  #7b8896 on #ffffff
+  [PASS]  4.13 : 1  (需 ≥3.0)  图表系列 1 / 卡片  #2b7fd4 on #ffffff
+  [PASS]  5.62 : 1  (需 ≥3.0)  图表系列 2 / 卡片  #6b4fd8 on #ffffff
+  [PASS]  4.35 : 1  (需 ≥3.0)  图表系列 3 / 卡片  #1a8a5a on #ffffff
+  [PASS]  4.34 : 1  (需 ≥3.0)  图表系列 4 / 卡片  #b5651d on #ffffff
+  [PASS]  1.29 : 1  (需 ≥1.2)  边框 / 卡片（只要不是完全同色看不见）  #dde3ea on #ffffff
+
+=== light / accent=violet ===
+  [PASS] 14.60 : 1  (需 ≥4.5)  正文 / 页面底  #1a2430 on #f4f7fb
+  [PASS] 15.68 : 1  (需 ≥4.5)  正文 / 卡片  #1a2430 on #ffffff
+  [PASS] 13.95 : 1  (需 ≥4.5)  正文 / 次级底（日志面板、端口格）  #1a2430 on #eef2f7
+  [PASS]  5.09 : 1  (需 ≥4.5)  辅助文字 / 页面底  #5b6b7c on #f4f7fb
+  [PASS]  5.47 : 1  (需 ≥4.5)  辅助文字 / 卡片  #5b6b7c on #ffffff
+  [PASS]  7.10 : 1  (需 ≥4.5)  主按钮文字 / 按钮底  #ffffff on #6d28d9
+  [PASS]  7.10 : 1  (需 ≥4.5)  链接与强调文字 / 卡片  #6d28d9 on #ffffff
+  [PASS]  6.04 : 1  (需 ≥4.5)  强调文字 / 强调软底（徽标）  #6d28d9 on #f0eafb
+  [PASS]  5.34 : 1  (需 ≥4.5)  成功文字 / 卡片  #1c7a4a on #ffffff
+  [PASS]  4.82 : 1  (需 ≥4.5)  成功文字 / 成功软底（徽标、diff 行）  #1c7a4a on #e8f7ee
+  [PASS]  5.44 : 1  (需 ≥4.5)  失败文字 / 卡片  #c0392b on #ffffff
+  [PASS]  4.76 : 1  (需 ≥4.5)  失败文字 / 失败软底  #c0392b on #fdecec
+  [PASS]  5.78 : 1  (需 ≥4.5)  告警文字 / 卡片  #8f5a08 on #ffffff
+  [PASS]  5.29 : 1  (需 ≥4.5)  告警文字 / 告警软底（顶部横条）  #8f5a08 on #fff4dc
+  [PASS]  3.62 : 1  (需 ≥3.0)  取消态色块 / 卡片（非文字，3:1 即可）  #7b8896 on #ffffff
+  [PASS]  4.13 : 1  (需 ≥3.0)  图表系列 1 / 卡片  #2b7fd4 on #ffffff
+  [PASS]  5.62 : 1  (需 ≥3.0)  图表系列 2 / 卡片  #6b4fd8 on #ffffff
+  [PASS]  4.35 : 1  (需 ≥3.0)  图表系列 3 / 卡片  #1a8a5a on #ffffff
+  [PASS]  4.34 : 1  (需 ≥3.0)  图表系列 4 / 卡片  #b5651d on #ffffff
+  [PASS]  1.29 : 1  (需 ≥1.2)  边框 / 卡片（只要不是完全同色看不见）  #dde3ea on #ffffff
+
+[PASS] 14 组（主题 × 强调色）共 280 项对比度全部达标
+[lint]   - tools/check_i18n.py
+[1/5] 语言包解析：zh-CN 1680 键 / en-US 1680 键
+[2/5] 键集相等：通过
+[3/5] 源码扫描：165 个文件，硬编码中文 0 处
+[4/5] 同值漏译与键引用：通过
+[5/5] 受控词表：27 个值逐个核对，全部有键
+[RESULT] 通过：键集相等 / 无硬编码中文 / 无同值漏译 / 键引用完整 / 枚举全覆盖
+[lint]   - tools/check_states.py
+扫描 3 个 css + 83 个 .vue 的 style 块
+[PASS] 9 类元素均有默认 / 悬停 / 焦点三态与 transition
+[lint]   - tools/check_tokens.py
+扫描 92 个文件：118 个 token 定义，686 处不同引用
+[PASS] var 引用 0 悬空；px 字面量 1504 处全部在白名单内（49 个取值）
+[lint]   - tools/check_import_header.py（CAS-03 台账表头对账）
+Excel      : fixtures/case-ledger/ledger-sample-226.xlsx
+工作表     : 详细测试流程
+别名来源   : backend/src/main/java/com/qa/autotest/application/caseasset/CaseImportService.java（54 个别名 / 15 个字段）
+表头行     : 第 2 行（Excel 行号 3）
+
+#   Excel 列名                     映射字段           结果
+--------------------------------------------------------------------------
+1   测试编号                         caseCode       命中
+2   一级分类                         category       命中
+3   二级分类                         categoryL2     命中
+4   测试用例                         title          命中
+5   测试类型                         category       命中
+6   预置条件                         precondition   命中
+7   测试步骤（按序执行）                   —              未命中
+8   A端命令（设备见各用例预置条件）             —              未命中
+9   B端命令（设备见各用例预置条件）             —              未命中
+10  交换机配置（按需）                    —              未命中
+11  预期结果                         expected       命中
+12  执行状态与证据                      —              未命中
+13  当前环境适配                       —              未命中
+14  执行顺序                         —              未命中
+--------------------------------------------------------------------------
+列命中     : 7 / 14
+
+[WARN] 多列映射到同一字段，只有最左一列会生效，其余静默丢弃：
+       category     第2列「一级分类」 / 第5列「测试类型」 → 生效的是 第2列「一级分类」
+       要么把多余列从别名表移除（表示「不认」），要么确认丢弃可接受。
+
+[PASS] 必需列齐，表头可定位
+       未命中的列会被忽略（不报错）：测试步骤（按序执行） / A端命令（设备见各用例预置条件） / B端命令（设备见各用例预置条件） / 交换机配置（按需） / 执行状态与证据 / 当前环境适配
+[lint]   - tools/check_bundle_budget.py（UX-04 S1 产物体积守门）
+扫描产物目录：/home/evergreen/robot-autotest/frontend/dist
+产物概览：共 129 个文件（JS 74 / CSS 49 / woff2 3 / 其它 3）
+全量 JS ：原始   2356585 B / gzip    733555 B（74 个文件）
+全量 CSS：原始    206772 B / gzip     45427 B（49 个文件）
+
+=== 产物文件清单（原始字节 / gzip 字节 / 文件名）===
+       1891 B / gzip       641 B  assets/AboutView-BBAQ1aOB.css
+       5042 B / gzip      2004 B  assets/AboutView-xNW0CVbS.js
+        244 B / gzip       169 B  assets/AdminView-Ci4p4W1P.css
+      14242 B / gzip      4169 B  assets/AdminView-Dhzsh5c2.js
+       1490 B / gzip       478 B  assets/AiAnswerCard-Csc3Fnkw.css
+       2667 B / gzip      1003 B  assets/AiAnswerCard-D5dVYLe-.js
+       6242 B / gzip      2222 B  assets/AiAssistantsView-8aSrkpNC.js
+       2867 B / gzip       676 B  assets/AiAssistantsView-B6qkMdGj.css
+        913 B / gzip       366 B  assets/ArchiveCenterView-DkDqFGws.css
+       7114 B / gzip      2161 B  assets/ArchiveCenterView-Dl0d4-Rd.js
+       1433 B / gzip       525 B  assets/AssetsView-BQw6izuq.css
+      60279 B / gzip     16508 B  assets/AssetsView-DCZxPlph.js
+       4244 B / gzip      1828 B  assets/AuditView-Br31MHSZ.js
+       2006 B / gzip       627 B  assets/CaseBoardView-DFGJv6wp.css
+       4429 B / gzip      1702 B  assets/CaseBoardView-DXuSda-D.js
+       3301 B / gzip       747 B  assets/CaseSetsView-BQmsfhqi.css
+      15998 B / gzip      4526 B  assets/CaseSetsView-CWDQLihC.js
+      50985 B / gzip     15236 B  assets/CasesView-BXwFiQTw.js
+       7748 B / gzip      1539 B  assets/CasesView-Bykd-amG.css
+       1103 B / gzip       606 B  assets/CclBaselineView-D8D2g5UK.js
+        687 B / gzip       310 B  assets/CclBaselineView-DUdXTdG7.css
+       1540 B / gzip       816 B  assets/ChangelogView-BeiNHDP2.js
+        979 B / gzip       396 B  assets/ChangelogView-BiQRr3j8.css
+      58662 B / gzip     17415 B  assets/CheckboxGroup-DAOB5cSe.js
+       3870 B / gzip      1648 B  assets/CollectionAnalysisView-aksl4Fii.js
+       1264 B / gzip       447 B  assets/CollectionAnalysisView-hq3Yl1cu.css
+        603 B / gzip       277 B  assets/DataTable-B2W-4jPq.css
+     269536 B / gzip     76464 B  assets/DataTable-CQTOOCQJ.js
+     167090 B / gzip     37081 B  assets/DatePicker-DCHpYPcj.js
+      86589 B / gzip     13246 B  assets/EditorView-9PSt60u9.css
+       6700 B / gzip      2600 B  assets/EditorView-K5pYwSeu.js
+       2225 B / gzip       934 B  assets/EmptyState-D1givo5s.js
+       1172 B / gzip       371 B  assets/EmptyState-DJxlP0Ds.css
+       4767 B / gzip      1881 B  assets/EnvironmentCollectView-BeYqzheh.js
+       1239 B / gzip       478 B  assets/EnvironmentCollectView-BwHVMn1O.css
+       1198 B / gzip       433 B  assets/EnvironmentOverviewView-DvPHXDzp.css
+       3440 B / gzip      1507 B  assets/EnvironmentOverviewView-mva8BfL0.js
+       1333 B / gzip       453 B  assets/EnvironmentPrepareView-BGetz3MH.css
+       3347 B / gzip      1478 B  assets/EnvironmentPrepareView-CSC9lRtA.js
+        739 B / gzip       436 B  assets/ErrorLine-CFgKOqgL.js
+        707 B / gzip       341 B  assets/ErrorLine-D-aJ6yPk.css
+       2943 B / gzip      1120 B  assets/ExecutionPrinciplesView-DtNoxAWz.js
+        675 B / gzip       314 B  assets/ExecutionPrinciplesView-QBoW-27l.css
+        642 B / gzip       306 B  assets/FailureClustersView-DlQIF9MH.css
+       5769 B / gzip      2275 B  assets/FailureClustersView-Jz1P3otc.js
+        450 B / gzip       286 B  assets/ForbiddenView-C9axjRLw.css
+        598 B / gzip       403 B  assets/ForbiddenView-H3Nhh8Up.js
+       1007 B / gzip       549 B  assets/FormField-BlsfjB0r.js
+        680 B / gzip       255 B  assets/FormField-CwkPrgJO.css
+        389 B / gzip       231 B  assets/GroupsView-CnkGST2U.css
+       2854 B / gzip      1326 B  assets/GroupsView-fCArsbNK.js
+       2998 B / gzip      1426 B  assets/ImportPreflightView-BqxmMD9w.js
+        435 B / gzip       243 B  assets/ImportPreflightView-HgZWM_s9.css
+      10915 B / gzip      3786 B  assets/InputNumber-yMfNMyy-.js
+        687 B / gzip       310 B  assets/IperfBaselineView-CIZUT4g_.css
+       1107 B / gzip       612 B  assets/IperfBaselineView-Cnlh7j0h.js
+       1654 B / gzip       842 B  assets/KernelsView-B3rQVP8p.js
+        357 B / gzip       204 B  assets/KernelsView-Bq6rx3EQ.css
+       3303 B / gzip      1427 B  assets/LoginView-DFZs8B9G.js
+        392 B / gzip       206 B  assets/LoginView-GP4AgVyt.css
+       8473 B / gzip      2880 B  assets/NodesView-BmwahrRr.js
+       1417 B / gzip       465 B  assets/NodesView-DXtKFBiN.css
+        572 B / gzip       389 B  assets/NotFoundView-ClE5XC7U.js
+       7488 B / gzip      2240 B  assets/OpsCenterView-B7NbzVxs.js
+       1215 B / gzip       467 B  assets/OpsCenterView-wiLOnFmc.css
+       1862 B / gzip       528 B  assets/OverviewView-BZ9OvrFI.css
+      15640 B / gzip      4551 B  assets/OverviewView-C2esrJRH.js
+        687 B / gzip       309 B  assets/PerftestBaselineView-BYGSTMlQ.css
+       1113 B / gzip       613 B  assets/PerftestBaselineView-CzPefGwv.js
+       7488 B / gzip      3015 B  assets/PlanGraphPage-2ntLZPD7.js
+       1700 B / gzip       549 B  assets/PlanGraphPage-Cu5q91D-.css
+       6350 B / gzip      2230 B  assets/PlanGroupsView-A5RwFAup.js
+        756 B / gzip       352 B  assets/PlanGroupsView-BgPm5YMz.css
+       2209 B / gzip       585 B  assets/PlansView-BXnLEzCG.css
+      18290 B / gzip      5891 B  assets/PlansView-CHtGMlU7.js
+       1029 B / gzip       531 B  assets/RadioButton-lMz2yIq3.js
+        988 B / gzip       391 B  assets/ReadOnlyRecoverView-DoSdKHWC.css
+       3269 B / gzip      1386 B  assets/ReadOnlyRecoverView-DrULgne5.js
+        815 B / gzip       339 B  assets/RecoveryRecordsView-BykmVemD.css
+       2300 B / gzip      1054 B  assets/RecoveryRecordsView-CoUH6Ixk.js
+       7957 B / gzip      1896 B  assets/ReportDetailView-CJ6MYJTZ.css
+      31963 B / gzip     10108 B  assets/ReportDetailView-Cwmcsuv-.js
+       4943 B / gzip      1913 B  assets/ReportPrintView-DJOEZ_aD.js
+       2309 B / gzip       734 B  assets/ReportPrintView-DfFFpCFy.css
+       3317 B / gzip       923 B  assets/ReportTemplatesView-BShrcie0.css
+      11898 B / gzip      3553 B  assets/ReportTemplatesView-CZ0rmHoq.js
+        140 B / gzip       130 B  assets/ReportsView-DLSJOjhS.css
+       6041 B / gzip      2351 B  assets/ReportsView-DxyjnakY.js
+       5848 B / gzip      1411 B  assets/RunsView-B8_kBai5.css
+      28411 B / gzip      8845 B  assets/RunsView-D_1P3c6l.js
+       4684 B / gzip      1733 B  assets/SettingsView-B55nk-4C.js
+       1449 B / gzip       540 B  assets/SettingsView-CpZ_FZD_.css
+        729 B / gzip       295 B  assets/StatusTag-BkZKYVEF.css
+        598 B / gzip       419 B  assets/StatusTag-BprPIA9W.js
+       9044 B / gzip      3090 B  assets/TestReportsView-DAWBoEBQ.js
+        662 B / gzip       276 B  assets/TestReportsView-nyVJo1L8.css
+       6141 B / gzip      2120 B  assets/TopologySnapshotView-CNHATOhw.js
+       1193 B / gzip       436 B  assets/TopologySnapshotView-DsfXCTCJ.css
+       3480 B / gzip       867 B  assets/WorkbenchView-BgQ4nl1F.css
+       7537 B / gzip      2612 B  assets/WorkbenchView-DSn569C1.js
+        871 B / gzip       306 B  assets/asset-BY2FqbMW.js
+        173 B / gzip       146 B  assets/audit-DwgKrmCO.js
+       2062 B / gzip       589 B  assets/cases-Bun1lKxx.js
+        504 B / gzip       303 B  assets/changelog-C9Hdu-_P.js
+     840238 B / gzip    257745 B  assets/editor-Cz-YM1zA.js
+        838 B / gzip       401 B  assets/environment-BUO34NnP.js
+        586 B / gzip       347 B  assets/errors-JwxaHaPr.js
+        478 B / gzip       269 B  assets/eta-eXb9pEII.js
+       1917 B / gzip       585 B  assets/execution-D9ArwedV.js
+     479534 B / gzip    159399 B  assets/index-B19FIzvR.js
+      44456 B / gzip      8657 B  assets/index-B5CcKlZV.css
+      21168 B / gzip     21196 B  assets/jetbrains-mono-latin-V6pRDFza.woff2
+      19616 B / gzip      4209 B  assets/lucide-yhkIjqJk.js
+        903 B / gzip       554 B  assets/maintenance-DfnXZukM.js
+      13304 B / gzip     13327 B  assets/noto-sans-sc-latin-C8q2FS1w.woff2
+     165580 B / gzip    165653 B  assets/noto-sans-sc-ui-Duy9HYM0.woff2
+        224 B / gzip       183 B  assets/observability-BXni3H_m.js
+        907 B / gzip       361 B  assets/plans-Bc_zPhiE.js
+       1471 B / gzip       545 B  assets/reports-COV2WaId.js
+        363 B / gzip       222 B  assets/settings-D8d3uEbS.js
+       1328 B / gzip       550 B  assets/statusLabels-DYa7I2fq.js
+        562 B / gzip       393 B  assets/useBatchAction-o6TFB-UH.js
+        525 B / gzip       356 B  assets/useListPageSize-COKZdZUb.js
+       4905 B / gzip      2099 B  assets/useSelection-BHHuuVAT.js
+       1212 B / gzip       402 B  assets/useSelection-CRuu47my.css
+      87899 B / gzip     34478 B  assets/vue-DByV_PZE.js
+
+=== 各项判定 ===
+[INFO] 图标 chunk 1 个，gzip 合计 4209 B ≤ 15360 B（15 KiB），达标
+[INFO] 组件库 vendor chunk 1 个，gzip 合计 159399 B ≤ 204800 B（200 KiB），达标
+[INFO] 懒加载共享分包 29 个，单包最大 assets/editor-Cz-YM1zA.js 257745 B ≤ 307200 B（300 KiB），达标；按需总量 gzip 合计 407587 B（仅趋势参考，不跨页相加判违规）
+[INFO] 字体 3 个 woff2：原始合计 200052 B、gzip 合计 200176 B ≤ 819200 B（800 KiB），达标
+[INFO] CSS 中存在 font-display: swap，首帧不被字体阻塞，达标
+[INFO] styleguide 标记在源码中存在（StyleguideView.vue），产物侧 grep 因此具备判定力
+[INFO] 生产产物中未找到 __STYLEGUIDE_DEV_ONLY__ 标记，且源码侧标记确认存在（DEV 条件挂载 + tree-shaking 生效），本项已被反向验证
+[INFO] 主入口闭包 gzip 198086 B ≤ 307200 B（300 KiB），含 3 个文件（最大 assets/index-B19FIzvR.js 159399 B）
+[INFO] 路由块 42 个，单块最大 assets/AssetsView-DCZxPlph.js 16508 B ≤ 153600 B（150 KiB），达标
+[INFO] 单路由加载总量（路由块 + 按需分包 - 入口已下载）最大 assets/EditorView-K5pYwSeu.js 261128 B ≤ 307200 B（300 KiB），达标
+
+[PASS] 构建产物体积守门通过：图标 ≤15 KiB / 组件库 ≤200 KiB / 字体 ≤800 KiB / 无 styleguide 标记泄漏 / 主入口 ≤300 KiB / 单路由块 ≤150 KiB
+[lint]   - tools/check_styleguide_tokens.py（styleguide ↔ theme.css 对账）
+[PASS] styleguide 清单 20 个语义名，全部在 theme.css（109 个定义）中有定义
+[lint]   - tools/gen_accent_tokens.py --check（六预设 WCAG 派生）
+=== 候选主色对比度实测（阈值 ≥ 4.5:1） ===
+  crimson  light #c81e1e  text/accent=5.74  accent/panel=5.74  accent/soft=4.86  PASS
+  crimson  dark  #ff6b6b  text/accent=6.75  accent/panel=5.52  accent/soft=5.25  PASS
+  gold     light #8f6500  text/accent=5.21  accent/panel=5.21  accent/soft=4.71  PASS
+  gold     dark  #ffd24a  text/accent=13.00  accent/panel=10.63  accent/soft=8.78  PASS
+  orange   light #ad4a05  text/accent=5.59  accent/panel=5.59  accent/soft=4.85  PASS
+  orange   dark  #fb923c  text/accent=8.28  accent/panel=6.77  accent/soft=6.09  PASS
+  violet   light #6d28d9  text/accent=7.10  accent/panel=7.10  accent/soft=6.04  PASS
+  violet   dark  #a78bfa  text/accent=6.89  accent/panel=5.63  accent/soft=5.15  PASS
+  jade     light #0d7a4f  text/accent=5.37  accent/panel=5.37  accent/soft=4.68  PASS
+  jade     dark  #34d399  text/accent=9.75  accent/panel=7.97  accent/soft=6.87  PASS
+
+=== 结果：10/10 组达标 ===
+[lint]   - tools/check_accent_presets.py（六预设清单七处一致）
+  [INFO] 真源 useAccent.ts ACCENTS = ['crimson', 'blue', 'gold', 'orange', 'violet', 'jade']（6 个）
+  [INFO] theme.css 变体块 12 个 / --preset-* 6 个；dialog 6 键；zh/en presets 6/6 键
+[PASS] 六预设清单七处一致（6 个预设）
+[lint]   - tools/subset_font.py --check（打包字体子集预算）
+扫描到界面汉字 1181 个（下限 200）
+  noto-sans-sc-latin.woff2                 13304 B  gzip     13327 B
+  noto-sans-sc-ui.woff2                   165580 B  gzip    165653 B
+  jetbrains-mono-latin.woff2               21168 B  gzip     21196 B
+  中文字体 cmap 覆盖 1181 / 1181 字
+  合计（gzip）                                            200176 B  / 预算 819200 B
+[PASS] 字体子集 1181 字 / 200176 B gzip，未超 800 KiB 预算
+[lint]   - tools/check_icons.py（图标名 ↔ iconMap.ts 对账）
+图标映射表：41 个名字 - admin, alert, arrowUpRight, audit, bell, boxes, cases, check, chevronDown, chevronRight, close, copy, credential, dashboard, database, device, download, external, fail, help, inbox, info, language, link, loader, logout, moon, palette, plus, refresh, reports, runs, search, sliders, sparkles, success, sun, system, trash, users, warn
+静态引用：60 处；动态表达式（跳过）：13 处
+
+[PASS] 图标名对账通过：60 处静态引用全部在 41 个定义内
+[lint]   - tools/check_component_imports.py（模板组件 ↔ import 对账）
+[PASS] 89 个 .vue：模板用到的自建组件全部有 import
+[lint]   - tools/check_report_sensitive.py（C5 EXTERNAL 字段判据自校验）
+PASS 自校验：白样本 0 命中；黑样本命中 IP/COMMAND/CREDENTIAL/ABS_PATH
+[lint]   - tools/check_api_prefix.py（前端 request() 双 /api 前缀守门）
+[OK] request() URL 前缀检查通过（扫描 38 个 API 模块）
+[lint]   - tools/check_w7_tokens.py（W7 token / 密度 / 深浅覆盖守门）
+[OK] W7 token guard: 8 grid tokens / 6 font levels / theme + density + a11y overrides
+[lint]   - tools/check_w7_tokens.py --self-check（破坏性元验证）
+[OK] self-check: mutated grid token is rejected
+[lint]   - tools/check_wbs_consistency.py（WBS 汇总数字 ↔ 逐行状态）
+[PASS] WBS 自洽：130 个包 / 未开始 0 / 进行中 0 / 待验 0 / 待现场 6 / 已完成 124
+[lint]   - tools/check_tables.py（数据网格 ↔ DataTable 壳 / 原生 table 白名单）
+扫描 89 个 .vue；DataTable 壳实例 44 处 / 30 个文件
+  components/CaseDetailPanel.vue               1
+  views/AboutView.vue                          1
+  views/AdminView.vue                          4
+  views/AssetsView.vue                         5
+  views/AuditView.vue                          1
+  views/CaseBoardView.vue                      1
+  views/CaseSetsView.vue                       1
+  views/CasesView.vue                          1
+  views/FailureClustersView.vue                1
+  views/GridBenchView.vue                      1
+  views/GroupsView.vue                         1
+  views/ImportPreflightView.vue                1
+  views/NodesView.vue                          1
+  views/OverviewView.vue                       3
+  views/PlansView.vue                          2
+  views/ReportDetailView.vue                   2
+  views/ReportsView.vue                        2
+  views/RunsView.vue                           1
+  views/TestReportsView.vue                    1
+  views/baselines/CclBaselineView.vue          1
+  views/baselines/IperfBaselineView.vue        1
+  views/baselines/PerftestBaselineView.vue     1
+  views/environment/CollectionAnalysisView.vue 1
+  views/environment/EnvironmentCollectView.vue 1
+  views/environment/EnvironmentOverviewView.vue 1
+  views/environment/EnvironmentPrepareView.vue 1
+  views/environment/TopologySnapshotView.vue   2
+  views/maintenance/ExecutionPrinciplesView.vue 2
+  views/maintenance/ReadOnlyRecoverView.vue    1
+  views/maintenance/RecoveryRecordsView.vue    1
+
+[PASS] 表格规范：44 处数据网格全部走壳；原生 <table> 仅出现在白名单 3 个文件
+[lint]   - tools/check_brand.py（favicon 可辨 / 品牌区挂载 / 版本号归位）
+[INFO] favicon：5 个图元 / 最细描边 2.2px / viewBox 32×32
+[INFO] 品牌区：App.vue 与 LoginView.vue 均挂载 AppLogo
+[INFO] 版本号：副标题无版本，关于面板从 /_ping 取
+
+[PASS] 品牌：favicon 可辨 / 侧栏与登录页均有标记 / 版本号只在关于（取自 /_ping）
+[lint] PASS

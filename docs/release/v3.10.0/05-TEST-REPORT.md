@@ -29,7 +29,7 @@
 | TC-v3.10-15 | 列表展示来源类型 | PASS | 显示「按执行记录 / 用例集 #id」而非内部枚举名 | `TestReportsView.spec` |
 | TC-v3.10-16 | V11_25 down→up 真实演练 | PASS | `test_report` 0→0 行；两列 down 后消失、up 后类型/可空性一致 | `EW310-03/down-up.log`（`RESULT PASS fails=0`） |
 | TC-v3.10-17 | 横向回归 | PASS | 前端 **80 文件 / 567 条**；后端 **1262 条 / 0 失败 / 4 跳过**；`vue-tsc` 无输出；`check_i18n.py` 1607 键全通过；`vite build` 成功 | 见 §3 |
-| TC-v3.10-18 | 门禁 28 步全 PASS | PASS | v3.10.0 收口时 28 步逐项 PASS；B5 最终 `bash scripts/gates.sh` **29 步全 PASS / `GATES_RESULT FAILS=0`**（第 29 步为 v3.11.0 追加，不重排既有编号） | `docs/evidence/gates/logs/00-full-run.log` |
+| TC-v3.10-18 | 门禁 28 步全 PASS | PASS | v3.10.0 收口时 28 步逐项 PASS；B5 最终 `bash scripts/gates.sh` **29 步全 PASS / `GATES_RESULT FAILS=0`**（第 29 步为 v3.11.0 追加，不重排既有编号） | `docs/evidence/v3.11.0/EW311-02/final-gates.log` |
 
 ## 2. 汇总
 

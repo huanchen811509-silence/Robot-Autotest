@@ -29,7 +29,7 @@
 | TC-v3.11-15 | 只读找回只发 GET、不产生新 run | PASS | 改关键字后命中 `GET /api/search?…types=run`，`写请求=0` | 同上 `searchRequests` |
 | TC-v3.11-16 | 不展示命令正文 | PASS | spec 断言 `不含恢复命令正文`、无 `<th>恢复命令</th>`、无 `.detail` 访问 | `npx vitest run src/views/maintenance/pages.spec.ts` |
 | TC-v3.11-17 | 横向回归 | PASS | 后端 **1272 / 0 失败 / 0 跳过**；前端 **80 文件 / 574 条**；编辑器 **24 文件 / 219 条**；`vue-tsc` 无输出；i18n **1680/1680 键**；`vite build` 成功 | 见 §3 |
-| TC-v3.11-18 | 门禁 29 步 + 自校验 | PASS | B5 最终 `bash scripts/gates.sh` → **29 步全 PASS / `GATES_RESULT FAILS=0`**；`--selfcheck` → `SELFCHECK_RESULT FAILS=0`（含「删第 28/29 步必变红」） | `docs/evidence/gates/logs/00-full-run.log`、`00-selfcheck.log` |
+| TC-v3.11-18 | 门禁 29 步 + 自校验 | PASS | B5 最终 `bash scripts/gates.sh` → **29 步全 PASS / `GATES_RESULT FAILS=0`**；`--selfcheck` → `SELFCHECK_RESULT FAILS=0`（含「删第 28/29 步必变红」） | `EW311-02/final-gates.log`、`final-selfcheck.log`（门禁原始日志在被 `.gitignore` 忽略的 `gates/logs/`，汇总已归档入库） |
 
 ## 2. 汇总
 
@@ -44,7 +44,7 @@
 
 | 层 | 读数 | 命令 |
 |---|---|---|
-| 后端全量 | 1272 条 / 0 失败 / 0 跳过 | `bash scripts/gates.sh` 第 5 步；`docs/evidence/gates/logs/05-backend_test.log`（16:36） |
+| 后端全量 | 1272 条 / 0 失败 / 0 跳过 | `bash scripts/gates.sh` 第 5 步（汇总见 `EW311-02/final-gates.log`） |
 | 前端全量 | 80 文件 / 574 条全绿 | `cd frontend && npx vitest run` |
 | 编辑器包 | 24 文件 / 219 条全绿 | `cd packages/editor && npx vitest run` |
 | 类型检查 | `vue-tsc --noEmit` 无输出 | `cd frontend && npx vue-tsc --noEmit` |

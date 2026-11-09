@@ -78,7 +78,7 @@
 | i18n | zh-CN / en-US 各 1680 键，键集相等、无硬编码中文 | `python3 tools/check_i18n.py` |
 | 构建 | `vite build` 成功 | `cd frontend && npx vite build` |
 | WebSocket E2E 竞态复验 | 修复后连跑 3 次 **4/4 全绿**、`BUILD SUCCESS`（生产代码零改动） | `mvn -o -B test -Dtest=RunLogWebSocketE2ETest` ×3 → `EW311-02/ws-flaky-verify.log` |
-| 门禁 | **29 步全 PASS / `GATES_RESULT FAILS=0`**（含第 29 步 host_inventory；`--selfcheck` 亦 `FAILS=0`） | `bash scripts/gates.sh` → `docs/evidence/gates/logs/00-full-run.log` |
+| 门禁 | **29 步全 PASS / `GATES_RESULT FAILS=0`**（含第 29 步 host_inventory；`--selfcheck` 亦 `FAILS=0`） | `bash scripts/gates.sh` → `EW311-02/final-gates.log`（29 步逐项读数已入库） |
 
 ## 遗留
 
