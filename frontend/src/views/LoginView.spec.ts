@@ -159,8 +159,8 @@ describe('LoginView 表单', () => {
     const root = await mountView()
     const brand = root.querySelector('.login-brand')
     expect(brand).not.toBeNull()
-    // 标记是几何 SVG（无 <text>），与 favicon 同形
-    expect(brand!.querySelector('svg.app-logo__mark')).not.toBeNull()
+    // 标记来自品牌资产（无 <text>），与 favicon 同形
+    expect(brand!.querySelector('.app-logo__mark svg')).not.toBeNull()
     expect(brand!.querySelectorAll('text')).toHaveLength(0)
     expect(brand!.textContent).toContain(i18n.global.t('app.title'))
     expect(brand!.textContent).toContain(i18n.global.t('app.subtitle'))

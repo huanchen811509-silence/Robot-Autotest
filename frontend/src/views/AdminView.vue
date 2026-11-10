@@ -65,7 +65,7 @@ const memberProjectId = ref<number | null>(null)
 const members = ref<ProjectMember[]>([])
 const memberLoading = ref(false)
 const candidates = ref<UserSummary[]>([])
-const memberForm = reactive({ userId: null as number | null, roleCode: 'viewer' })
+const memberForm = reactive({ userId: null as number | null, roleCodes: ['viewer'] as string[] })
 
 const selectedProject = computed(
   () => auth.projects.find((p) => p.id === memberProjectId.value) ?? null,
@@ -263,11 +263,12 @@ const memberColumns = computed<DataTableColumns<ProjectMember>>(() => [
       isOwner(row)
         ? h('span', { class: 'muted' }, `${roleLabel(row.roleCode)} · ${t('admin.owner')}`)
         : h(NSelect, {
-          value: row.roleCode,
+          value: row.roleCodes ?? [row.roleCode],
           options: projectRoleOptions.value,
+          multiple: true,
           size: 'small',
           'aria-label': t('admin.memberRole'),
-          'onUpdate:value': (value: string) => void changeMemberRole(row, value),
+          'onUpdate:value': (value: string[]) => void changeMemberRoles(row, value),
         }),
   },
   {
@@ -292,6 +293,8 @@ const memberColumns = computed<DataTableColumns<ProjectMember>>(() => [
             text: true,
             type: 'error',
             size: 'small',
+            disabled: isLastManager(row),
+            title: isLastManager(row) ? t('admin.lastManagerLocked') : undefined,
             onClick: () => void removeMember(row),
           },
           { default: () => t('admin.removeMember') },
@@ -451,6 +454,18 @@ function isOwner(member: ProjectMember): boolean {
   return selectedProject.value?.ownerId === member.userId
 }
 
+/** 项目经理口径：admin 或 pm 任一项目角色。 */
+function isManager(member: ProjectMember): boolean {
+  const roles = member.roleCodes ?? [member.roleCode]
+  return roles.includes('admin') || roles.includes('pm')
+}
+
+/** 最后一名经理的保护（FR-v4.4-05）：移除按钮直接禁用并给文案，避免一次注定 409 的点击。 */
+function isLastManager(member: ProjectMember): boolean {
+  if (!isManager(member)) return false
+  return members.value.filter((item) => isManager(item)).length <= 1
+}
+
 async function loadMembers(): Promise<void> {
   if (memberProjectId.value === null) {
     members.value = []
@@ -484,7 +499,7 @@ async function addMember(): Promise<void> {
   try {
     await projectApi.addMember(memberProjectId.value, {
       userId: memberForm.userId,
-      roleCode: memberForm.roleCode,
+      roleCodes: memberForm.roleCodes,
     })
     message.value = t('common.saved')
     memberForm.userId = null
@@ -495,11 +510,16 @@ async function addMember(): Promise<void> {
 }
 
 /** 改角色失败时仍重载列表：把下拉框还原成服务端的真实值，不留下「看起来改了」的假象。 */
-async function changeMemberRole(member: ProjectMember, roleCode: string): Promise<void> {
+async function changeMemberRoles(member: ProjectMember, roleCodes: string[]): Promise<void> {
   error.value = null
   message.value = ''
+  if (roleCodes.length === 0) {
+    error.value = { summary: t('admin.memberRoleRequired'), detail: null }
+    await loadMembers()
+    return
+  }
   try {
-    await projectApi.updateMember(member.projectId, member.userId, roleCode)
+    await projectApi.updateMember(member.projectId, member.userId, roleCodes)
     message.value = t('common.saved')
   } catch (e) {
     error.value = localizeError(e)
@@ -670,9 +690,10 @@ async function removeMember(member: ProjectMember): Promise<void> {
             :aria-label="t('admin.selectUser')"
           />
           <NSelect
-            v-model:value="memberForm.roleCode"
+            v-model:value="memberForm.roleCodes"
             :options="projectRoleOptions"
-            style="width: 140px"
+            multiple
+            style="width: 220px"
             :aria-label="t('admin.memberRole')"
           />
           <NButton type="primary" attr-type="submit">{{ t('admin.addMember') }}</NButton>

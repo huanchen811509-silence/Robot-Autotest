@@ -12,6 +12,8 @@ import com.qa.autotest.domain.asset.Link;
 import com.qa.autotest.domain.common.PageResult;
 import com.qa.autotest.domain.iam.PermissionAction;
 import com.qa.autotest.domain.iam.PermissionResource;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 /** 链路台账（AST-02）：两端设备与端口必须存在且不能自环。 */
@@ -29,6 +31,14 @@ public class LinkService {
     private final ProjectAssetRepository projectAssets;
     private final AccessControlService access;
     private final AuditService audit;
+
+    /** v4.3.0：链路写操作后发缓存失效事件。 */
+    private ApplicationEventPublisher events;
+
+    @Autowired(required = false)
+    void setEventPublisher(ApplicationEventPublisher events) {
+        this.events = events;
+    }
 
     public LinkService(LinkRepository links, DeviceRepository devices,
                        ProjectAssetRepository projectAssets,
@@ -59,6 +69,7 @@ public class LinkService {
         validate(projectId, command);
         long id = links.insert(toLink(null, projectId, command), TenantContext.userId());
         audit.record("link.create", "link", String.valueOf(id), "name=" + command.name());
+        publishAssetChanged(projectId, "LINK", id);
         return get(projectId, id);
     }
 
@@ -71,6 +82,7 @@ public class LinkService {
         validate(projectId, command);
         links.update(toLink(id, projectId, command), TenantContext.userId());
         audit.record("link.update", "link", String.valueOf(id), "name=" + command.name());
+        publishAssetChanged(projectId, "LINK", id);
         return get(projectId, id);
     }
 
@@ -93,6 +105,13 @@ public class LinkService {
         requireOwned(existing, projectId);
         links.delete(projectId, id);
         audit.record("link.delete", "link", String.valueOf(id), "");
+        publishAssetChanged(projectId, "LINK", id);
+    }
+
+    private void publishAssetChanged(long projectId, String assetType, long assetId) {
+        if (events != null) {
+            events.publishEvent(new AssetChangedEvent(projectId, assetType, assetId));
+        }
     }
 
     /** 平台共享链路对引用方只读：归属项目仍是原项目，共享后 project_id 为 NULL（映射成 0）。 */

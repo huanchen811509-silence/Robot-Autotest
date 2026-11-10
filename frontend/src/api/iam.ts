@@ -40,15 +40,20 @@ export interface Project {
   visibility: string | null
   /** 测试内核：robot（Robot Framework，默认）| pytest。缺省按 robot 显示。 */
   testKernel?: string | null
+  /** standard（普通项目）| platform（公共库载体，v4.5.0）。 */
+  kind?: string | null
+  /** 编码唯一一次变更时间；非空表示已用掉改码机会（v4.4.0）。 */
+  codeChangedAt?: string | null
 }
 
-/** 项目成员；roleCode 是**项目内角色**（member_role），不是全局角色。 */
+/** 项目成员；roleCode 是**项目内主角色**，roleCodes 是全部项目角色（v4.4.0）。 */
 export interface ProjectMember {
   id: number | null
   projectId: number
   userId: number
   username: string
   roleCode: string
+  roleCodes?: string[]
   displayName: string | null
   enabled: boolean
 }
@@ -121,13 +126,41 @@ export const roleApi = {
   },
 }
 
+export interface UpdateProjectRequest {
+  name: string
+  description?: string | null
+  /** 停用（归档）= false；可随时重新启用，数据不删。 */
+  enabled: boolean
+  ownerId?: number | null
+  visibility?: string | null
+  testKernel?: string | null
+}
+
 export const projectApi = {
   list() {
     return request<Project[]>('/projects')
   },
+  /** 服务端建议编码（FR-v4.4-07）：前缀-引擎-年月-序号。 */
+  nextCode(prefix: string, kernel: string) {
+    return request<{ code: string }>(`/projects/next-code${toQuery({ prefix, kernel })}`)
+  },
+  /** 服务端能力码（只做显隐；后端仍逐请求判定）。 */
+  capabilities() {
+    return request<{ globalEnter: boolean }>('/projects/capabilities')
+  },
   create(body: { code: string; name: string; description?: string; visibility?: string;
                   testKernel?: string }) {
     return request<Project>('/projects', { method: 'POST', body: JSON.stringify(body) })
+  },
+  update(id: number, body: UpdateProjectRequest) {
+    return request<Project>(`/projects/${id}`, { method: 'PUT', body: JSON.stringify(body) })
+  },
+  /** 编码唯一一次变更（FR-v4.4-08）：仅 ADMIN、必须 reason。 */
+  changeCode(id: number, code: string, reason: string) {
+    return request<Project>(`/projects/${id}/code`, {
+      method: 'PUT',
+      body: JSON.stringify({ code, reason }),
+    })
   },
   remove(id: number) {
     return request<void>(`/projects/${id}`, { method: 'DELETE' })
@@ -135,19 +168,39 @@ export const projectApi = {
   members(id: number) {
     return request<ProjectMember[]>(`/projects/${id}/members`)
   },
-  addMember(id: number, body: { userId: number; roleCode: string }) {
+  addMember(id: number, body: { userId: number; roleCode?: string; roleCodes?: string[] }) {
     return request<ProjectMember>(`/projects/${id}/members`, {
       method: 'POST',
       body: JSON.stringify(body),
     })
   },
-  updateMember(id: number, userId: number, roleCode: string) {
+  /** 批量添加（FR-v4.4-03）：逐人失败原因返回，不整体回滚。 */
+  addMembers(id: number, members: { userId: number; roleCodes: string[] }[]) {
+    return request<{ added: number; failed: number; failures: { userId: number; reason: string }[] }>(
+      `/projects/${id}/members/batch`,
+      { method: 'POST', body: JSON.stringify({ members }) },
+    )
+  },
+  updateMember(id: number, userId: number, roleCodes: string[]) {
     return request<ProjectMember>(`/projects/${id}/members/${userId}`, {
       method: 'PUT',
-      body: JSON.stringify({ roleCode }),
+      body: JSON.stringify({ roleCodes }),
     })
   },
   removeMember(id: number, userId: number) {
     return request<void>(`/projects/${id}/members/${userId}`, { method: 'DELETE' })
+  },
+}
+
+/** 当前用户偏好（v4.5.0）：记住上次界面模式。 */
+export const meApi = {
+  uiMode() {
+    return request<{ mode: 'global' | 'project' }>('/me/ui-mode')
+  },
+  setUiMode(mode: 'global' | 'project') {
+    return request<{ mode: 'global' | 'project' }>('/me/ui-mode', {
+      method: 'PUT',
+      body: JSON.stringify({ mode }),
+    })
   },
 }

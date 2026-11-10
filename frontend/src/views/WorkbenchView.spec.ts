@@ -19,6 +19,18 @@ vi.mock('@/api/projectCards', () => ({
   projectCardsApi: { list: vi.fn() },
 }))
 
+/**
+ * `projectApi.remove` 必须打桩：删除弹层点确认后会真发请求，
+ * 不打桩等于让单测打网络（失败也看不出来）。`auth` 里同样引用了 `authApi`，
+ * 一并给空实现，避免 mock 模块缺导出。
+ */
+const removeProject = vi.hoisted(() => vi.fn())
+vi.mock('@/api/iam', () => ({
+  projectApi: { list: vi.fn(async () => []), remove: removeProject, update: vi.fn() },
+  authApi: { renew: vi.fn(), logout: vi.fn() },
+  userApi: { page: vi.fn(async () => ({ items: [], total: 0 })) },
+}))
+
 const push = vi.hoisted(() => vi.fn())
 vi.mock('vue-router', () => ({ useRouter: () => ({ push }) }))
 
@@ -175,5 +187,75 @@ describe('WorkbenchView 卡牌页', () => {
     expect(root.textContent).toContain('项目卡牌加载失败')
     expect(cardEls(root)).toHaveLength(0)
     expect(root.querySelector('[data-testid="project-cards"]')).toBeNull()
+  })
+})
+
+/**
+ * v4.4 缺陷回归：删除弹层的编码输入框曾经「点得进去、打不出字」。
+ *
+ * 两条断言缺一不可：
+ * ① 打开后焦点必须落在输入框（被别处抢焦点就会出现打不出字）；
+ * ② 逐字输入后 model 真的变、编码匹配后确认按钮由禁用转为可用。
+ */
+describe('WorkbenchView 删除确认弹层', () => {
+  const emptyCard: ProjectCard = {
+    ...cards[1],
+    id: 9,
+    code: 'EMPTY-01',
+    name: '空项目',
+    caseCount: 0,
+    runCount: 0,
+    deviceCount: 0,
+  }
+
+  async function openDeleteDialog(): Promise<HTMLInputElement> {
+    list.mockResolvedValue([emptyCard])
+    useAuthStore().user = { id: 1, username: 'admin', displayName: '管理员', roles: ['admin'] } as never
+    const root = await mountView()
+    root.querySelector<HTMLButtonElement>('[data-testid="card-delete"]')!.click()
+    await nextTick()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    return document.querySelector<HTMLInputElement>('[data-testid="delete-code"]')!
+  }
+
+  afterEach(() => {
+    removeProject.mockReset()
+    document.querySelector('[data-testid="delete-mask"]')?.remove()
+  })
+
+  it('打开后输入框拿到焦点，可以逐字输入并匹配编码', async () => {
+    const input = await openDeleteDialog()
+
+    expect(document.activeElement).toBe(input)
+    input.value = 'EMPTY-01'
+    input.dispatchEvent(new Event('input'))
+    await nextTick()
+
+    expect(input.value).toBe('EMPTY-01')
+    const confirm = document.querySelector<HTMLButtonElement>('[data-testid="delete-confirm"]')!
+    expect(confirm.disabled).toBe(false)
+  })
+
+  it('编码不匹配时确认按钮保持禁用，不调删除接口', async () => {
+    const input = await openDeleteDialog()
+    input.value = 'EMPTY-0'
+    input.dispatchEvent(new Event('input'))
+    await nextTick()
+
+    const confirm = document.querySelector<HTMLButtonElement>('[data-testid="delete-confirm"]')!
+    expect(confirm.disabled).toBe(true)
+    expect(removeProject).not.toHaveBeenCalled()
+  })
+
+  it('编码匹配后点确认按项目 id 调删除接口', async () => {
+    const input = await openDeleteDialog()
+    input.value = 'EMPTY-01'
+    input.dispatchEvent(new Event('input'))
+    await nextTick()
+
+    document.querySelector<HTMLButtonElement>('[data-testid="delete-confirm"]')!.click()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(removeProject).toHaveBeenCalledWith(9)
   })
 })

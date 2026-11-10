@@ -10,6 +10,8 @@ import com.qa.autotest.domain.iam.PermissionAction;
 import com.qa.autotest.domain.iam.PermissionResource;
 import java.util.Locale;
 import java.util.Set;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +31,14 @@ public class ProjectAssetService {
     private final ProjectAssetRepository assets;
     private final AccessControlService access;
     private final AuditService audit;
+
+    /** v4.3.0：共享/引用/解除引用后发缓存失效事件（FR-v4.3-05 T1）。 */
+    private ApplicationEventPublisher events;
+
+    @Autowired(required = false)
+    void setEventPublisher(ApplicationEventPublisher events) {
+        this.events = events;
+    }
 
     public ProjectAssetService(ProjectAssetRepository assets, AccessControlService access,
                                AuditService audit) {
@@ -55,6 +65,7 @@ public class ProjectAssetService {
         assets.addReference(ownerProjectId, type, assetId, null, TenantContext.userId());
         audit.record("asset.share", type.toLowerCase(Locale.ROOT), String.valueOf(assetId),
                 "owner_project=" + ownerProjectId);
+        publish(ownerProjectId, type, assetId);
     }
 
     /** 项目引用一条平台共享资产。 */
@@ -72,6 +83,7 @@ public class ProjectAssetService {
         assets.addReference(projectId, type, assetId, null, TenantContext.userId());
         audit.record("asset.reference", type.toLowerCase(Locale.ROOT), String.valueOf(assetId),
                 "project=" + projectId);
+        publish(projectId, type, assetId);
     }
 
     /** 只解除引用，不动物资本体。 */
@@ -84,6 +96,13 @@ public class ProjectAssetService {
         }
         audit.record("asset.unreference", type.toLowerCase(Locale.ROOT), String.valueOf(assetId),
                 "project=" + projectId);
+        publish(projectId, type, assetId);
+    }
+
+    private void publish(long projectId, String type, long assetId) {
+        if (events != null) {
+            events.publishEvent(new AssetChangedEvent(projectId, type, assetId));
+        }
     }
 
     private ProjectAssetRepository.AssetScope requireAsset(String type, long assetId) {

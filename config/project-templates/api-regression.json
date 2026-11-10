@@ -1,6 +1,7 @@
 {
   "schemaVersion": "1.0",
   "key": "api-regression",
+  "code": "API-RF-202611-001",
   "nameKey": "projectWizard.templates.api.name",
   "descKey": "projectWizard.templates.api.desc",
   "testKernel": "robot",

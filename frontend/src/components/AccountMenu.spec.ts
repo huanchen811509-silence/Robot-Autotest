@@ -119,7 +119,7 @@ describe('菜单结构与状态区', () => {
       .filter(Boolean)
     expect(titles).toEqual([
       i18n.global.t('accountMenu.appearance'),
-      i18n.global.t('accountMenu.admin'),
+      i18n.global.t('accountMenu.help'),
       i18n.global.t('accountMenu.session'),
     ])
   })
@@ -148,24 +148,21 @@ describe('菜单结构与状态区', () => {
   })
 })
 
-describe('管理入口按能力显隐', () => {
-  it('admin 能看到 设置 / 审计 / 运维 / 关于 / 快捷键 / 版本迭代', async () => {
+describe('帮助入口与角色无关', () => {
+  it('admin 看到 关于 / 快捷键 / 版本迭代，不再重复管理入口', async () => {
     const root = await mountMenu(['admin'])
     const panel = await openPanel(root)
     const texts = linkTexts(panel)
-    for (const key of [
-      'accountMenu.settings',
-      'accountMenu.audit',
-      'accountMenu.ops',
-      'about.open',
-      'shortcuts.title',
-      'accountMenu.changelog',
-    ]) {
+    for (const key of ['about.open', 'shortcuts.title', 'accountMenu.changelog']) {
       expect(texts).toContain(i18n.global.t(key))
     }
+    // v4.5.0：设置 / 审计 / 运维统一收进全局模式的「系统设置」，账户菜单不重复摆一份
+    expect(texts).not.toContain(i18n.global.t('accountMenu.settings'))
+    expect(texts).not.toContain(i18n.global.t('accountMenu.audit'))
+    expect(texts).not.toContain(i18n.global.t('accountMenu.ops'))
   })
 
-  it('engineer 看不到 设置 / 审计 / 运维，但保留 关于 / 快捷键 / 版本迭代', async () => {
+  it('engineer 与 admin 看到同一组帮助入口', async () => {
     const root = await mountMenu(['engineer'])
     const panel = await openPanel(root)
     const texts = linkTexts(panel)

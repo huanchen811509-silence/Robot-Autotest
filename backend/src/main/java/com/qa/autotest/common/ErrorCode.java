@@ -37,6 +37,12 @@ public enum ErrorCode {
     /** 冲突（唯一键、状态机非法跃迁）。 */
     CONFLICT(40900, "CONFLICT"),
 
+    /** 项目必须保留至少一名项目经理（v4.4.0 / FR-v4.4-05）。 */
+    LAST_PM_REQUIRED(40901, "LAST_PM_REQUIRED"),
+
+    /** 编码已使用过唯一一次变更机会（v4.4.0 / FR-v4.4-08）。 */
+    CODE_ALREADY_CHANGED(40902, "CODE_ALREADY_CHANGED"),
+
     /** 触发限流（令牌级滑动窗口超限，PLN-03）。 */
     TOO_MANY_REQUESTS(42900, "TOO_MANY_REQUESTS"),
 

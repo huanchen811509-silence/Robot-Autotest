@@ -40,4 +40,9 @@ public interface UserRepository {
     boolean usernameExists(String username);
 
     boolean emailExists(String email, Long excludeUserId);
+
+    /** 上次使用的界面模式：global / project（v4.5.0 / FR-v4.5-02）。 */
+    String defaultUiMode(long userId);
+
+    void updateDefaultUiMode(long userId, String mode);
 }

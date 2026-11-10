@@ -8,7 +8,62 @@
 > `<!-- current -->` 是给解析器用的语言无关标识（Markdown 渲染时不可见）。
 > 因此代码里不需要硬编码中文，界面显示文案一律走 i18n 语言包 `changelog.*`。
 
-## v4.2.0-workspace-closeout（2026-11-10） <!-- current -->
+## v4.9.2-ga（2026-11-10） <!-- current -->
+
+### 新增 <!-- added -->
+- **成员多角色（4.4.0）**：一个成员可同时持有多个项目角色，权限按并集求值；成员批量添加与角色回显；项目编码由 `GET /api/projects/next-code` 统一发号，支持改码与审核留痕
+- **双模式与平台项目（4.5.0）**：新增项目模式 / 全局模式切换；`project.kind='platform'` 单例平台项目承载公共用例与公共资产；`/g/**` 全局命名空间与品牌顶栏、「公共用例 / 公共资产 / 模板中心 / 系统设置」入口
+- **公共用例库（4.6.0）**：两级分类树，用例扩展 `external_id` / `content_sha` / `lifecycle_status` / `version_no`；导入「文件 sha256 / 行 external_id / 版本 content_sha」三层幂等，预览零写入、提交单事务；反向导出 14 列固定表头并登记 `export_record`；批次历史与错误报告 CSV；失效 / 恢复
+- **公共资产库（4.7.0）**：「当前测试环境」分节解析（设备 / 端口 / 凭据，列名别名容错），业务键 upsert，源文件缺失项软失效；凭据只落引用与掩码，不落明文；删除前按 `project_asset` 引用计数保护（被引用返回 409）
+- **模板中心（4.8.0）**：`project_template` / `project_template_item` / `project_template_asset` 持久化，4 个内置模板；模板以**引用**保存用例与资产、不复制正文；创建向导新增「内容」步，选中的公共用例复制进项目用例集、资产按引用挂载
+- **存量同步（4.9.0）**：`sync_job` / `sync_job_item` 记录预览与执行；NEW / UPDATE / CONFLICT / UNCHANGED / SKIP 五态差异，冲突逐条选择「保留本地 / 接受公共库 / 另存副本」；执行后可整单回滚；`local_override` 用例永不被同步覆盖；每日预览定时任务默认关闭（`sync.auto.enabled=false`）
+- **错误追踪号（4.9.1）**：接口错误展示服务端 `X-Trace-Id`，用户可连同错误码一起复制给运维定位
+
+### 变更 <!-- changed -->
+- 新增 8 组迁移 `V11_30`–`V11_37`，均附 `db/down/` 回滚脚本；`test_case` 增公共库列与索引，`import_batch` / `import_item` / `export_record` / `case_version` / `sync_job` / `sync_job_item` 等表建立
+- 用例导入改为「预览 → 提交」两段式：预览只读并可重复回放（同一文件 sha 命中已提交批次时不重复建批次）；提交写入用例、步骤、版本快照与审计
+- 侧栏「维护与恢复」新增「存量同步」入口（`/sync`）；全局模式导航独立于项目导航，避免项目内页面误挂全局
+- 关于页版本与依赖继续取自构建产物 `build-info.properties`，本版发布口径为 `4.9.2`
+
+### 修复 <!-- fixed -->
+- 公共用例导入的 `case_code` 按列宽 64 截断，超长编号不再整行失败；`safety_level` 缺省补 `LX`，避免以 NULL 写 NOT NULL 列
+- 公共资产删除改为按真实引用计数判定：0 引用可直接删，被引用才返回 409，修正此前平台资产无引用也拒绝删除的问题
+- 模板更新接口补齐 `status` 参数；模板内核读取改取项目实际列 `test_kernel`
+- 公共分类回填改从历史唯一分类列 `case_kind` 取值，修正迁移引用不存在列导致无法升级的问题
+
+### 破坏性变更 <!-- breaking -->
+- 无。新增列均可空或带默认值；新增接口路径为增量；旧数据在迁移中按 `case_kind` / `case_code` 回填，无需人工干预
+
+---
+
+## v4.3.0-project-create-asset-info（2026-11-10）
+
+### 新增 <!-- added -->
+- **「新建项目」独立入口**：侧栏「工作台」组新增 `workbench-create` 叶子，路由 `/projects/new` 由 `settings:read` 改为 `project:create`；账户菜单「新建项目」同码控制显隐。`project:create` 只发给 ADMIN 与 PM，ENGINEER / VIEWER 不渲染该入口
+- **项目经理可建项目**：`PermissionMatrix` 的 PROJECT 动作集补 `CREATE`（`READ` / `CREATE` / `UPDATE`），单元测试与 `authz-matrix.yaml` 用例 `AUTHZ-PM-PROJECT-WRITE` 由 DENY 改 ALLOW，权限四处（矩阵 / 单测 / 契约样本 / PRD §3.1）同版本落地
+- **端口网卡归属**：`V11_29` 给 `device_port` 增可空列 `nic_name` / `nic_index` 与索引 `idx_device_port_nic`，附 down 脚本；`DevicePort` 记录、仓储映射、`PortCommand` 与前端口表单（可选输入，空值即「未归属」）全链路打通
+- **资产信息聚合接口**：`GET /api/projects/{projectId}/asset-info`（`scope=connections|topology|all`、`includeDisabled`）一次返回连接明细与拓扑（`dev:{id}` / `dev:{id}/nic:{name}` / `dev:{id}/nic:{name}/port:{name}` 三级节点 ID）；`POST .../asset-info/refresh` 需 `ASSET UPDATE` 并写审计 `asset-info.refresh`
+- **两级缓存与主动失效**：片段键 `link:{id}:{contentHash}`、项目键 `project:{projectId}:{指纹}`，默认 TTL 12 小时（`ASSET_INFO_CACHE_TTL_SECONDS:43200`）、单飞合并并发回源、缓存可整体关闭；设备 / 链路 / 资产引用变更在事务提交后按项目前缀失效，支持手工强制刷新
+- **「连接与拓扑」页**：新增 `/environment/connections`，元信息条展示生成时间 / 数据来源 / 缓存命中 / TTL，SVG 拓扑按设备→网卡→接口稳定分层，连接明细表支持设备 / 网卡 / 接口三路本地过滤并带空态引导
+- **平台资产引用入口（P1）**：资产页新增「引用平台资产」表单，按设备 / 链路 / 凭据类型引用他项目资产；对 `projectId` 非当前项目的行只给「解除引用」，自有资产只给「删除」，避免误删平台资产本体
+- **项目停用与彻底删除**：项目卡新增「停用 / 启用」（`PROJECT UPDATE`，落库 `status=0`，数据全保留可恢复）与「彻底删除」（仅 ADMIN，需输入项目 code 二次确认）；`DELETE /api/projects/{id}` 删除前扫描全部 `project_id` 业务表，非空返回 `409` 并逐类报数，成功写 `project:delete` 审计（含 code / name）
+
+### 变更 <!-- changed -->
+- 资产信息复用窗口由短时缓存改为**默认 12 小时可配置**，并叠加「资产变更立即失效」与手工刷新两条兜底；新增 3 个环境变量：`ASSET_INFO_CACHE_ENABLED` / `ASSET_INFO_CACHE_TTL_SECONDS` / `ASSET_INFO_CACHE_MAX_PROJECTS`（`application.yml` 中已给默认值 `true` / `43200` / `512`）
+- 账户菜单入口显隐从「可见设置即可新建」改为按 `project:create` 判定，避免只读角色看到点了会被后端拒绝的按钮
+- 导航能力集补齐 `asset:read`（ADMIN / PM / ENGINEER / VIEWER 均持有），项目内可见范围仍由后端 `AssetScopeSql` 兜底
+- 门禁步数维持 **32** 步；OpenAPI 快照重生成 **293 endpoints / 234 paths**（+2 endpoints / +2 paths）
+
+### 修复 <!-- fixed -->
+- 连接明细曾按仓储返回顺序输出，同一数据两次请求顺序可能漂移；现按 `linkId` 升序、拓扑按设备→网卡→接口稳定排序，前端 `<select>` 与表格行序不再抖动
+- 端口未填网卡时后端归入统一「未归属」分组，前端显示「未归属」而非空白列
+
+### 破坏性变更 <!-- breaking -->
+- 无。`V11_29` 只增可空列与普通索引并附 down 脚本，旧行 `nic_name` / `nic_index` 为 `NULL`，接口新增字段均为可选；`asset-info` 为新增路径，未改既有 API 形状
+
+---
+
+## v4.2.0-workspace-closeout（2026-11-10）
 
 ### 新增 <!-- added -->
 - **项目工作区导出**：`GET /api/projects/{id}/workspace/export` 产出 `project.json` + `manifest.json`（逐文件 `sha256` 与字节数）+ 7 个子目录 + `members.json`；契约 16 项全 PASS，导出件全文本面密钥扫描 0 命中

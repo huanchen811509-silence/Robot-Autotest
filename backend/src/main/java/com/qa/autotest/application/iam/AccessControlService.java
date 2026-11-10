@@ -11,9 +11,12 @@ import com.qa.autotest.domain.iam.PermissionResource;
 import com.qa.autotest.domain.iam.Project;
 import com.qa.autotest.domain.iam.ProjectMember;
 import com.qa.autotest.domain.iam.RoleCode;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.springframework.stereotype.Service;
 
 /**
@@ -21,6 +24,8 @@ import org.springframework.stereotype.Service;
  *
  * <p>两层口径：接口注解做粗粒度拦截；这里做资源级校验（项目是否属于当前用户），
  * 同一接口被跨项目调用时只有这一层能拦住。
+ *
+ * <p>v4.4.0 / FR-v4.4-02：有效权限 = 全局角色权限 ∪ 项目角色权限（并集）。
  */
 @Service
 public class AccessControlService {
@@ -46,27 +51,36 @@ public class AccessControlService {
                 .anyMatch(code -> code.equalsIgnoreCase(RoleCode.ADMIN.code()));
     }
 
-    /** 当前用户在指定项目上的有效角色：全局管理员优先，其次项目成员角色，再次全局最高角色。 */
-    public RoleCode effectiveRole(long userId, Long projectId) {
-        List<String> globalCodes = users.roleCodesOf(userId);
-        if (globalCodes.stream().anyMatch(code -> code.equalsIgnoreCase(RoleCode.ADMIN.code()))) {
-            return RoleCode.ADMIN;
-        }
+    /** 当前用户的有效角色集合：全局角色 ∪ 项目角色（去重，非法值忽略）。 */
+    public List<RoleCode> effectiveRoles(long userId, Long projectId) {
+        Set<RoleCode> roles = new LinkedHashSet<>();
+        roles.addAll(parse(users.roleCodesOf(userId)));
         if (projectId != null) {
-            Optional<ProjectMember> member = projects.findMember(projectId, userId);
-            if (member.isPresent()) {
-                return RoleCode.from(member.get().roleCode());
+            projects.findMember(projectId, userId)
+                    .ifPresent(member -> roles.addAll(parse(member.roleCodes())));
+        }
+        return new ArrayList<>(roles);
+    }
+
+    private static List<RoleCode> parse(List<String> codes) {
+        List<RoleCode> parsed = new ArrayList<>();
+        if (codes == null) {
+            return parsed;
+        }
+        for (String code : codes) {
+            try {
+                parsed.add(RoleCode.from(code));
+            } catch (IllegalArgumentException ignored) {
+                // 脏数据不放大权限：未知角色直接忽略
             }
         }
-        return globalCodes.stream()
-                .map(code -> {
-                    try {
-                        return RoleCode.from(code);
-                    } catch (IllegalArgumentException ex) {
-                        return null;
-                    }
-                })
-                .filter(java.util.Objects::nonNull)
+        return parsed;
+    }
+
+    /** 当前用户在指定项目上的展示角色：全局管理员优先，其次按项目/全局角色优先级取最高。 */
+    public RoleCode effectiveRole(long userId, Long projectId) {
+        List<RoleCode> roles = effectiveRoles(userId, projectId);
+        return roles.stream()
                 .min(Comparator.comparingInt(PRIORITY::indexOf))
                 .orElse(null);
     }
@@ -75,10 +89,24 @@ public class AccessControlService {
     public void require(PermissionResource resource, PermissionAction action) {
         long userId = TenantContext.requireUserId();
         Long projectId = TenantContext.projectId();
-        RoleCode role = effectiveRole(userId, projectId);
-        if (role == null || !PermissionMatrix.allows(role, resource, action)) {
+        List<RoleCode> roles = effectiveRoles(userId, projectId);
+        if (!PermissionMatrix.allows(roles, resource, action)) {
             throw new BusinessException(ErrorCode.FORBIDDEN,
                     "无权限：" + resource.name() + ":" + action.name());
+        }
+    }
+
+    /** 是否可进入全局模式（ADMIN / PM）。 */
+    public boolean canEnterGlobal(long userId) {
+        return PermissionMatrix.allows(effectiveRoles(userId, null),
+                PermissionResource.GLOBAL, PermissionAction.ENTER);
+    }
+
+    /** 全局模式入口校验：无权限统一 403，不泄露全局资源是否存在。 */
+    public void requireGlobalEnter() {
+        long userId = TenantContext.requireUserId();
+        if (!canEnterGlobal(userId)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "无权访问全局模式");
         }
     }
 

@@ -12,9 +12,12 @@
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useUiModeStore, type UiMode } from '@/stores/uiMode'
 import { useAiDrawer } from '@/composables/useAiDrawer'
 import AppIcon from '@/components/AppIcon.vue'
+import AppLogo from '@/components/AppLogo.vue'
 import AccountMenu from '@/components/AccountMenu.vue'
 import NotificationCenter from '@/components/NotificationCenter.vue'
 
@@ -27,6 +30,8 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const auth = useAuthStore()
+const uiMode = useUiModeStore()
+const router = useRouter()
 const { toggleDrawer } = useAiDrawer()
 
 /** 当前项目：只用来显示名称与启用状态点，不在这里改数据。 */
@@ -35,17 +40,61 @@ const currentProject = computed(() =>
 )
 const projectMissing = computed(() => auth.projectId === null || !currentProject.value)
 
-function changeProject(event: Event): void {
+/** 双模式入口只对 ADMIN / PM 渲染；工程师完全看不到（FR-v4.5-06）。 */
+const canGlobal = computed(() => {
+  const roles = auth.user?.roles ?? []
+  return roles.includes('admin') || roles.includes('pm')
+})
+
+async function switchMode(mode: UiMode): Promise<void> {
+  if (mode === uiMode.mode) return
+  const ok = await uiMode.setMode(mode)
+  if (!ok) return
+  await router.push(mode === 'global' ? '/g/projects' : uiMode.projectPath())
+}
+
+async function changeProject(event: Event): Promise<void> {
   const raw = (event.target as HTMLSelectElement).value
   auth.setProject(raw ? Number(raw) : null)
+  // 在全局模式里选项目 = 进入该项目的项目模式（FR-v4.5-04）。
+  if (uiMode.mode === 'global') {
+    await uiMode.setMode('project')
+    await router.push('/workbench')
+  }
 }
 </script>
 
 <template>
   <header class="app-header">
-    <span class="app-header-title">{{ t('app.subtitle') }}</span>
+    <span class="app-header-brand">
+      <AppLogo :size="22" />
+      <span class="app-header-title">{{ t('app.subtitle') }}</span>
+    </span>
 
     <div class="app-header-right" data-testid="header-actions">
+      <!-- 段 0 模式：项目 / 全局（v4.5.0 / FR-v4.5-04）；无权限时整组不渲染 -->
+      <div v-if="canGlobal" class="app-seg app-mode-switch" data-seg="mode" role="group"
+           :aria-label="t('mode.switch')">
+        <button
+          class="app-mode-btn"
+          type="button"
+          :class="{ 'is-active': uiMode.mode === 'project' }"
+          :aria-pressed="uiMode.mode === 'project'"
+          @click="void switchMode('project')"
+        >
+          {{ t('mode.project') }}
+        </button>
+        <button
+          class="app-mode-btn"
+          type="button"
+          :class="{ 'is-active': uiMode.mode === 'global' }"
+          :aria-pressed="uiMode.mode === 'global'"
+          @click="void switchMode('global')"
+        >
+          {{ t('mode.global') }}
+        </button>
+      </div>
+
       <!-- 段 1 上下文：当前项目。原生 select 保留（键盘与移动端都熟），但造型独立。 -->
       <div class="app-seg" data-seg="context">
         <label
@@ -58,7 +107,7 @@ function changeProject(event: Event): void {
             class="app-project-select"
             :value="auth.projectId ?? ''"
             :aria-label="t('projectPicker.select')"
-            @change="changeProject"
+            @change="void changeProject($event)"
           >
             <option value="" disabled>{{ t('projectPicker.choose') }}</option>
             <option v-for="project in auth.projects" :key="project.id" :value="project.id">
@@ -111,3 +160,41 @@ function changeProject(event: Event): void {
     </div>
   </header>
 </template>
+
+<style scoped>
+.app-header-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.app-mode-switch {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 2px;
+  background: var(--surface-2);
+}
+
+.app-mode-btn {
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+  padding: 2px var(--space-3);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.app-mode-btn.is-active {
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+}
+
+.app-mode-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+</style>

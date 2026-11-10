@@ -177,13 +177,17 @@ class DeviceAssetIT {
 
         DevicePort port = service.addPort(projectId, device.id(),
                 new DeviceService.PortCommand("mlx5_0", "QSFP", "RoCE", "00:11:22:33:44:55",
-                        200, 4200, "10.20.3.11", "UP"));
+                        200, 4200, "10.20.3.11", "UP", "mlx5_0", 0));
         assertThat(port.portName()).isEqualTo("mlx5_0");
         assertThat(port.speedGbps()).isEqualTo(200);
+        // v4.3.0：网卡归属随端口落库并可回读
+        assertThat(port.nicName()).isEqualTo("mlx5_0");
+        assertThat(port.nicIndex()).isZero();
         assertThat(service.ports(projectId, device.id())).hasSize(1);
 
         assertThatThrownBy(() -> service.addPort(projectId, device.id(),
-                new DeviceService.PortCommand("mlx5_0", "QSFP", "RoCE", null, 100, null, null, null)))
+                new DeviceService.PortCommand("mlx5_0", "QSFP", "RoCE", null, 100, null, null,
+                        null, "mlx5_0", 1)))
                 .isInstanceOf(BusinessException.class)
                 .satisfies(ex -> {
                     assertThat(((BusinessException) ex).errorCode()).isEqualTo(ErrorCode.CONFLICT);
@@ -192,9 +196,11 @@ class DeviceAssetIT {
 
         DevicePort updated = service.updatePort(projectId, port.id(),
                 new DeviceService.PortCommand("mlx5_0", "QSFP", "RoCE", "00:11:22:33:44:55",
-                        100, 4200, "10.20.3.11", "DOWN"));
+                        100, 4200, "10.20.3.11", "DOWN", "mlx5_1", 2));
         assertThat(updated.speedGbps()).isEqualTo(100);
         assertThat(updated.portStatus()).isEqualTo("DOWN");
+        assertThat(updated.nicName()).isEqualTo("mlx5_1");
+        assertThat(updated.nicIndex()).isEqualTo(2);
 
         service.deletePort(projectId, port.id());
         assertThat(service.ports(projectId, device.id())).isEmpty();

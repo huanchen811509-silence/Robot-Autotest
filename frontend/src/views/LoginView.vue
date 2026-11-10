@@ -145,7 +145,7 @@ onMounted(() => {
     <form class="login-card" @submit.prevent="submit">
       <!-- 品牌区（UX-05）：登录页是唯一没有侧边导航的整屏页面，标记 + 定位语是它唯一的身份线索 -->
       <div class="login-brand">
-        <AppLogo :size="44" />
+        <span class="login-brand-tile"><AppLogo :size="44" /></span>
         <h1 class="login-title">{{ t('app.title') }}</h1>
         <p class="login-tagline">{{ t('app.subtitle') }}</p>
       </div>
@@ -213,6 +213,18 @@ onMounted(() => {
 }
 
 /* main.css 里 `.login-title` 还留着给别的场景用的下边距，品牌区靠 gap 排版，这里清掉 */
+.login-brand-tile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  box-shadow: var(--shadow-sm);
+}
+
 .login-brand .login-title {
   margin: 0;
 }

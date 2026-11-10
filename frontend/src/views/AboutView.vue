@@ -15,6 +15,7 @@ import { useI18n } from 'vue-i18n'
 import type { DataTableColumns } from 'naive-ui'
 import DataTable from '@/components/DataTable.vue'
 import AppIcon from '@/components/AppIcon.vue'
+import AppLogo from '@/components/AppLogo.vue'
 import { settingsApi, type BuildInfo } from '@/api/settings'
 import {
   CHANGELOG_SECTION_LABELS,
@@ -144,6 +145,7 @@ onUnmounted(() => {
 <template>
   <div class="page">
     <header class="page-head">
+      <span class="about-brand"><AppLogo :size="52" with-wordmark /></span>
       <h1>{{ t('aboutPage.title') }}</h1>
       <p class="muted">{{ t('app.subtitle') }}</p>
       <p class="muted intro">{{ t('aboutPage.intro') }}</p>
@@ -250,6 +252,7 @@ onUnmounted(() => {
 <style scoped>
 .page { padding: 24px 28px; display: grid; gap: 18px; max-width: 999px; }
 .page-head h1 { margin: 0 0 6px; font-size: 22px; }
+.about-brand { display: inline-flex; margin-bottom: var(--space-2); }
 .muted { color: color-mix(in srgb, currentColor 60%, transparent); font-size: 13px; }
 .intro { margin: 6px 0 0; max-width: 760px; line-height: 1.7; }
 .small { font-size: 12px; }
@@ -271,7 +274,7 @@ onUnmounted(() => {
 }
 .change-text { min-width: 0; }
 .change-text :deep(code) {
-  padding: 1px 5px; border-radius: 4px;
+  padding: 1px 6px; border-radius: 4px;
   background: color-mix(in srgb, currentColor 9%, transparent);
   font-family: var(--font-mono, monospace); font-size: 12px;
 }

@@ -41,8 +41,11 @@ public final class SecretRedactor {
                             // 审计历史里存在中文键名（口令 / 密码 / 密钥），迁移到本类后仍须覆盖
                             + "|口令|密码|令牌|密钥|凭据))\"?"
                             + "\\s*[=:]\\s*)"
-                            + "(?!(?:bearer|basic|digest)\\b)"
-                            + "(\"[^\"]*\"|'[^']*'|[^,;\\s}]+)"),
+                            // 认证方案词必须排除在「值」之外：若把 lookahead 放在分组前，
+                            // 正则会回溯 `\s*` 让 "Bearer" 落进值分组，二次脱敏成
+                            // "Authorization: <redacted> <redacted>"（方案名被抹，不像原文）。
+                            + "((?!(?:bearer|basic|digest)\\b)"
+                            + "(?:\"[^\"]*\"|'[^']*'|[^,;\\s}]+))"),
             // 3) -u/--user 后带冒号的口令（保留用户名）
             Pattern.compile("(?i)((?:-u|--user)\\s+[^:\\s]+:)(\\S+)"),
             // 4) --password / --passwd / --token / --secret 的等号或空格形态

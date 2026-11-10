@@ -51,6 +51,28 @@ async function mountCard(card: ProjectCardData, current = false): Promise<HTMLEl
   return root
 }
 
+/** 带管理态挂载（v4.3.0 FR-v4.3-09：停用 / 彻底删除入口）。 */
+async function mountManaged(
+  card: ProjectCardData,
+  handlers: { onToggleEnabled?: () => void; onRequestDelete?: () => void } = {},
+): Promise<HTMLElement> {
+  const root = document.createElement('div')
+  document.body.appendChild(root)
+  host = root
+  app = createApp(ProjectCard, {
+    card,
+    current: false,
+    canManage: true,
+    canDelete: true,
+    ...handlers,
+  })
+  app.use(pinia!)
+  app.use(i18n)
+  app.mount(root)
+  await nextTick()
+  return root
+}
+
 function pick(root: HTMLElement, testid: string): HTMLElement {
   return root.querySelector<HTMLElement>(`[data-testid="${testid}"]`)!
 }
@@ -134,5 +156,47 @@ describe('ProjectCard 动作语义', () => {
 
     expect(root.textContent).toContain('已停用')
     expect(root.textContent).not.toContain('启用')
+  })
+})
+
+describe('ProjectCard 停用与彻底删除（FR-v4.3-09）', () => {
+  it('无管理能力时不渲染停用 / 删除入口', async () => {
+    const root = await mountCard(base)
+
+    expect(root.querySelector('[data-testid="card-toggle"]')).toBeNull()
+    expect(root.querySelector('[data-testid="card-delete"]')).toBeNull()
+  })
+
+  it('停用按钮按当前状态换文案，点击只发事件不直接改数据', async () => {
+    const onToggleEnabled = vi.fn()
+    const root = await mountManaged({ ...base, enabled: false }, { onToggleEnabled })
+    const toggle = pick(root, 'card-toggle') as HTMLButtonElement
+
+    expect(toggle.textContent?.trim()).toBe('启用')
+    toggle.click()
+    await nextTick()
+    expect(onToggleEnabled).toHaveBeenCalledTimes(1)
+  })
+
+  it('有用例 / 运行 / 设备的项目：彻底删除置灰并给出原因', async () => {
+    const root = await mountManaged(base)
+    const remove = pick(root, 'card-delete') as HTMLButtonElement
+
+    expect(remove.disabled).toBe(true)
+    expect(remove.getAttribute('title')).toContain('只能停用')
+  })
+
+  it('空项目：彻底删除可点，点击只发请求事件', async () => {
+    const onRequestDelete = vi.fn()
+    const root = await mountManaged(
+      { ...base, caseCount: 0, runCount: 0, deviceCount: 0 },
+      { onRequestDelete },
+    )
+    const remove = pick(root, 'card-delete') as HTMLButtonElement
+
+    expect(remove.disabled).toBe(false)
+    remove.click()
+    await nextTick()
+    expect(onRequestDelete).toHaveBeenCalledTimes(1)
   })
 })

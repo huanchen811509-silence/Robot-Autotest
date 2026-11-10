@@ -249,6 +249,11 @@ class ProjectCardServiceTest {
         }
 
         @Override
+        public java.util.Map<String, Long> busyCounts(long projectId) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public List<ProjectMember> members(long projectId) {
             throw new UnsupportedOperationException();
         }
@@ -270,6 +275,48 @@ class ProjectCardServiceTest {
 
         @Override
         public void removeMember(long projectId, long userId) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean changeCode(long id, String newCode, String reason, Long operatorId) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public java.util.Optional<Project> platformProject() {
+            return java.util.Optional.empty();
+        }
+
+        @Override
+        public PageResult<Project> pageGlobal(String keyword, boolean includePlatform,
+                                              int page, int size) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public List<String> rolesOf(long projectId, long userId) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void replaceMemberRoles(long projectId, long userId, List<String> roleCodes,
+                                       String primaryRole, Long operatorId) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public long countMembersWithRole(long projectId, String roleCode) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public long countManagers(long projectId) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public long nextCodeSequence(String scope) {
             throw new UnsupportedOperationException();
         }
 

@@ -1,6 +1,7 @@
 {
   "schemaVersion": "1.0",
   "key": "pytest-service",
+  "code": "PY-PYT-202611-001",
   "nameKey": "projectWizard.templates.pytest.name",
   "descKey": "projectWizard.templates.pytest.desc",
   "testKernel": "pytest",

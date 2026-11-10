@@ -60,6 +60,44 @@ export interface NavGroup {
 
 export type NavNode = NavGroup | NavLeaf
 
+/**
+ * 全局模式导航（v4.5.0 / FR-v4.5-03）：项目 · 公共用例 · 公共资产 · 模板 · 系统设置。
+ *
+ * 与项目导航分开维护，避免把「项目内页面」误挂到全局；权限仍由路由 meta 与后端 403 兜底。
+ */
+export const GLOBAL_NAVIGATION: NavNode[] = [
+  {
+    key: 'global-projects',
+    labelKey: 'menu.globalProjects',
+    icon: 'dashboard',
+    path: '/g/projects',
+  },
+  {
+    key: 'global-cases',
+    labelKey: 'menu.globalCases',
+    icon: 'cases',
+    path: '/g/cases',
+  },
+  {
+    key: 'global-assets',
+    labelKey: 'menu.globalAssets',
+    icon: 'database',
+    path: '/g/assets',
+  },
+  {
+    key: 'global-templates',
+    labelKey: 'menu.globalTemplates',
+    icon: 'boxes',
+    path: '/g/templates',
+  },
+  {
+    key: 'global-settings',
+    labelKey: 'menu.globalSettings',
+    icon: 'admin',
+    path: '/g/settings',
+  },
+]
+
 export function isGroup(node: NavNode): node is NavGroup {
   return Array.isArray((node as NavGroup).children)
 }
@@ -91,6 +129,16 @@ export const NAVIGATION: NavNode[] = [
         labelKey: 'menu.overview',
         icon: 'reports',
         path: '/overview',
+      },
+      {
+        // v4.3.0 / FR-v4.3-01：项目创建从「系统设置」口径独立出来。
+        // 原先 `/projects/new` 复用 `settings:read`，等于「能看设置就能建项目」；
+        // 现按 PROJECT/CREATE 授予（ADMIN + PM），工程/观察者不再出现入口。
+        key: 'workbench-create',
+        labelKey: 'menu.newProject',
+        icon: 'plus',
+        path: '/projects/new',
+        capability: 'project:create',
       },
     ],
   },
@@ -229,6 +277,14 @@ export const NAVIGATION: NavNode[] = [
       { key: 'environment-topology', labelKey: 'menu.envTopology', icon: 'link', path: '/environment/topology' },
       { key: 'environment-prepare', labelKey: 'menu.envPrepare', icon: 'sliders', path: '/environment/prepare' },
       { key: 'environment-analysis', labelKey: 'menu.envAnalysis', icon: 'reports', path: '/environment/analysis' },
+      {
+        // v4.3.0 / FR-v4.3-07：连接与拓扑（只读派生页），数据来自 `/asset-info`。
+        // 不做连接编辑：连接由链路定义，编辑入口仍在「测试资产 → 链路」。
+        key: 'environment-connections',
+        labelKey: 'menu.envConnections',
+        icon: 'link',
+        path: '/environment/connections',
+      },
     ],
   },
   {
@@ -240,6 +296,13 @@ export const NAVIGATION: NavNode[] = [
       { key: 'maintenance-principles', labelKey: 'menu.mntPrinciples', icon: 'info', path: '/maintenance/principles' },
       { key: 'maintenance-records', labelKey: 'menu.mntRecords', icon: 'database', path: '/maintenance/records' },
       { key: 'maintenance-recover', labelKey: 'menu.mntRecover', icon: 'search', path: '/maintenance/recover' },
+      {
+        // v4.9.0 / FR-v4.9-01：存量同步。挂在「维护与恢复」下，不新增一级菜单。
+        key: 'maintenance-sync',
+        labelKey: 'menu.mntSync',
+        icon: 'download',
+        path: '/sync',
+      },
     ],
   },
   {
@@ -399,10 +462,16 @@ export type NavRole = 'admin' | 'pm' | 'engineer' | 'viewer'
 
 /** 四角色能力集：与后端角色口径一致，前端只做入口显隐。 */
 export const ROLE_CAPABILITIES: Record<NavRole, string[]> = {
-  admin: ['execution:read', 'audit:read', 'settings:read', 'user:write', 'case:write', 'ai:config'],
-  pm: ['execution:read', 'settings:read', 'case:write'],
-  engineer: ['execution:read', 'case:write'],
-  viewer: [],
+  // v4.3.0：`project:create` 只给 ADMIN + PM（后端 PROJECT/CREATE 同口径）；
+  // `asset:read` 四角色都有（后端 ASSET READ 对 PM/ENGINEER/VIEWER 均开放，
+  // 项目内可见范围仍由后端 AssetScopeSql 兜底）。
+  admin: [
+    'execution:read', 'asset:read', 'audit:read', 'settings:read', 'user:write', 'case:write',
+    'ai:config', 'project:create',
+  ],
+  pm: ['execution:read', 'asset:read', 'settings:read', 'case:write', 'project:create'],
+  engineer: ['execution:read', 'asset:read', 'case:write'],
+  viewer: ['asset:read'],
 }
 
 /** 后端角色码 → 四角色；未知角色按最小权限 viewer 处理（不放大权限）。 */

@@ -1,17 +1,14 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import markSvg from '@/assets/brand/logo-mark.svg?raw'
 
 /**
- * 品牌标记（UX-05）。
+ * 品牌标记（v4.5.0 / FR-v4.5-11、FR-v4.5-17）。
  *
- * 几何取自这个产品本身：一个根节点 + 一个缩进分支，就是「套件 → 用例」的层级树。
- * 三条横线 + 一条竖连接的组合在 16px 下仍分得清；换成更细的细节（图标化齿轮、
- * 文字首字母）在 favicon 尺寸下会糊成一团。
- *
- * 颜色一律走 token：`--accent` 底 + `--accent-contrast` 线条，换强调色时标记跟着变。
- * 注意 SVG 的 `fill` / `stroke` 作为 presentation attribute 时 `var()` 解析不可靠，
- * 所以统一写在 scoped `<style>` 里（与 TrendChart 同一处理）。
+ * 唯一来源是 `assets/brand/logo-mark.svg`（由 `logo/白泽Logo_白底黑线矢量版.svg`
+ * 移除满幅白底、路径改为 currentColor 得到）；组件只用 `?raw` 内联一次，
+ * 页面不得复制 SVG。颜色走 `--logo-fg`：亮色近黑、暗色香槟金，不跟随强调色。
  */
 const props = withDefaults(
   defineProps<{
@@ -28,13 +25,14 @@ const boxStyle = computed(() => ({ width: `${props.size}px`, height: `${props.si
 
 <template>
   <span class="app-logo">
-    <svg class="app-logo__mark" :style="boxStyle" viewBox="0 0 32 32" role="img" :aria-label="t('app.title')">
-      <rect class="app-logo__plate" x="0.5" y="0.5" width="31" height="31" rx="9" />
-      <line class="app-logo__line" x1="9.5" y1="10.5" x2="23" y2="10.5" />
-      <line class="app-logo__spine" x1="9.5" y1="10.5" x2="9.5" y2="21.5" />
-      <line class="app-logo__line" x1="13" y1="16" x2="23" y2="16" />
-      <line class="app-logo__line" x1="13" y1="21.5" x2="19.5" y2="21.5" />
-    </svg>
+    <!-- 本地静态资产，非用户输入；v-html 只为让 currentColor 生效 -->
+    <span
+      class="app-logo__mark"
+      :style="boxStyle"
+      role="img"
+      :aria-label="t('app.title')"
+      v-html="markSvg"
+    />
     <span v-if="withWordmark" class="app-logo__word">{{ t('app.title') }}</span>
   </span>
 </template>
@@ -45,6 +43,7 @@ const boxStyle = computed(() => ({ width: `${props.size}px`, height: `${props.si
   align-items: center;
   gap: 8px;
   min-width: 0;
+  color: var(--logo-fg);
 }
 
 .app-logo__mark {
@@ -52,19 +51,11 @@ const boxStyle = computed(() => ({ width: `${props.size}px`, height: `${props.si
   display: block;
 }
 
-.app-logo__plate {
-  fill: var(--accent);
-}
-
-.app-logo__line,
-.app-logo__spine {
-  stroke: var(--accent-contrast);
-  stroke-width: 2.6;
-  stroke-linecap: round;
-}
-
-.app-logo__spine {
-  stroke-width: 2.2;
+.app-logo__mark :deep(svg) {
+  display: block;
+  width: 100%;
+  height: 100%;
+  color: inherit;
 }
 
 .app-logo__word {
@@ -74,5 +65,11 @@ const boxStyle = computed(() => ({ width: `${props.size}px`, height: `${props.si
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .app-logo {
+    transition: color 150ms ease;
+  }
 }
 </style>

@@ -20,7 +20,6 @@ import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import { confirmAction } from '@/composables/useConfirm'
 import { useFocusTrap } from '@/composables/useFocusTrap'
-import { capabilitiesForRole, roleFromCodes } from '@/config/navigation'
 import { settingsApi } from '@/api/settings'
 import { healthPing } from '@/api/http'
 import AppIcon from '@/components/AppIcon.vue'
@@ -51,12 +50,6 @@ const roleLabel = computed(() => {
 const currentProject = computed(
   () => auth.projects.find((project) => project.id === auth.projectId) ?? null,
 )
-const capabilities = computed(() =>
-  capabilitiesForRole(roleFromCodes(auth.user?.roles)),
-)
-const canSeeSettings = computed(() => capabilities.value.includes('settings:read'))
-const canSeeAudit = computed(() => capabilities.value.includes('audit:read'))
-const canSeeOps = computed(() => auth.isAdmin)
 
 const health = ref<'unknown' | 'ok' | 'degraded'>('unknown')
 const version = ref('')
@@ -191,50 +184,10 @@ async function askLogout(): Promise<void> {
         <AppearanceControls />
       </div>
 
-      <!-- 分区 3：管理（按能力显隐；帮助入口对所有角色可见） -->
+      <!-- 分区 3：帮助（v4.5.0 起管理入口移到全局模式「系统设置」，这里只留与当前人相关的帮助/关于） -->
       <div class="account-section">
-        <h3 class="account-section__title">{{ t('accountMenu.admin') }}</h3>
+        <h3 class="account-section__title">{{ t('accountMenu.help') }}</h3>
         <div class="account-links">
-          <button
-            v-if="canSeeSettings"
-            type="button"
-            class="account-link"
-            role="menuitem"
-            @click="go('/projects/new')"
-          >
-            <AppIcon name="plus" :size="16" />
-            <span>{{ t('accountMenu.newProject') }}</span>
-          </button>
-          <button
-            v-if="canSeeSettings"
-            type="button"
-            class="account-link"
-            role="menuitem"
-            @click="go('/settings')"
-          >
-            <AppIcon name="admin" :size="16" />
-            <span>{{ t('accountMenu.settings') }}</span>
-          </button>
-          <button
-            v-if="canSeeAudit"
-            type="button"
-            class="account-link"
-            role="menuitem"
-            @click="go('/admin/audit')"
-          >
-            <AppIcon name="audit" :size="16" />
-            <span>{{ t('accountMenu.audit') }}</span>
-          </button>
-          <button
-            v-if="canSeeOps"
-            type="button"
-            class="account-link"
-            role="menuitem"
-            @click="go('/admin/ops')"
-          >
-            <AppIcon name="sliders" :size="16" />
-            <span>{{ t('accountMenu.ops') }}</span>
-          </button>
           <button
             type="button"
             class="account-link"

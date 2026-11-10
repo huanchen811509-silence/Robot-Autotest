@@ -42,7 +42,9 @@ public class DeviceRepositoryJdbc implements DeviceRepository {
             rs.getString("port_type"), rs.getString("protocol"), rs.getString("mac_address"),
             rs.getObject("speed_gbps") == null ? null : rs.getInt("speed_gbps"),
             rs.getObject("mtu") == null ? null : rs.getInt("mtu"),
-            rs.getString("ip_address"), rs.getString("port_status"));
+            rs.getString("ip_address"), rs.getString("port_status"),
+            rs.getString("nic_name"),
+            rs.getObject("nic_index") == null ? null : rs.getInt("nic_index"));
 
     private final JdbcTemplate jdbc;
 
@@ -164,7 +166,8 @@ public class DeviceRepositoryJdbc implements DeviceRepository {
     public List<DevicePort> ports(long projectId, long deviceId) {
         String sql = """
                 SELECT dp.id, dp.device_id, dp.port_name, dp.port_type, dp.protocol, dp.mac_address,
-                       dp.speed_gbps, dp.mtu, dp.ip_address, dp.port_status
+                       dp.speed_gbps, dp.mtu, dp.ip_address, dp.port_status, dp.nic_name,
+                       dp.nic_index
                   FROM device_port dp JOIN device d ON d.id = dp.device_id
                 """ + AssetScopeSql.DEVICE_JOIN + AssetScopeSql.DEVICE_WHERE
                 + " AND dp.device_id = ? ORDER BY dp.id";
@@ -173,10 +176,32 @@ public class DeviceRepositoryJdbc implements DeviceRepository {
     }
 
     @Override
+    public List<DevicePort> portsOfVisibleDevices(long projectId) {
+        String sql = """
+                SELECT dp.id, dp.device_id, dp.port_name, dp.port_type, dp.protocol, dp.mac_address,
+                       dp.speed_gbps, dp.mtu, dp.ip_address, dp.port_status, dp.nic_name,
+                       dp.nic_index
+                  FROM device_port dp JOIN device d ON d.id = dp.device_id
+                """ + AssetScopeSql.DEVICE_JOIN + AssetScopeSql.DEVICE_WHERE
+                + " ORDER BY dp.device_id, dp.nic_index, dp.nic_name, dp.id";
+        TenantGuard.requireProjectScope(sql, "device_port");
+        return jdbc.query(sql, PORT_MAPPER, projectId, projectId);
+    }
+
+    @Override
+    public List<Device> listAll(long projectId) {
+        String sql = SELECT + AssetScopeSql.DEVICE_JOIN + AssetScopeSql.DEVICE_WHERE
+                + " ORDER BY d.id";
+        TenantGuard.requireProjectScope(sql, "device");
+        return jdbc.query(sql, MAPPER, projectId, projectId);
+    }
+
+    @Override
     public Optional<DevicePort> findPort(long projectId, long portId) {
         String sql = """
                 SELECT dp.id, dp.device_id, dp.port_name, dp.port_type, dp.protocol, dp.mac_address,
-                       dp.speed_gbps, dp.mtu, dp.ip_address, dp.port_status
+                       dp.speed_gbps, dp.mtu, dp.ip_address, dp.port_status, dp.nic_name,
+                       dp.nic_index
                   FROM device_port dp JOIN device d ON d.id = dp.device_id
                 """ + AssetScopeSql.DEVICE_JOIN + AssetScopeSql.DEVICE_WHERE + " AND dp.id = ?";
         TenantGuard.requireProjectScope(sql, "device_port");
@@ -190,8 +215,8 @@ public class DeviceRepositoryJdbc implements DeviceRepository {
             PreparedStatement ps = connection.prepareStatement("""
                     INSERT INTO device_port
                       (device_id, port_name, port_type, protocol, mac_address, speed_gbps, mtu,
-                       ip_address, port_status, created_by, updated_by)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                       ip_address, port_status, nic_name, nic_index, created_by, updated_by)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """, Statement.RETURN_GENERATED_KEYS);
             ps.setLong(1, port.deviceId());
             ps.setString(2, port.portName());
@@ -202,8 +227,10 @@ public class DeviceRepositoryJdbc implements DeviceRepository {
             ps.setObject(7, port.mtu(), java.sql.Types.INTEGER);
             ps.setString(8, port.ipAddress());
             ps.setString(9, port.portStatus());
-            ps.setObject(10, operatorId, java.sql.Types.BIGINT);
-            ps.setObject(11, operatorId, java.sql.Types.BIGINT);
+            ps.setString(10, port.nicName());
+            ps.setObject(11, port.nicIndex(), java.sql.Types.INTEGER);
+            ps.setObject(12, operatorId, java.sql.Types.BIGINT);
+            ps.setObject(13, operatorId, java.sql.Types.BIGINT);
             return ps;
         }, keyHolder);
         return keyHolder.getKey() == null ? 0 : keyHolder.getKey().longValue();
@@ -213,13 +240,14 @@ public class DeviceRepositoryJdbc implements DeviceRepository {
     public void updatePort(long projectId, DevicePort port, Long operatorId) {
         String sql = """
                 UPDATE device_port SET port_name = ?, port_type = ?, protocol = ?, mac_address = ?,
-                       speed_gbps = ?, mtu = ?, ip_address = ?, port_status = ?, updated_by = ?
+                       speed_gbps = ?, mtu = ?, ip_address = ?, port_status = ?, nic_name = ?,
+                       nic_index = ?, updated_by = ?
                  WHERE id = ? AND device_id IN (SELECT id FROM device WHERE project_id = ?)
                 """;
         TenantGuard.requireProjectScope(sql, "device_port");
         jdbc.update(sql, port.portName(), port.portType(), port.protocol(), port.macAddress(),
-                port.speedGbps(), port.mtu(), port.ipAddress(), port.portStatus(), operatorId,
-                port.id(), projectId);
+                port.speedGbps(), port.mtu(), port.ipAddress(), port.portStatus(), port.nicName(),
+                port.nicIndex(), operatorId, port.id(), projectId);
     }
 
     @Override

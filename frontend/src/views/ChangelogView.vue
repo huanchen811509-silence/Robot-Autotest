@@ -98,7 +98,7 @@ onMounted(async () => {
 }
 .block-title { letter-spacing: .04em; }
 .count {
-  font-size: 11px; font-weight: 400; padding: 1px 7px; border-radius: 999px;
+  font-size: 11px; font-weight: 400; padding: 1px 6px; border-radius: 999px;
   border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
   color: color-mix(in srgb, currentColor 70%, transparent);
   font-family: var(--font-mono, ui-monospace, monospace);

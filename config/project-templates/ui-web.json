@@ -1,6 +1,7 @@
 {
   "schemaVersion": "1.0",
   "key": "ui-web",
+  "code": "UI-RF-202611-001",
   "nameKey": "projectWizard.templates.ui.name",
   "descKey": "projectWizard.templates.ui.desc",
   "testKernel": "robot",

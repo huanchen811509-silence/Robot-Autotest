@@ -59,6 +59,14 @@ execution:
   orphan-sweep-interval-seconds: ${EXECUTION_ORPHAN_SWEEP_SECONDS:60}
   orphan-min-age-seconds: ${EXECUTION_ORPHAN_MIN_AGE_SECONDS:30}
 
+asset-info:
+  cache:
+    # v4.3.0 / FR-v4.3-05：连接与拓扑复用窗口，默认 12 小时（43200s）；
+    # 关闭后所有读取直算（功能等价，仅性能下降），用于「关缓存等价」回归
+    enabled: ${ASSET_INFO_CACHE_ENABLED:true}
+    ttl-seconds: ${ASSET_INFO_CACHE_TTL_SECONDS:43200}
+    max-project-entries: ${ASSET_INFO_CACHE_MAX_PROJECTS:512}
+
 app:
   cache:
     # EW32-03：关闭后所有读路径回源，用于「关缓存等价」回归

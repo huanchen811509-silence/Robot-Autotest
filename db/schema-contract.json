@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "expectedTables": 89,
+  "expectedTables": 98,
   "appendOnlyTables": [
     "resource_lease_history",
     "run_attempt",

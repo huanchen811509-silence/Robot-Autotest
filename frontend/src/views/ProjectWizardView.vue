@@ -12,8 +12,13 @@ import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { projectApi, userApi, type UserSummary } from '@/api/iam'
+import { projectCardsApi } from '@/api/projectCards'
+import { globalCaseApi, type GlobalCaseRow } from '@/api/globalCases'
+import { globalAssetApi, type GlobalAssetRow } from '@/api/globalAssets'
+import { templateApi } from '@/api/globalTemplates'
 import { capabilitiesForRole, roleFromCodes } from '@/config/navigation'
 import { PROJECT_TEMPLATES } from '@/config/projectTemplates'
+import { engineCode, nextProjectCode, yearMonth } from '@/config/projectCode'
 import ErrorLineView from '@/components/ErrorLine.vue'
 import { localizeError, type ErrorLine } from '@/utils/errors'
 
@@ -21,7 +26,7 @@ const { t } = useI18n()
 const router = useRouter()
 const auth = useAuthStore()
 
-const ALL_STEPS = ['template', 'basics', 'runtime', 'members', 'review'] as const
+const ALL_STEPS = ['template', 'basics', 'runtime', 'members', 'content', 'review'] as const
 type StepKey = (typeof ALL_STEPS)[number]
 
 const step = ref(0)
@@ -40,11 +45,100 @@ const form = reactive({
   visibility: 'private',
 })
 
-const memberRole = ref('engineer')
+const memberRoles = ref<string[]>(['engineer'])
 const memberUserId = ref<number | null>(null)
-const picked = ref<{ userId: number; roleCode: string; username: string }[]>([])
+const picked = ref<{ userId: number; roleCodes: string[]; username: string }[]>([])
 const users = ref<UserSummary[]>([])
 const usersLoading = ref(false)
+
+// 内容步（FR-v4.8-05）：从公共库挑选用例与资产，默认引用；用例复制进项目用例集。
+const contentCases = ref<GlobalCaseRow[]>([])
+const contentAssets = ref<GlobalAssetRow[]>([])
+const selectedCaseIds = ref<number[]>([])
+const selectedAssetIds = ref<number[]>([])
+const contentLoading = ref(false)
+const contentAvailable = ref(true)
+const contentHint = ref('')
+let contentLoaded = false
+
+async function loadContent(): Promise<void> {
+  if (contentLoaded) return
+  contentLoaded = true
+  contentLoading.value = true
+  try {
+    const [cases, assets] = await Promise.all([
+      globalCaseApi.page({ page: 1, size: 100, lifecycleStatus: 'active' }),
+      globalAssetApi.list({ type: 'DEVICE', availability: 'active' }),
+    ])
+    contentCases.value = cases.items
+    contentAssets.value = assets.slice(0, 100)
+  } catch {
+    contentAvailable.value = false
+    contentHint.value = t('projectWizard.contentUnavailable')
+  } finally {
+    contentLoading.value = false
+  }
+}
+
+function toggleCase(id: number): void {
+  selectedCaseIds.value = selectedCaseIds.value.includes(id)
+    ? selectedCaseIds.value.filter((item) => item !== id)
+    : [...selectedCaseIds.value, id]
+}
+
+function toggleAsset(id: number): void {
+  selectedAssetIds.value = selectedAssetIds.value.includes(id)
+    ? selectedAssetIds.value.filter((item) => item !== id)
+    : [...selectedAssetIds.value, id]
+}
+
+/**
+ * 项目编码自动生成（v4.4 需求 1）。
+ *
+ * <p>建议值 = 模板前缀 + 三位序号；用户改过就不再用建议值覆盖。
+ * 序号来源是本账号可见项目的编码集合——私有项目不可见时会漏号，
+ * 因此建议值只是默认值，重复仍由后端 409 拒绝并原样提示。
+ */
+const projectCodes = ref<string[]>([])
+const autoCode = ref('')
+let codesLoaded = false
+
+async function ensureCodes(): Promise<void> {
+  if (codesLoaded) return
+  codesLoaded = true
+  try {
+    projectCodes.value = (await projectCardsApi.list()).map((card) => card.code)
+  } catch {
+    // 取不到列表不影响创建：退化成 001 起，重复时后端会拒绝
+    projectCodes.value = []
+  }
+}
+
+/** 编码建议优先问服务端（FR-v4.4-07）：私有项目不可见也不会撞号。 */
+async function regenerateCode(): Promise<void> {
+  const tpl = selected.value
+  if (!tpl) return
+  try {
+    const result = await projectApi.nextCode(tpl.codePrefix, form.testKernel || tpl.testKernel)
+    form.code = result.code
+  } catch {
+    // 服务端不可用时退化为本地推算；重复仍由创建接口 409 拒绝
+    form.code = nextProjectCode(
+      tpl.codePrefix,
+      form.testKernel || tpl.testKernel,
+      projectCodes.value,
+      form.code,
+    )
+  }
+  autoCode.value = form.code
+}
+
+/** 编码示例跟着「前缀 + 引擎 + 当前年月」走，用户在输入框里能看到目标格式。 */
+const codeSample = computed(() => {
+  const tpl = selected.value
+  if (!tpl) return ''
+  return `${tpl.codePrefix}-${engineCode(form.testKernel || tpl.testKernel)}-${yearMonth()}-001`
+})
 
 const capabilities = computed(() => capabilitiesForRole(roleFromCodes(auth.user?.roles)))
 const canManageMembers = computed(() => capabilities.value.includes('user:write'))
@@ -105,9 +199,23 @@ async function loadUsers(): Promise<void> {
   }
 }
 
-watch(current, (key) => {
+watch(current, async (key) => {
+  if (key === 'basics') {
+    await ensureCodes()
+    // 只在「没填过」或「还是上一次的自动建议」时覆盖，避免抹掉用户手写的编码
+    if (!form.code.trim() || form.code === autoCode.value) void regenerateCode()
+  }
   if (key === 'members') void loadUsers()
+  if (key === 'content') void loadContent()
 })
+
+// 改内核（robot ↔ pytest）会改编码里的引擎段：只有编码还是自动建议时才跟着换
+watch(
+  () => form.testKernel,
+  () => {
+    if (form.code === autoCode.value) void regenerateCode()
+  },
+)
 
 onMounted(() => void loadUsers())
 
@@ -117,16 +225,21 @@ function addMember(): void {
     message.value = t('projectWizard.memberUserRequired')
     return
   }
+  if (memberRoles.value.length === 0) {
+    message.value = t('projectWizard.memberRoleRequired')
+    return
+  }
   if (picked.value.some((member) => member.userId === user.id)) {
     message.value = t('projectWizard.memberDuplicate')
     return
   }
   picked.value.push({
     userId: user.id,
-    roleCode: memberRole.value,
+    roleCodes: [...memberRoles.value],
     username: user.displayName || user.username,
   })
   memberUserId.value = null
+  memberRoles.value = ['engineer']
   message.value = ''
 }
 
@@ -147,13 +260,38 @@ async function createProject(): Promise<void> {
       visibility: form.visibility,
       testKernel: form.testKernel,
     })
-    for (const member of picked.value) {
+    // 批量成员（FR-v4.4-03）：一次请求，逐人失败原因回显，不回滚项目本身
+    if (picked.value.length) {
       try {
-        await projectApi.addMember(project.id, member)
+        const result = await projectApi.addMembers(
+          project.id,
+          picked.value.map((member) => ({ userId: member.userId, roleCodes: member.roleCodes })),
+        )
+        for (const failure of result.failures) {
+          const member = picked.value.find((item) => item.userId === failure.userId)
+          warnings.value.push(
+            t('projectWizard.memberFailed', {
+              name: member?.username ?? failure.userId,
+              reason: failure.reason,
+            }),
+          )
+        }
       } catch (e) {
         const line = localizeError(e)
+        warnings.value.push(t('projectWizard.memberBatchFailed', { reason: line.summary }))
+      }
+    }
+    // 内容步（FR-v4.8-05）：用例复制进项目用例集，资产按引用登记；失败不回滚项目
+    if (selectedCaseIds.value.length || selectedAssetIds.value.length) {
+      try {
+        await templateApi.applyContent(project.id, {
+          caseIds: selectedCaseIds.value,
+          assets: selectedAssetIds.value.map((assetId) => ({ assetType: 'DEVICE', assetId })),
+          setName: t('projectWizard.contentSetName'),
+        })
+      } catch (e) {
         warnings.value.push(
-          t('projectWizard.memberFailed', { name: member.username, reason: line.summary }),
+          t('projectWizard.contentFailed', { reason: localizeError(e).summary }),
         )
       }
     }
@@ -236,6 +374,7 @@ function openWorkbench(): void {
             @click="selectTemplate(tpl.key)"
           >
             <span class="template-card__name">{{ t(tpl.nameKey) }}</span>
+            <span class="template-card__code">{{ tpl.code }}</span>
             <span class="template-card__desc">{{ t(tpl.descKey) }}</span>
             <span class="template-card__meta">
               {{ t(`projectWizard.kernels.${tpl.testKernel}`) }} ·
@@ -248,17 +387,30 @@ function openWorkbench(): void {
       <section v-else-if="current === 'basics'" class="card wizard-card">
         <h2 class="card-title">{{ t('projectWizard.basicsTitle') }}</h2>
         <form class="wizard-form" @submit.prevent="goNext">
-          <label class="wizard-field">
-            <span>{{ t('projectWizard.code') }}</span>
-            <input
-              v-model="form.code"
-              class="input wide"
-              type="text"
-              autocomplete="off"
-              :placeholder="selected ? `${selected.codePrefix}-001` : t('projectWizard.codePlaceholder')"
-            />
+          <div class="wizard-field">
+            <label for="wizard-code-input">{{ t('projectWizard.code') }}</label>
+            <span class="wizard-field__row">
+              <input
+                id="wizard-code-input"
+                v-model="form.code"
+                class="input wide"
+                type="text"
+                autocomplete="off"
+                spellcheck="false"
+                data-testid="wizard-code"
+                :placeholder="codeSample || t('projectWizard.codePlaceholder')"
+              />
+              <button
+                type="button"
+                class="btn"
+                data-testid="wizard-code-suggest"
+                @click="regenerateCode"
+              >
+                {{ t('projectWizard.codeSuggest') }}
+              </button>
+            </span>
             <span class="wizard-hint">{{ t('projectWizard.codeHint') }}</span>
-          </label>
+          </div>
           <label class="wizard-field">
             <span>{{ t('projectWizard.name') }}</span>
             <input v-model="form.name" class="input wide" type="text" autocomplete="off" />
@@ -314,14 +466,15 @@ function openWorkbench(): void {
               </option>
             </select>
           </label>
-          <label class="wizard-field">
+          <div class="wizard-field">
             <span>{{ t('projectWizard.memberRole') }}</span>
-            <select v-model="memberRole" class="input wide">
-              <option v-for="role in ['admin', 'pm', 'engineer', 'viewer']" :key="role" :value="role">
-                {{ t(`admin.projectRole.${role}`) }}
-              </option>
-            </select>
-          </label>
+            <div class="wizard-role-checks" role="group" :aria-label="t('projectWizard.memberRole')">
+              <label v-for="role in ['admin', 'pm', 'engineer', 'viewer']" :key="role">
+                <input v-model="memberRoles" type="checkbox" :value="role" />
+                <span>{{ t(`admin.projectRole.${role}`) }}</span>
+              </label>
+            </div>
+          </div>
           <button type="button" class="btn" @click="addMember">{{ t('projectWizard.addMember') }}</button>
         </div>
         <p v-if="usersLoading" class="wizard-hint">{{ t('common.loading') }}</p>
@@ -329,7 +482,11 @@ function openWorkbench(): void {
         <ul v-if="picked.length" class="wizard-members">
           <li v-for="member in picked" :key="member.userId">
             <span>{{ member.username }}</span>
-            <span class="wizard-member-role">{{ t(`admin.projectRole.${member.roleCode}`) }}</span>
+            <span class="wizard-member-role">
+              <span v-for="role in member.roleCodes" :key="role" class="role-chip">
+                {{ t(`admin.projectRole.${role}`) }}
+              </span>
+            </span>
             <button
               type="button"
               class="btn btn-ghost"
@@ -340,6 +497,49 @@ function openWorkbench(): void {
             </button>
           </li>
         </ul>
+      </section>
+
+      <section v-else-if="current === 'content'" class="card wizard-card">
+        <h2 class="card-title">{{ t('projectWizard.contentTitle') }}</h2>
+        <p class="wizard-hint">{{ t('projectWizard.contentHint') }}</p>
+        <p v-if="contentHint" class="wizard-hint">{{ contentHint }}</p>
+        <p v-if="contentLoading" class="wizard-hint">{{ t('common.loading') }}</p>
+        <template v-else-if="contentAvailable">
+          <div class="content-group">
+            <h3>{{ t('projectWizard.contentCases', { count: selectedCaseIds.length }) }}</h3>
+            <div class="content-picker">
+              <label v-for="item in contentCases" :key="item.id" class="content-item">
+                <input
+                  type="checkbox"
+                  :checked="selectedCaseIds.includes(item.id)"
+                  @change="toggleCase(item.id)"
+                />
+                <span class="content-item__title">{{ item.title }}</span>
+                <span class="content-item__meta">{{ item.categoryL1 || '—' }}</span>
+              </label>
+              <p v-if="contentCases.length === 0" class="wizard-hint">
+                {{ t('global.empty') }}
+              </p>
+            </div>
+          </div>
+          <div class="content-group">
+            <h3>{{ t('projectWizard.contentAssets', { count: selectedAssetIds.length }) }}</h3>
+            <div class="content-picker">
+              <label v-for="item in contentAssets" :key="item.id" class="content-item">
+                <input
+                  type="checkbox"
+                  :checked="selectedAssetIds.includes(item.id)"
+                  @change="toggleAsset(item.id)"
+                />
+                <span class="content-item__title">{{ item.name }}</span>
+                <span class="content-item__meta">{{ item.managementIp || '—' }}</span>
+              </label>
+              <p v-if="contentAssets.length === 0" class="wizard-hint">
+                {{ t('global.empty') }}
+              </p>
+            </div>
+          </div>
+        </template>
       </section>
 
       <section v-else class="card wizard-card">
@@ -354,9 +554,18 @@ function openWorkbench(): void {
             <dt>{{ t('projectWizard.membersTitle') }}</dt>
             <dd>
               <template v-if="picked.length">
-                {{ picked.map((member) => `${member.username}(${t(`admin.projectRole.${member.roleCode}`)})`).join('、') }}
+                {{ picked.map((member) => `${member.username}(${member.roleCodes.map((role) => t(`admin.projectRole.${role}`)).join('/')})`).join('、') }}
               </template>
               <template v-else>{{ t('projectWizard.noMembers') }}</template>
+            </dd>
+          </div>
+          <div>
+            <dt>{{ t('projectWizard.contentTitle') }}</dt>
+            <dd>
+              {{ t('projectWizard.contentSummary', {
+                cases: selectedCaseIds.length,
+                assets: selectedAssetIds.length,
+              }) }}
             </dd>
           </div>
         </dl>
@@ -487,6 +696,14 @@ function openWorkbench(): void {
   font-size: var(--font-size-sm);
 }
 
+/* 编码输入 + 「重新生成」并排：按钮附在字段内，避免用户跑到别处找命名规则。 */
+.wizard-field__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
 .wizard-radio {
   display: inline-flex;
   align-items: center;
@@ -524,6 +741,14 @@ function openWorkbench(): void {
   font-weight: 600;
 }
 
+/* 模板内部编号：等宽、弱化，方便对号但别抢模板名的注意力。 */
+.template-card__code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+}
+
 .template-card__desc,
 .template-card__meta {
   color: var(--text-muted);
@@ -558,6 +783,75 @@ function openWorkbench(): void {
 .wizard-member-role {
   color: var(--text-muted);
   font-size: var(--font-size-sm);
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.role-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--text);
+  font-size: var(--font-size-xs);
+}
+
+.wizard-role-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.wizard-role-checks label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--text);
+  font-size: var(--font-size-sm);
+}
+
+.content-group {
+  margin-top: var(--space-3);
+}
+
+.content-group h3 {
+  margin: 0 0 var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+.content-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--space-1);
+  max-height: 220px;
+  overflow: auto;
+  padding: var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.content-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  padding: 2px 4px;
+}
+
+.content-item__title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.content-item__meta {
+  color: var(--text-muted);
+  font-size: var(--font-size-xs);
 }
 
 .wizard-review {

@@ -220,7 +220,7 @@ describe('选中判定', () => {
 describe('v2.3 菜单 IA 与执行/报告合并', () => {
   const byKey = (key: string): NavNode => NAVIGATION.find((node) => node.key === key) as NavNode
 
-  it('工作台是分组，且「项目总览 / 工作区 / 项目看板」路径都命中真实页面', () => {
+  it('工作台是分组，且「项目总览 / 工作区 / 项目看板 / 新建项目」路径都命中真实页面', () => {
     const workbench = byKey('workbench')
     expect(isGroup(workbench)).toBe(true)
     const group = workbench as NavGroup
@@ -228,11 +228,39 @@ describe('v2.3 菜单 IA 与执行/报告合并', () => {
       '/workbench',
       '/workspace',
       '/overview',
+      '/projects/new',
     ])
     for (const child of group.children) {
       const name = router.resolve(leafTarget(child)).matched.at(-1)?.name
       expect(name, `${child.path} 没有命中路由`).toBeTruthy()
       expect(name).not.toBe('not-found')
+    }
+  })
+
+  it('v4.3.0 / FR-v4.3-01：新建项目是独立叶子，按 project:create 授予 ADMIN + PM', () => {
+    const workbench = byKey('workbench') as NavGroup
+    const create = workbench.children.find((child) => child.key === 'workbench-create') as NavLeaf
+    expect(create).toBeTruthy()
+    expect(create.path).toBe('/projects/new')
+    expect(create.capability).toBe('project:create')
+    // 原三个子项的路径与顺序不被新叶子打乱（边界要求）
+    expect(workbench.children.slice(0, 3).map((child) => child.path)).toEqual([
+      '/workbench', '/workspace', '/overview',
+    ])
+    const keysOf = (role: Parameters<typeof navKeysForRole>[0]) => navKeysForRole(role)
+    expect(keysOf('admin')).toContain('workbench-create')
+    expect(keysOf('pm')).toContain('workbench-create')
+    expect(keysOf('engineer')).not.toContain('workbench-create')
+    expect(keysOf('viewer')).not.toContain('workbench-create')
+  })
+
+  it('v4.3.0 / FR-v4.3-07：环境组新增「连接与拓扑」，四角色均可见', () => {
+    const environment = byKey('environment') as NavGroup
+    const leaf = environment.children.find((child) => child.key === 'environment-connections')
+    expect(leaf?.path).toBe('/environment/connections')
+    expect(leaf?.labelKey).toBe('menu.envConnections')
+    for (const role of ['admin', 'pm', 'engineer', 'viewer'] as const) {
+      expect(navKeysForRole(role)).toContain('environment-connections')
     }
   })
 

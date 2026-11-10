@@ -11,11 +11,14 @@
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { projectCardsApi, type ProjectCard as ProjectCardData } from '@/api/projectCards'
+import { projectApi } from '@/api/iam'
+import { roleFromCodes } from '@/config/navigation'
 import { useAuthStore } from '@/stores/auth'
 import ProjectCard from '@/components/ProjectCard.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import ErrorLineView from '@/components/ErrorLine.vue'
 import { localizeError, type ErrorLine } from '@/utils/errors'
+import { useFocusTrap } from '@/composables/useFocusTrap'
 
 type SortKey = 'recent' | 'name'
 
@@ -73,6 +76,100 @@ async function load(): Promise<void> {
 }
 
 onMounted(() => void load())
+
+/* ------------------------------------------------------------------
+ * v4.3.0 FR-v4.3-09：项目停用（归档）与彻底删除
+ *
+ * 停用 = 复用 `PUT /projects/{id}` 的 enabled → status=0，数据全保留、可随时启用；
+ * 彻底删除 = `DELETE /projects/{id}`，后端只允许「无业务数据」的项目，ADMIN 专属，
+ * 界面要求输入项目代码二次确认，失败原因（含各类条数）原样展示。
+ * ------------------------------------------------------------------ */
+
+const actionError = ref<ErrorLine | null>(null)
+const busyId = ref<number | null>(null)
+const deleteTarget = ref<ProjectCardData | null>(null)
+const deleteCode = ref('')
+const deleteBusy = ref(false)
+const deleteError = ref<ErrorLine | null>(null)
+
+/**
+ * 删除确认弹层用自己的遮罩，不用 naive-ui `NModal`。
+ *
+ * <p>原因：`NModal` 自带焦点管理，与页面上的全局快捷键/焦点陷阱叠在一起时，
+ * 输入框拿不到键盘输入（v4.3.0 实测：弹窗能打开、点进去打不出字）。
+ * 这里改成 `<Teleport>` + `useFocusTrap`：遮罩与卡片都由本项目控制，
+ * 打开即把焦点送进容器（首个可聚焦元素就是编码输入框），Esc 关闭、Tab 循环不外逃。
+ */
+const deleteCardRef = ref<HTMLElement | null>(null)
+const deleteOpen = computed(() => deleteTarget.value !== null)
+useFocusTrap(deleteCardRef, deleteOpen, { onEscape: () => closeDelete() })
+
+/** 停用/启用对应后端 PROJECT/UPDATE（ADMIN + PM）；删除对应 PROJECT/DELETE（仅 ADMIN）。 */
+const canManage = computed(() => {
+  const role = roleFromCodes(auth.user?.roles)
+  return role === 'admin' || role === 'pm'
+})
+const canDelete = computed(() => auth.isAdmin)
+const deleteMatched = computed(
+  () => deleteTarget.value !== null && deleteCode.value.trim() === deleteTarget.value.code,
+)
+
+/** 顶栏项目下拉与卡片共用同一份项目列表，动作后要一起刷新，避免状态不同步。 */
+async function refreshProjects(): Promise<void> {
+  await load()
+  try {
+    await auth.loadProjects()
+  } catch {
+    // 列表刷新失败不影响当前操作结果：卡片已按新状态渲染
+  }
+}
+
+async function toggleEnabled(card: ProjectCardData): Promise<void> {
+  busyId.value = card.id
+  actionError.value = null
+  try {
+    await projectApi.update(card.id, {
+      name: card.name,
+      description: card.description,
+      enabled: !card.enabled,
+      ownerId: card.ownerId,
+      visibility: card.visibility,
+      testKernel: card.testKernel ?? 'robot',
+    })
+    await refreshProjects()
+  } catch (e) {
+    actionError.value = localizeError(e)
+  } finally {
+    busyId.value = null
+  }
+}
+
+function requestDelete(card: ProjectCardData): void {
+  deleteTarget.value = card
+  deleteCode.value = ''
+  deleteError.value = null
+}
+
+function closeDelete(): void {
+  if (deleteBusy.value) return
+  deleteTarget.value = null
+}
+
+async function confirmDelete(): Promise<void> {
+  const target = deleteTarget.value
+  if (!target || !deleteMatched.value) return
+  deleteBusy.value = true
+  deleteError.value = null
+  try {
+    await projectApi.remove(target.id)
+    deleteTarget.value = null
+    await refreshProjects()
+  } catch (e) {
+    deleteError.value = localizeError(e)
+  } finally {
+    deleteBusy.value = false
+  }
+}
 </script>
 
 <template>
@@ -116,6 +213,8 @@ onMounted(() => void load())
       </span>
     </div>
 
+    <ErrorLineView v-if="actionError" :error="actionError" />
+
     <div v-if="loading" class="workbench-skeleton" aria-busy="true" data-testid="workbench-loading">
       <div v-for="n in 6" :key="n" class="skeleton-card" />
     </div>
@@ -142,8 +241,67 @@ onMounted(() => void load())
         :key="card.id"
         :card="card"
         :current="isCurrent(card)"
+        :can-manage="canManage"
+        :can-delete="canDelete"
+        :busy="busyId === card.id"
+        @toggle-enabled="toggleEnabled"
+        @request-delete="requestDelete"
       />
     </div>
+
+    <Teleport to="body">
+      <div
+        v-if="deleteTarget"
+        class="delete-mask"
+        data-testid="delete-mask"
+        @click.self="closeDelete"
+      >
+        <section
+          ref="deleteCardRef"
+          class="delete-card"
+          role="dialog"
+          aria-modal="true"
+          tabindex="-1"
+          :aria-label="t('workbench.deleteTitle')"
+        >
+          <h2 class="delete-card__title">{{ t('workbench.deleteTitle') }}</h2>
+          <p class="delete-card__hint">
+            {{ t('workbench.deleteHint', { code: deleteTarget.code }) }}
+          </p>
+          <label class="delete-card__field" for="delete-code-input">
+            <span>{{ t('workbench.deleteCodeLabel') }}</span>
+            <input
+              id="delete-code-input"
+              v-model="deleteCode"
+              class="input"
+              type="text"
+              autocomplete="off"
+              spellcheck="false"
+              data-testid="delete-code"
+              :placeholder="deleteTarget.code"
+            />
+          </label>
+          <ErrorLineView v-if="deleteError" :error="deleteError" />
+          <p v-if="deleteCode.trim() && !deleteMatched" class="delete-card__warn">
+            {{ t('workbench.deleteMismatch') }}
+          </p>
+          <footer class="delete-card__actions">
+            <button type="button" class="btn btn-ghost" :disabled="deleteBusy" @click="closeDelete">
+              {{ t('common.cancel') }}
+            </button>
+            <button
+              type="button"
+              class="btn danger"
+              data-testid="delete-confirm"
+              :disabled="!deleteMatched || deleteBusy"
+              @click="confirmDelete"
+            >
+              {{ deleteBusy ? t('workbench.deleting') : t('workbench.deleteConfirm') }}
+            </button>
+          </footer>
+        </section>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -198,5 +356,67 @@ onMounted(() => void load())
   margin: 0 0 var(--space-3);
   color: var(--fail);
   font-size: var(--font-size-base);
+}
+
+.delete-mask {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  /* 与全局浮层口径一致：从顶栏下沿开始，遮罩不压顶栏（FR-v4.0-02）。 */
+  top: var(--header-h, 0);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.delete-card {
+  width: 420px;
+  max-width: 90vw;
+  padding: var(--space-5);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow);
+}
+
+.delete-card:focus {
+  outline: none;
+}
+
+.delete-card__title {
+  margin: 0;
+  font-size: var(--font-size-md);
+  color: var(--text);
+}
+
+.delete-card__hint {
+  margin: var(--space-3) 0 var(--space-4);
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+  line-height: 1.6;
+}
+
+.delete-card__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--font-size-sm);
+}
+
+.delete-card__warn {
+  margin: var(--space-2) 0 0;
+  color: var(--fail);
+  font-size: var(--font-size-sm);
+}
+
+.delete-card__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-5);
 }
 </style>

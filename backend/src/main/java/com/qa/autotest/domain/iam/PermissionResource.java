@@ -9,7 +9,13 @@ public enum PermissionResource {
     CASE("用例/用例集"),
     EXECUTION("执行"),
     IMPORT("导入"),
-    AUDIT("审计日志");
+    AUDIT("审计日志"),
+    /** 全局模式（v4.4.0 / FR-v4.4-06）。 */
+    GLOBAL("全局模式"),
+    /** 模板中心（v4.8.0 / FR-v4.8-03）。 */
+    TEMPLATE("模板"),
+    /** 存量同步（v4.9.0 / FR-v4.9-01）。 */
+    SYNC("同步");
 
     private final String label;
 

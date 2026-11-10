@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1254" height="1254" viewBox="0 0 1254 1254" role="img" aria-label="白泽软件开发平台 Logo · 黑底香槟金矢量版">
+<title>白泽软件开发平台 Logo · 黑底香槟金矢量版</title>
+<desc>由原始白泽正面图像的轮廓重新矢量化；角、丹凤眼、额头、鼻梁和鬃毛均采用独立可编辑的 SVG path，无嵌入位图。</desc>
+<defs>
+  <radialGradient id="bg" cx="48%" cy="44%" r="72%">
+    <stop offset="0" stop-color="#17151A"/><stop offset=".55" stop-color="#0A0B15"/><stop offset="1" stop-color="#040713"/>
+  </radialGradient>
+  <linearGradient id="gold" x1=".1" y1=".15" x2=".85" y2="1" objectBoundingBox="true">
+    <stop offset="0" stop-color="#FFEBC0"/>
+    <stop offset=".24" stop-color="#E5B464"/>
+    <stop offset=".46" stop-color="#FFF3D1"/>
+    <stop offset=".68" stop-color="#E5B168"/>
+    <stop offset=".85" stop-color="#F6DFAB"/>
+    <stop offset="1" stop-color="#C78F47"/>
+  </linearGradient>
+  <linearGradient id="goldLight" x1=".05" y1=".05" x2=".95" y2=".9" objectBoundingBox="true">
+    <stop offset="0" stop-color="#FFF2CE"/>
+    <stop offset=".4" stop-color="#F1CB8D"/>
+    <stop offset=".7" stop-color="#FFF5D9"/>
+    <stop offset="1" stop-color="#D8A258"/>
+  </linearGradient>
+</defs>
+<rect width="1254" height="1254" fill="url(#bg)"/>
+<g id="baize-mark">
+  <path id="shape-0" d="M 478,692 L 430,747 L 418,781 L 410,785 L 398,820 L 398,843 L 405,868 L 418,891 L 434,909 L 502,958 L 528,982 L 508,952 L 452,888 L 434,855 L 465,884 L 532,930 L 565,961 L 585,987 L 605,1024 L 628,1103 L 652,1024 L 668,994 L 690,964 L 729,927 L 791,883 L 824,846 L 821,860 L 799,897 L 735,974 L 803,928 L 833,897 L 848,868 L 853,846 L 853,820 L 846,791 L 825,752 L 777,694 L 787,740 L 780,775 L 763,802 L 696,868 L 660,912 L 640,961 L 630,1027 L 627,1028 L 616,962 L 591,902 L 553,857 L 515,829 L 485,799 L 475,782 L 468,736 Z" fill="url(#gold)" fill-rule="evenodd"/>
+  <path id="shape-1" d="M 787,566 L 765,577 L 736,603 L 697,619 L 683,635 L 677,653 L 694,637 L 733,625 L 753,614 L 765,602 Z" fill="url(#gold)" fill-rule="evenodd"/>
+  <path id="shape-2" d="M 467,566 L 488,600 L 503,615 L 519,624 L 557,635 L 578,653 L 572,636 L 560,621 L 518,603 L 491,578 Z" fill="url(#gold)" fill-rule="evenodd"/>
+  <path id="shape-3" d="M 362,553 L 379,580 L 425,621 L 413,638 L 348,706 L 321,754 L 316,780 L 318,811 L 326,838 L 341,865 L 335,818 L 339,795 L 349,771 L 367,743 L 443,678 L 455,654 L 455,639 L 447,622 L 431,607 L 385,576 Z" fill="url(#gold)" fill-rule="evenodd"/>
+  <path id="shape-4" d="M 893,552 L 869,576 L 807,622 L 800,636 L 799,654 L 811,678 L 886,745 L 903,771 L 917,817 L 913,862 L 924,840 L 933,805 L 934,779 L 929,749 L 924,735 L 902,701 L 838,635 L 829,621 L 876,579 Z" fill="url(#gold)" fill-rule="evenodd"/>
+  <path id="shape-5" d="M 626,485 L 616,572 L 628,633 L 638,563 L 629,488 Z" fill="url(#gold)" fill-rule="evenodd"/>
+  <path id="shape-6" d="M 699,495 L 688,462 L 650,428 L 641,416 L 628,385 L 604,430 L 556,470 L 555,499 L 605,462 L 628,435 L 649,462 L 684,485 L 697,499 Z" fill="url(#gold)" fill-rule="evenodd"/>
+  <path id="shape-7" d="M 400,139 L 356,161 L 325,188 L 305,218 L 295,242 L 289,280 L 290,312 L 308,343 L 330,363 L 380,393 L 315,402 L 283,402 L 266,398 L 245,386 L 233,373 L 218,331 L 214,372 L 219,398 L 233,425 L 249,440 L 268,448 L 294,449 L 368,433 L 409,431 L 447,439 L 477,454 L 508,490 L 521,521 L 521,536 L 473,515 L 426,507 L 375,505 L 334,490 L 351,510 L 368,523 L 396,535 L 445,543 L 491,558 L 535,582 L 560,603 L 574,622 L 584,650 L 583,683 L 572,718 L 574,733 L 581,745 L 612,772 L 628,798 L 638,778 L 676,742 L 682,729 L 681,708 L 671,679 L 670,658 L 674,636 L 689,609 L 715,585 L 761,559 L 797,546 L 850,537 L 881,526 L 902,511 L 920,490 L 879,505 L 801,510 L 774,517 L 732,536 L 739,504 L 762,467 L 777,451 L 792,444 L 845,431 L 887,433 L 959,449 L 979,449 L 997,444 L 1016,430 L 1032,403 L 1039,371 L 1035,332 L 1020,373 L 1007,387 L 990,397 L 970,402 L 940,402 L 872,393 L 915,368 L 942,344 L 958,318 L 962,285 L 955,243 L 937,202 L 900,165 L 882,153 L 848,139 L 882,176 L 899,211 L 906,249 L 904,289 L 900,301 L 889,319 L 864,340 L 767,377 L 737,404 L 721,438 L 712,472 L 711,529 L 706,546 L 659,603 L 638,662 L 627,677 L 618,665 L 595,602 L 546,541 L 543,474 L 538,445 L 516,402 L 502,387 L 475,371 L 413,351 L 383,336 L 362,317 L 349,295 L 344,261 L 351,216 L 373,171 L 407,138 Z M 661,714 L 659,724 L 628,750 L 603,731 L 594,719 L 596,712 L 623,721 L 657,711 Z" fill="url(#goldLight)" fill-rule="evenodd"/>
+</g>
+</svg>

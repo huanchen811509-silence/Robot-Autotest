@@ -24,6 +24,12 @@ public interface DeviceRepository {
 
     List<DevicePort> ports(long projectId, long deviceId);
 
+    /** 本项目可见（私有 + 已引用平台）的全部端口，供连接/拓扑派生使用（v4.3.0）。 */
+    List<DevicePort> portsOfVisibleDevices(long projectId);
+
+    /** 本项目可见的全部设备（不分页、不截断），供连接/拓扑派生使用（v4.3.0）。 */
+    List<Device> listAll(long projectId);
+
     Optional<DevicePort> findPort(long projectId, long portId);
 
     long insertPort(long projectId, DevicePort port, Long operatorId);

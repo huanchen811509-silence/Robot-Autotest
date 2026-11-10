@@ -36,7 +36,7 @@ matrix:
   - {role: PM, resource: 用户角色, action: DELETE, expected: DENY, reason: "项目经理不具备用户与角色的删权限", case_id: AUTHZ-PM-USER_ROLE-DELETE}
   - {role: PM, resource: 用户角色, action: MANAGE, expected: DENY, reason: "项目经理不具备用户与角色的管理权限", case_id: AUTHZ-PM-USER_ROLE-MANAGE}
   - {role: PM, resource: 项目, action: READ, expected: ALLOW, reason: "项目经理可读项目基本信息", case_id: AUTHZ-PM-PROJECT-READ}
-  - {role: PM, resource: 项目, action: WRITE, expected: DENY, reason: "PM 不可新建项目", case_id: AUTHZ-PM-PROJECT-WRITE}
+  - {role: PM, resource: 项目, action: WRITE, expected: ALLOW, reason: "PM 可新建项目（v4.3.0）", case_id: AUTHZ-PM-PROJECT-WRITE}
   - {role: PM, resource: 项目, action: DELETE, expected: DENY, reason: "项目经理不具备项目删权限", case_id: AUTHZ-PM-PROJECT-DELETE}
   - {role: PM, resource: 项目, action: MANAGE, expected: ALLOW, reason: "PM 可管理自己作为所有者的项目（成员与设置）", case_id: AUTHZ-PM-PROJECT-MANAGE}
   - {role: PM, resource: 资产, action: READ, expected: ALLOW, reason: "项目经理可读资产台账", case_id: AUTHZ-PM-ASSET-READ}

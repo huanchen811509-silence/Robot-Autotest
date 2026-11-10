@@ -48,18 +48,26 @@ export function localizeError(e: unknown): ErrorLine {
   }
 
   const localized = translate(`error.${e.codeName}`)
+  const code = `${e.codeName} (${e.code})`
+  // v4.9.1 / T49-17：追踪号一并展示，用户可直接复制给运维定位。
+  const trace = e.traceId ? `traceId: ${e.traceId}` : null
   // 前端合成的码（超时 / 断网）没有服务端原文，也就没有可追溯的详情
   if (e.code >= SYNTHETIC_CODE_BASE) {
-    return { summary: localized ?? unknown, detail: e.message.trim() || null }
+    return {
+      summary: localized ?? unknown,
+      detail: [e.message.trim(), trace].filter((part) => part && part.length > 0).join('\n') || null,
+    }
   }
 
-  const code = `${e.codeName} (${e.code})`
   if (i18n.global.locale.value.startsWith('zh')) {
-    return { summary: e.message.trim() || localized || unknown, detail: code }
+    return {
+      summary: e.message.trim() || localized || unknown,
+      detail: [code, trace].filter((part) => part && part.length > 0).join(' · '),
+    }
   }
   return {
     summary: localized ?? unknown,
-    detail: [e.message.trim(), code].filter((part) => part.length > 0).join('\n'),
+    detail: [e.message.trim(), code, trace].filter((part) => part && part.length > 0).join('\n'),
   }
 }
 

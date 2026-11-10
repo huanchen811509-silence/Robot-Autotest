@@ -4,8 +4,10 @@ import com.qa.autotest.application.repository.ProjectAssetRepository;
 import com.qa.autotest.common.BusinessException;
 import com.qa.autotest.common.ErrorCode;
 import com.qa.autotest.common.tenant.TenantGuard;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -63,6 +65,20 @@ public class ProjectAssetRepositoryJdbc implements ProjectAssetRepository {
                 """;
         TenantGuard.requireProjectScope(sql, "project_asset");
         return jdbc.update(sql, projectId, AssetScopeSql.normalize(assetType), assetId) > 0;
+    }
+
+    @Override
+    public Map<Long, String> aliases(long projectId, String assetType) {
+        String sql = """
+                SELECT asset_id, alias FROM project_asset
+                 WHERE project_id = ? AND asset_type = ? AND alias IS NOT NULL AND alias <> ''
+                """;
+        TenantGuard.requireProjectScope(sql, "project_asset");
+        Map<Long, String> out = new HashMap<>();
+        jdbc.query(sql, rs -> {
+            out.put(rs.getLong("asset_id"), rs.getString("alias"));
+        }, projectId, AssetScopeSql.normalize(assetType));
+        return out;
     }
 
     @Override

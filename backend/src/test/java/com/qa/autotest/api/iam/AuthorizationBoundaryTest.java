@@ -416,12 +416,14 @@ class AuthorizationBoundaryTest {
     }
 
     @Test
-    @DisplayName("IAM05-29 PM 建项目 → 403 PROJECT:CREATE（项目经理只能改自己项目）")
-    void 项目经理建项目_403() throws Exception {
-        assertForbidden(auth(post("/api/projects")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"code\":\"newproj\",\"name\":\"新项目\"}"), TOKEN_PM),
-                "无权限：PROJECT:CREATE");
+    @DisplayName("IAM05-29 PM 建项目 → 200（v4.3.0 起允许：PROJECT:CREATE 对 PM 开放）")
+    void 项目经理建项目_200() throws Exception {
+        mockMvc.perform(auth(post("/api/projects")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"code\":\"newproj\",\"name\":\"新项目\"}"), TOKEN_PM))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(ErrorCode.SUCCESS.code()))
+                .andExpect(jsonPath("$.data.code").value("newproj"));
     }
 
     @Test
@@ -641,6 +643,15 @@ class AuthorizationBoundaryTest {
             case "members" -> membersOf(((Number) args[0]).longValue());
             case "page" -> new PageResult<>(List.copyOf(projects.values()), projects.size(),
                     (Integer) args[1], (Integer) args[2]);
+            // v4.3.0：PM 建项目不再是「被拦截」，桩仓储需真实落一行，create 才能返回 200。
+            case "insert" -> {
+                Project incoming = (Project) args[0];
+                long id = 1000L + projects.size();
+                projects.put(id, new Project(id, incoming.code(), incoming.name(),
+                        incoming.description(), incoming.enabled(), incoming.ownerId(),
+                        incoming.visibility(), incoming.testKernel()));
+                yield id;
+            }
             case "addMember", "updateMemberRole" -> {
                 long projectId = ((Number) args[0]).longValue();
                 long userId = ((Number) args[1]).longValue();

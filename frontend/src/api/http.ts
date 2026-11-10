@@ -75,6 +75,8 @@ export class ApiError extends Error {
     readonly code: number,
     readonly codeName: string,
     message: string,
+    /** 服务端回显的追踪号（v4.9.1 / T49-17），便于用户直接贴给运维定位。 */
+    readonly traceId: string | null = null,
   ) {
     super(message)
     this.name = 'ApiError'
@@ -127,7 +129,12 @@ async function doRequest<T>(
 
     const envelope = parseEnvelope<T>(await response.text())
     if (envelope.code !== 0) {
-      throw new ApiError(envelope.code, envelope.codeName, envelope.message)
+      throw new ApiError(
+        envelope.code,
+        envelope.codeName,
+        envelope.message,
+        response.headers.get('X-Trace-Id'),
+      )
     }
     return envelope.data as T
   } catch (e) {
@@ -268,7 +275,12 @@ export async function requestMultipart<T>(
 
     const envelope = parseEnvelope<T>(await response.text())
     if (envelope.code !== 0) {
-      throw new ApiError(envelope.code, envelope.codeName, envelope.message)
+      throw new ApiError(
+        envelope.code,
+        envelope.codeName,
+        envelope.message,
+        response.headers.get('X-Trace-Id'),
+      )
     }
     return envelope.data as T
   } catch (e) {

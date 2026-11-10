@@ -1,9 +1,8 @@
 /**
- * `AppLogo` 组件级回归（UX-05 品牌）。
+ * `AppLogo` 组件级回归（v4.5.0 / UX-05 品牌）。
  *
- * 标记只有 4 条线，退化时**页面完全正常**：少一条线、多一个 `<text>`、把几何形换成
- * 图片都构建通过、类型通过、肉眼不盯着看也发现不了。这里把「几何、无文字、彩色走 token」
- * 三件事固定住——尤其「无 `<text>`」：favicon 是同一形状的固定色版本，16px 下文字必糊。
+ * v4.5 起标记唯一来源是 `assets/brand/logo-mark.svg`（白泽），组件按 `?raw` 内联，
+ * 不再手写几何。这里固定四件事：形状来自真实资产、无文字、颜色走 token、尺寸落到盒子。
  */
 import { afterEach, describe, expect, it } from 'vitest'
 import { createApp, h, nextTick, type App } from 'vue'
@@ -32,25 +31,27 @@ afterEach(() => {
 })
 
 describe('AppLogo', () => {
-  it('几何标记：一条底板 + 四条线（无文字）', async () => {
+  it('几何标记来自品牌资产：多段路径且无文字', async () => {
     const root = await mount({})
-    const svg = root.querySelector('svg.app-logo__mark')
+    const svg = root.querySelector('.app-logo__mark svg')
     expect(svg).not.toBeNull()
-    expect(svg!.querySelectorAll('rect')).toHaveLength(1)
-    expect(svg!.querySelectorAll('line')).toHaveLength(4)
+    expect(svg!.querySelectorAll('path').length).toBeGreaterThanOrEqual(1)
     expect(svg!.querySelectorAll('text')).toHaveLength(0)
+    expect(svg!.querySelectorAll('image')).toHaveLength(0)
   })
 
-  it('viewBox 与 favicon 同坐标系（32×32），换形时两边才对照得上', async () => {
+  it('viewBox 与资产一致（0 38 1254 1040），换形时两边才对照得上', async () => {
     const root = await mount({})
-    expect(root.querySelector('svg')!.getAttribute('viewBox')).toBe('0 0 32 32')
+    expect(root.querySelector('svg')!.getAttribute('viewBox')).toBe('0 38 1254 1040')
   })
 
   it('size 落到盒子尺寸上，不靠外层 padding 撑', async () => {
     const root = await mount({ size: 40 })
-    const svg = root.querySelector<SVGSVGElement>('svg.app-logo__mark')!
-    expect(svg.style.width).toBe('40px')
-    expect(svg.style.height).toBe('40px')
+    const box = root.querySelector<HTMLElement>('.app-logo__mark')!
+    expect(box.style.width).toBe('40px')
+    expect(box.style.height).toBe('40px')
+    // 尺寸由内联样式驱动，SVG 填满该盒子（样式由 scoped CSS 给出，jsdom 不做布局）
+    expect(box.querySelector('svg')).not.toBeNull()
   })
 
   it('withWordmark 才渲染字标', async () => {
@@ -67,8 +68,8 @@ describe('AppLogo', () => {
     const root = await mount({})
     const html = root.innerHTML
     expect(html).not.toMatch(/#[0-9a-f]{3,6}/i)
-    // 颜色在 scoped style 里以 var() 出现，SVG 元素自身不带 fill/stroke 字面量
-    const plate = root.querySelector('.app-logo__plate')!
-    expect(plate.getAttribute('fill')).toBeNull()
+    // 颜色由父级 `--logo-fg` 决定，路径本身只声明 currentColor
+    const group = root.querySelector('.app-logo__mark svg g')!
+    expect(group.getAttribute('fill')).toBe('currentColor')
   })
 })

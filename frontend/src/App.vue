@@ -16,6 +16,7 @@ import { prefetchRouteViews } from '@/router'
 import { useI18n } from 'vue-i18n'
 import { useLocaleStore } from '@/stores/locale'
 import { useAuthStore } from '@/stores/auth'
+import { useUiModeStore } from '@/stores/uiMode'
 import { useTheme } from '@/composables/useTheme'
 import { useAccent } from '@/composables/useAccent'
 import { useDensity } from '@/composables/useDensity'
@@ -34,6 +35,7 @@ import { isEditableTarget } from '@/utils/keyboard'
 import { useAiDrawer } from '@/composables/useAiDrawer'
 import { performLogout } from '@/composables/useLogout'
 import {
+  GLOBAL_NAVIGATION,
   capabilitiesForRole,
   roleFromCodes,
   visibleNavByCapabilities,
@@ -45,6 +47,7 @@ const route = useRoute()
 const router = useRouter()
 const localeStore = useLocaleStore()
 const auth = useAuthStore()
+const uiMode = useUiModeStore()
 const theme = useTheme()
 const accent = useAccent()
 const density = useDensity()
@@ -75,8 +78,11 @@ function syncHeaderHeight(): void {
 
 // 两级导航：结构在 config/navigation.ts，这里只管「按能力过滤 + 展开态」。
 // v2.0 起不再是单一 adminOnly：四角色能力集决定入口显隐，越权仍由后端 403 兜底。
+// v4.5.0：全局模式使用独立导航（项目 / 公共用例 / 公共资产 / 模板 / 系统设置）。
 const nav = computed<NavNode[]>(() =>
-  visibleNavByCapabilities(capabilitiesForRole(roleFromCodes(auth.user?.roles))),
+  uiMode.isGlobal
+    ? GLOBAL_NAVIGATION
+    : visibleNavByCapabilities(capabilitiesForRole(roleFromCodes(auth.user?.roles))),
 )
 
 // NAV-04：命令面板全局快捷键。打印页/登录页不响应，避免无头打印被快捷键干扰。
@@ -116,6 +122,7 @@ watch(
 
 async function logout(): Promise<void> {
   await performLogout(router)
+  uiMode.clear()
 }
 
 onMounted(() => window.addEventListener('keydown', onGlobalKeydown))
@@ -196,6 +203,11 @@ onMounted(async () => {
     auth.clear()
     await router.replace('/login')
     return
+  }
+  // v4.5.0 / FR-v4.5-02：记住上次模式；首屏落在工作台且上次是全局时直接还原。
+  await uiMode.load()
+  if (uiMode.mode === 'global' && route.path === '/workbench') {
+    await router.replace('/g/projects')
   }
 })
 </script>

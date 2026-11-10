@@ -2,9 +2,11 @@ package com.qa.autotest.api.iam;
 
 import com.qa.autotest.application.iam.ProjectService;
 import com.qa.autotest.common.ApiResponse;
+import com.qa.autotest.common.tenant.TenantContext;
 import com.qa.autotest.domain.iam.Project;
 import com.qa.autotest.domain.iam.ProjectMember;
 import java.util.List;
+import java.util.Map;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -12,6 +14,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /** 项目与成员（IAM-01 / IAM-03）。 */
@@ -27,10 +30,16 @@ public class ProjectController {
                                        Long ownerId, String visibility, String testKernel) {
     }
 
-    public record MemberRequest(Long userId, String roleCode) {
+    public record MemberRequest(Long userId, String roleCode, List<String> roleCodes) {
     }
 
-    public record RoleRequest(String roleCode) {
+    public record RoleRequest(String roleCode, List<String> roleCodes) {
+    }
+
+    public record BatchMemberRequest(List<MemberRequest> members) {
+    }
+
+    public record ChangeCodeRequest(String code, String reason) {
     }
 
     private final ProjectService projects;
@@ -42,6 +51,21 @@ public class ProjectController {
     @GetMapping
     public ApiResponse<List<Project>> list() {
         return ApiResponse.ok(projects.visible());
+    }
+
+    /** 服务端建议编码（FR-v4.4-07）。 */
+    @GetMapping("/next-code")
+    public ApiResponse<Map<String, String>> nextCode(
+            @RequestParam(defaultValue = "PRJ") String prefix,
+            @RequestParam(defaultValue = "robot") String kernel) {
+        return ApiResponse.ok(Map.of("code", projects.nextCode(prefix, kernel)));
+    }
+
+    /** 前端能力码（只做显隐，后端仍逐请求判定）。 */
+    @GetMapping("/capabilities")
+    public ApiResponse<Map<String, Boolean>> capabilities() {
+        long userId = TenantContext.requireUserId();
+        return ApiResponse.ok(Map.of("globalEnter", projects.canEnterGlobal(userId)));
     }
 
     @GetMapping("/{projectId}")
@@ -63,6 +87,13 @@ public class ProjectController {
                 request.visibility(), request.testKernel()));
     }
 
+    /** 编码唯一一次变更（FR-v4.4-08）。 */
+    @PutMapping("/{projectId}/code")
+    public ApiResponse<Project> changeCode(@PathVariable long projectId,
+                                           @RequestBody ChangeCodeRequest request) {
+        return ApiResponse.ok(projects.changeCode(projectId, request.code(), request.reason()));
+    }
+
     @DeleteMapping("/{projectId}")
     public ApiResponse<Void> delete(@PathVariable long projectId) {
         projects.delete(projectId);
@@ -77,14 +108,30 @@ public class ProjectController {
     @PostMapping("/{projectId}/members")
     public ApiResponse<ProjectMember> addMember(@PathVariable long projectId,
                                                 @RequestBody MemberRequest request) {
-        return ApiResponse.ok(projects.addMember(projectId, request.userId(), request.roleCode()));
+        List<String> roles = request.roleCodes() != null && !request.roleCodes().isEmpty()
+                ? request.roleCodes() : List.of(request.roleCode());
+        return ApiResponse.ok(projects.addMember(projectId, request.userId(), roles));
+    }
+
+    /** 批量添加成员（FR-v4.4-03）：逐人失败原因返回，不整体回滚。 */
+    @PostMapping("/{projectId}/members/batch")
+    public ApiResponse<ProjectService.BatchMembersResult> addMembers(
+            @PathVariable long projectId, @RequestBody BatchMemberRequest request) {
+        List<ProjectService.MemberInput> inputs = request.members() == null ? List.of()
+                : request.members().stream()
+                        .map(item -> new ProjectService.MemberInput(item.userId(),
+                                item.roleCode(), item.roleCodes()))
+                        .toList();
+        return ApiResponse.ok(projects.addMembers(projectId, inputs));
     }
 
     @PutMapping("/{projectId}/members/{userId}")
     public ApiResponse<ProjectMember> updateMember(@PathVariable long projectId,
                                                    @PathVariable long userId,
                                                    @RequestBody RoleRequest request) {
-        return ApiResponse.ok(projects.updateMemberRole(projectId, userId, request.roleCode()));
+        List<String> roles = request.roleCodes() != null && !request.roleCodes().isEmpty()
+                ? request.roleCodes() : List.of(request.roleCode());
+        return ApiResponse.ok(projects.updateMemberRoles(projectId, userId, roles));
     }
 
     @DeleteMapping("/{projectId}/members/{userId}")

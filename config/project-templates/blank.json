@@ -1,6 +1,7 @@
 {
   "schemaVersion": "1.0",
   "key": "blank",
+  "code": "PRJ-RF-202611-001",
   "nameKey": "projectWizard.templates.blank.name",
   "descKey": "projectWizard.templates.blank.desc",
   "testKernel": "robot",

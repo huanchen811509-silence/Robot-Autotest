@@ -48,6 +48,8 @@ export function renderInlineMarkdown(text: string): string {
     return `\u0000${codes.length - 1}\u0000`
   })
   html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+  // U+0000 只作为临时占位符（不进入最终输出）；转义后正文里不可能出现，用它才不会与正文字符串撞车。
+  // eslint-disable-next-line no-control-regex
   return html.replace(/\u0000(\d+)\u0000/g, (_, index: string) => codes[Number(index)])
 }
 

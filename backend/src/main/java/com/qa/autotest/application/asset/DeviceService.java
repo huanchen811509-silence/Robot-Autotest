@@ -13,6 +13,8 @@ import com.qa.autotest.domain.common.PageResult;
 import com.qa.autotest.domain.iam.PermissionAction;
 import com.qa.autotest.domain.iam.PermissionResource;
 import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 /** 设备与端口台账（AST-01）。 */
@@ -25,15 +27,27 @@ public class DeviceService {
                                 String rackNo, String domainTag, boolean enabled, Long ownerId) {
     }
 
-    /** 端口写入表单。 */
+    /**
+     * 端口写入表单（v4.3.0 / FR-v4.3-03 增 {@code nicName}/{@code nicIndex}，均可空）。
+     * 既有调用方不传时行为不变。
+     */
     public record PortCommand(String portName, String portType, String protocol, String macAddress,
-                              Integer speedGbps, Integer mtu, String ipAddress, String portStatus) {
+                              Integer speedGbps, Integer mtu, String ipAddress, String portStatus,
+                              String nicName, Integer nicIndex) {
     }
 
     private final DeviceRepository devices;
     private final ProjectAssetRepository projectAssets;
     private final AccessControlService access;
     private final AuditService audit;
+
+    /** v4.3.0：写操作后发缓存失效事件；单测手工构造服务时可为 null（不发布）。 */
+    private ApplicationEventPublisher events;
+
+    @Autowired(required = false)
+    void setEventPublisher(ApplicationEventPublisher events) {
+        this.events = events;
+    }
 
     public DeviceService(DeviceRepository devices, ProjectAssetRepository projectAssets,
                          AccessControlService access, AuditService audit) {
@@ -73,6 +87,7 @@ public class DeviceService {
         }
         long id = devices.insert(toDevice(null, projectId, command), TenantContext.userId());
         audit.record("device.create", "device", String.valueOf(id), "name=" + command.name());
+        publishAssetChanged(projectId, "DEVICE", id);
         return get(projectId, id);
     }
 
@@ -89,6 +104,7 @@ public class DeviceService {
         }
         devices.update(toDevice(id, projectId, command), TenantContext.userId());
         audit.record("device.update", "device", String.valueOf(id), "name=" + command.name());
+        publishAssetChanged(projectId, "DEVICE", id);
         return get(projectId, id);
     }
 
@@ -111,6 +127,7 @@ public class DeviceService {
         requireOwned(existing, projectId);
         devices.delete(projectId, id);
         audit.record("device.delete", "device", String.valueOf(id), "");
+        publishAssetChanged(projectId, "DEVICE", id);
     }
 
     public List<DevicePort> ports(long projectId, long deviceId) {
@@ -135,6 +152,7 @@ public class DeviceService {
                 toPort(null, deviceId, command), TenantContext.userId());
         audit.record("device.port-add", "device_port", String.valueOf(id),
                 "device=" + deviceId + ",port=" + command.portName());
+        publishAssetChanged(projectId, "DEVICE", deviceId);
         return devices.findPort(projectId, id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "端口不存在"));
     }
@@ -152,6 +170,7 @@ public class DeviceService {
         devices.updatePort(projectId, toPort(portId, existing.deviceId(), command),
                 TenantContext.userId());
         audit.record("device.port-update", "device_port", String.valueOf(portId), "");
+        publishAssetChanged(projectId, "DEVICE", existing.deviceId());
         return devices.findPort(projectId, portId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "端口不存在"));
     }
@@ -164,6 +183,14 @@ public class DeviceService {
         requireOwnedPort(projectId, existing);
         devices.deletePort(projectId, portId);
         audit.record("device.port-delete", "device_port", String.valueOf(portId), "");
+        publishAssetChanged(projectId, "DEVICE", existing.deviceId());
+    }
+
+    /** 写操作后通知缓存失效（v4.3.0 / FR-v4.3-05 T2）。 */
+    private void publishAssetChanged(long projectId, String assetType, long assetId) {
+        if (events != null) {
+            events.publishEvent(new AssetChangedEvent(projectId, assetType, assetId));
+        }
     }
 
     /**
@@ -190,7 +217,8 @@ public class DeviceService {
 
     private static DevicePort toPort(Long id, long deviceId, PortCommand c) {
         return new DevicePort(id, deviceId, c.portName(), c.portType(), c.protocol(),
-                c.macAddress(), c.speedGbps(), c.mtu(), c.ipAddress(), c.portStatus());
+                c.macAddress(), c.speedGbps(), c.mtu(), c.ipAddress(), c.portStatus(),
+                c.nicName(), c.nicIndex());
     }
 
     private static void requireName(String name) {

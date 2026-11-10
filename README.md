@@ -11,14 +11,16 @@
 
 | 项 | 值 | 说明 |
 |---|---|---|
-| 版本 | `4.2.0` | 唯一真源是根 [`VERSION`](VERSION)；可用 `APP_VERSION` 运行期覆盖 |
-| 门禁 | 32 步 | `bash scripts/gates.sh`；第 30 步为交付包机检 |
-| 数据库 | 89 张业务表 | Flyway 迁移至 `V11_28`，`scripts/db-audit.sh` 体检 |
-| API 契约 | 291 endpoints / 232 paths | `docs/contracts/openapi.json` |
-| 前端 | 1847 i18n 键（中英一致） | `tools/check_i18n.py` |
+| 版本 | `4.9.2` | 唯一真源是根 [`VERSION`](VERSION)；可用 `APP_VERSION` 运行期覆盖 |
+| 门禁 | 32 步 | `bash scripts/gates.sh`；第 07 步为发布文档机检，第 30 步为交付包机检 |
+| 数据库 | 98 张业务表 | Flyway 迁移至 `V11_37`（`V11_30`–`V11_37` 八组均附 `db/down/` 回滚），`scripts/db-audit.sh` 体检 |
+| API 契约 | 335 endpoints / 271 paths | `docs/contracts/openapi.json` |
+| 前端 | 2072 i18n 键（中英一致） | `tools/check_i18n.py`；硬编码中文 0 处 |
 | 交付物 | linux-x64 tarball | GitHub Actions `delivery.yml` 产出，见 [交付指南](docs/DELIVERY-GUIDE.md) |
 
-**口径**：G4 / G5 / G7 / G8 **门禁尚未判过，不得对外称「已发版」**。
+**口径**：`4.9.2` 是**内部交付版本**，已按 [发布说明](docs/release/v4.9.2/RELEASE-NOTES.md) 部署到统一入口 `:8001`；
+G4 / G5 / G7 / G8 **门禁仍未判过**，真库迁移 down→up 演练与真实 DUT / 负载未执行
+（见 [已知限制](docs/release/v4.9.2/KNOWN-LIMITATIONS.md)），**不得对外称 GA**。
 开发期遵守 [ADR-0013](docs/adr/ADR-0013-执行安全分级与开发期禁跑令.md)：不在真实 DUT / 交换机执行台账用例。
 版本历史见 [版本地图](docs/release/README.md) 与 [CHANGELOG](CHANGELOG.md)；「关于」页和「版本迭代」页分别读构建信息与本 CHANGELOG。
 
@@ -60,6 +62,17 @@
 | 导入沙箱 | 解压前校验条目数、体积、嵌套深度，防 zip slip；只做 `--dryrun` 预检 |
 | 资产版本与差异 | 版本标识、引用方检测、差异对比与同步 / 分叉 |
 
+### 公共库与复用
+
+| 能力 | 一句话说明 |
+|---|---|
+| 双模式 | 项目模式 / 全局模式切换；`project.kind='platform'` 单例平台项目承载公共用例与公共资产，`/g/**` 为全局命名空间 |
+| 公共用例库 | 两级分类树；导入按「文件 sha256 / 行 external_id / 版本 content_sha」三层幂等，预览零写入、提交单事务；14 列反向导出并登记批次 |
+| 公共资产库 | 按「当前测试环境」分节解析设备 / 端口 / 凭据，业务键 upsert，缺失项软失效；凭据只落引用与掩码 |
+| 引用保护 | 资产删除前按 `project_asset` 真实引用计数判定：0 引用可删，被引用返回 409 并报引用方 |
+| 模板中心 | 4 个内置模板以**引用**保存用例与资产、不复制正文；创建向导「内容」步按模板落地 |
+| 存量同步 | NEW / UPDATE / CONFLICT / UNCHANGED / SKIP 五态预览；冲突逐条选「保留本地 / 接受公共库 / 另存副本」；执行后整单可回滚，`local_override` 永不被覆盖 |
+
 ### 执行与调度
 
 | 能力 | 一句话说明 |
@@ -91,7 +104,7 @@
 | 主机清单 | 10 类只读命令采集，`POST /collect` 显式触发；未采到写「原因」不写占位 |
 | 组授权 | 用户组 + 项目角色，有效角色取「直接授权 ∪ 组授权」最高值 |
 | AI 辅助 | 7 个候选 CLI 可配端点 / 密钥 / 模型；密钥 AES-256-GCM 入库、接口只回掩码 |
-| 可观测性 | `/api/metrics`、run 时间线、性能基线进门禁、备份恢复演练 |
+| 可观测性 | `/api/metrics`、run 时间线、性能基线进门禁、错误响应带 `X-Trace-Id`、备份恢复演练 |
 | 安全治理 | 登录与令牌、RBAC、项目级租户隔离、审计只增不改、产物保留策略 |
 
 ---
@@ -112,7 +125,7 @@
 | 层 | 选型 | 关键约定 |
 |---|---|---|
 | 后端 | Spring Boot 3 / Java 21 | `api / application / domain / infrastructure / common`，ArchUnit 约束依赖方向 |
-| 数据库 | MySQL 8.0 / Flyway | 89 张业务表，手写 down 脚本；dev / it 双库 `robot_dev` / `robot_it` |
+| 数据库 | MySQL 8.0 / MariaDB / Flyway | 98 张业务表，手写 down 脚本；dev / it 双库 `robot_dev` / `robot_it` |
 | 前端 | Vue 3 / Vite / TS / Pinia / naive-ui | Vitest 单测，主题走语义 token 单向派生 |
 | 编辑器 | `packages/editor`（CodeMirror 6） | 独立 vitest 与 dist，**构建先于前端** |
 | 执行内核 | Robot Framework 7.5 + pytest | `ExecutionKernel` SPI 统一接入，同一作业不混跑 |
@@ -190,6 +203,7 @@ releases/          本地打包产物（按脚本重建，不入库）
 | [运维命令矩阵](scripts/ops/README.md) | `bin/` 下每个脚本的作用与护栏 |
 | [能力评估](docs/plan/安装拆卸运维能力评估-20261109.md) | 安装 / 拆卸 / 运维能力的事实清单与方案比较 |
 | [版本地图](docs/release/README.md) | 每版交付口径与六份产物 |
+| [v4.9.2 发布说明](docs/release/v4.9.2/RELEASE-NOTES.md) | 本版升级步骤、兼容性、回滚与已知限制 |
 | [CHANGELOG](CHANGELOG.md) | 版本迭代页数据源，四类小节齐全 |
 | [VERSION](VERSION) | 版本号唯一真源 |
 | [WBS-STATUS](docs/plan/WBS-STATUS.md) | 130 个任务包的五态与证据 |
@@ -204,17 +218,35 @@ releases/          本地打包产物（按脚本重建，不入库）
 
 ## 路线图
 
-1. **收尾 6 个「待现场」**：GitHub runner 注册、真实 pabot 子进程树与日志样本、真机 DUT 实网用例。
-2. **门禁判定**：G4 / G5 / G7 / G8 逐门出书面结论；未判过之前不宣称发版。
-3. **交付能力正式化**：公开 Release 与匿名下载、远程主机采集、拓扑画布、SchemaIT 口径对齐，
+### 已交付
+
+| 版本 | 主题 | 交付内容 | 产物 |
+|---|---|---|---|
+| `4.2.0` | 工作区目录化 | 顶栏浮层范式、账户下拉、项目工作区导入 / 导出、创建项目向导、可回滚升级、CI 无库质量门、Schema 单源、远程只读采集 | [v4.2.0](docs/release/v4.2.0/) |
+| `4.3.0` | 项目创建 + 资产信息 | 「新建项目」独立入口与 `project:create`、端口网卡归属、连接与拓扑聚合接口与页面、12h 可配缓存、平台资产引用、项目停用与彻底删除 | [v4.3.0](docs/release/v4.3.0/) |
+| `4.4.0` | 成员多角色 | 一个成员多角色并按并集求值、成员批量添加、项目编码统一发号与改码留痕 | `V11_30` |
+| `4.5.0` | 双模式与平台项目 | 项目 / 全局模式切换、`project.kind='platform'` 单例、`/g/**` 全局命名空间与品牌顶栏 | `V11_31` |
+| `4.6.0` | 公共用例库 | 两级分类树、三层幂等导入、预览零写入、14 列反向导出、批次历史与失效 / 恢复 | `V11_32`–`V11_34` |
+| `4.7.0` | 公共资产库 | 「当前测试环境」分节解析、业务键 upsert、源缺失软失效、凭据只落引用与掩码 | `V11_35` |
+| `4.8.0` | 模板中心 | 模板持久化与 4 个内置模板、模板以引用保存用例与资产、向导「内容」步 | `V11_36` |
+| `4.9.0` | 存量同步 | 五态差异预览、冲突逐条处置、整单回滚、`local_override` 永不被覆盖、定时预览默认关闭 | `V11_37` |
+| `4.9.1` | 可诊断性 | 错误响应 `X-Trace-Id`、i18n / CSS 变量 / 空错载态专项 | — |
+| `4.9.2` | 收尾与发布 | `VERSION` / build-info / OpenAPI / CHANGELOG 同源，发布六件套、已知限制与人工核对清单 | [v4.9.2](docs/release/v4.9.2/) |
+
+合并计划：[PRD](docs/plan/v4.4-v4.9-软件迭代开发PRD-20261110.md) /
+[开发计划](docs/plan/v4.4-v4.9-开发计划-20261110.md) /
+[测试计划](docs/plan/v4.4-v4.9-测试计划-20261110.md)。逐版本条目见 [CHANGELOG](CHANGELOG.md) 的 `v4.9.2-ga` 小节。
+
+### 待办
+
+1. **收尾「待现场」**：GitHub runner 注册、真实 pabot 子进程树与日志样本、真机 DUT 实网用例。
+2. **门禁判定**：G4 / G5 / G7 / G8 逐门出书面结论；未判过之前不宣称正式发版。
+3. **真库迁移演练**：在预发执行 `docs/evidence/v4.9.2/migration-drill-V11_30-37.sh`，当前如实记为 `NOT-RUN`。
+4. **交付能力正式化**：公开 Release 与匿名下载、拓扑画布、`SchemaIT` 口径对齐，
    已并入 [4.X 总体演进 PRD](docs/plan/v4.x-总体演进-产品PRD-20261109.md) 的 4.2 批。
-4. **试点**：搭建小型试点项目，覆盖「建项目 → 编用例 → 并发执行 → 出报告 → 定时 / CI」全链路。
-5. **4.X 总体演进（已交付，落号 `4.2.0`）**：顶栏浮层范式、账户下拉、项目工作区目录化、创建项目向导、
-   可回滚升级机制、CI 无库质量门、Schema 单源、远程只读采集；发版产物见
-   [docs/release/v4.2.0](docs/release/v4.2.0/)，计划文档见
-   [评估](docs/plan/v4.x-总体演进-调研与评估-20261109.md) /
-   [开发计划](docs/plan/v4.x-总体演进-开发计划-20261109.md) /
-   [测试计划](docs/plan/v4.x-总体演进-测试计划-20261109.md)。
+5. **试点**：搭建小型试点项目，覆盖「建项目 → 编用例 → 并发执行 → 出报告 → 定时 / CI」全链路。
+6. **公共库后续**：跨实例 / 跨集群复制、`.xls` / `.csv` 导入、历史一级分类人工归并
+   （对应 [已知限制](docs/release/v4.9.2/KNOWN-LIMITATIONS.md) 的 L-05 / L-07 / L-06）。
 
 ---
 

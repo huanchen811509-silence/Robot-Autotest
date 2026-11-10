@@ -90,21 +90,38 @@ afterEach(() => {
   pinia = null
 })
 
-describe('顶栏三段排版（FR-v4.0-03）', () => {
-  it('三段按「上下文 → 工具 → 账户」顺序存在，且恰好 2 条分隔线', async () => {
+describe('顶栏三段排版（FR-v4.0-03 / FR-v4.5-04）', () => {
+  it('管理员按「模式 → 上下文 → 工具 → 账户」排布，且恰好 2 条分隔线', async () => {
     const root = await mountHeader()
-    expect(segs(root).map((el) => el.dataset.seg)).toEqual(['context', 'tools', 'account'])
+    expect(segs(root).map((el) => el.dataset.seg)).toEqual([
+      'mode',
+      'context',
+      'tools',
+      'account',
+    ])
     expect(root.querySelectorAll('.app-sep')).toHaveLength(2)
   })
 
-  it('AI 开启时 5 枚控件，关闭时 4 枚（AI 整项不渲染）', async () => {
+  it('工程师没有全局模式，因此不渲染模式段（三段）', async () => {
+    useAuthStore().user = {
+      id: 2,
+      username: 'qa-engineer',
+      displayName: '工程师',
+      roles: ['engineer'],
+    } as unknown as ReturnType<typeof useAuthStore>['user']
+    const root = await mountHeader()
+    expect(segs(root).map((el) => el.dataset.seg)).toEqual(['context', 'tools', 'account'])
+    expect(root.querySelector('.app-mode-switch')).toBeNull()
+  })
+
+  it('AI 开启时 7 枚控件，关闭时 6 枚（AI 整项不渲染）', async () => {
     const withAi = await mountHeader(true)
-    expect(interactive(withAi)).toHaveLength(5)
+    expect(interactive(withAi)).toHaveLength(7)
     app?.unmount()
     host?.remove()
 
     const withoutAi = await mountHeader(false)
-    expect(interactive(withoutAi)).toHaveLength(4)
+    expect(interactive(withoutAi)).toHaveLength(6)
     expect(withoutAi.querySelector('[aria-label="' + i18n.global.t('aiPanel.toggle') + '"]')).toBeNull()
   })
 
@@ -118,10 +135,10 @@ describe('顶栏三段排版（FR-v4.0-03）', () => {
     expect(root.querySelector('.app-logout')).toBeNull()
   })
 
-  it('Tab 顺序与视觉顺序一致（项目 → 检索 → 通知 → AI → 账户）', async () => {
+  it('Tab 顺序与视觉顺序一致（模式 → 项目 → 检索 → 通知 → AI → 账户）', async () => {
     const root = await mountHeader()
     const order = interactive(root).map((el) => el.tagName.toLowerCase())
-    expect(order).toEqual(['select', 'button', 'button', 'button', 'button'])
+    expect(order).toEqual(['button', 'button', 'select', 'button', 'button', 'button', 'button'])
   })
 
   it('账户入口是菜单触发器：aria-haspopup=menu 且默认收起', async () => {

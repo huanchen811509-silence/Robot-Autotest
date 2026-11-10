@@ -17,10 +17,12 @@ import {
   credentialApi,
   deviceApi,
   linkApi,
+  shareApi,
   type Credential,
   type Device,
   type DevicePort,
   type Link,
+  type PlatformAssetType,
 } from '@/api/asset'
 import { executionApi, type LeaseView } from '@/api/execution'
 import { useAuthStore } from '@/stores/auth'
@@ -226,7 +228,14 @@ const deviceForm = reactive({
   domainTag: '',
 })
 
-const portForm = reactive({ portName: '', portType: '', speedGbps: null as number | null })
+const portForm = reactive({
+  portName: '',
+  portType: '',
+  speedGbps: null as number | null,
+  // v4.3.0 / FR-v4.3-03：网卡归属可留空（空 = 「未归属」，归一到一个网卡分组里）。
+  nicName: '',
+  nicIndex: null as number | null,
+})
 
 const linkForm = reactive({
   name: '',
@@ -250,7 +259,28 @@ const credentialForm = reactive({
   secret: '',
 })
 
+/**
+ * 平台资产引用（v4.3.0 / FR-v4.3-08，P1）。
+ *
+ * 资产页只能看到「本项目私有 + 已引用平台共享」，因此「引用」入口必须允许输入资产 ID；
+ * 「解除引用」只在行上出现——判定依据是 `projectId !== 当前项目`（接口自带该字段），
+ * 不给自己的私有资产摆一个点了必然 404/403 的按钮。
+ */
+const showShareForm = ref(false)
+const shareForm = reactive({ assetId: null as number | null })
+
+const shareAssetType = computed<PlatformAssetType>(() => {
+  if (tab.value === 'devices') return 'DEVICE'
+  if (tab.value === 'links') return 'LINK'
+  return 'CREDENTIAL'
+})
+
 const projectId = computed(() => auth.projectId ?? 0)
+
+function isPlatformAsset(row: { projectId: number }): boolean {
+  return row.projectId !== projectId.value
+}
+
 const pageCount = computed(() => Math.max(1, Math.ceil(total.value / size.value)))
 
 /**
@@ -394,9 +424,12 @@ const deviceColumns = computed<DataTableColumns<Device>>(() => [
   {
     title: t('common.actions'),
     key: 'actions',
-    width: 160,
-    render: (row) =>
-      h('div', { class: 'row-actions' }, [
+    width: 190,
+    render: (row) => {
+      // v4.3.0 / FR-v4.3-08 R1：平台共享资产只给「解除引用」，不给「删除」——
+      // 删的是别人的资产本体，入口不该出现在本项目的行上。
+      const platform = isPlatformAsset(row)
+      return h('div', { class: 'row-actions' }, [
         h(
           NButton,
           {
@@ -412,17 +445,29 @@ const deviceColumns = computed<DataTableColumns<Device>>(() => [
                 : t('assets.device.ports'),
           },
         ),
-        h(
-          NButton,
-          {
-            text: true,
-            type: 'error',
-            size: 'small',
-            onClick: () => void removeDevice(row),
-          },
-          { default: () => t('common.delete') },
-        ),
-      ]),
+        platform
+          ? h(
+              NButton,
+              {
+                text: true,
+                type: 'warning',
+                size: 'small',
+                onClick: () => void unreferenceAsset('DEVICE', row.id),
+              },
+              { default: () => t('assets.share.unreference') },
+            )
+          : h(
+              NButton,
+              {
+                text: true,
+                type: 'error',
+                size: 'small',
+                onClick: () => void removeDevice(row),
+              },
+              { default: () => t('common.delete') },
+            ),
+      ])
+    },
   },
 ])
 
@@ -463,17 +508,24 @@ const linkColumns = computed<DataTableColumns<Link>>(() => [
   {
     title: t('common.actions'),
     key: 'actions',
-    width: 110,
+    width: 130,
     render: (row) =>
       h(
         NButton,
-        {
-          text: true,
-          type: 'error',
-          size: 'small',
-          onClick: () => void removeLink(row),
-        },
-        { default: () => t('common.delete') },
+        isPlatformAsset(row)
+          ? {
+              text: true,
+              type: 'warning',
+              size: 'small',
+              onClick: () => void unreferenceAsset('LINK', row.id),
+            }
+          : {
+              text: true,
+              type: 'error',
+              size: 'small',
+              onClick: () => void removeLink(row),
+            },
+        { default: () => (isPlatformAsset(row) ? t('assets.share.unreference') : t('common.delete')) },
       ),
   },
 ])
@@ -511,17 +563,24 @@ const credentialColumns = computed<DataTableColumns<Credential>>(() => [
   {
     title: t('common.actions'),
     key: 'actions',
-    width: 110,
+    width: 130,
     render: (row) =>
       h(
         NButton,
-        {
-          text: true,
-          type: 'error',
-          size: 'small',
-          onClick: () => void removeCredential(row),
-        },
-        { default: () => t('common.delete') },
+        isPlatformAsset(row)
+          ? {
+              text: true,
+              type: 'warning',
+              size: 'small',
+              onClick: () => void unreferenceAsset('CREDENTIAL', row.id),
+            }
+          : {
+              text: true,
+              type: 'error',
+              size: 'small',
+              onClick: () => void removeCredential(row),
+            },
+        { default: () => (isPlatformAsset(row) ? t('assets.share.unreference') : t('common.delete')) },
       ),
   },
 ])
@@ -665,6 +724,8 @@ watch([projectId, tab], () => {
   portsDeviceId.value = null
   ports.value = []
   showForm.value = false
+  showShareForm.value = false
+  shareForm.assetId = null
   void load()
 }, { immediate: true })
 
@@ -707,6 +768,42 @@ function turnPage(next: number): void {
   page.value = next
   // 选择跨页保留（FR-v0.2-35），翻页不清空
   void load()
+}
+
+/**
+ * 引用平台资产（P1）：成功后关表单并重载；失败（含 403）只把错误写进错误行，
+ * **表单与已填 ID 一律保留**，用户不用重新输入就能换一个 ID 再试（PRD FR-v4.3-08 R2）。
+ */
+async function referencePlatformAsset(): Promise<void> {
+  error.value = null
+  message.value = ''
+  if (!shareForm.assetId) {
+    error.value = { summary: t('assets.requiredAssetId'), detail: null }
+    return
+  }
+  try {
+    await shareApi.reference(projectId.value, shareAssetType.value, shareForm.assetId)
+    message.value = t('assets.share.referenceOk')
+    shareForm.assetId = null
+    showShareForm.value = false
+    await load()
+  } catch (e) {
+    error.value = localizeError(e)
+  }
+}
+
+/** 解除引用（P1）：只删关系不删资产，因此文案强调「本项目不再看到」。 */
+async function unreferenceAsset(type: PlatformAssetType, id: number): Promise<void> {
+  if (!(await confirmAction(t('assets.share.unreferenceConfirm'), { tone: 'danger' }))) return
+  error.value = null
+  message.value = ''
+  try {
+    await shareApi.unreference(projectId.value, type, id)
+    message.value = t('assets.share.unreferenceOk')
+    await load()
+  } catch (e) {
+    error.value = localizeError(e)
+  }
 }
 
 async function createDevice(): Promise<void> {
@@ -775,8 +872,12 @@ async function addPort(): Promise<void> {
       portName: portForm.portName.trim(),
       portType: portForm.portType,
       speedGbps: portForm.speedGbps,
+      nicName: portForm.nicName.trim() || null,
+      nicIndex: portForm.nicIndex,
     })
     portForm.portName = ''
+    portForm.nicName = ''
+    portForm.nicIndex = null
     ports.value = await deviceApi.ports(projectId.value, deviceId)
   } catch (e) {
     error.value = localizeError(e)
@@ -961,6 +1062,15 @@ async function forceRelease(lease: LeaseView): Promise<void> {
       >
         {{ topologyMode ? t('assets.link.tableView') : t('assets.link.topologyView') }}
       </NButton>
+      <!-- v4.3.0 / FR-v4.3-08（P1）：引用平台共享资产。租约页签不涉及资产关系，不显示。 -->
+      <NButton
+        v-if="tab !== 'leases'"
+        quaternary
+        data-testid="assets-share-toggle"
+        @click="showShareForm = !showShareForm"
+      >
+        {{ showShareForm ? t('common.cancel') : t('assets.share.reference') }}
+      </NButton>
     </div>
 
     <ErrorLineView v-if="error" :error="error" />
@@ -983,6 +1093,27 @@ async function forceRelease(lease: LeaseView): Promise<void> {
         {{ t('batch.deleteAssets') }}
       </NButton>
     </SelectionBar>
+
+    <!--
+      v4.3.0 / FR-v4.3-08 R2：引用失败（含 403）只写错误行，**表单与已填 ID 保持**，
+      不 flash、不清空——用户能直接改 ID 重试。
+    -->
+    <form
+      v-if="showShareForm && tab !== 'leases'"
+      class="inline-form"
+      data-testid="assets-share-form"
+      @submit.prevent="referencePlatformAsset"
+    >
+      <span class="muted">{{ t('assets.share.hint') }}</span>
+      <NInputNumber
+        v-model:value="shareForm.assetId"
+        style="width: 180px"
+        :min="1"
+        :show-button="false"
+        :placeholder="t('assets.share.assetId')"
+      />
+      <NButton type="primary" attr-type="submit">{{ t('assets.share.reference') }}</NButton>
+    </form>
 
     <form v-if="showForm && tab === 'devices'" class="inline-form" @submit.prevent="createDevice">
       <NInput v-model:value="deviceForm.name" style="width: 180px" :placeholder="t('assets.device.name')" />
@@ -1111,6 +1242,18 @@ async function forceRelease(lease: LeaseView): Promise<void> {
           :min="1"
           :show-button="false"
           :placeholder="t('assets.port.speed')"
+        />
+        <NInput
+          v-model:value="portForm.nicName"
+          style="width: 180px"
+          :placeholder="t('assets.port.nicName')"
+        />
+        <NInputNumber
+          v-model:value="portForm.nicIndex"
+          style="width: 180px"
+          :min="0"
+          :show-button="false"
+          :placeholder="t('assets.port.nicIndex')"
         />
         <NButton attr-type="submit">{{ t('common.add') }}</NButton>
       </form>

@@ -7,10 +7,11 @@
  * ② **概要层** —— 用例数 / 近 7 天运行数 / 近 7 天通过率 / 最近运行时间；
  * ③ **细节层** —— 设备数 / 成员数 / 可见性 / 我的角色。
  *
- * <p>两个动作语义**必须分离**（FR-UI-13）：
+ * <p>动作语义**必须分离**（FR-UI-13）：
  * - 「进入」= 切项目 + 跳到该项目的总览；
  * - 「设为当前」= 只切项目，**不跳转**（用户可能想留在总览页继续扫其他项目）。
  * 两者共用 `auth.setProject`，差别只在有没有 `router.push`。
+ * - 「停用 / 启用」「彻底删除」= v4.3.0 `FR-v4.3-09`，卡片只发事件，由父级统一调接口并刷新列表。
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -19,10 +20,21 @@ import type { ProjectCard as ProjectCardData } from '@/api/projectCards'
 import { useAuthStore } from '@/stores/auth'
 import { formatDateTime, formatNumber, formatPercent } from '@/utils/format'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   card: ProjectCardData
   /** 是否当前项目：由父级按 `auth.projectId` 计算，点击「设为当前」后标记会跟着移动。 */
   current: boolean
+  /** 是否显示「停用 / 启用」：对应后端 PROJECT/UPDATE（ADMIN + PM）。 */
+  canManage?: boolean
+  /** 是否显示「彻底删除」：对应后端 PROJECT/DELETE（仅 ADMIN）。 */
+  canDelete?: boolean
+  /** 该卡片的动作请求是否在途，避免重复点击。 */
+  busy?: boolean
+}>(), { canManage: false, canDelete: false, busy: false })
+
+const emit = defineEmits<{
+  toggleEnabled: [card: ProjectCardData]
+  requestDelete: [card: ProjectCardData]
 }>()
 
 const { t } = useI18n()
@@ -62,6 +74,19 @@ const kernelLabel = computed(() => {
   if (kernel === 'robot') return t('workbench.kernelRobot')
   if (kernel === 'pytest') return t('workbench.kernelPytest')
   return props.card.testKernel || t('workbench.noData')
+})
+
+/**
+ * 「彻底删除」的界面预判：用例 / 运行 / 设备任一非空就只能停用。
+ * 报告、文件等其它数据由后端做最终校验（409 带具体条数）。
+ */
+const hasData = computed(
+  () => props.card.caseCount > 0 || props.card.runCount > 0 || props.card.deviceCount > 0,
+)
+
+const toggleLabel = computed(() => {
+  if (props.busy) return t('workbench.processing')
+  return props.card.enabled ? t('workbench.disable') : t('workbench.enable')
 })
 
 function enter(): void {
@@ -152,6 +177,27 @@ function setCurrent(): void {
         @click="setCurrent"
       >
         {{ t('workbench.setCurrent') }}
+      </button>
+      <button
+        v-if="canManage"
+        type="button"
+        class="btn btn-ghost"
+        data-testid="card-toggle"
+        :disabled="busy"
+        @click="emit('toggleEnabled', card)"
+      >
+        {{ toggleLabel }}
+      </button>
+      <button
+        v-if="canDelete"
+        type="button"
+        class="btn btn-ghost danger"
+        data-testid="card-delete"
+        :disabled="busy || hasData"
+        :title="hasData ? t('workbench.deleteBlocked') : t('workbench.delete')"
+        @click="emit('requestDelete', card)"
+      >
+        {{ t('workbench.delete') }}
       </button>
     </div>
   </article>

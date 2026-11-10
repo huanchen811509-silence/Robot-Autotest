@@ -31,6 +31,9 @@ export interface DevicePort {
   mtu: number | null
   ipAddress: string | null
   portStatus: string | null
+  /** v4.3.0 / FR-v4.3-03：端口所属网卡（可空，空 = 未归属）。 */
+  nicName: string | null
+  nicIndex: number | null
 }
 
 export interface Link {
@@ -87,6 +90,9 @@ export interface PortCommand {
   mtu?: number | null
   ipAddress?: string
   portStatus?: string
+  /** v4.3.0 / FR-v4.3-03：网卡名与序号，空值表示「未归属」。 */
+  nicName?: string | null
+  nicIndex?: number | null
 }
 
 export interface LinkCommand {
@@ -176,5 +182,23 @@ export const credentialApi = {
 export const labelApi = {
   values(projectId: number, key: string) {
     return request<string[]>(`${base(projectId)}/labels${toQuery({ key })}`)
+  },
+}
+
+/** 平台共享资产的类型段，与后端路径大小写一致（v4.3.0 / FR-v4.3-08）。 */
+export type PlatformAssetType = 'DEVICE' | 'LINK' | 'CREDENTIAL'
+
+/**
+ * 引用 / 解除引用平台共享资产（P1）。
+ *
+ * 引用只写一条 `project_asset` 关系，不改资产本体；解除引用同样只删关系。
+ * 两者都由后端校验：非平台共享资产、跨项目私有资产一律 403，页面按错误行提示。
+ */
+export const shareApi = {
+  reference(projectId: number, assetType: PlatformAssetType, assetId: number) {
+    return request<void>(`${base(projectId)}/assets/${assetType}/${assetId}`, { method: 'POST' })
+  },
+  unreference(projectId: number, assetType: PlatformAssetType, assetId: number) {
+    return request<void>(`${base(projectId)}/assets/${assetType}/${assetId}`, { method: 'DELETE' })
   },
 }

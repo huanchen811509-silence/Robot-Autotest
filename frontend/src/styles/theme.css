@@ -138,6 +138,8 @@
   --side: var(--gray-800);
   --panel: var(--gray-750);
   --surface-2: var(--gray-850);
+  /* 品牌标记：暗色香槟金（亮色见 data-theme='light'），不随强调色变化 */
+  --logo-fg: #e5b464;
   --overlay: rgb(0 0 0 / 45%);
   --shadow: 0 8px 24px rgb(0 0 0 / 45%);
   /* 卡片一级阴影：暗色下白卡片不存在层次问题，给 none 免得发灰 */
@@ -201,6 +203,8 @@
   --side: var(--gray-0);
   --panel: var(--gray-0);
   --surface-2: var(--gray-100);
+  /* 品牌标记：亮色近黑（暗色见 data-theme='dark'），不随强调色变化 */
+  --logo-fg: #111111;
   --overlay: rgb(26 36 48 / 35%);
   --shadow: 0 8px 24px rgb(15 23 42 / 12%);
   /* 亮色下 panel 是纯白、bg 是浅灰，只靠 1px 边框会显得"贴"在一起 */

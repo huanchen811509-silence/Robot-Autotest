@@ -206,4 +206,16 @@ public class UserRepositoryJdbc implements UserRepository {
                 """, Integer.class, email, excludeUserId == null ? -1L : excludeUserId);
         return count != null && count > 0;
     }
+
+    @Override
+    public String defaultUiMode(long userId) {
+        String mode = jdbc.queryForObject(
+                "SELECT default_ui_mode FROM app_user WHERE id = ?", String.class, userId);
+        return mode == null || mode.isBlank() ? "project" : mode;
+    }
+
+    @Override
+    public void updateDefaultUiMode(long userId, String mode) {
+        jdbc.update("UPDATE app_user SET default_ui_mode = ? WHERE id = ?", mode, userId);
+    }
 }

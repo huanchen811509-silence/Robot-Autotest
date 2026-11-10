@@ -79,6 +79,13 @@ public class LinkRepositoryJdbc implements LinkRepository {
     }
 
     @Override
+    public List<Link> listAll(long projectId) {
+        String sql = SELECT + AssetScopeSql.LINK_JOIN + AssetScopeSql.LINK_WHERE + " ORDER BY l.id";
+        TenantGuard.requireProjectScope(sql, "link");
+        return jdbc.query(sql, MAPPER, projectId, projectId);
+    }
+
+    @Override
     public Optional<Link> find(long projectId, long id) {
         String sql = SELECT + AssetScopeSql.LINK_JOIN + AssetScopeSql.LINK_WHERE + " AND l.id = ?";
         TenantGuard.requireProjectScope(sql, "link");

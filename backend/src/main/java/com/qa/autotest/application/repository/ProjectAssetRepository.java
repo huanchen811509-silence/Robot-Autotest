@@ -1,5 +1,6 @@
 package com.qa.autotest.application.repository;
 
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -32,6 +33,13 @@ public interface ProjectAssetRepository {
 
     /** 该资产被多少个项目引用（删除保护提示用）。 */
     int referenceCount(String assetType, long assetId);
+
+    /**
+     * 本项目对某类资产设置的别名（{@code asset_id → alias}），只含非空别名。
+     *
+     * <p>v4.3.0：别名只用于输出组装，**不进缓存键**，避免 A 项目别名串到 B 项目（PRD K2）。
+     */
+    Map<Long, String> aliases(long projectId, String assetType);
 
     /**
      * 硬删前置校验（FR-v0.2-51）：平台共享资产一律不允许从项目路径硬删，

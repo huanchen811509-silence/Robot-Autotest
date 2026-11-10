@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useUiModeStore } from '@/stores/uiMode'
 import { capabilitiesForRole, roleFromCodes } from '@/config/navigation'
 
 // 7 个一级菜单（工作台 / 执行与报告 / 用例 / 资产 / 环境与拓扑 / 维护与恢复 / 系统设置）
@@ -27,11 +28,20 @@ const router = createRouter({
       component: () => import('@/views/WorkspaceView.vue'),
     },
     {
+      // 存量同步（v4.9.0 / FR-v4.9-01..07）：预览 → 冲突处理 → 执行 → 回滚。
+      // 项目范围由顶部项目选择器决定，写权限由后端 403 兜底。
+      path: '/sync',
+      name: 'project-sync',
+      component: () => import('@/views/ProjectSyncView.vue'),
+    },
+    {
       // 创建项目向导（FR-v4.1-04）：五步，模板来自 config/project-templates。
+      // v4.3.0 / FR-v4.3-01：能力码由 `settings:read` 改为 `project:create`，
+      // 与后端 PROJECT/CREATE（ADMIN + PM）对齐，工程/观察者直达会被守卫送 403。
       path: '/projects/new',
       name: 'project-new',
       component: () => import('@/views/ProjectWizardView.vue'),
-      meta: { capability: 'settings:read' },
+      meta: { capability: 'project:create' },
     },
     {
       path: '/overview',
@@ -240,6 +250,14 @@ const router = createRouter({
       component: () => import('@/views/environment/CollectionAnalysisView.vue'),
     },
     {
+      // v4.3.0 / FR-v4.3-07：连接与拓扑（只读，从设备/端口/链路派生）。
+      // 能力码只挡「有没有入口」，项目内可见范围与刷新权限仍由后端 403 兜底。
+      path: '/environment/connections',
+      name: 'environment-connections',
+      component: () => import('@/views/environment/ConnectionsView.vue'),
+      meta: { capability: 'asset:read' },
+    },
+    {
       path: '/maintenance/principles',
       name: 'maintenance-principles',
       component: () => import('@/views/maintenance/ExecutionPrinciplesView.vue'),
@@ -270,6 +288,38 @@ const router = createRouter({
       name: 'baseline-ccl',
       component: () => import('@/views/baselines/CclBaselineView.vue'),
     },
+    // v4.5.0 全局模式（FR-v4.5-03）：独立命名空间，避免与项目内页面权限混淆。
+    { path: '/g', redirect: '/g/projects' },
+    {
+      path: '/g/projects',
+      name: 'global-projects',
+      meta: { global: true },
+      component: () => import('@/views/global/GlobalProjectsView.vue'),
+    },
+    {
+      path: '/g/cases',
+      name: 'global-cases',
+      meta: { global: true },
+      component: () => import('@/views/global/GlobalCasesView.vue'),
+    },
+    {
+      path: '/g/assets',
+      name: 'global-assets',
+      meta: { global: true },
+      component: () => import('@/views/global/GlobalAssetsView.vue'),
+    },
+    {
+      path: '/g/templates',
+      name: 'global-templates',
+      meta: { global: true },
+      component: () => import('@/views/global/GlobalTemplatesView.vue'),
+    },
+    {
+      path: '/g/settings',
+      name: 'global-settings',
+      meta: { global: true },
+      component: () => import('@/views/global/GlobalSettingsView.vue'),
+    },
     {
       path: '/:pathMatch(.*)*',
       name: 'not-found',
@@ -294,6 +344,18 @@ router.beforeEach((to) => {
   if (capability && auth.user) {
     const owned = capabilitiesForRole(roleFromCodes(auth.user.roles))
     if (!owned.includes(capability)) return { path: '/403' }
+  }
+  // 全局模式只对 ADMIN / PM 开放（FR-v4.5-06）；未加载 user 时先放行，后端会 403。
+  const uiMode = useUiModeStore()
+  if (to.meta.global && auth.user) {
+    const roles = auth.user.roles ?? []
+    if (!roles.includes('admin') && !roles.includes('pm')) return { path: '/403' }
+    if (uiMode.mode !== 'global') void uiMode.setMode('global')
+  } else if (!to.meta.public) {
+    uiMode.rememberProjectPath(to.fullPath)
+    if (to.meta.global !== true && uiMode.mode === 'global' && !to.path.startsWith('/g')) {
+      if (uiMode.ready) void uiMode.setMode('project')
+    }
   }
   return true
 })

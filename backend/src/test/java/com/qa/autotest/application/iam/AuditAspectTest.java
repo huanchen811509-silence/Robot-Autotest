@@ -213,10 +213,11 @@ class AuditAspectTest {
         projectService.addMember(ALPHA, 5L, "viewer");
         projectService.updateMemberRole(ALPHA, 5L, "engineer");
         assertEquals(2, auditRepo.entries.size());
-        assertTrue(auditRepo.entries.get(0).summary().contains("before={role=none}"));
-        assertTrue(auditRepo.entries.get(0).summary().contains("after={role=viewer}"));
-        assertTrue(auditRepo.entries.get(1).summary().contains("before={role=viewer}"));
-        assertTrue(auditRepo.entries.get(1).summary().contains("after={role=engineer}"));
+        // v4.4 起成员支持多角色，摘要口径由单值 `role=` 改为列表 `roles=`
+        assertTrue(auditRepo.entries.get(0).summary().contains("before={roles=[]}"));
+        assertTrue(auditRepo.entries.get(0).summary().contains("after={roles=[viewer]}"));
+        assertTrue(auditRepo.entries.get(1).summary().contains("before={roles=[viewer]}"));
+        assertTrue(auditRepo.entries.get(1).summary().contains("after={roles=[engineer]}"));
     }
 
     @Test
@@ -333,15 +334,21 @@ class AuditAspectTest {
 
     private static void assertAnnotated(Class<?> type, String method, String action,
                                         String resource) throws Exception {
-        Method target = null;
+        // v4.4 起存在重载（单角色 / 多角色）：只要求同名方法里有一个带声明的重载，
+        // 不依赖 `getDeclaredMethods()` 的返回顺序。
+        Audited annotated = null;
+        boolean found = false;
         for (Method candidate : type.getDeclaredMethods()) {
             if (candidate.getName().equals(method)) {
-                target = candidate;
-                break;
+                found = true;
+                Audited hit = candidate.getAnnotation(Audited.class);
+                if (hit != null) {
+                    annotated = hit;
+                    break;
+                }
             }
         }
-        assertNotNull(target, "找不到方法：" + type.getSimpleName() + "#" + method);
-        Audited annotated = target.getAnnotation(Audited.class);
+        assertTrue(found, "找不到方法：" + type.getSimpleName() + "#" + method);
         assertNotNull(annotated, "缺少 @Audited：" + method);
         assertEquals(action, annotated.action());
         assertEquals(resource, annotated.resource());

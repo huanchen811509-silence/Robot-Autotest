@@ -16,6 +16,8 @@ export type TemplateVisibility = 'private' | 'project' | 'public'
 export interface ProjectTemplate {
   schemaVersion: string
   key: string
+  /** 模板内部编号：`前缀-引擎-年月-序号`，与创建项目时的编码同一格式。 */
+  code: string
   nameKey: string
   descKey: string
   testKernel: TemplateKernel
@@ -37,6 +39,8 @@ const VISIBILITIES: TemplateVisibility[] = ['private', 'project', 'public']
 const KEY_PATTERN = /^[a-z][a-z0-9-]{2,30}$/
 const PREFIX_PATTERN = /^[A-Z][A-Z0-9]{1,7}$/
 const ROLE_PATTERN = /^[a-z][a-z0-9_]{2,31}$/
+/** 内部编号：`前缀-引擎-年月-序号`，引擎只能是 RF（Robot Framework）或 PYT（Pytest）。 */
+const CODE_PATTERN = /^([A-Z][A-Z0-9]{1,7})-(RF|PYT)-(\d{6})-(\d{3,})$/
 
 /** 返回问题清单；空数组 = 合法。索引用于定位第几个模板。 */
 export function validateTemplate(raw: unknown): string[] {
@@ -55,6 +59,14 @@ export function validateTemplate(raw: unknown): string[] {
   if (!KERNELS.includes(t.testKernel as TemplateKernel)) problems.push('testKernel-unsupported')
   if (!VISIBILITIES.includes(t.visibility as TemplateVisibility)) problems.push('visibility-unsupported')
   if (typeof t.codePrefix !== 'string' || !PREFIX_PATTERN.test(t.codePrefix)) problems.push('codePrefix-invalid')
+  // 编号要与前缀、引擎对得上：前缀取自 codePrefix，引擎由 testKernel 决定
+  const code = typeof t.code === 'string' ? CODE_PATTERN.exec(t.code) : null
+  if (!code) {
+    problems.push('code-invalid')
+  } else {
+    if (code[1] !== t.codePrefix) problems.push('code-prefix-mismatch')
+    if (code[2] !== (t.testKernel === 'pytest' ? 'PYT' : 'RF')) problems.push('code-engine-mismatch')
+  }
   if (typeof t.defaultRoleCode !== 'string' || !ROLE_PATTERN.test(t.defaultRoleCode)) {
     problems.push('roleCode-invalid')
   }
@@ -68,9 +80,12 @@ export function validateTemplate(raw: unknown): string[] {
 export const TEMPLATE_PROBLEMS: string[] = (() => {
   const list: string[] = []
   const keys = new Set<string>()
+  const codes = new Set<string>()
   PROJECT_TEMPLATES.forEach((template, index) => {
     if (keys.has(template.key)) list.push(`#${index}:duplicate-key`)
     keys.add(template.key)
+    if (codes.has(template.code)) list.push(`#${index}:duplicate-code`)
+    codes.add(template.code)
     validateTemplate(template).forEach((problem) => list.push(`#${index}:${problem}`))
   })
   if (PROJECT_TEMPLATES.length !== 4) list.push(`count=${PROJECT_TEMPLATES.length}`)
