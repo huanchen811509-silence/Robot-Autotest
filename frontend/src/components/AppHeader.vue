@@ -1,54 +1,33 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 /**
- * 顶栏（v2.3 / UI-04，FR-UI-15..19）。
+ * 顶栏（v4.0 / FR-v4.0-03）。
  *
- * 为什么从 App.vue 抽出来：顶栏现在有 4 段、9 个控件、3 条分隔线与「28px 栅格」的
- * 硬约束，再挤在外壳组件里就没人能单独验它。抽出来之后 `AppHeader.spec.ts` 能直接
- * 断 DOM 结构与交互，外壳只负责布局。
+ * v3.x 顶栏是 4 段 9 控件：项目 / 检索 / 帮助 / 通知 / AI / 外观 / 主题 / 语言 / 用户 / 登出。
+ * v4.0 把「与当前人相关」的外观、主题、语言、关于、快捷键、登出全部收进账户菜单，
+ * 顶栏只保留 5 个目标控件（AI 关闭时 4 个）：
+ *   项目（上下文）→ 检索 / 通知 / AI（工具）→ 账户（当前人）
  *
- * 四段排序（从左到右，按「离用户多近」）：
- *   上下文（当前项目）→ 工具（检索 / 通知 / AI）→ 偏好（外观 / 主题 / 语言）→ 账户（身份 / 登出）
- *
- * 三条不做的事：
- * 1. 不再有「关于」按钮——侧栏「系统设置 > 关于」是同一入口，顶栏留着只是占位。
- * 2. 登出不裸奔：`danger` 视觉 + 二次确认，误点不再直接退出。
- * 3. 主题快捷按钮只做 light ↔ dark 二态；`system` 归外观弹层（弹层里有全部三选）。
+ * 计数口径（自动化测试也按这个断）：只数可聚焦控件，不数分隔线、不数用户展示。
+ * 帮助按钮不在顶栏另起入口——快捷键面板仍可用 `?` 或账户菜单打开。
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
-import { useLocaleStore } from '@/stores/locale'
-import { useTheme, type ResolvedTheme } from '@/composables/useTheme'
 import { useAiDrawer } from '@/composables/useAiDrawer'
-import { confirmAction } from '@/composables/useConfirm'
-import { preferenceApi } from '@/api/preferences'
 import AppIcon from '@/components/AppIcon.vue'
+import AccountMenu from '@/components/AccountMenu.vue'
 import NotificationCenter from '@/components/NotificationCenter.vue'
-import type { IconName } from '@/components/iconMap'
 
 const props = defineProps<{ aiEnabled: boolean }>()
 const emit = defineEmits<{
   (event: 'open-palette'): void
   (event: 'open-shortcuts'): void
-  (event: 'open-appearance'): void
   (event: 'logout'): void
 }>()
 
 const { t } = useI18n()
 const auth = useAuthStore()
-const localeStore = useLocaleStore()
-const theme = useTheme()
 const { toggleDrawer } = useAiDrawer()
-
-/** 角色码 → 词条键。后端可能给全局角色（admin/engineer…），项目角色多了 owner/member。 */
-const ROLE_KEYS = ['owner', 'admin', 'pm', 'engineer', 'member', 'viewer'] as const
-
-const displayName = computed(() => auth.user?.displayName || auth.user?.username || '')
-const roleLabel = computed(() => {
-  const codes = (auth.user?.roles ?? []).map((code) => code.toLowerCase())
-  const hit = ROLE_KEYS.find((key) => codes.includes(key))
-  return hit ? t(`enum.memberRole.${hit}`) : ''
-})
 
 /** 当前项目：只用来显示名称与启用状态点，不在这里改数据。 */
 const currentProject = computed(() =>
@@ -59,40 +38,6 @@ const projectMissing = computed(() => auth.projectId === null || !currentProject
 function changeProject(event: Event): void {
   const raw = (event.target as HTMLSelectElement).value
   auth.setProject(raw ? Number(raw) : null)
-}
-
-function changeLocale(event: Event): void {
-  localeStore.setLocale((event.target as HTMLSelectElement).value as 'zh-CN' | 'en-US')
-}
-
-/**
- * 二态切换：目标值取当前**解析后**主题的反面。
- *
- * 用 `resolved` 而不是 `mode`：`system` 下用户看到的可能是暗色，此时点按钮应该是
- * 「切到亮色」，而不是「先跳到 system 的下一档」——后者会让按钮看起来没反应。
- */
-const themeTarget = computed<ResolvedTheme>(() =>
-  theme.resolved.value === 'dark' ? 'light' : 'dark',
-)
-const themeIcon = computed<IconName>(() => (themeTarget.value === 'dark' ? 'moon' : 'sun'))
-const themeLabel = computed(() =>
-  t('theme.switchTo', { mode: t(`theme.${themeTarget.value}`) }),
-)
-
-async function toggleTheme(): Promise<void> {
-  const next = themeTarget.value
-  theme.setMode(next)
-  if (!auth.authenticated) return
-  try {
-    await preferenceApi.put({ theme: next })
-  } catch {
-    // 静默：主题是纯展示偏好，同步失败不回滚本地（否则用户点了没反应）
-  }
-}
-
-async function askLogout(): Promise<void> {
-  const ok = await confirmAction(t('app.logoutConfirm'), { tone: 'danger' })
-  if (ok) emit('logout')
 }
 </script>
 
@@ -141,15 +86,6 @@ async function askLogout(): Promise<void> {
         >
           <AppIcon name="search" :size="16" />
         </button>
-        <button
-          class="btn btn-ghost app-icon-btn"
-          type="button"
-          :aria-label="t('shortcuts.help')"
-          :title="`${t('shortcuts.help')} (?)`"
-          @click="emit('open-shortcuts')"
-        >
-          <AppIcon name="help" :size="16" />
-        </button>
         <NotificationCenter />
         <button
           v-if="props.aiEnabled"
@@ -165,58 +101,12 @@ async function askLogout(): Promise<void> {
 
       <span class="app-sep" role="presentation" aria-hidden="true" />
 
-      <!-- 段 3 偏好：外观（全量选项）/ 主题（一键亮暗）/ 语言 -->
-      <div class="app-seg" data-seg="prefs">
-        <button
-          class="btn btn-ghost app-icon-btn"
-          type="button"
-          :aria-label="t('appearance.open')"
-          :title="t('appearance.open')"
-          @click="emit('open-appearance')"
-        >
-          <AppIcon name="palette" :size="16" />
-        </button>
-        <button
-          class="btn btn-ghost app-icon-btn app-theme-btn"
-          type="button"
-          :aria-label="themeLabel"
-          :title="themeLabel"
-          @click="toggleTheme"
-        >
-          <AppIcon :name="themeIcon" :size="16" />
-        </button>
-        <label class="app-lang" :title="t('app.localeSwitch')">
-          <AppIcon name="language" :size="16" />
-          <select
-            class="app-lang-select"
-            :value="localeStore.locale"
-            :aria-label="t('app.localeSwitch')"
-            @change="changeLocale"
-          >
-            <option value="zh-CN">{{ t('app.langZh') }}</option>
-            <option value="en-US">{{ t('app.langEn') }}</option>
-          </select>
-        </label>
-      </div>
-
-      <span class="app-sep" role="presentation" aria-hidden="true" />
-
-      <!-- 段 4 账户：身份 + 登出（danger + 二次确认） -->
+      <!-- 段 3 账户：状态 / 外观 / 管理 / 会话四分区收在一个菜单里 -->
       <div class="app-seg" data-seg="account">
-        <span v-if="displayName" class="app-user">
-          <span class="app-user-name">{{ displayName }}</span>
-          <span v-if="roleLabel" class="app-user-role">{{ roleLabel }}</span>
-        </span>
-        <button
-          class="btn btn-ghost danger app-logout"
-          type="button"
-          :aria-label="t('app.logout')"
-          :title="t('app.logout')"
-          @click="askLogout"
-        >
-          <AppIcon name="logout" :size="16" />
-          <span>{{ t('app.logout') }}</span>
-        </button>
+        <AccountMenu
+          @logout="emit('logout')"
+          @open-shortcuts="emit('open-shortcuts')"
+        />
       </div>
     </div>
   </header>

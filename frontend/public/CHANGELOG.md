@@ -8,7 +8,39 @@
 > `<!-- current -->` 是给解析器用的语言无关标识（Markdown 渲染时不可见）。
 > 因此代码里不需要硬编码中文，界面显示文案一律走 i18n 语言包 `changelog.*`。
 
-## v3.11.0-asset-pages（2026-11-09） <!-- current -->
+## v4.2.0-workspace-closeout（2026-11-10） <!-- current -->
+
+### 新增 <!-- added -->
+- **项目工作区导出**：`GET /api/projects/{id}/workspace/export` 产出 `project.json` + `manifest.json`（逐文件 `sha256` 与字节数）+ 7 个子目录 + `members.json`；契约 16 项全 PASS，导出件全文本面密钥扫描 0 命中
+- **项目工作区导入**：dry-run 预检先列冲突，默认 `skip` 逐条报告；单事务、失败整批回滚；`skip` / `overwrite` / `rename` 三策略幂等；18 项契约全 PASS（路径穿越、非白名单扩展名、`..`、控制字符全拒；篡改 `sha` 与未验签必拒并给原因）
+- **三级传递**：整项目 / 子目录 / 单文件三粒度各自可用，9 项契约全 PASS；单文件 `sha` 与源一致、子目录不夹带
+- **创建项目向导 + 4 模板**：5 步（viewer 4 步）每步可回退且无副作用，4 套版本化 JSON 模板；提交后真库 `projects 11 → 12`、`members=2`、`kernel.default=robot`、`audit.project:create=1`
+- **工作区 UI 与任务中心**：导出包 / 导入预检 / 任务三视图统一到项目 `DataTable` 壳；任务失败行可单独重试，重试入口真实调用后端
+- **远程主机只读采集**：`SshHostCommandRunner` + `HostInventoryCollector`；`StrictHostKeyChecking=yes` + 显式 `UserKnownHostsFile`、`BatchMode=yes`、`sudo` / `su` / `doas` 启动前拒绝、口令只进 `SSHPASS` 不进 `argv`、私钥临时文件 `0600` 用完即删、单条输出上限 256 KiB；单测 18 例、契约 29 项全 PASS
+- **CI 无 DB 质量门**：`delivery.yml` 构建前跑后端非 IT 全量单测（1301 例 / 0 失败 / 4 例按环境变量条件跳过）与前端单测，`DB_PASSWORD` 不入 workflow
+- **`db/schema-contract.json` 同源契约**：`SchemaIT` 与 `db-audit` 直读同一份常量；新增 `appendOnlyTimeColumns`，明确「`created_at` 或业务时间锚点二选一且互斥」
+- **`V11_28` 工作区迁移**：新建工作区相关表并附 `down` 脚本，`TenantGuard` 登记
+
+### 变更 <!-- changed -->
+- 命令脱敏扩到 `-u user:pass` 写法，报告 / 打印 / docx / API / 审计 / 运行日志 / 控制台 / 导出包八面明文 0 命中；`-u username` 等合法写法不误脱敏
+- 顶栏入口统一「工作区浮层」范式：浮层 `boundingBox.top >= header.bottom`，遮罩不盖顶栏；嵌套浮层逐层 ESC、焦点归还
+- 账户下拉四分区（状态 / 外观 / 管理 / 会话）：状态区只读、加载期 0 写请求、非 admin 不渲染管理入口且键盘可达、登出 danger + 二次确认
+- 折叠态留白：窄轨 `56 → 64px`、右内边距 `20 → 28px`，5 处同步走令牌；四档视口 + 125% / 150% 缩放无横滚
+- 可回滚升级：默认 dry-run、`--apply` 二次确认、同版本拒绝、降级需 `--force --restore-db`、生产库名拦截；`status.sh` 显示上一可用版本并保留 3 版
+- 门禁 29 → **32** 步；OpenAPI 快照重生成 **291 endpoints / 232 paths**；业务表 88 → **89**
+
+### 修复 <!-- fixed -->
+- 门禁第 6 步阻断：`WorkspaceView.vue` 三张原生 `<table>` 改为项目 `DataTable` 壳，列定义抽成 `computed<DataTableColumns<T>>`；未扩白名单、未降门禁
+- `SchemaIT` 用 `-Dgroups=it` 被默认 `excludedGroups=it` 抵消成 0 用例却 `BUILD SUCCESS` → 改 `-Pit`（`DB_NAME=robot_it`）并在类注释写明
+- append-only 判据强制 `created_at` 在真库必然判红（`alert_event` / `archived_run` / `release_record` 用业务时间锚点）→ 契约显式二选一互斥，负向样本仍判红
+- `GET /collect` 被 `@GetMapping("/{id}")` 吃掉回 400 → 改 `{id:\d+}`，现正确回 405
+
+### 破坏性变更 <!-- breaking -->
+- 无。`V11_28` 为新建表并附 `down` 脚本；`VERSION` 由 `3.11.0` 直接落 `4.2.0` 属计划内跨版本落号，未改任何 API 路径或包名。
+
+---
+
+## v3.11.0-asset-pages（2026-11-09）
 
 ### 新增 <!-- added -->
 - **测试资产主机清单**：`V11_26` 建 `device_host_spec`，10 类只读命令（OS / 内核 / CPU / 内存 / 磁盘 / GPU / 网卡 / IP / RoCE / 路由）原样存进 `spec_json`；采不到的项写「未采集到 + 原因」，不用 `0` / `-` / `未知` 占位；本机实测 `PARTIAL 9/10`，缺的 GPU 原因是 `sh: 1: nvidia-smi: not found`

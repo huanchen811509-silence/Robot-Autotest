@@ -1,0 +1,80 @@
+== 13/14/28/29 负向自检 ==
+[cdp] HeadlessChrome/157.0.8103.38
+[app] http://localhost:8001  routes=/,/runs,/assets,/reports/templates,/nodes  mode=selfcheck
+
+[auth] 登录成功
+
+[selfcheck] 注入横滚后 scrollWidth=1600 viewport=1280 -> 已判红（符合预期）
+SELFCHECK_13 PASS
+SELFCHECK 13 PASS（注入横滚被判红）
+PASS 自校验：白样本 0 命中；黑样本命中 IP/COMMAND/CREDENTIAL/ABS_PATH
+SELFCHECK 14 PASS（黑样本命中、白样本 0 命中）
+  SELFCHECK 干净数据: PASS（符合预期）
+  SELFCHECK 覆盖率不足: RED（符合预期）
+  SELFCHECK 非法来源: RED（符合预期）
+  SELFCHECK 缺一个内核: RED（符合预期）
+  SELFCHECK 历史 NULL 行: RED（符合预期）
+  SELFCHECK 抽样命令为空: RED（符合预期）
+  SELFCHECK 静态缺片段: RED（符合预期）
+  SELFCHECK 脱敏干净证据: PASS（符合预期）
+  SELFCHECK 脱敏后残留口令: RED（符合预期）
+  SELFCHECK 缺少 URL 类样本: RED（符合预期）
+  SELFCHECK 正常命令被误脱敏: RED（符合预期）
+SELFCHECK_RESULT FAILS=0
+SELFCHECK 28 PASS（命令契约五类 + 脱敏四类脏数据均判红、干净数据判绿）
+  SELFCHECK 干净数据（10 类，GPU 未采到但给了原因）: PASS（符合预期）
+  SELFCHECK 10 类全采到（status=OK）: PASS（符合预期）
+  SELFCHECK 少一类（9 类）: RED（符合预期）
+  SELFCHECK 顺序错（GPU 与 DISK 对调）: RED（符合预期）
+  SELFCHECK 未采集却没有原因: RED（符合预期）
+  SELFCHECK 用 '-' 冒充采集结果: RED（符合预期）
+  SELFCHECK status 与项数不符: RED（符合预期）
+  SELFCHECK 记录的命令与源码不符: RED（符合预期）
+  SELFCHECK 缺 collectedAt: RED（符合预期）
+  SELFCHECK 有值却又带 reason（语义矛盾）: RED（符合预期）
+  SELFCHECK 只读命令 `ip -br addr`: PASS（符合预期）
+  SELFCHECK 带 2>/dev/null 的只读命令: PASS（符合预期）
+  SELFCHECK 重定向写文件: RED（符合预期）
+  SELFCHECK rm -rf: RED（符合预期）
+  SELFCHECK 就地改文件 sed -i: RED（符合预期）
+  SELFCHECK 用 ip 改地址: RED（符合预期）
+  SELFCHECK 装包: RED（符合预期）
+  SELFCHECK 未登记的可执行名: RED（符合预期）
+  SELFCHECK 接口命令与源码漂移: RED（符合预期）
+  SELFCHECK 接口命令与源码一致: PASS（符合预期）
+SELFCHECK_RESULT FAILS=0
+SELFCHECK 29 PASS（七类脏数据均判红、干净数据判绿）
+  PASS  完整骨架（期望 PASS）
+  PASS  删 install.sh（期望 FAIL）
+  PASS  去掉 --apply 护栏（期望 FAIL）
+  PASS  拆卸出现 DROP TABLE（期望 FAIL）
+  PASS  CI 换回 self-hosted（期望 FAIL）
+  PASS  凭据模板塞明文口令（期望 FAIL）
+  PASS  入口 unit 丢 ENTRY_DIST（期望 FAIL）
+  PASS  ctl.sh 丢 systemd 托管标记（期望 FAIL）
+  PASS  产物与证据都缺失（期望 FAIL）
+
+SELFCHECK_RESULT FAILS=0
+SELFCHECK 30 PASS（八类脏数据均判红、干净骨架判绿）
+STRUCT_FAIL 缺少步骤 13 browser_regression
+SELFCHECK 删步骤 13 PASS（删了变红）
+STRUCT_FAIL 缺少步骤 14 report_sensitive
+SELFCHECK 删步骤 14 PASS（删了变红）
+STRUCT_FAIL 缺少步骤 19 evidence_integrity
+SELFCHECK 删步骤 19 PASS（删了变红）
+STRUCT_FAIL 缺少步骤 20 api_contract
+SELFCHECK 删步骤 20 PASS（删了变红）
+STRUCT_FAIL 缺少步骤 23 version_consistency
+SELFCHECK 删步骤 23 PASS（删了变红）
+STRUCT_FAIL 缺少步骤 24 ai_eval
+SELFCHECK 删步骤 24 PASS（删了变红）
+STRUCT_FAIL 缺少步骤 27 i18n_contrast
+SELFCHECK 删步骤 27 PASS（删了变红）
+STRUCT_FAIL 缺少步骤 28 case_command
+SELFCHECK 删步骤 28 PASS（删了变红）
+STRUCT_FAIL 缺少步骤 29 host_inventory
+SELFCHECK 删步骤 29 PASS（删了变红）
+STRUCT_FAIL 缺少步骤 30 delivery_bundle
+SELFCHECK 删步骤 30 PASS（删了变红）
+
+SELFCHECK_RESULT FAILS=0

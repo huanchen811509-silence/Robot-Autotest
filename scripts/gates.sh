@@ -12,15 +12,17 @@
 #   19 证据完整性（v2.2 CLOS-02：output.xml metadata 六必填 + 三处单测基线只增不减
 #      + AI 契约机检（AI-06：零 prompt 文件开关 / 零硬编码凭据 / 零 L4-L5 自动提交））
 #
-# 本脚本共 30 步：01–17 为 run 步，18 为末尾 structure_selfcheck 内联块，19 为证据完整性 run 步，
+# 本脚本共 32 步：01–17 为 run 步，18 为末尾 structure_selfcheck 内联块，19 为证据完整性 run 步，
 # 20–23 为 v3.2.0 的契约 / 包体 / 性能预算 / 版本一致性门禁。
 # 24–27 为 v3.3.0+v3.4.0 的 AI 评测 / 安全扫描 / 容量+备份演练 / i18n+对比度门禁。
 # 28 为 v3.9.0 的用例级命令契约（FR-v3.9-02：三列贯通 + 双内核真实 run 覆盖率 100%）。
 # 29 为 v3.11.0 的主机清单（FR-v3.11-01：10 类齐全 + 只读命令白名单 + 未采集必有原因）。
 # 30 为 v3.11.0 交付能力（FR-v3.11-D05）：安装/拆卸/运维脚本 + 交付包 + CI workflow 静态契约，
 #     并校验真实 tarball 或入库的 bundle-manifest.json 证据，二者皆无判红。
-# 结构自检：若步骤 13 / 14 / 17 / 19 / 20 / 21 / 22 / 23 / 24 / 25 / 26 / 27 / 28 / 29 / 30 被删除，
-# check_structure 必须变红（`--selfcheck` 会实证 13/14、20/23、24/27 与新增的 28、29、30）。
+# 31 为 v4.0.0 更新机制（FR-v4.0-05）：update.sh 安全默认态 / 降级护栏 / 自动回滚 / 演练版本化。
+# 32 为 v4.1.0 工作区目录（FR-v4.1-01/07）：包契约 + 生命周期属主（KEEP_DIRS / backup / 只读报错）。
+# 结构自检：若步骤 13 / 14 / 17 / 19 / 20 / 21 / 22 / 23 / 24 / 25 / 26 / 27 / 28 / 29 / 30 / 31 / 32 被删除，
+# check_structure 必须变红（`--selfcheck` 会实证 13/14、20/23、24/27 与新增的 28、29、30、31、32）。
 #
 # 用法：
 #   bash scripts/gates.sh              # 全量门禁，0 = 全 PASS
@@ -71,6 +73,8 @@ check_structure() {
   grep -qE '^run 28 case_command ' "$file" || { echo "STRUCT_FAIL 缺少步骤 28 case_command"; bad=1; }
   grep -qE '^run 29 host_inventory ' "$file" || { echo "STRUCT_FAIL 缺少步骤 29 host_inventory"; bad=1; }
   grep -qE '^run 30 delivery_bundle ' "$file" || { echo "STRUCT_FAIL 缺少步骤 30 delivery_bundle"; bad=1; }
+  grep -qE '^run 31 update_mechanism ' "$file" || { echo "STRUCT_FAIL 缺少步骤 31 update_mechanism"; bad=1; }
+  grep -qE '^run 32 workspace_bundle ' "$file" || { echo "STRUCT_FAIL 缺少步骤 32 workspace_bundle"; bad=1; }
   return "$bad"
 }
 
@@ -87,9 +91,10 @@ if [ "${1:-}" = "--selfcheck" ]; then
     echo 'SELFCHECK 14 FAIL（扫描器判据失灵）'; FAILS=$((FAILS + 1))
   fi
   # 28 的判据负向自证：干净数据必须绿、五类脏数据（覆盖率不足 / 非法来源 / 缺内核 /
-  # 历史 NULL 行 / 抽样为空）必须红。只看「能判红」不够，恒定报错也会"看起来在守门"。
+  # 历史 NULL 行 / 抽样为空）必须红；v4.0 起再加脱敏四类（残留口令 / 缺类样本 /
+  # 误脱敏 / 干净证据）。只看「能判红」不够，恒定报错也会"看起来在守门"。
   if python3 tools/check_case_command.py --self-check; then
-    echo 'SELFCHECK 28 PASS（五类脏数据均判红、干净数据判绿）'
+    echo 'SELFCHECK 28 PASS（命令契约五类 + 脱敏四类脏数据均判红、干净数据判绿）'
   else
     echo 'SELFCHECK 28 FAIL（命令契约判据失灵）'; FAILS=$((FAILS + 1))
   fi
@@ -108,6 +113,21 @@ if [ "${1:-}" = "--selfcheck" ]; then
   else
     echo 'SELFCHECK 30 FAIL（交付包判据失灵）'; FAILS=$((FAILS + 1))
   fi
+  # 31 的判据负向自证：去 dry-run 默认 / 去二次确认 / 去 DB 备份 / 去自动回滚 /
+  # 删演练脚本 / 演练不留临时 prefix / status 丢上一可用版本 / 文档脱钩，八类脏数据必须红。
+  if python3 tools/check_update_mechanism.py --self-check; then
+    echo 'SELFCHECK 31 PASS（八类脏数据均判红、干净骨架判绿）'
+  else
+    echo 'SELFCHECK 31 FAIL（更新机制判据失灵）'; FAILS=$((FAILS + 1))
+  fi
+  # 32 的判据负向自证：删目录 / 改文件 / 多文件 / 去签名 / 错密钥 / 明文凭据 /
+  # 版本越界 / 仓库缺 ADR / 缺 down / 缺服务类 / KEEP_DIRS 丢 workspace /
+  # backup 丢 workspace / 只读报错被抹平，十三类脏数据必须红。
+  if python3 tools/check_workspace_bundle.py --self-check; then
+    echo 'SELFCHECK 32 PASS（十三类脏数据均判红、干净骨架判绿）'
+  else
+    echo 'SELFCHECK 32 FAIL（工作区判据失灵）'; FAILS=$((FAILS + 1))
+  fi
   tmp="$(mktemp -d)"
   sed '/^run 13 /d' "$SELF" > "$tmp/no13.sh"
   sed '/^run 14 /d' "$SELF" > "$tmp/no14.sh"
@@ -119,6 +139,8 @@ if [ "${1:-}" = "--selfcheck" ]; then
   sed '/^run 28 /d' "$SELF" > "$tmp/no28.sh"
   sed '/^run 29 /d' "$SELF" > "$tmp/no29.sh"
   sed '/^run 30 /d' "$SELF" > "$tmp/no30.sh"
+  sed '/^run 31 /d' "$SELF" > "$tmp/no31.sh"
+  sed '/^run 32 /d' "$SELF" > "$tmp/no32.sh"
   if check_structure "$tmp/no13.sh"; then
     echo 'SELFCHECK 删步骤 13 FAIL（删了仍然绿）'; FAILS=$((FAILS + 1))
   else
@@ -168,6 +190,16 @@ if [ "${1:-}" = "--selfcheck" ]; then
     echo 'SELFCHECK 删步骤 30 FAIL（删了仍然绿）'; FAILS=$((FAILS + 1))
   else
     echo 'SELFCHECK 删步骤 30 PASS（删了变红）'
+  fi
+  if check_structure "$tmp/no31.sh"; then
+    echo 'SELFCHECK 删步骤 31 FAIL（删了仍然绿）'; FAILS=$((FAILS + 1))
+  else
+    echo 'SELFCHECK 删步骤 31 PASS（删了变红）'
+  fi
+  if check_structure "$tmp/no32.sh"; then
+    echo 'SELFCHECK 删步骤 32 FAIL（删了仍然绿）'; FAILS=$((FAILS + 1))
+  else
+    echo 'SELFCHECK 删步骤 32 PASS（删了变红）'
   fi
   rm -rf "$tmp"
   printf '\nSELFCHECK_RESULT FAILS=%s\n' "$FAILS"
@@ -293,6 +325,16 @@ run 29 host_inventory "python3 tools/check_host_inventory.py"
 #    并以真实 tarball 或入库的 bundle-manifest.json 作证据；两者皆无判红，
 #    避免「脚本写了、门禁没接线、包根本没打出来」的假绿。
 run 30 delivery_bundle "python3 tools/check_delivery_bundle.py"
+
+# 31 更新机制（v4.0.0 / FR-v4.0-05）：update.sh 的安全默认态（dry-run / 二次确认 /
+#    同版本与降级护栏 / 先备份后写盘 / 失败自动回滚 / 健康打后端 actuator / UPDATE-HISTORY
+#    表头模板 / 保留 3 版 / RTO）、版本化演练脚本、status 的上一可用版本与最近结论。
+run 31 update_mechanism "python3 tools/check_update_mechanism.py"
+
+# 32 工作区目录（v4.1.0 / FR-v4.1-01/07）：契约文档 + ADR-4X-12..15 + V11_28 up/down 成对 +
+#    TenantGuard 登记 workspace_job + 工作区服务类 + 生命周期属主（.gitignore / KEEP_DIRS /
+#    backup 覆盖 / 只读文件系统明确报错）。--bundle 由 workspace-contract.sh 另跑真包。
+run 32 workspace_bundle "python3 tools/check_workspace_bundle.py"
 
 printf '\nGATES_RESULT FAILS=%s\n' "$FAILS"
 exit "$FAILS"

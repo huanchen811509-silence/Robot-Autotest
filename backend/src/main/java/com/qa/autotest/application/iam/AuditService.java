@@ -2,13 +2,12 @@ package com.qa.autotest.application.iam;
 
 import com.qa.autotest.application.repository.AuditRepository;
 import com.qa.autotest.common.async.BoundedExecutor;
+import com.qa.autotest.common.security.SecretRedactor;
 import com.qa.autotest.common.tenant.TenantContext;
 import com.qa.autotest.domain.iam.AuditEntry;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import java.util.concurrent.Executor;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,16 +32,6 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 public class AuditService {
 
     private static final Logger log = LoggerFactory.getLogger(AuditService.class);
-
-    /**
-     * 敏感键值对：键名命中即把值替换为 ***（中英文键名都覆盖）。
-     *
-     * <p>分隔符允许前面带一个引号，以覆盖 JSON 形态 {@code "password":"abc"}；
-     * 该引号保留在第二组里，替换后仍是合法 JSON。
-     */
-    private static final Pattern SENSITIVE = Pattern.compile(
-            "(?i)(password|passwd|pwd|token|secret|credential|口令|密码|密钥)"
-                    + "(\"?\\s*[=:]\\s*)(\"[^\"]*\"|'[^']*'|[^,;\\s}]+)");
 
     /** 摘要最大长度，避免超长文本撑爆审计表。 */
     private static final int SUMMARY_MAX = 1000;
@@ -119,30 +108,13 @@ public class AuditService {
     }
 
     /**
-     * 脱敏：password=xxx / token: "yyy" / 口令=zzz 一律替换为 ***。
+     * 脱敏：password=xxx / token: "yyy" / 口令=zzz / -u root:pass / URL 内嵌一律替换。
      *
-     * <p>带引号的值保留引号（{@code "abc"} → {@code "***"}），避免把 JSON / 日志里的
-     * 结构引号一起删掉后产生非法片段。
+     * <p>规则只允许 {@link SecretRedactor} 持有（FR-v4.0-01 单一规则源）：审计摘要会带操作
+     * 参数，不能只挡住 password=xxx 这一种写法，也不允许与报告 / 日志用两份会漂移的正则。
      */
     public static String sanitize(String text) {
-        if (text == null) {
-            return null;
-        }
-        Matcher matcher = SENSITIVE.matcher(text);
-        StringBuilder out = new StringBuilder(text.length());
-        while (matcher.find()) {
-            String value = matcher.group(3);
-            String masked = "***";
-            if (value.length() >= 2
-                    && (value.charAt(0) == '"' || value.charAt(0) == '\'')
-                    && value.charAt(value.length() - 1) == value.charAt(0)) {
-                masked = value.charAt(0) + "***" + value.charAt(0);
-            }
-            matcher.appendReplacement(out, Matcher.quoteReplacement(
-                    matcher.group(1) + matcher.group(2) + masked));
-        }
-        matcher.appendTail(out);
-        return out.toString();
+        return SecretRedactor.redact(text);
     }
 
     /** 生成前后摘要；删除只记前值，新增只记后值。 */

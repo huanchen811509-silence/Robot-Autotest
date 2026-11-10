@@ -1,0 +1,49 @@
+[cdp] HeadlessChrome/157.0.8103.38
+[app] http://localhost:8001  routes=/,/runs,/assets,/reports/templates,/nodes  mode=regress
+
+[auth] 登录成功
+
+PASS  /@1440-route  path=/workbench
+PASS  /@1440-main  content=1240px
+PASS  /@1440-utilization  utilization=86.1%
+PASS  /@1440-no-js-error  0 exception
+PASS  /@1280-route  path=/workbench
+PASS  /@1280-main  content=1080px
+PASS  /@1280-no-hscroll  scrollWidth=1280 viewport=1280
+PASS  /@1280-no-js-error  0 exception
+PASS  /runs@1440-route  path=/runs
+PASS  /runs@1440-main  content=1240px
+PASS  /runs@1440-utilization  utilization=86.1%
+PASS  /runs@1440-no-js-error  0 exception
+PASS  /runs@1280-route  path=/runs
+PASS  /runs@1280-main  content=1080px
+PASS  /runs@1280-no-hscroll  scrollWidth=1280 viewport=1280
+PASS  /runs@1280-no-js-error  0 exception
+PASS  /assets@1440-route  path=/assets
+PASS  /assets@1440-main  content=1240px
+PASS  /assets@1440-utilization  utilization=86.1%
+PASS  /assets@1440-no-js-error  0 exception
+PASS  /assets@1280-route  path=/assets
+PASS  /assets@1280-main  content=1080px
+PASS  /assets@1280-no-hscroll  scrollWidth=1280 viewport=1280
+PASS  /assets@1280-no-js-error  0 exception
+PASS  /reports/templates@1440-route  path=/reports/templates
+PASS  /reports/templates@1440-main  content=1240px
+PASS  /reports/templates@1440-utilization  utilization=86.1%
+PASS  /reports/templates@1440-no-js-error  0 exception
+PASS  /reports/templates@1280-route  path=/reports/templates
+PASS  /reports/templates@1280-main  content=1080px
+PASS  /reports/templates@1280-no-hscroll  scrollWidth=1280 viewport=1280
+PASS  /reports/templates@1280-no-js-error  0 exception
+PASS  /nodes@1440-route  path=/nodes
+PASS  /nodes@1440-main  content=1240px
+PASS  /nodes@1440-utilization  utilization=86.1%
+PASS  /nodes@1440-no-js-error  0 exception
+PASS  /nodes@1280-route  path=/nodes
+PASS  /nodes@1280-main  content=1080px
+PASS  /nodes@1280-no-hscroll  scrollWidth=1280 viewport=1280
+PASS  /nodes@1280-no-js-error  0 exception
+
+[report] 跳过对比/趋势深检（未设置 REGRESS_REPORT_RUN）
+
+BROWSER_REGRESSION checks=40 fails=0

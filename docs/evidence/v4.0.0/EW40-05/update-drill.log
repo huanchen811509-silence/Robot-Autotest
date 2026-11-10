@@ -1,0 +1,14 @@
+[drill] 基线包：/home/evergreen/robot-autotest/releases/robot-autotest-3.11.0-d4ad9d5-linux-x64.tar.gz
+MANIFEST files=284 bytes=57290734
+[drill] PASS  A dry-run 只读列出，不写盘
+[drill] PASS  B 改一字节即红（MANIFEST sha256 闸门有效）
+[drill] PASS  C 版本已到 3.11.1
+[drill] PASS  C 输出 UPDATE PASS
+[drill] PASS  C state=last_result=PASS
+[drill] PASS  C 原包已归档（可回滚）
+[drill] PASS  C UPDATE-HISTORY 已追加
+[drill] PASS  C workspace 原样保留（KEEP 区未动）
+[drill] PASS  D 回滚后版本回到 3.11.0
+[drill] PASS  D state=ROLLED_BACK
+[drill] PASS  D 历史记录回滚
+UPDATE_DRILL_RESULT FAILS=0 baseline=3.11.0 target=3.11.1

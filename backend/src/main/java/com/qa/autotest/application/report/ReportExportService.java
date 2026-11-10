@@ -1,5 +1,6 @@
 package com.qa.autotest.application.report;
 
+import com.qa.autotest.common.security.SecretRedactor;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -56,6 +57,9 @@ public class ReportExportService {
      *               缺失的 key 回落到 key 本身，绝不因为「没配标题」就少一行。
      */
     public byte[] export(String format, Map<String, Object> view, Map<String, String> titles) {
+        // FR-v4.0-01：导出件是最后一个可能把凭据带出去的表面。四格式共用同一道
+        // 「命中即阻断」闸门，避免 HTML 过了、DOCX 漏了。已脱敏文本幂等，不会误伤。
+        assertNoSecrets(view, titles);
         String kind = format == null ? "html" : format.trim().toLowerCase(Locale.ROOT);
         Map<String, String> headers = titles == null ? Map.of() : titles;
         return switch (kind) {
@@ -65,6 +69,37 @@ public class ReportExportService {
             case "xlsx" -> xlsx(view, headers);
             default -> throw new IllegalArgumentException("不支持的导出格式: " + format);
         };
+    }
+
+    /** 递归扫描视图与标题里的字符串；命中明文凭据即阻断本次导出。 */
+    static void assertNoSecrets(Map<String, Object> view, Map<String, String> titles) {
+        if (view != null) {
+            for (Map.Entry<String, Object> entry : view.entrySet()) {
+                SecretRedactor.assertClean(entry.getKey(), "report-export.key");
+                assertNoSecrets(entry.getValue(), "report-export." + entry.getKey());
+            }
+        }
+        if (titles != null) {
+            for (String title : titles.values()) {
+                SecretRedactor.assertClean(title, "report-export.title");
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void assertNoSecrets(Object value, String surface) {
+        if (value instanceof Map<?, ?> map) {
+            for (Map.Entry<?, ?> entry : map.entrySet()) {
+                assertNoSecrets(entry.getKey(), surface + ".key");
+                assertNoSecrets(entry.getValue(), surface + "." + entry.getKey());
+            }
+        } else if (value instanceof Iterable<?> items) {
+            for (Object item : items) {
+                assertNoSecrets(item, surface + "[]");
+            }
+        } else if (value != null) {
+            SecretRedactor.assertClean(String.valueOf(value), surface);
+        }
     }
 
     public static String extension(String format) {

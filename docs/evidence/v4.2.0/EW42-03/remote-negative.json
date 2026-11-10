@@ -1,0 +1,16 @@
+{
+  "generatedAt": "2026-11-09T23:35:10.531121+00:00",
+  "note": "FR-v4.2-03 远程采集负向：未过凭据/二次确认两道门前不得启动任何远端进程",
+  "cases": [
+    {
+      "case": "远程 host 不带 credentialId",
+      "http": 400,
+      "message": "远程主机采集需要传 credentialId（凭据库里的 SSH 口令或私钥）"
+    },
+    {
+      "case": "远程 host 不带 confirm=true",
+      "http": 400,
+      "message": "远程主机采集需要二次确认：请求需带 confirm=true"
+    }
+  ]
+}

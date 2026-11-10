@@ -1,0 +1,8 @@
+# W41-05 向导真库读数：CDP 提交前 projects=11 → 提交后 projects=12（仅最终提交新增 1 行）
+# WIZARD_PROJECT code=W41E2E-769631
+project=85 code=W41E2E-769631 name=W41 向导探针 W41E2E-769631 kernel=robot visibility=project
+members=2
+member.role.engineer=1
+kernel.default=robot
+audit.project:create=1
+test_sets=0

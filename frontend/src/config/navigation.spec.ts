@@ -220,11 +220,15 @@ describe('选中判定', () => {
 describe('v2.3 菜单 IA 与执行/报告合并', () => {
   const byKey = (key: string): NavNode => NAVIGATION.find((node) => node.key === key) as NavNode
 
-  it('工作台是分组，且「项目总览 / 项目看板」两个 path 都命中真实页面', () => {
+  it('工作台是分组，且「项目总览 / 工作区 / 项目看板」路径都命中真实页面', () => {
     const workbench = byKey('workbench')
     expect(isGroup(workbench)).toBe(true)
     const group = workbench as NavGroup
-    expect(group.children.map((child) => child.path)).toEqual(['/workbench', '/overview'])
+    expect(group.children.map((child) => child.path)).toEqual([
+      '/workbench',
+      '/workspace',
+      '/overview',
+    ])
     for (const child of group.children) {
       const name = router.resolve(leafTarget(child)).matched.at(-1)?.name
       expect(name, `${child.path} 没有命中路由`).toBeTruthy()

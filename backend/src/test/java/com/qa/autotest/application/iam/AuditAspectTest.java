@@ -323,9 +323,10 @@ class AuditAspectTest {
     @Test
     @DisplayName("脱敏函数覆盖 password/token/secret/口令")
     void sanitizePatterns() {
-        assertEquals("password=***; token=***; secret=***; 口令=***",
+        // W40-01 起审计只用 SecretRedactor 一份规则，占位符统一为 <redacted>
+        assertEquals("password=<redacted>; token=<redacted>; secret=<redacted>; 口令=<redacted>",
                 AuditService.sanitize("password=abc; token=xyz; secret=123; 口令=mm"));
-        assertEquals("{\"password\":\"***\"}", AuditService.sanitize("{\"password\":\"abc\"}"));
+        assertEquals("{\"password\":\"<redacted>\"}", AuditService.sanitize("{\"password\":\"abc\"}"));
     }
 
     // ------------------------------------------------------------------

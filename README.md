@@ -11,11 +11,11 @@
 
 | 项 | 值 | 说明 |
 |---|---|---|
-| 版本 | `3.11.0` | 唯一真源是根 [`VERSION`](VERSION)；可用 `APP_VERSION` 运行期覆盖 |
-| 门禁 | 30 步 | `bash scripts/gates.sh`；第 30 步为交付包机检 |
-| 数据库 | 88 张业务表 | Flyway 迁移至 `V11_27`，`scripts/db-audit.sh` 体检 |
-| API 契约 | 284 endpoints / 225 paths | `docs/contracts/openapi.json` |
-| 前端 | 1687 i18n 键（中英一致） | `tools/check_i18n.py` |
+| 版本 | `4.2.0` | 唯一真源是根 [`VERSION`](VERSION)；可用 `APP_VERSION` 运行期覆盖 |
+| 门禁 | 32 步 | `bash scripts/gates.sh`；第 30 步为交付包机检 |
+| 数据库 | 89 张业务表 | Flyway 迁移至 `V11_28`，`scripts/db-audit.sh` 体检 |
+| API 契约 | 291 endpoints / 232 paths | `docs/contracts/openapi.json` |
+| 前端 | 1847 i18n 键（中英一致） | `tools/check_i18n.py` |
 | 交付物 | linux-x64 tarball | GitHub Actions `delivery.yml` 产出，见 [交付指南](docs/DELIVERY-GUIDE.md) |
 
 **口径**：G4 / G5 / G7 / G8 **门禁尚未判过，不得对外称「已发版」**。
@@ -43,7 +43,7 @@
 命令矩阵见 [scripts/ops/README.md](scripts/ops/README.md)。
 
 > **CI 与门禁的分工**：`delivery.yml` 在 GitHub-hosted `ubuntu-latest` 上只做构建、机检、打包、解包自检与上传 artifact；
-> 不连 MySQL、不跑真浏览器、不判发版。**全量 30 步门禁只在 WSL 权威副本跑**。
+> 不连 MySQL、不跑真浏览器、不判发版。**全量 32 步门禁只在 WSL 权威副本跑**。
 > 既有 `pr.yml` 依赖尚未注册的自托管 runner `rf-lab`，保留不动，属「待现场」项。
 
 ---
@@ -112,7 +112,7 @@
 | 层 | 选型 | 关键约定 |
 |---|---|---|
 | 后端 | Spring Boot 3 / Java 21 | `api / application / domain / infrastructure / common`，ArchUnit 约束依赖方向 |
-| 数据库 | MySQL 8.0 / Flyway | 88 张业务表，手写 down 脚本；dev / it 双库 `robot_dev` / `robot_it` |
+| 数据库 | MySQL 8.0 / Flyway | 89 张业务表，手写 down 脚本；dev / it 双库 `robot_dev` / `robot_it` |
 | 前端 | Vue 3 / Vite / TS / Pinia / naive-ui | Vitest 单测，主题走语义 token 单向派生 |
 | 编辑器 | `packages/editor`（CodeMirror 6） | 独立 vitest 与 dist，**构建先于前端** |
 | 执行内核 | Robot Framework 7.5 + pytest | `ExecutionKernel` SPI 统一接入，同一作业不混跑 |
@@ -149,7 +149,7 @@ systemd 样例在 `deploy/`；交付包专用的 unit 样例在 `deploy/release/
 ## 门禁与测试
 
 ```bash
-bash scripts/gates.sh           # 全量 30 步门禁（真库 / 真浏览器 / 真链路）
+bash scripts/gates.sh           # 全量 32 步门禁（真库 / 真浏览器 / 真链路）
 bash scripts/gates.sh --selfcheck  # 负向自检：删步骤必变红 + 各机检脏样本判红
 bash scripts/lint.sh            # 静态检查：密钥扫描 + eslint + Checkstyle + 各类守门
 bash artifacts/run_it.sh        # 集成测试，连 robot_it 库
@@ -209,10 +209,12 @@ releases/          本地打包产物（按脚本重建，不入库）
 3. **交付能力正式化**：公开 Release 与匿名下载、远程主机采集、拓扑画布、SchemaIT 口径对齐，
    已并入 [4.X 总体演进 PRD](docs/plan/v4.x-总体演进-产品PRD-20261109.md) 的 4.2 批。
 4. **试点**：搭建小型试点项目，覆盖「建项目 → 编用例 → 并发执行 → 出报告 → 定时 / CI」全链路。
-5. **4.X 总体演进（待评审 / 未开工）**：顶栏浮层范式、账户下拉、项目工作区目录化、创建项目向导、
-   可回滚升级机制；[评估](docs/plan/v4.x-总体演进-调研与评估-20261109.md) /
+5. **4.X 总体演进（已交付，落号 `4.2.0`）**：顶栏浮层范式、账户下拉、项目工作区目录化、创建项目向导、
+   可回滚升级机制、CI 无库质量门、Schema 单源、远程只读采集；发版产物见
+   [docs/release/v4.2.0](docs/release/v4.2.0/)，计划文档见
+   [评估](docs/plan/v4.x-总体演进-调研与评估-20261109.md) /
    [开发计划](docs/plan/v4.x-总体演进-开发计划-20261109.md) /
-   [测试计划](docs/plan/v4.x-总体演进-测试计划-20261109.md) 同步在 `docs/plan/`。
+   [测试计划](docs/plan/v4.x-总体演进-测试计划-20261109.md)。
 
 ---
 

@@ -1,0 +1,22 @@
+# ADR 4X-12..15
+docs/adr/ADR-4X-12-导出包manifest带服务端-HMAC-签名.md
+docs/adr/ADR-4X-13-跨实例引用按稳定业务键映射.md
+docs/adr/ADR-4X-14-升级前DB全量备份与人工恢复.md
+docs/adr/ADR-4X-15-workspace生命周期纳入卸载备份与忽略清单.md
+
+# 迁移成对
+db/down/V11_28__v4_1_workspace_job.down.sql
+db/migration/V11_28__v4_1_workspace_job.sql
+
+# TenantGuard 登记
+61:            "workspace_job", "project_member");
+
+# 工作区服务类
+CanonicalJson.java
+ScriptSafetyScanner.java
+WorkspaceBundleReader.java
+WorkspaceBundleSigner.java
+WorkspaceBundleWriter.java
+WorkspaceExportService.java
+WorkspaceImportService.java
+WorkspaceProperties.java

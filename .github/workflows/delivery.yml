@@ -64,6 +64,23 @@ jobs:
             packages/editor/package-lock.json
             frontend/package-lock.json
 
+      # FR-v4.2-01：打包前先跑「无库轻量质量门」。
+      # 只跑单元测试：不连 MySQL、不启 Chrome CDP，失败即整条流水线判红，
+      # 后面的 Build / Package / Upload 都不会执行，因此失败时不会产出 tarball。
+      # WSL 权威副本已实证 `mvn -o -B test` 在数据库不可达时仍全绿（EW42-01/no-db-proof.log）。
+      - name: Backend unit tests (no DB)
+        run: |
+          set -euo pipefail
+          cd backend
+          mvn -B test
+
+      - name: Frontend unit tests (no DB, no CDP)
+        run: |
+          set -euo pipefail
+          cd frontend
+          npm ci --no-audit --no-fund
+          npx vitest run
+
       # 与 WSL 权威副本完全同一条命令；build.sh 内部锁死「编辑器 → 前端 → 后端」顺序，
       # 并同步根 CHANGELOG.md 到 frontend/public（版本迭代页数据源）。
       - name: Build (editor -> frontend -> backend)

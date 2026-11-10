@@ -19,6 +19,24 @@ printf ' 布局        %s\n' "$LAYOUT"
 printf ' 安装根      %s\n' "$APP_HOME"
 printf ' 环境文件    %s\n' "$([[ -f "$ENV_FILE" ]] && echo '已配置' || echo '缺失')"
 printf ' 日志目录    %s\n' "$LOG_DIR"
+# 升级结论（FR-v4.0-05）：排障时先看「上一可用版本」，避免拿一次失败升级后的版本号当基线。
+STATE_FILE="$APP_HOME/var/update/state"
+state_val() {
+  local key="$1" default="${2:-未记录}"
+  [[ -f "$STATE_FILE" ]] || { printf '%s\n' "$default"; return 0; }
+  local value
+  value="$(awk -F= -v k="$key" '$1==k {print substr($0, index($0,"=")+1)}' "$STATE_FILE" | tail -1)"
+  [[ -n "$value" ]] && printf '%s\n' "$value" || printf '%s\n' "$default"
+}
+printf ' 上一可用版本 %s\n' "$(state_val last_good_version "$(version_of)")"
+printf ' 最近升级     %s / %s → %s（%s，用时 %ss）\n' \
+  "$(state_val last_result '未记录')" \
+  "$(state_val last_result_version "$(version_of)")" \
+  "$(state_val last_target_version '未记录')" \
+  "$(state_val last_update_at '未记录')" \
+  "$(state_val rto_seconds 0)"
+printf ' 可回滚归档   %s 份\n' \
+  "$(find "$BACKUP_DIR/artifacts" -maxdepth 1 -type f -name 'pre-*.tar.gz' 2>/dev/null | wc -l | tr -d ' ')"
 printf '--------------------------------------------------------------\n'
 
 for port in "$BACKEND_PORT" "$ENTRY_PORT"; do

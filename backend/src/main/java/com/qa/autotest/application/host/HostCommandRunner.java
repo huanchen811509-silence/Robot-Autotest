@@ -20,6 +20,16 @@ public interface HostCommandRunner {
     Outcome run(String host, String command, Duration timeout);
 
     /**
+     * 远程主机版本（FR-v4.2-03）：{@code access} 为 null 表示不需要凭据（本机路径）。
+     *
+     * <p>默认实现直接忽略访问材料、退化成三参版本——本机执行器不需要凭据，
+     * 这样加一条远程通道不用改动已有实现与离线夹具。
+     */
+    default Outcome run(String host, String command, Duration timeout, HostAccess access) {
+        return run(host, command, timeout);
+    }
+
+    /**
      * @param exitCode 进程退出码；-1 表示没跑起来（连接失败、超时等）
      * @param stderr   失败原因；成功时可为空
      */

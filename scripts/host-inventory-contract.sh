@@ -15,6 +15,8 @@
 #   ⑦ 采集只能显式 POST：GET /collect 必须 405（不存在「打开页面就采一次」）
 #   ⑧ spec_hash 与库里的 spec_json 对得上（搬运过程没被改坏）
 #   ⑨ 跨项目访问 403（漏登记租户表就会读出别人项目的机器）
+#   ⑩ 远程采集负向（FR-v4.2-03）：远程 host 不带 credentialId / 不带 confirm，
+#      必须在**连远端之前**就 400；判据是「三道门没走完，一条命令也不许发出去」
 #
 # 用法：bash scripts/host-inventory-contract.sh
 # 输出：逐条 [PASS]/[FAIL]，末行 RESULT PASS/FAIL fails=N
@@ -214,11 +216,51 @@ fi
 db_exec -D "$DB_NAME" -e "DELETE FROM device_host_spec WHERE id=$RECORD_ID;" 2>/dev/null
 RECORD_ID=""
 
-# ---- ⑩ 机检脚本对证据的判定（第 29 步真正的判据） ----
+# ---- ⑩ 远程采集负向（W42-03）：三道门没走完，一条命令也不许发出去 ----
+# 这里**刻意不连任何远端**：两条用例都在 HostInventoryService.accessOf 里就被拦下。
+# 用 10.0.0.9 这种不存在的地址，对照的是「真发出去会立刻失败」——但正确行为是根本发不出去。
+W42_OUT_DIR="docs/evidence/v4.2.0/EW42-03"
+mkdir -p "$W42_OUT_DIR"
+NEG_LINES=/tmp/hi-neg-lines.txt
+: > "$NEG_LINES"
+neg() {  # $1=用例说明 $2=请求体 $3=期望 message 片段
+    local code msg
+    code="$(curl -s --noproxy '*' -o /tmp/hi-neg.json -w '%{http_code}' -X POST \
+        "$API/api/asset-host-inventory/collect" -H "$AUTH" -H 'Content-Type: application/json' \
+        -d "$2")"
+    msg="$(python3 -c "import json;print(json.load(open('/tmp/hi-neg.json',encoding='utf-8')).get('message') or '')" 2>/dev/null || echo '')"
+    if [[ "$code" == "400" && "$msg" == *"$3"* ]]; then
+        pass "⑩ $1 → 400（$msg）"
+    else
+        fail "⑩ $1 → HTTP $code message='$msg'（期望 400 且含「$3」）"
+    fi
+    printf '%s\t%s\t%s\n' "$1" "$code" "$msg" >> "$NEG_LINES"
+}
+neg "远程 host 不带 credentialId" \
+    "{\"projectId\":$PROJECT_ID,\"host\":\"10.0.0.9\"}" "credentialId"
+neg "远程 host 不带 confirm=true" \
+    "{\"projectId\":$PROJECT_ID,\"host\":\"10.0.0.9\",\"credentialId\":999999}" "confirm=true"
+
+python3 - "$W42_OUT_DIR/remote-negative.json" <<'PY'
+import json, sys, datetime
+rows = []
+for line in open('/tmp/hi-neg-lines.txt', encoding='utf-8'):
+    label, code, msg = line.rstrip('\n').split('\t')
+    rows.append({"case": label, "http": int(code), "message": msg})
+payload = {
+    "generatedAt": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+    "note": "FR-v4.2-03 远程采集负向：未过凭据/二次确认两道门前不得启动任何远端进程",
+    "cases": rows,
+}
+json.dump(payload, open(sys.argv[1], 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
+PY
+echo "[host-inventory] 远程负向证据 -> $W42_OUT_DIR/remote-negative.json"
+
+# ---- ⑪ 机检脚本对证据的判定（第 29 步真正的判据） ----
 if python3 tools/check_host_inventory.py; then
-    pass "⑩ check_host_inventory.py 判定通过（10 类 + 只读命令 + 证据自洽）"
+    pass "⑪ check_host_inventory.py 判定通过（10 类 + 只读命令 + 远程硬约束 + 证据自洽）"
 else
-    fail "⑩ check_host_inventory.py 判定失败（详见上方输出）"
+    fail "⑪ check_host_inventory.py 判定失败（详见上方输出）"
 fi
 
 if [[ "$FAILS" -gt 0 ]]; then

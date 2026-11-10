@@ -1,0 +1,58 @@
+mysql: [Warning] Using a password on the command line interface can be insecure.
+[contract] api=http://127.0.0.1:8081 db=robot_dev project=29 code=qa-e2e-fixture root=/home/evergreen/robot-autotest/backend/workspace mode=all
+[contract] ---- export ----
+[PASS] E1 导出 PROJECT 返回 200
+[PASS] E1 包路径=项目 code（qa-e2e-fixture）
+[PASS] E1 报告含文件数（24）
+[PASS] E2 契约目录/文件齐全
+[PASS] E2 project.json granularity=project rootPath=null
+[PASS] E2 manifest 有签名（keyId=server-local-v1）
+[PASS] E2 包结构 + HMAC 机检通过
+[PASS] E3 改字节 → 预检 400（INVALID_ARGUMENT）
+[PASS] E3 改签名 → 预检 400（INVALID_ARGUMENT）
+[PASS] E4 越界 rootPath → 400
+mysql: [Warning] Using a password on the command line interface can be insecure.
+[PASS] E4 失败任务落 FAILED
+[PASS] E4 失败未破坏旧包
+[PASS] E4 无残留临时/回收目录
+mysql: [Warning] Using a password on the command line interface can be insecure.
+[PASS] E4 失败审计留痕
+[PASS] E5 viewer 可列出包（CASE:READ）
+[PASS] E5 非成员导出 403
+[contract] ---- import ----
+[PASS] I1 预检 200
+[PASS] I1 预检判定可导入
+[PASS] I2 导入 200
+[PASS] I2 首次重复导入全 SKIP（幂等）
+[PASS] I2 再次导入仍全 SKIP
+mysql: [Warning] Using a password on the command line interface can be insecure.
+[PASS] I2 导入任务 SUCCESS
+[PASS] I3 预检识别可疑脚本（隔离 3）
+mysql: [Warning] Using a password on the command line interface can be insecure.
+[PASS] I3 预检不写库
+[PASS] I3 导入未确认 → 隔离
+[PASS] I3 隔离副本落到 .quarantine/<code>/<job>/
+mysql: [Warning] Using a password on the command line interface can be insecure.
+[PASS] I3 隔离后未写库
+[PASS] I3 显式确认 → 写库并留 warning
+[PASS] I3 确认导入带 warning
+mysql: [Warning] Using a password on the command line interface can be insecure.
+[PASS] I3 确认后写库（1 行）
+[PASS] I4 viewer 可预检（CASE:READ）
+[PASS] I4 viewer 导入 403（IMPORT:EXECUTE）
+mysql: [Warning] Using a password on the command line interface can be insecure.
+[PASS] I5 workspace:import 审计（18 条）
+mysql: [Warning] Using a password on the command line interface can be insecure.
+[PASS] I5 workspace:import-quarantine 审计
+[contract] ---- levels ----
+[PASS] L1 DIR 缺 rootPath → 400
+[PASS] L1 DIR 传文件路径 → 400
+[PASS] L2 绝对路径 → 400
+[PASS] L2 .. 越界 → 400
+[PASS] L2 非法粒度 → 400
+[PASS] L3 DIR files/：granularity=dir rootPath=files
+[PASS] L3 DIR 只带 files/（用例 0、源文件 14）
+mysql: [Warning] Using a password on the command line interface can be insecure.
+[PASS] L4 FILE 单文件：manifest 只带 guard.robot
+[PASS] L5 恢复 PROJECT 全量包 200
+RESULT PASS passes=43 fails=0 skips=0

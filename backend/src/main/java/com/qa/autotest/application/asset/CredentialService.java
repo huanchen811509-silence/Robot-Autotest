@@ -114,6 +114,31 @@ public class CredentialService {
         return cipher.decrypt(blob);
     }
 
+    /**
+     * 执行域取用「账号 + 明文」（FR-v4.2-03）：远程主机采集要知道用哪个账号登录。
+     *
+     * <p>权限与审计口径与 {@link #resolveSecret} 一致（CREDENTIAL:USE + credential.use），
+     * 返回值同样不得写进日志。
+     */
+    public Material resolveMaterial(long projectId, long id) {
+        access.bindProject(projectId);
+        access.require(PermissionResource.CREDENTIAL, PermissionAction.USE);
+        Credential credential = credentials.find(projectId, id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "凭据不存在"));
+        String blob = credentials.cipherOf(projectId, id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "凭据未配置内容"));
+        audit.record("credential.use", "credential", String.valueOf(id), "host-inventory");
+        return new Material(credential.username(), credential.credType(), cipher.decrypt(blob));
+    }
+
+    /** 执行域材料（账号 + 类型 + 明文）；{@code toString} 对明文打码，防止顺手打日志泄漏。 */
+    public record Material(String username, String credType, String secret) {
+        @Override
+        public String toString() {
+            return "Material[username=" + username + ", credType=" + credType + ", secret=***]";
+        }
+    }
+
     /** 平台共享凭据对引用方只读：可被取用执行，但元信息与密文只能由归属项目改。 */
     private static void requireOwned(Credential credential, long projectId) {
         if (credential.projectId() != projectId) {

@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "1.0",
+  "key": "ui-web",
+  "nameKey": "projectWizard.templates.ui.name",
+  "descKey": "projectWizard.templates.ui.desc",
+  "testKernel": "robot",
+  "visibility": "project",
+  "codePrefix": "UI",
+  "defaultRoleCode": "engineer",
+  "tags": ["ui", "smoke"]
+}

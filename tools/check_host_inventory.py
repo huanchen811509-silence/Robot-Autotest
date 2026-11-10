@@ -23,6 +23,11 @@ C. **真实采集结果**——`docs/evidence/v3.11.0/EW311-01/host-inventory.js
    ④ `value` 非空时不许是 `-` / `未知` / `0` 这类占位串冒充结果；
    ⑤ `status` 必须与「有值项数」对得上（全采到 OK、一条没有 FAILED、其余 PARTIAL）。
 
+D. **远程采集硬约束**（FR-v4.2-03）——远程是本门禁唯一会「在别人机器上起进程」的路径，
+   源码里必须逐条写有：`StrictHostKeyChecking=yes` / `BatchMode=yes` / 拒绝 sudo·su·doas /
+   输出上限 / 超时杀进程 / 口令不进 argv / 二次确认 / 凭据走 CREDENTIAL:USE / 审计主机掩码。
+   删掉任何一条都判红；`--self-check` 会逐条删除并验证「删哪条红哪条」。
+
 证据缺失判红（不静默放行）：没有一次真实采集，就没有「10 类齐全」这回事。
 
 用法：
@@ -343,6 +348,54 @@ STATIC_CHECKS = [
      ["device_host_spec"], "多租户表登记（漏登记 = 跨项目可读）"),
 ]
 
+# --------------------------------------------------------------- W42-03：远程采集硬约束
+#
+# 远程采集是本门禁唯一会「在别人的机器上起进程」的路径。下面每一条都是**安全边界**，
+# 不是代码风格：从源码里删掉一条，本脚本必须判红（负向自证见 self_check）。
+# 判据不是「有没有 SSH 类」，而是「这几条边界是不是真的写在代码里」。
+SSH_JAVA = "backend/src/main/java/com/qa/autotest/application/host/SshHostCommandRunner.java"
+ROUTER_JAVA = "backend/src/main/java/com/qa/autotest/application/host/HostCommandRunnerRouter.java"
+ACCESS_JAVA = "backend/src/main/java/com/qa/autotest/application/host/HostAccess.java"
+CREDENTIAL_JAVA = "backend/src/main/java/com/qa/autotest/application/asset/CredentialService.java"
+
+# 每条 (文件, 针, 说明)。针取源码里的字面，不取「类名」——类名在，门可能已经没了。
+REMOTE_GUARDS = [
+    (SSH_JAVA, '"StrictHostKeyChecking=yes"', "远程 SSH 必须校验主机指纹（不能静默接受新主机）"),
+    (SSH_JAVA, '"BatchMode=yes"', "禁止交互式提问（无人值守下不能挂起等输入）"),
+    (SSH_JAVA, '(sudo|su|doas)', "提权词必须写在拒绝正则里"),
+    (SSH_JAVA, "PRIVILEGE.matcher(command).find()", "命令含 sudo/su/doas 必须直接拒绝"),
+    (SSH_JAVA, '"SSHPASS"', "口令只走环境变量（ps 看不到 argv）"),
+    (SSH_JAVA, "MAX_OUTPUT_BYTES", "单条输出必须有上限"),
+    (SSH_JAVA, "已截断", "超上限要显式标注截断（不假装采全）"),
+    (SSH_JAVA, "destroyForcibly", "超时必须真的杀进程"),
+    (SSH_JAVA, "StrictHostKeyChecking=yes，known_hosts=", "指纹失败要把原因透给用户"),
+    (ROUTER_JAVA, "@Primary", "本机/远程由同一个路由 Bean 决定，避免两套通道各写一半"),
+    (ROUTER_JAVA, "LocalHostCommandRunner.isLocal(host)", "本机判定只有一个口径"),
+    (SERVICE_JAVA, "需要二次确认：请求需带 confirm=true", "远程采集必须二次确认（不误触生产机）"),
+    (SERVICE_JAVA, "需要传 credentialId", "远程采集必须显式选凭据"),
+    (SERVICE_JAVA, "maskHost(target)", "审计里的主机必须掩码"),
+    (SERVICE_JAVA, "audit.recordFailure", "采集失败也要落审计"),
+    (CONTROLLER_JAVA, "request.confirm()", "接口要把二次确认标记透传下来"),
+    (CREDENTIAL_JAVA, "resolveMaterial", "凭据材料解析必须经 CREDENTIAL:USE"),
+    (ACCESS_JAVA, "secret=***", "访问材料不得被日志打出口令"),
+]
+
+
+def remote_problems(overrides: dict[str, str] | None = None) -> list[str]:
+    """W42-03 硬约束逐条判红。overrides 供负向自证用（按相对路径替换文件内容）。"""
+    problems = []
+    for rel, needle, label in REMOTE_GUARDS:
+        path = ROOT / rel
+        if not path.is_file():
+            problems.append(f"缺少文件：{rel}（{label}）")
+            continue
+        text = (overrides or {}).get(rel)
+        if text is None:
+            text = path.read_text(encoding="utf-8", errors="replace")
+        if needle not in text:
+            problems.append(f"{rel} 缺少 {needle!r}（{label}）")
+    return problems
+
 
 def check_static() -> list[str]:
     problems = []
@@ -452,6 +505,34 @@ def self_check() -> int:
     else:
         print("  SELFCHECK 接口命令与源码一致: PASS（符合预期）")
 
+    # W42-03 的负向自证：从真实源码里**逐条删掉**安全边界，删哪条就得判红哪条。
+    # 只判「删除后是否被判红」不做别的加工：这样证明的是门禁本身有效，不是数据造得对。
+    ssh_text = (ROOT / SSH_JAVA).read_text(encoding="utf-8") if (ROOT / SSH_JAVA).is_file() else ""
+    if not ssh_text:
+        print(f"  SELFCHECK W42-03 前置失败：缺少 {SSH_JAVA}")
+        fails += 1
+    else:
+        detected = 0
+        ssh_guards = [(n, lb) for rel, n, lb in REMOTE_GUARDS if rel == SSH_JAVA]
+        for needle, label in ssh_guards:
+            if needle not in ssh_text:
+                print(f"  SELFCHECK W42-03 源码本就没有 {needle!r}（{label}）: 不符合预期")
+                fails += 1
+                continue
+            # 全部删掉：像 MAX_OUTPUT_BYTES 这种常量会出现在多行，只删一处等于没删
+            broken = ssh_text.replace(needle, "")
+            if any(label in p for p in remote_problems({SSH_JAVA: broken})):
+                detected += 1
+            else:
+                print(f"  SELFCHECK W42-03 删掉 {label}: 不符合预期（门禁没判红）")
+                fails += 1
+        print(f"  SELFCHECK W42-03 远程采集硬约束（删一条即判红）: {detected}/{len(ssh_guards)} 条符合预期")
+        if remote_problems():
+            print(f"  SELFCHECK W42-03 干净源码被判红: 不符合预期 problems={remote_problems()}")
+            fails += 1
+        else:
+            print("  SELFCHECK W42-03 干净源码: PASS（符合预期）")
+
     print(f"SELFCHECK_RESULT FAILS={fails}")
     return 1 if fails else 0
 
@@ -468,7 +549,7 @@ def main() -> int:
         return self_check()
 
     evidence_dir = Path(args.evidence_dir)
-    problems: list[str] = list(check_static())
+    problems: list[str] = list(check_static()) + remote_problems()
 
     collector = ROOT / COLLECTOR_JAVA
     if not collector.is_file():
@@ -507,6 +588,7 @@ def main() -> int:
     collected = sum(1 for i in items if not _is_blank(i.get("value")))
     print("HOST_INVENTORY PASS")
     print(f"  命令白名单 {len(pairs)} 类，全部只读；接口自述与源码逐字一致")
+    print(f"  远程采集硬约束 {len(REMOTE_GUARDS)} 条齐全（指纹/BatchMode/拒绝提权/输出上限/二次确认）")
     print(f"  真实采集 {inventory.get('host')} status={inventory.get('status')} "
           f"{collected}/{len(items)} 项有值")
     for item in items:

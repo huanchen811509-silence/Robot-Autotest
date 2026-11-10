@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "1.0",
+  "key": "pytest-service",
+  "nameKey": "projectWizard.templates.pytest.name",
+  "descKey": "projectWizard.templates.pytest.desc",
+  "testKernel": "pytest",
+  "visibility": "private",
+  "codePrefix": "PY",
+  "defaultRoleCode": "engineer",
+  "tags": ["pytest", "service"]
+}

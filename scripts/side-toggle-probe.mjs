@@ -148,8 +148,9 @@ function judge(before, after, back) {
     after.toggleHit === true && after.toggleRect.x >= 0 && after.toggleRect.y >= 0,
     `hit=${after.hitTag}.${after.hitClass} toggleRect=${JSON.stringify(after.toggleRect)}`)
 
-  push('折叠后空间收住（首列 = 56px 且无横向溢出）',
-    after.sideWidth === 56 && after.sideScrollW <= after.sideClientW + 1,
+  // v4.0 / FR-v4.0-04：窄轨由 56 → 64（令牌 --rail-w-collapsed），此处取令牌值而非写死旧值。
+  push('折叠后空间收住（首列 = 64px 且无横向溢出）',
+    after.sideWidth === 64 && after.sideScrollW <= after.sideClientW + 1,
     `width=${after.sideWidth} scrollW=${after.sideScrollW} clientW=${after.sideClientW}`)
 
   push('折叠后品牌区隐藏', after.brandDisplay === 'none', `display=${after.brandDisplay}`)

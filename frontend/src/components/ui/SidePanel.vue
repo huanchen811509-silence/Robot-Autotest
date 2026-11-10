@@ -5,7 +5,7 @@
  * 解决什么问题：详情面板各自监听 keydown 容易忘记移除监听；关闭后焦点丢到 body，
  * 键盘用户得从头 Tab。这里在打开时记录来源元素、关闭/卸载时归还焦点。
  */
-import { ref, toRef } from 'vue'
+import { onBeforeUnmount, ref, toRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import AppIcon from '@/components/AppIcon.vue'
 import { useFocusTrap } from '@/composables/useFocusTrap'
@@ -29,6 +29,28 @@ function close() {
 }
 
 useFocusTrap(panelRef, toRef(props, 'open'), { onEscape: close })
+
+/**
+ * FR-v4.0-02 滚动锁：抽屉打开期间冻结背后的页面滚动。
+ * 用保存/恢复原值而不是无条件设 ''，避免把调用方原本的 overflow 覆盖掉。
+ */
+let previousOverflow = ''
+watch(
+  () => props.open,
+  (open) => {
+    if (open) {
+      previousOverflow = document.body.style.overflow
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = previousOverflow
+    }
+  },
+  { immediate: true },
+)
+
+onBeforeUnmount(() => {
+  document.body.style.overflow = previousOverflow
+})
 </script>
 
 <template>
@@ -69,9 +91,13 @@ useFocusTrap(panelRef, toRef(props, 'open'), { onEscape: close })
 </template>
 
 <style scoped>
+/* FR-v4.0-02：从顶栏下沿开始，顶栏保持可点（elementFromPoint 命中 header） */
 .side-panel {
   position: fixed;
-  inset: 0;
+  top: var(--header-h, 0);
+  right: 0;
+  bottom: 0;
+  left: 0;
   z-index: var(--z-modal);
 }
 

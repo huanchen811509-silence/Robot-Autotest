@@ -1,0 +1,28 @@
+mysql: [Warning] Using a password on the command line interface can be insecure.
+[contract] api=http://127.0.0.1:8081 db=robot_dev project=29 code=qa-e2e-fixture root=/home/evergreen/robot-autotest/backend/workspace mode=import
+[contract] ---- import ----
+[PASS] I1 预检 200
+[PASS] I1 预检判定可导入
+[PASS] I2 导入 200
+[PASS] I2 首次重复导入全 SKIP（幂等）
+[PASS] I2 再次导入仍全 SKIP
+mysql: [Warning] Using a password on the command line interface can be insecure.
+[PASS] I2 导入任务 SUCCESS
+[PASS] I3 预检识别可疑脚本（隔离 3）
+mysql: [Warning] Using a password on the command line interface can be insecure.
+[PASS] I3 预检不写库
+[PASS] I3 导入未确认 → 隔离
+[PASS] I3 隔离副本落到 .quarantine/<code>/<job>/
+mysql: [Warning] Using a password on the command line interface can be insecure.
+[PASS] I3 隔离后未写库
+[PASS] I3 显式确认 → 写库并留 warning
+[PASS] I3 确认导入带 warning
+mysql: [Warning] Using a password on the command line interface can be insecure.
+[PASS] I3 确认后写库（1 行）
+[PASS] I4 viewer 可预检（CASE:READ）
+[PASS] I4 viewer 导入 403（IMPORT:EXECUTE）
+mysql: [Warning] Using a password on the command line interface can be insecure.
+[PASS] I5 workspace:import 审计（8 条）
+mysql: [Warning] Using a password on the command line interface can be insecure.
+[PASS] I5 workspace:import-quarantine 审计
+RESULT PASS passes=18 fails=0 skips=0

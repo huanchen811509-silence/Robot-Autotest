@@ -1,14 +1,14 @@
 {
   "host": "localhost",
   "deviceId": null,
-  "collectedAt": "2026-11-09T07:24:20.811192136Z",
+  "collectedAt": "2026-11-09T23:35:09.528191116Z",
   "status": "PARTIAL",
   "items": [
     {
       "category": "OS",
       "label": "操作系统",
       "command": "grep -m1 '^PRETTY_NAME=' /etc/os-release",
-      "collectedAt": "2026-11-09T07:24:20.821790689Z",
+      "collectedAt": "2026-11-09T23:35:09.536559360Z",
       "value": "Ubuntu 24.04.5 LTS",
       "reason": null
     },
@@ -16,7 +16,7 @@
       "category": "KERNEL",
       "label": "内核",
       "command": "uname -r",
-      "collectedAt": "2026-11-09T07:24:20.826738102Z",
+      "collectedAt": "2026-11-09T23:35:09.538834280Z",
       "value": "5.15.167.4-microsoft-standard-WSL2",
       "reason": null
     },
@@ -24,7 +24,7 @@
       "category": "CPU",
       "label": "CPU",
       "command": "nproc; lscpu | grep -m1 'Model name'",
-      "collectedAt": "2026-11-09T07:24:20.837576872Z",
+      "collectedAt": "2026-11-09T23:35:09.550164967Z",
       "value": {
         "cores": 16,
         "model": "13th Gen Intel(R) Core(TM) i5-13500H"
@@ -35,11 +35,11 @@
       "category": "MEMORY",
       "label": "内存",
       "command": "free -m | head -2",
-      "collectedAt": "2026-11-09T07:24:20.844121578Z",
+      "collectedAt": "2026-11-09T23:35:09.555161625Z",
       "value": {
         "totalMb": 15860,
-        "usedMb": 5213,
-        "availableMb": 10646
+        "usedMb": 2668,
+        "availableMb": 13192
       },
       "reason": null
     },
@@ -47,12 +47,12 @@
       "category": "DISK",
       "label": "磁盘",
       "command": "df -P / | tail -1; echo ---; lsblk -d -o NAME,SIZE,ROTA 2>/dev/null",
-      "collectedAt": "2026-11-09T07:24:20.853441703Z",
+      "collectedAt": "2026-11-09T23:35:09.567644602Z",
       "value": {
         "root": {
           "size": "1055762868",
-          "used": "43653908",
-          "available": "958405488",
+          "used": "45024692",
+          "available": "957034704",
           "usePercent": "5%"
         },
         "disks": [
@@ -79,7 +79,7 @@
       "category": "GPU",
       "label": "GPU",
       "command": "nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader",
-      "collectedAt": "2026-11-09T07:24:20.857060707Z",
+      "collectedAt": "2026-11-09T23:35:09.569631156Z",
       "value": null,
       "reason": "未采集到 GPU 信息：sh: 1: nvidia-smi: not found"
     },
@@ -87,7 +87,7 @@
       "category": "NIC",
       "label": "网卡",
       "command": "ip -br link; for i in /sys/class/net/*; do printf '%s %s\\n' \"$(basename $i)\" \"$(cat $i/speed 2>/dev/null)\"; done",
-      "collectedAt": "2026-11-09T07:24:20.895107104Z",
+      "collectedAt": "2026-11-09T23:35:09.601350373Z",
       "value": [
         {
           "name": "lo",
@@ -126,12 +126,6 @@
           "speedMbps": null
         },
         {
-          "name": "eth5",
-          "state": "UP",
-          "mac": "00:15:5d:b2:12:ba",
-          "speedMbps": 10000
-        },
-        {
           "name": "loopback0",
           "state": "UP",
           "mac": "00:15:5d:6f:4e:90",
@@ -166,6 +160,12 @@
           "state": "-1",
           "mac": "1e:52:a5:64:cc:97",
           "speedMbps": null
+        },
+        {
+          "name": "eth5",
+          "state": "UP",
+          "mac": "00:15:5d:46:9c:e6",
+          "speedMbps": 10000
         }
       ],
       "reason": null
@@ -174,7 +174,7 @@
       "category": "IP",
       "label": "IP 地址",
       "command": "ip -br addr",
-      "collectedAt": "2026-11-09T07:24:20.901961069Z",
+      "collectedAt": "2026-11-09T23:35:09.604220450Z",
       "value": [
         {
           "interface": "lo",
@@ -211,15 +211,6 @@
           "addresses": []
         },
         {
-          "interface": "eth5",
-          "state": "UP",
-          "addresses": [
-            "100.113.225.35/32",
-            "fd7a:115c:a1e0::ca32:e123/128",
-            "fe80::8bdb:3eca:790c:721b/64"
-          ]
-        },
-        {
           "interface": "loopback0",
           "state": "UP",
           "addresses": []
@@ -253,6 +244,15 @@
           "addresses": [
             "172.17.0.1/16"
           ]
+        },
+        {
+          "interface": "eth5",
+          "state": "UP",
+          "addresses": [
+            "100.113.225.35/32",
+            "fd7a:115c:a1e0::ca32:e123/128",
+            "fe80::8bdb:3eca:790c:721b/64"
+          ]
         }
       ],
       "reason": null
@@ -261,7 +261,7 @@
       "category": "ROCE",
       "label": "RoCE",
       "command": "for p in /sys/class/infiniband/*/ports/*; do printf '%s|%s|%s\\n' \"$p\" \"$(cat $p/state 2>/dev/null)\" \"$(cat $p/rate 2>/dev/null)\"; done",
-      "collectedAt": "2026-11-09T07:24:20.910419469Z",
+      "collectedAt": "2026-11-09T23:35:09.608753431Z",
       "value": [
         {
           "device": "*",
@@ -277,7 +277,7 @@
       "category": "ROUTE",
       "label": "路由",
       "command": "ip route show",
-      "collectedAt": "2026-11-09T07:24:20.946376470Z",
+      "collectedAt": "2026-11-09T23:35:09.645436365Z",
       "value": {
         "defaultRoute": "default via 10.202.16.1 dev eth9 proto kernel metric 45",
         "routes": [

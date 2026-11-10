@@ -1,6 +1,8 @@
 package com.qa.autotest.application.host;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.qa.autotest.application.asset.CredentialService;
+import com.qa.autotest.application.iam.AuditService;
 import com.qa.autotest.application.repository.HostInventoryRepository;
 import com.qa.autotest.common.BusinessException;
 import com.qa.autotest.common.ErrorCode;
@@ -34,34 +36,104 @@ public class HostInventoryService {
     private final HostInventoryCollector collector;
     private final HostInventoryRepository repository;
     private final ObjectMapper mapper;
+    private final CredentialService credentials;
+    private final AuditService audit;
 
     public HostInventoryService(HostInventoryCollector collector,
                                 HostInventoryRepository repository,
-                                ObjectMapper mapper) {
+                                ObjectMapper mapper,
+                                CredentialService credentials,
+                                AuditService audit) {
         this.collector = collector;
         this.repository = repository;
         this.mapper = mapper;
+        this.credentials = credentials;
+        this.audit = audit;
     }
 
     /** 采集 + 入库，返回落库后的记录（含 id，前端据此拉详情）。 */
     public HostInventoryRecord collect(long projectId, String host, Long deviceId, Long operatorId) {
+        return collect(projectId, host, deviceId, operatorId, null, null, false);
+    }
+
+    /**
+     * 采集 + 入库（FR-v4.2-03）。
+     *
+     * <p>远程主机的三道门都在这层：必须是项目成员（接口层已判）、必须显式二次确认、
+     * 凭据必须可执行取用（CREDENTIAL:USE）。本机采集不需要凭据，历史调用保持四参不变。
+     * 成功与失败都落审计，detail 里的 host 是掩码后的。
+     */
+    public HostInventoryRecord collect(long projectId, String host, Long deviceId, Long operatorId,
+                                       String username, Long credentialId, boolean confirmed) {
         if (host == null || host.isBlank()) {
             throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "采集目标 host 不能为空");
         }
-        HostInventory inventory = collector.collect(host.trim(), deviceId);
-        String json;
+        String target = host.trim();
+        String detail = "host=" + maskHost(target) + "; remote=" + (credentialId != null);
         try {
-            json = mapper.writeValueAsString(inventory);
-        } catch (Exception ex) {
-            throw new BusinessException(ErrorCode.INTERNAL_ERROR,
-                    "序列化主机清单失败：" + ex.getMessage());
+            HostAccess access = accessOf(projectId, target, username, credentialId, confirmed);
+            HostInventory inventory = collector.collect(target, deviceId, access);
+            String json;
+            try {
+                json = mapper.writeValueAsString(inventory);
+            } catch (Exception ex) {
+                throw new BusinessException(ErrorCode.INTERNAL_ERROR,
+                        "序列化主机清单失败：" + ex.getMessage());
+            }
+            HostInventoryRecord record = new HostInventoryRecord(0L, projectId, deviceId, inventory.host(),
+                    inventory.collectedAt(), inventory.status(), json, sha256(json),
+                    countOf(inventory, "NIC"), countOf(inventory, "ROCE"), maxRoceGbps(inventory));
+            long id = repository.insert(record, operatorId);
+            HostInventoryRecord saved = repository.find(projectId, id).orElseThrow(
+                    () -> new BusinessException(ErrorCode.INTERNAL_ERROR, "采集结果写入后读不回来"));
+            audit.record("host.inventory.collect", "device_host_spec", String.valueOf(id),
+                    detail + "; status=" + saved.status());
+            return saved;
+        } catch (BusinessException ex) {
+            audit.recordFailure("host.inventory.collect", "device_host_spec", "0",
+                    detail + "; " + ex.getMessage());
+            throw ex;
         }
-        HostInventoryRecord record = new HostInventoryRecord(0L, projectId, deviceId, inventory.host(),
-                inventory.collectedAt(), inventory.status(), json, sha256(json),
-                countOf(inventory, "NIC"), countOf(inventory, "ROCE"), maxRoceGbps(inventory));
-        long id = repository.insert(record, operatorId);
-        return repository.find(projectId, id).orElseThrow(
-                () -> new BusinessException(ErrorCode.INTERNAL_ERROR, "采集结果写入后读不回来"));
+    }
+
+    /**
+     * 决定这次采集走哪条通道。返回 null 表示本机（不需要凭据）。
+     *
+     * <p>本机判定先于凭据校验：给 localhost 传凭据不该被要求二次确认，也不该真去 SSH。
+     */
+    private HostAccess accessOf(long projectId, String target, String username, Long credentialId,
+                                boolean confirmed) {
+        if (LocalHostCommandRunner.isLocal(target)) {
+            return null;
+        }
+        if (credentialId == null) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                    "远程主机采集需要传 credentialId（凭据库里的 SSH 口令或私钥）");
+        }
+        if (!confirmed) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                    "远程主机采集需要二次确认：请求需带 confirm=true");
+        }
+        CredentialService.Material material = credentials.resolveMaterial(projectId, credentialId);
+        String user = username == null || username.isBlank() ? material.username() : username.trim();
+        if (user == null || user.isBlank()) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                    "凭据未配置 SSH 账号，请在请求里传 username");
+        }
+        return new HostAccess(projectId, user, credentialId, material.secret());
+    }
+
+    /** 审计里的主机掩码：IPv4 保留首尾段，主机名只留前两位，避免日志里成片泄漏内网资产。 */
+    static String maskHost(String host) {
+        if (host == null || host.isBlank()) {
+            return "***";
+        }
+        String[] parts = host.split("\\.");
+        if (parts.length == 4) {
+            return parts[0] + ".***.***." + parts[3];
+        }
+        int keep = Math.min(2, host.length());
+        return host.substring(0, keep) + "***";
     }
 
     public List<HostInventoryRecord> list(long projectId, Long deviceId, int limit) {

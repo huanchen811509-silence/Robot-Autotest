@@ -1,11 +1,11 @@
 package com.qa.autotest.application.execution;
 
+import com.qa.autotest.common.security.SecretRedactor;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.regex.Pattern;
 
 /**
  * EVID-02：证据 LOG 生成器（可复用）。
@@ -18,10 +18,6 @@ import java.util.regex.Pattern;
 public class EvidenceLogWriter {
 
     private static final String MISSING = "missing";
-
-    /** 常见凭据键值片段：password / token / secret / api_key / credential 等。 */
-    private static final Pattern SECRET = Pattern.compile(
-            "(?i)\\b(password|passwd|pwd|token|secret|api[_-]?key|credential)\\s*[=:]\\s*[^\\s]+");
 
     /** 真实进程采样：ProcessBuilder 起命令，waitFor 后取 exitValue()。 */
     public static Captured capture(List<String> command) throws Exception {
@@ -45,12 +41,17 @@ public class EvidenceLogWriter {
         }
     }
 
-    /** 脱敏：把凭据值替换为占位，避免 LOG 写入凭据。 */
+    /**
+     * 脱敏：把凭据值替换为占位，避免 LOG 写入凭据。
+     *
+     * <p>规则统一住在 {@link SecretRedactor}（FR-v4.0-01）：运行日志 / 控制台 / 报告
+     * 使用同一份实现，避免三处正则各自漂移导致某条路径漏脱敏。
+     */
     public static String scrub(String text) {
         if (text == null) {
             return null;
         }
-        return SECRET.matcher(text).replaceAll("$1=<redacted>");
+        return SecretRedactor.redact(text);
     }
 
     /** 生成一段可归档文本：五要素齐全；缺任一要素显式标 missing。 */

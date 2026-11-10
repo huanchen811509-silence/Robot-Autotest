@@ -2,11 +2,18 @@ package com.qa.autotest.db;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -16,9 +23,11 @@ import org.junit.jupiter.api.Test;
 /**
  * 数据库基线集成测试（TC-v0.1-020 ~ 028），必须连真实 MariaDB（ADR-0002：不用 H2）。
  *
- * <p><b>默认被 surefire 跳过</b>（{@code @Tag("it")}）；CI 与本地显式打开：
+ * <p><b>默认被 surefire 跳过</b>（{@code @Tag("it")}）；CI 与本地显式打开（`-Pit` 才会
+ * 清空 {@code excludedGroups}，只写 {@code -Dgroups=it} 会与默认的 {@code excludedGroups=it}
+ * 抵消成 0 个用例，看着 BUILD SUCCESS 其实一条没跑）：
  * <pre>DB_HOST=127.0.0.1 DB_NAME=robot_it DB_USERNAME=robot DB_PASSWORD=*** \
- *   mvn -Dgroups=it test -Dtest=SchemaIT</pre>
+ *   mvn -Pit test -Dtest=SchemaIT</pre>
  *
  * <p>库名必须带 {@code _it} 后缀，禁止指向开发库或生产库（会 clean 掉整个 schema）。
  */
@@ -28,29 +37,67 @@ class SchemaIT {
     private static final String DB_NAME = System.getenv().getOrDefault("DB_NAME", "robot_it");
 
     /**
-     * 业务表总数。v0.1 设计为 38 张；v1.0 扩到 47 张（末位 run_metadata，V7_6）；
-     * v2.0 的 V8_1..V8_4 再增 13 张（报告三表 / 导入两表 / 组授权五表 / AI 三表），
-     * 实测 60（2026-11-06）。V8_5 只补列不加表，故仍为 60。
-     * v2.1 V9_1/V9_2 各 +2、V9_3/V9_4/V9_6 各 +1 → 67；
-     * v2.2 V11_1/V11_2 各 +1 → 69，V11_12（execution_selection）+1 → 70。
-     * 2026-11-08 与 scripts/db-audit.sh 对齐为 70；此前 60 是 v2.0 的历史读数，
-     * 本类 @Tag("it") 默认被 surefire 跳过，所以漂移一直没被发现。
-     * v3.1 V11_18 增 4 张（saved_view / batch_undo / notification_preference /
-     * notification_read；已读按用户隔离，故单列一表）→ 75。
-     * 这个值随迁移演进更新，不是「越多越好」。
+     * FR-v4.2-02：期望表数与 append-only 清单的唯一真源是 {@code db/schema-contract.json}，
+     * 与 {@code scripts/db-audit.sh} 读同一份文件。之前两处各写一套常量，V8 之后已经漂移
+     * （SchemaIT 少算了 ai_message / alert_event / slo_daily / release_record / archived_run /
+     * device_host_spec，只是 @Tag("it") 默认跳过才没被门禁发现）。
+     * {@code SCHEMA_CONTRACT_PATH} 可覆盖路径，供负向自证使用。
      */
-    private static final int EXPECTED_TABLES = 75;
+    private static final JsonNode CONTRACT = loadContract();
+
+    private static final int EXPECTED_TABLES = CONTRACT.path("expectedTables").asInt();
 
     /**
      * append-only 表：按设计只增不改，没有「更新人/更新时间」这回事。
      * 要求它们也有 updated_at/updated_by，只会逼业务代码写假值。
-     *
-     * <p>2026-11-06 补入 V8 的三张：{@code test_report_export}（每次导出插一行）、
-     * {@code test_report_audit}（审计日志）、{@code ai_action}（AI 动作留痕）。
      */
-    private static final java.util.Set<String> APPEND_ONLY =
-            java.util.Set.of("resource_lease_history", "run_attempt",
-                    "test_report_export", "test_report_audit", "ai_action");
+    private static final java.util.Set<String> APPEND_ONLY = loadAppendOnly();
+
+    /** append-only 表里必须有 created_at 的那些（其余靠业务时间锚点）。 */
+    private static final Set<String> CREATED_AT_REQUIRED = loadNames("createdAtRequired");
+
+    /** 没有 created_at 的 append-only 表，用哪个业务时间列证明「何时发生」。 */
+    private static final java.util.Map<String, String> TIME_ANCHORS = loadAnchors();
+
+    private static JsonNode loadContract() {
+        Path path = Path.of(System.getenv().getOrDefault("SCHEMA_CONTRACT_PATH",
+                "../db/schema-contract.json"));
+        try {
+            return new ObjectMapper().readTree(Files.readString(path));
+        } catch (IOException e) {
+            throw new IllegalStateException("无法读取 schema 契约: " + path.toAbsolutePath(), e);
+        }
+    }
+
+    private static Set<String> loadAppendOnly() {
+        return loadNames("appendOnlyTables");
+    }
+
+    private static Set<String> loadNames(String field) {
+        Set<String> names = new LinkedHashSet<>();
+        CONTRACT.path(field).forEach(node -> names.add(node.asText()));
+        if (names.isEmpty()) {
+            throw new IllegalStateException("schema 契约的 " + field + " 不能为空");
+        }
+        return Set.copyOf(names);
+    }
+
+    private static java.util.Map<String, String> loadAnchors() {
+        java.util.Map<String, String> anchors = new java.util.LinkedHashMap<>();
+        CONTRACT.path("appendOnlyTimeColumns").fields().forEachRemaining(entry -> {
+            String column = entry.getValue().asText();
+            if (!column.isBlank()) {
+                anchors.put(entry.getKey(), column);
+            }
+        });
+        Set<String> uncovered = new LinkedHashSet<>(APPEND_ONLY);
+        uncovered.removeAll(CREATED_AT_REQUIRED);
+        uncovered.removeAll(anchors.keySet());
+        if (!uncovered.isEmpty()) {
+            throw new IllegalStateException("append-only 表缺少 created_at / 时间锚点: " + uncovered);
+        }
+        return java.util.Map.copyOf(anchors);
+    }
 
     private static Flyway flyway;
 
@@ -82,14 +129,20 @@ class SchemaIT {
     }
 
     @Test
-    @DisplayName("TC-v0.1-023 每张表都有审计四列（append-only 表只要求 created_at）")
+    @DisplayName("TC-v0.1-023 每张表都有审计四列（append-only 表只要求「何时发生」可追溯）")
     void 审计四列齐全() throws Exception {
         List<String> 缺列的表 = new ArrayList<>();
         for (String table : 表名清单()) {
             List<String> columns = 列名(table);
             if (APPEND_ONLY.contains(table)) {
-                if (!columns.contains("created_at")) {
+                // append-only 表不写 updated_*，但必须能回答「这条是什么时候发生的」：
+                // 契约声明的 created_at 必须有；没声明 created_at 的，业务时间锚点必须有。
+                if (CREATED_AT_REQUIRED.contains(table) && !columns.contains("created_at")) {
                     缺列的表.add(table + "（append-only，缺 created_at）");
+                }
+                String anchor = TIME_ANCHORS.get(table);
+                if (anchor != null && !columns.contains(anchor)) {
+                    缺列的表.add(table + "（append-only，缺时间锚点 " + anchor + "）");
                 }
                 continue;
             }
@@ -108,10 +161,14 @@ class SchemaIT {
             if (!"id".equals(主键列(table))) {
                 违规.add(table + ": 主键不是 id");
             }
-            boolean 时间列合规 = "datetime(3)".equalsIgnoreCase(列类型(table, "created_at"));
+            boolean 时间列合规;
             if (!APPEND_ONLY.contains(table)) {
-                时间列合规 = 时间列合规
+                时间列合规 = "datetime(3)".equalsIgnoreCase(列类型(table, "created_at"))
                         && "datetime(3)".equalsIgnoreCase(列类型(table, "updated_at"));
+            } else if (CREATED_AT_REQUIRED.contains(table)) {
+                时间列合规 = "datetime(3)".equalsIgnoreCase(列类型(table, "created_at"));
+            } else {
+                时间列合规 = "datetime(3)".equalsIgnoreCase(列类型(table, TIME_ANCHORS.get(table)));
             }
             if (!时间列合规) {
                 违规.add(table + ": 时间列不是 datetime(3)");

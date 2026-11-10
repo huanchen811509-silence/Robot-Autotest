@@ -1,0 +1,14 @@
+mysql: [Warning] Using a password on the command line interface can be insecure.
+[contract] api=http://127.0.0.1:8081 db=robot_dev project=29 code=qa-e2e-fixture root=/home/evergreen/robot-autotest/backend/workspace mode=levels
+[contract] ---- levels ----
+[PASS] L1 DIR 缺 rootPath → 400
+[PASS] L1 DIR 传文件路径 → 400
+[PASS] L2 绝对路径 → 400
+[PASS] L2 .. 越界 → 400
+[PASS] L2 非法粒度 → 400
+[PASS] L3 DIR files/：granularity=dir rootPath=files
+[PASS] L3 DIR 只带 files/（用例 0、源文件 14）
+mysql: [Warning] Using a password on the command line interface can be insecure.
+[PASS] L4 FILE 单文件：manifest 只带 guard.robot
+[PASS] L5 恢复 PROJECT 全量包 200
+RESULT PASS passes=9 fails=0 skips=0

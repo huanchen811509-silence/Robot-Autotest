@@ -21,6 +21,19 @@ const router = createRouter({
       component: () => import('@/views/WorkbenchView.vue'),
     },
     {
+      // 项目工作区（FR-v4.1-05）：导出 / 预检 / 导入 / 任务中心；写权限由后端校验。
+      path: '/workspace',
+      name: 'workspace',
+      component: () => import('@/views/WorkspaceView.vue'),
+    },
+    {
+      // 创建项目向导（FR-v4.1-04）：五步，模板来自 config/project-templates。
+      path: '/projects/new',
+      name: 'project-new',
+      component: () => import('@/views/ProjectWizardView.vue'),
+      meta: { capability: 'settings:read' },
+    },
+    {
       path: '/overview',
       name: 'overview',
       component: () => import('@/views/OverviewView.vue'),

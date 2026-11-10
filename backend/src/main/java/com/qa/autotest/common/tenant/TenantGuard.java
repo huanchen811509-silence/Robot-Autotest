@@ -30,6 +30,8 @@ public final class TenantGuard {
             "test_case", "test_case_step", "test_set", "test_set_item",
             "robot_file", "robot_file_version", "case_requirement", "editor_keyword",
             "schedule", "schedule_dependency", "execution_job", "run", "export_record",
+            // v4.1.0：报告索引进入工作区快照，按项目隔离（V8_1）
+            "test_report",
             "execution_plan", "execution_plan_dependency",
             // v2.1 ORCH-01：计划组与成员（都按 project_id 隔离）
             "plan_group", "plan_group_item",
@@ -53,7 +55,10 @@ public final class TenantGuard {
             "archive_policy", "archived_run", "archived_test_result",
             "archived_keyword_result",
             // v3.11.0：主机清单（按项目隔离；同一台设备可能被多个项目各自采集）
-            "device_host_spec");
+            "device_host_spec",
+            // v4.1.0：工作区导出/导入任务（任务即项目锁，ADR-4X-12..15）；
+            // project_member 进快照的成员清单，按项目隔离
+            "workspace_job", "project_member");
 
     private TenantGuard() {
     }

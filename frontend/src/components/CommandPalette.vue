@@ -350,8 +350,10 @@ onBeforeUnmount(() => runner.dispose())
 
 <style scoped>
 .palette-backdrop {
-  position: fixed; inset: 0; z-index: var(--z-modal); display: flex; justify-content: center;
-  padding-top: 12vh; background: var(--overlay);
+  /* FR-v4.0-02：遮罩从顶栏下沿开始，顶栏仍可点；面板下移 8vh 保留原视觉重心 */
+  position: fixed; top: var(--header-h, 0); right: 0; bottom: 0; left: 0;
+  z-index: var(--z-modal); display: flex; justify-content: center;
+  padding-top: 8vh; background: var(--overlay);
 }
 .palette {
   width: min(560px, 92vw); max-height: 72vh; display: flex; flex-direction: column;

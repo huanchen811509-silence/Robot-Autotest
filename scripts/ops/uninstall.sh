@@ -8,7 +8,7 @@
 # 硬护栏（对应运维红线）：
 #   - 默认 dry-run；--apply 前列出**每一条**待删路径；
 #   - 目标必须含本产品的 MANIFEST.json，否则拒绝（防止把任意目录删掉）；
-#   - 先停服务、先备份 env / logs / var / backups，备份失败立即中止；
+#   - 先停服务、先备份 env / logs / var / backups / workspace，备份失败立即中止；
 #   - **从不碰数据库**：不 DROP、不 TRUNCATE，数据保留由 DBA 决定；
 #   - 只删明确列出的程序子项，逐项删除、每批校验，不用宽通配符。
 set -euo pipefail
@@ -36,7 +36,7 @@ esac
 [[ -d "$PREFIX" ]] || die "目录不存在：$PREFIX"
 [[ -f "$PREFIX/MANIFEST.json" ]] || die "目标目录没有 MANIFEST.json，不认定为本产品安装：$PREFIX"
 
-KEEP_DIRS=(logs var backups)
+KEEP_DIRS=(logs var backups workspace)
 PROGRAM_ITEMS=(MANIFEST.json VERSION CHANGELOG.md README.md install.sh uninstall.sh bin app entry db deploy docs)
 BACKUP_ROOT="${ROBOT_UNINSTALL_BACKUP:-$HOME/robot-autotest-uninstall-backups}"
 STAMP="$(date '+%Y%m%d-%H%M%S')"
@@ -115,7 +115,7 @@ cat > "$PREFIX/REMOVED.txt" <<EOF
 本目录的 AIDC AutoTest 程序文件已于 $STAMP 拆卸。
 运行数据备份：$BACKUP_DIR
 数据库未改动；如需恢复，重新解压交付包并按 docs/DELIVERY-GUIDE.md 安装，
-再把备份中的 logs / var / backups 复制回安装目录。
+再把备份中的 logs / var / backups / workspace 复制回安装目录。
 EOF
 
 ok "拆卸完成：程序项 $batch 个；备份 $BACKUP_DIR；数据库未改动"

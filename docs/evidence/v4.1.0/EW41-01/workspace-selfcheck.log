@@ -1,0 +1,16 @@
+PASS good
+PASS missing-dir
+PASS tampered-file
+PASS extra-file
+PASS missing-signature
+PASS wrong-key
+PASS plaintext-credential
+PASS bad-format-version
+PASS repo-good
+PASS repo-missing-adr
+PASS repo-missing-down
+PASS repo-missing-service
+PASS repo-uninstall-drops-workspace
+PASS repo-backup-drops-workspace
+PASS repo-readonly-not-explicit
+WORKSPACE_BUNDLE_SELFCHECK PASS fails=0

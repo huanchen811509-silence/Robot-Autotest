@@ -158,8 +158,14 @@ optgroup {
   padding: 4px 8px;
 }
 
+/* FR-v4.0-02：Naive UI 模态遮罩同样避让顶栏（--header-h 由 App.vue 量出）。 */
+.n-modal-mask {
+  top: var(--header-h, 0) !important;
+}
+
 .app-body {
-  padding: 20px;
+  /* v4.0 / FR-v4.0-04：右侧 20 → 28，折叠后主区变宽 144px，需要呼吸位 */
+  padding: 20px 28px;
   /* 与 .app-main 的 flex 列配合：内容区成为可分配的确定高度，
      列表页才能用 flex:1 铺满（见 .page.is-list）。非列表页 flex-basis:auto，
      内容多高就多高，不受影响。 */
@@ -931,7 +937,7 @@ select option:disabled {
 }
 
 .app-shell.side-collapsed {
-  grid-template-columns: 56px minmax(0, 1fr);
+  grid-template-columns: var(--rail-w-collapsed) minmax(0, 1fr);
 }
 
 /* v2.6 / FR-AI-14：第三列宽度由 --ai-drawer-w 驱动（拖拽时只改这个变量）。
@@ -941,14 +947,14 @@ select option:disabled {
 }
 
 .app-shell.side-collapsed.has-drawer {
-  grid-template-columns: 56px minmax(0, 1fr) var(--ai-drawer-w, 420px);
+  grid-template-columns: var(--rail-w-collapsed) minmax(0, 1fr) var(--ai-drawer-w, 420px);
 }
 
 .app-side {
   grid-area: 1 / 1 / 3 / 2;   /* 侧栏跨两行（顶栏从第 2 列开始） */
   min-height: 0;
   /* 3.9.0 / FR-v3.9-16：grid item 的 min-width 默认是 auto，内容（图标 + 内边距 + 分组缩进）
-     会把侧栏撑回 200px——于是折叠到 56px 时侧栏**溢出到列外**，被从 56px 起画的顶栏压住，
+     会把侧栏撑回 200px——于是折叠到窄轨时侧栏**溢出到列外**，被从窄轨起点画的顶栏压住，
      折叠按钮命中不到（elementFromPoint 落到 .app-header-title），用户点一次就再也展不开。
      必须显式 min-width:0 才能让窄轨真的收住；overflow-x:hidden 同时挡住横向滚动条。 */
   min-width: 0;
@@ -1001,13 +1007,13 @@ select option:disabled {
 }
 
 /* 窄屏窄轨：断点用 760px（复用既有档位）。999px 时 200px 侧栏还放得下，
-   提前收成 56px 只会白白把文字裁掉。进窄轨就同步藏文字并保留 title 提示。 */
+   提前收成窄轨只会白白把文字裁掉。进窄轨就同步藏文字并保留 title 提示。 */
 @media (max-width: 760px) {
   .app-shell,
   .app-shell.has-drawer,
   .app-shell.side-collapsed,
   .app-shell.side-collapsed.has-drawer {
-    grid-template-columns: 56px minmax(0, 1fr);
+    grid-template-columns: var(--rail-w-collapsed) minmax(0, 1fr);
   }
 
   .app-side { padding: 16px 8px; }

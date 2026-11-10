@@ -1,0 +1,12 @@
+[cdp] HeadlessChrome/157.0.8103.38  [app] http://localhost:8001
+
+[PASS] 折叠后可点性（按钮未被遮挡且在视口内）  hit=svg.[object SVGAnimatedString] toggleRect={"x":18,"y":16,"w":28,"h":28}
+[PASS] 折叠后空间收住（首列 = 64px 且无横向溢出）  width=64 scrollW=63 clientW=63
+[PASS] 折叠后品牌区隐藏  display=none
+[PASS] 折叠后文字隐藏  visible=0/35
+[PASS] 折叠后图标仍在（不能连图标一起藏）  visible=16/42
+[PASS] 再次点击可还原  collapsed=false width=200 expect=200
+[PASS] 还原后文字全部回来  visible=9 expect=9
+
+SIDE_TOGGLE_PROBE collapsedBefore=false collapsedAfter=true restored=true FAILS=0
+[out] docs/evidence/v4.0.0/EW40-04/side-toggle.json

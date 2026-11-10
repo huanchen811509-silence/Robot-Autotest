@@ -16,7 +16,12 @@ import type { DataTableColumns } from 'naive-ui'
 import DataTable from '@/components/DataTable.vue'
 import AppIcon from '@/components/AppIcon.vue'
 import { settingsApi, type BuildInfo } from '@/api/settings'
-import { parseChangelog, type ChangelogRelease } from '@/config/changelog'
+import {
+  CHANGELOG_SECTION_LABELS,
+  parseChangelog,
+  renderInlineMarkdown,
+  type ChangelogRelease,
+} from '@/config/changelog'
 
 const { t } = useI18n()
 const info = ref<BuildInfo | null>(null)
@@ -33,10 +38,25 @@ const refreshing = ref(false)
 const latestRelease = ref<ChangelogRelease | null>(null)
 const changelogError = ref('')
 
-const latestItems = computed(() => {
+type LatestChange = { key: string; label: string; text: string }
+
+/** 小节锚点 → 语言包文案；标签由 CHANGELOG 的 `<!-- added -->` 锚点决定，代码里不写死文案。 */
+function sectionLabel(key: string): string {
+  const i18nKey = CHANGELOG_SECTION_LABELS[key]
+  return i18nKey ? t(i18nKey) : key
+}
+
+const latestItems = computed<LatestChange[]>(() => {
   const release = latestRelease.value
   if (!release) return []
-  return release.sections.flatMap((section) => section.items).slice(0, 4)
+  const rows = release.sections.flatMap((section) =>
+    section.items.map((text, index) => ({
+      key: `${section.key}-${index}`,
+      label: sectionLabel(section.key),
+      text,
+    })),
+  )
+  return rows.slice(0, 4)
 })
 
 async function loadChangelog(): Promise<void> {
@@ -168,9 +188,12 @@ onUnmounted(() => {
         </p>
         <p v-else-if="!latestRelease" class="muted">{{ t('aboutPage.noChanges') }}</p>
         <template v-else>
-          <p class="muted small release-title">{{ latestRelease.title }}</p>
+          <p class="muted small release-title" v-html="renderInlineMarkdown(latestRelease.title)"></p>
           <ul class="changes">
-            <li v-for="(item, index) in latestItems" :key="index">{{ item }}</li>
+            <li v-for="row in latestItems" :key="row.key">
+              <span class="change-tag">{{ row.label }}</span>
+              <span class="change-text" v-html="renderInlineMarkdown(row.text)"></span>
+            </li>
           </ul>
         </template>
       </section>
@@ -237,7 +260,22 @@ onUnmounted(() => {
 .link { font-size: 13px; font-weight: 400; color: var(--accent); text-decoration: none; }
 .link:hover { text-decoration: underline; }
 .release-title { margin: 0 0 10px; font-family: var(--font-mono, monospace); }
-.changes { margin: 0; padding-left: 20px; display: grid; gap: 6px; font-size: 13px; line-height: 1.65; }
+.changes { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; font-size: 13px; line-height: 1.7; }
+.changes li { display: flex; align-items: baseline; gap: 8px; }
+.change-tag {
+  flex: none; min-width: 56px; text-align: center; font-size: 11px;
+  padding: 1px 6px; border-radius: 4px;
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  color: color-mix(in srgb, currentColor 70%, transparent);
+  background: color-mix(in srgb, currentColor 5%, transparent);
+}
+.change-text { min-width: 0; }
+.change-text :deep(code) {
+  padding: 1px 5px; border-radius: 4px;
+  background: color-mix(in srgb, currentColor 9%, transparent);
+  font-family: var(--font-mono, monospace); font-size: 12px;
+}
+.change-text :deep(strong) { font-weight: 600; }
 .kv { display: grid; grid-template-columns: 180px 1fr; gap: 8px 16px; margin: 0; font-size: 13px; }
 .kv dt { opacity: .65; }
 .kv dd { margin: 0; font-family: var(--font-mono, monospace); }

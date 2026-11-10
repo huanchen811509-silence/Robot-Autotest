@@ -1,0 +1,59 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] -------------------< com.qa:robot-autotest-backend >--------------------
+[INFO] Building robot-autotest-backend 0.1.0-SNAPSHOT
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- jacoco-maven-plugin:0.8.12:prepare-agent (default) @ robot-autotest-backend ---
+[INFO] argLine set to -javaagent:/home/evergreen/.m2/repository/org/jacoco/org.jacoco.agent/0.8.12/org.jacoco.agent-0.8.12-runtime.jar=destfile=/tmp/jacoco-robot-autotest.exec
+[INFO] 
+[INFO] --- maven-resources-plugin:3.3.1:resources (default-resources) @ robot-autotest-backend ---
+[INFO] Copying 5 resources from src/main/resources to target/classes
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- maven-compiler-plugin:3.13.0:compile (default-compile) @ robot-autotest-backend ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- maven-resources-plugin:3.3.1:testResources (default-testResources) @ robot-autotest-backend ---
+[INFO] Copying 10 resources from src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- maven-compiler-plugin:3.13.0:testCompile (default-testCompile) @ robot-autotest-backend ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 239 source files with javac [debug parameters release 21] to target/test-classes
+[INFO] /home/evergreen/robot-autotest/backend/src/test/java/com/qa/autotest/application/ai/AiCliArgvContractTest.java: Some input files use or override a deprecated API.
+[INFO] /home/evergreen/robot-autotest/backend/src/test/java/com/qa/autotest/application/ai/AiCliArgvContractTest.java: Recompile with -Xlint:deprecation for details.
+[INFO] /home/evergreen/robot-autotest/backend/src/test/java/com/qa/autotest/application/caseasset/CapabilityServiceCacheTest.java: Some input files use unchecked or unsafe operations.
+[INFO] /home/evergreen/robot-autotest/backend/src/test/java/com/qa/autotest/application/caseasset/CapabilityServiceCacheTest.java: Recompile with -Xlint:unchecked for details.
+[INFO] 
+[INFO] --- maven-surefire-plugin:3.2.5:test (default-test) @ robot-autotest-backend ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.qa.autotest.application.host.HostInventoryCollectorTest
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.390 s -- in com.qa.autotest.application.host.HostInventoryCollectorTest
+[INFO] Running com.qa.autotest.application.host.SshHostCommandRunnerTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.557 s -- in com.qa.autotest.application.host.SshHostCommandRunnerTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 18, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] --- jacoco-maven-plugin:0.8.12:report (report) @ robot-autotest-backend ---
+[INFO] Loading execution data file /tmp/jacoco-robot-autotest.exec
+[INFO] Analyzed bundle 'robot-autotest-backend' with 848 classes
+[WARNING] Classes in bundle 'robot-autotest-backend' do not match with execution data. For report generation the same class files must be used as at runtime.
+[WARNING] Execution data for class com/qa/autotest/application/caseasset/CaseImportService$RowError does not match.
+[WARNING] Execution data for class com/qa/autotest/application/caseasset/CaseImportService$ImportPreview does not match.
+[WARNING] Execution data for class com/qa/autotest/api/host/HostInventoryController does not match.
+[WARNING] Execution data for class com/qa/autotest/application/asset/CredentialService does not match.
+[WARNING] Execution data for class com/qa/autotest/application/host/HostInventoryService does not match.
+[WARNING] Execution data for class com/qa/autotest/application/caseasset/CaseImportService$ImportResult does not match.
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  17.872 s
+[INFO] Finished at: 2026-11-10T07:27:42+08:00
+[INFO] ------------------------------------------------------------------------

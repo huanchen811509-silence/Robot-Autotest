@@ -31,3 +31,9 @@ docs/design/pilot/dist/
 # 部署/回滚备份与发版产物：体积大且可按脚本重建（A6 收口 2026-11-07）
 /backups/
 /releases/
+
+# 工作区运行数据（用户上传/导出/任务产物）：不入库，由 backup.sh 归档
+/workspace/
+
+# 契约脚本的默认工作区根（含 .signing-key 与 e2e 夹具）：运行时生成，严禁入库
+/backend/workspace/

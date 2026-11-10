@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "1.0",
+  "key": "blank",
+  "nameKey": "projectWizard.templates.blank.name",
+  "descKey": "projectWizard.templates.blank.desc",
+  "testKernel": "robot",
+  "visibility": "private",
+  "codePrefix": "PRJ",
+  "defaultRoleCode": "engineer",
+  "tags": ["baseline"]
+}

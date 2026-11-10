@@ -64,7 +64,8 @@ public class LocalHostCommandRunner implements HostCommandRunner {
         }
     }
 
-    private static boolean isLocal(String host) {
+    /** 本机判定：本机采集与远程路由共用，避免两处各写一份口径。 */
+    static boolean isLocal(String host) {
         if (host == null || host.isBlank()) {
             return false;
         }

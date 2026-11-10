@@ -1,0 +1,63 @@
+{
+  "at": "2026-11-09T15:15:18.612Z",
+  "app": "http://localhost:8001",
+  "cdp": "http://127.0.0.1:9222",
+  "checks": {
+    "trigger-present": true,
+    "four-sections": true,
+    "status-readonly": true,
+    "aria-expanded": true,
+    "aria-menu": true,
+    "z-index-token": true,
+    "focus-trap": true,
+    "esc-close": true,
+    "reduced-motion": true,
+    "capability-ops-hidden": true
+  },
+  "fails": [],
+  "login": {
+    "ok": true,
+    "user": "qa-e2e-admin"
+  },
+  "panel": {
+    "role": "menu",
+    "label": "账户菜单（状态 / 外观 / 管理 / 会话）",
+    "tabindex": "-1",
+    "expanded": "true",
+    "sections": 4,
+    "sectionTitles": [
+      "外观",
+      "管理与帮助",
+      "会话"
+    ],
+    "menuItems": [
+      "新建项目",
+      "系统设置",
+      "审计日志",
+      "运维监控",
+      "关于本产品",
+      "快捷键",
+      "版本迭代",
+      "切换账号",
+      "退出登录"
+    ],
+    "zIndex": "100",
+    "position": "absolute",
+    "overflowY": "auto",
+    "statusInputs": 0,
+    "transitionDuration": "0s",
+    "focusInside": true
+  },
+  "reducedMotionTransition": "1e-05s",
+  "menuItems": [
+    "新建项目",
+    "系统设置",
+    "审计日志",
+    "运维监控",
+    "关于本产品",
+    "快捷键",
+    "版本迭代",
+    "切换账号",
+    "退出登录"
+  ]
+}

@@ -2,7 +2,7 @@
 
 | 项 | 内容 |
 |---|---|
-| 目录 | `docs/evidence/v4.x-plan/` ｜ 2026-11-09 |
+| 目录 | `docs/evidence/v4.x-plan/` ｜ v1.2 ｜ 2026-11-09 |
 | 对应流程 | ① 需求调研 / ② 评估报告 / ③ PRD / ④ 开发计划 / ⑤ 测试计划 |
 | 对应需求 | 大师 2026-11-09 补充需求 1–7（其中第 7 项即本套文档） |
 | 状态 | **规划已交付并机检；⑥ 测试执行与 ⑦ 版本文档回写尚未发生，4.X 视为未完成** |
@@ -15,9 +15,9 @@
 | 类别 | 文件 | 内容 |
 |---|---|---|
 | ① ② | `docs/plan/v4.x-总体演进-调研与评估-20261109.md` | 20 条已核实事实 / 7 条推断 / 6 条假设；7 项需求逐条深入评估；目录化四方案比较与目录契约；可运维收编矩阵；10 条风险、8 项决策 |
-| ③ | `docs/plan/v4.x-总体演进-产品PRD-20261109.md` | 13 条正式 FR + 4 条候选、11 条 ADR、7 项需求追溯、`v3.12` 收编映射、7 项总判据 |
-| ④ | `docs/plan/v4.x-总体演进-开发计划-20261109.md` | 17 个工作包（4.0 七个 / 4.1 六个 / 4.2 五个）、验收命令、迁移部署、门禁取证、⑦ 回写清单 |
-| ⑤ | `docs/plan/v4.x-总体演进-测试计划-20261109.md` | 55 条 TC（4.0 二十一条 / 4.1 十九条 / 4.2 十五条）、8 条已知取证缺口、放行命令 |
+| ③ | `docs/plan/v4.x-总体演进-产品PRD-20261109.md` | 14 条正式 FR + 4 条候选、15 条 ADR、7 项需求追溯、`v3.12` 收编映射、7 项总判据 |
+| ④ | `docs/plan/v4.x-总体演进-开发计划-20261109.md` | 19 个工作包（4.0 六个 / 4.1 七个 / 4.2 六个）、验收命令、迁移部署、门禁取证、⑦ 回写清单 |
+| ⑤ | `docs/plan/v4.x-总体演进-测试计划-20261109.md` | 70 条 TC（4.0 二十七 / 4.1 二十六 / 4.2 十七）、测试治理准入准出、环境矩阵、10 条已知取证缺口、放行命令 |
 | ⑦ 回写 | `CHANGELOG.md` / `frontend/public/CHANGELOG.md` | 追加「未发版工作记录」引用块，不产生新 release |
 | ⑦ 回写 | `README.md` / `docs/release/README.md` | 路线图与版本地图指向 4.X 规划，注明「未落号」 |
 | ⑦ 回写 | `docs/plan/v3.12+*.md` 三份 | 头部加「已被 4.X 收编」标注，保留为历史审计轨迹 |
@@ -34,12 +34,12 @@
 | 检查 | 命令 | 读数 |
 |---|---|---|
 | 行尾 / 字符 | Python 逐字节扫 11 份改动文档 | `LINE_ENDINGS PASS files=11`，无 CRLF、无 U+FFFD |
-| Markdown 表格 | `check_md_tables.py`（显式传路径） | 初次 11 份 / 101 块 `[PASS]`；**最终工作树 12 份 / 107 块 `[PASS]`**（行数随修订记录递增，故只报块数） |
-| 发布文档机检 | `python3 tools/check_release_docs.py` | 22 个版本，`FAIL 0 项 / WARN 0 项` |
-| 版本四副本 | `check_version_consistency.py --static` | `VERSION_CONSISTENCY PASS (0 项)`，`VERSION=3.11.0` |
+| Markdown 表格 | `docs/evidence/v1.0/policy-20261106/check_md_tables.py`（v1.2 复跑） | 7 份文档 / 159 个表格块 / 1282 个数据行 `[PASS]` |
+| 发布文档机检 | `python3 tools/check_release_docs.py`（v1.2 复跑） | 22 个版本，`FAIL 0 项 / WARN 0 项` |
+| 版本四副本 | `check_version_consistency.py --static`（v1.2 复跑） | `VERSION_CONSISTENCY PASS (0 项)`，`VERSION=3.11.0`；缺 build-info 时先跑 `scripts/gen_build_info.py` |
 | i18n | `python3 tools/check_i18n.py` | 键集相等 / 无硬编码中文 / 无同值漏译 / 键引用完整 / 枚举全覆盖 |
-| 门禁结构自校验 | `bash scripts/gates.sh --selfcheck` | `SELFCHECK_RESULT FAILS=0`，含「删第 30 步必变红」 |
-| **全量门禁** | `bash scripts/gates.sh` | **30 步全 PASS / `GATES_RESULT FAILS=0`**（后端 102s、前端 26s、编辑器 7s、浏览器 17s） |
+| 门禁结构自校验 | `bash scripts/gates.sh --selfcheck`（v1.2 复跑，WSL + `~/.config/robot-autotest/env`） | `SELFCHECK_RESULT FAILS=0`，含「删步骤 24 / 27 / 28 / 29 / 30 必变红」 |
+| **全量门禁** | `bash scripts/gates.sh`（v1.1 读数） | **30 步全 PASS / `GATES_RESULT FAILS=0`**（后端 102s、前端 26s、编辑器 7s、浏览器 17s）；v1.2 仅改文档，未复跑全量 |
 
 归档：`final-gates.log`、`final-selfcheck.log`（本目录，已入库；`docs/evidence/gates/logs/` 被 `.gitignore` 忽略，不能作为交付证据）。
 
@@ -58,8 +58,8 @@
 
 ## 4. 本轮**没有**做什么（不得当作通过）
 
-- 没有实装任何 FR；4.X 的 13 条正式 FR 全部是「待评审 / 未开工」。
-- 没有执行任何 TC；55 条 TC 是计划用例，不是测试结果。
+- 没有实装任何 FR；4.X 的 14 条正式 FR 全部是「待评审 / 未开工」。
+- 没有执行任何 TC；70 条 TC 是计划用例，不是测试结果。
 - 没有 bump 版本：`VERSION` 仍为 `3.11.0`，版本四副本未动。
 - 没有判定 G4 / G5 / G7 / G8，没有创建公开 Release，没有产生对外口径。
 - 没有改动生产代码、数据库结构、OpenAPI 快照、门禁步数（仍 30 步）。
@@ -70,11 +70,13 @@
 
 | # | 缺口 | 状态 |
 |---|---|---|
-| G-01 | CDP `:9222` 曾被取消授权 | 交互类 TC 可能 `NOT-RUN`；需大师恢复授权 |
+| G-01 | CDP `:9222` 非持久化授权（当前探活可用） | 交互类 TC 可能 `NOT-RUN`；每次开测前复探，不可用记 `NOT-RUN` |
 | G-02 / G-03 | `rf-lab` runner 未注册、真机 DUT 样本 | 待现场 |
 | G-04 | 远程 SSH 目标与凭据方案 | 4.2 前置 |
 | G-05 | 48MB CI artifact 完整下载未完成 | 只有元数据 + `HTTP 206` Range 探测实证，端到端 sha256 复核排 4.2 |
 | G-06 / G-07 / G-08 | 升级演练环境、脱敏真命令样本、公开 Release 授权 | 4.0 / 4.2 前置或待授权 |
+| G-09 | 「空实例 B」与第二套真库未就绪 | A→B round-trip（`TC-v4.1-20/21`）无法执行 |
+| G-10 | bundle HMAC/签名密钥与验签流水线未定 | `TC-v4.1-08/24` 只能按「未验签必拒」判 |
 
 沿用遗留台账：`L-39-03`（脱敏已提升为 `FR-v4.0-01` P0）、`L-311-01`..`L-311-04`、`L-310-01`..`L-310-04`。
 
@@ -97,3 +99,4 @@
 |---|---|---|
 | v1.0 | 2026-11-09 | 首版：交付清单、7 项机检读数、两处修正、未做清单、取证缺口、收编关系 |
 | v1.1 | 2026-11-09 | ⑦ 实测回写：补「最终工作树 12 份 / 107 块」表格机检读数；全量门禁在最终工作树上复跑仍为 30 步全 PASS |
+| v1.2 | 2026-11-09 | 按评审修订三份计划并复跑：PRD 14 FR / 15 ADR、DEV-PLAN 19 工作包、TEST-PLAN 70 TC + 测试治理；同步本索引计数；补 G-09/G-10；机检读数：表格 7 份 / 159 块 / 1282 行 PASS、发布文档 22 版 `FAIL 0 / WARN 0`、版本四副本 PASS、`--selfcheck FAILS=0`（在 WSL 载入 env 后执行） |

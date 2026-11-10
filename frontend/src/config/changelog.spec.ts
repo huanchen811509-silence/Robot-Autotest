@@ -2,7 +2,7 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { parseChangelog } from '@/config/changelog'
+import { parseChangelog, renderInlineMarkdown } from '@/config/changelog'
 
 const MARKDOWN = `## v2.0（2026-11-06）<!-- current -->
 ### 新增 <!-- added -->
@@ -48,6 +48,28 @@ describe('parseChangelog', () => {
 
   it('空输入返回空数组', () => {
     expect(parseChangelog('')).toEqual([])
+  })
+})
+
+describe('renderInlineMarkdown', () => {
+  it('加粗与行内代码转成标签，原始标记不残留', () => {
+    expect(renderInlineMarkdown('**项目工作区导出**：`GET /api/x`')).toBe(
+      '<strong>项目工作区导出</strong>：<code>GET /api/x</code>',
+    )
+  })
+
+  it('代码段里的星号不当作加粗', () => {
+    expect(renderInlineMarkdown('命令 `a ** b` 保持原样')).toBe('命令 <code>a ** b</code> 保持原样')
+  })
+
+  it('先转义 HTML，CHANGELOG 内容不能注入标签', () => {
+    expect(renderInlineMarkdown('<img src=x onerror=alert(1)>')).toBe(
+      '&lt;img src=x onerror=alert(1)&gt;',
+    )
+  })
+
+  it('无标记的纯文本原样返回', () => {
+    expect(renderInlineMarkdown('修复：业务表 88 → 89 张')).toBe('修复：业务表 88 → 89 张')
   })
 })
 

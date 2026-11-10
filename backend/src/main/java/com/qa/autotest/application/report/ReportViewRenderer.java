@@ -1,6 +1,7 @@
 package com.qa.autotest.application.report;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.qa.autotest.common.security.SecretRedactor;
 import com.qa.autotest.domain.report.ReportSnapshot;
 import com.qa.autotest.domain.report.ReportTemplate;
 import java.util.ArrayList;
@@ -243,7 +244,10 @@ public class ReportViewRenderer {
         if (value == null) {
             return "";
         }
-        String s = IP.matcher(value).replaceAll("[REDACTED]");
+        // 先走统一的凭据脱敏（FR-v4.0-01），再走报告侧的 IP / 路径 / 命令遮蔽。
+        // 顺序不能反：COMMAND 规则只吃掉命令头，会把 -u user:pass 里的口令留在原地。
+        String s = SecretRedactor.redact(value);
+        s = IP.matcher(s).replaceAll("[REDACTED]");
         s = CREDENTIAL.matcher(s).replaceAll("[REDACTED]");
         s = ABS_PATH.matcher(s).replaceAll("[REDACTED]");
         return COMMAND.matcher(s).replaceAll("[REDACTED]");

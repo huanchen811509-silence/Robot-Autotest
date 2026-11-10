@@ -1,0 +1,152 @@
+{
+  "generatedAt": "2026-11-09T12:43:43.142Z",
+  "selfcheck": false,
+  "viewport": "1440x900",
+  "version": "HeadlessChrome/157.0.8103.38",
+  "before": {
+    "collapsed": false,
+    "gridCols": "200px 1240px",
+    "sideWidth": 200,
+    "sideScrollW": 199,
+    "sideClientW": 199,
+    "sideOverflowX": "hidden",
+    "sideOverflowY": "auto",
+    "brandDisplay": "block",
+    "brandRect": {
+      "x": 12,
+      "y": 16,
+      "w": 141,
+      "h": 33
+    },
+    "headJustify": "space-between",
+    "toggleDisplay": "flex",
+    "toggleRect": {
+      "x": 159,
+      "y": 19,
+      "w": 28,
+      "h": 28
+    },
+    "toggleCenter": {
+      "x": 173,
+      "y": 33
+    },
+    "hitTag": "svg",
+    "hitClass": "[object SVGAnimatedString]",
+    "toggleHit": true,
+    "navLabelTotal": 35,
+    "navLabelVisible": 9,
+    "navIconTotal": 42,
+    "navIconVisible": 16,
+    "stored": "false"
+  },
+  "after": {
+    "collapsed": true,
+    "gridCols": "64px 1376px",
+    "sideWidth": 64,
+    "sideScrollW": 63,
+    "sideClientW": 63,
+    "sideOverflowX": "hidden",
+    "sideOverflowY": "auto",
+    "brandDisplay": "none",
+    "brandRect": {
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0
+    },
+    "headJustify": "center",
+    "toggleDisplay": "flex",
+    "toggleRect": {
+      "x": 18,
+      "y": 16,
+      "w": 28,
+      "h": 28
+    },
+    "toggleCenter": {
+      "x": 32,
+      "y": 30
+    },
+    "hitTag": "svg",
+    "hitClass": "[object SVGAnimatedString]",
+    "toggleHit": true,
+    "navLabelTotal": 35,
+    "navLabelVisible": 0,
+    "navIconTotal": 42,
+    "navIconVisible": 16,
+    "stored": "true"
+  },
+  "back": {
+    "collapsed": false,
+    "gridCols": "200px 1240px",
+    "sideWidth": 200,
+    "sideScrollW": 199,
+    "sideClientW": 199,
+    "sideOverflowX": "hidden",
+    "sideOverflowY": "auto",
+    "brandDisplay": "block",
+    "brandRect": {
+      "x": 12,
+      "y": 16,
+      "w": 141,
+      "h": 33
+    },
+    "headJustify": "space-between",
+    "toggleDisplay": "flex",
+    "toggleRect": {
+      "x": 159,
+      "y": 19,
+      "w": 28,
+      "h": 28
+    },
+    "toggleCenter": {
+      "x": 173,
+      "y": 33
+    },
+    "hitTag": "svg",
+    "hitClass": "[object SVGAnimatedString]",
+    "toggleHit": true,
+    "navLabelTotal": 35,
+    "navLabelVisible": 9,
+    "navIconTotal": 42,
+    "navIconVisible": 16,
+    "stored": "false"
+  },
+  "rows": [
+    {
+      "name": "折叠后可点性（按钮未被遮挡且在视口内）",
+      "ok": true,
+      "detail": "hit=svg.[object SVGAnimatedString] toggleRect={\"x\":18,\"y\":16,\"w\":28,\"h\":28}"
+    },
+    {
+      "name": "折叠后空间收住（首列 = 64px 且无横向溢出）",
+      "ok": true,
+      "detail": "width=64 scrollW=63 clientW=63"
+    },
+    {
+      "name": "折叠后品牌区隐藏",
+      "ok": true,
+      "detail": "display=none"
+    },
+    {
+      "name": "折叠后文字隐藏",
+      "ok": true,
+      "detail": "visible=0/35"
+    },
+    {
+      "name": "折叠后图标仍在（不能连图标一起藏）",
+      "ok": true,
+      "detail": "visible=16/42"
+    },
+    {
+      "name": "再次点击可还原",
+      "ok": true,
+      "detail": "collapsed=false width=200 expect=200"
+    },
+    {
+      "name": "还原后文字全部回来",
+      "ok": true,
+      "detail": "visible=9 expect=9"
+    }
+  ],
+  "fails": 0
+}

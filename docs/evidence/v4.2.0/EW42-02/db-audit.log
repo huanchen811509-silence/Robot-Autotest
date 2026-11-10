@@ -1,0 +1,17 @@
+[db-audit] robot@127.0.0.1:3306/robot_dev
+mysql: [Warning] Using a password on the command line interface can be insecure.
+  OK    业务表数 = 89（89）
+mysql: [Warning] Using a password on the command line interface can be insecure.
+  OK    缺审计四列的表的数量 = 0（0）
+mysql: [Warning] Using a password on the command line interface can be insecure.
+  OK    append-only 历史表都有 created_at（8）
+mysql: [Warning] Using a password on the command line interface can be insecure.
+  OK    主键不是单列 id 的表数量 = 0（0）
+mysql: [Warning] Using a password on the command line interface can be insecure.
+  OK    缺主键的表数量 = 0（0）
+mysql: [Warning] Using a password on the command line interface can be insecure.
+  OK    时间列不是 datetime(3) 的表数量 = 0（0）
+mysql: [Warning] Using a password on the command line interface can be insecure.
+  OK    非 utf8mb4 的表数量 = 0（0）
+--------------------------------------------------------------
+db-audit: PASS

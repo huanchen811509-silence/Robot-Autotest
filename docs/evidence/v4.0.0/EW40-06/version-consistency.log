@@ -1,0 +1,4 @@
+INFO  VERSION=3.11.0  build-info=3.11.0
+INFO  入口托管 CHANGELOG=3.11.0
+FAIL  缺 QA_E2E_PASSWORD，无法验证运行期版本（静态检查可用 --static）
+VERSION_CONSISTENCY FAIL (1 项)

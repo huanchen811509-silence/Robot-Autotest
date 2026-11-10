@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-09T10:55:31.656073+00:00",
+  "generatedAt": "2026-11-10T01:23:46.365570+00:00",
   "engine": "grounded-answer-factory",
   "realCli": false,
   "fakeCliContract": true,
   "entry": "http://127.0.0.1:8001",
   "projectId": 29,
-  "runId": "RUN-20261109030033-300000",
+  "runId": "RUN-20261110030056-fe0000",
   "checksPassed": 20,
   "checksTotal": 20,
   "scores": {
@@ -13,13 +13,13 @@
     "factTargetPct": 95.0,
     "severeHallucinations": 0,
     "citationCoveragePct": 100.0,
-    "firstTokenMs": 25,
+    "firstTokenMs": 29,
     "firstTokenBudgetMs": 3000
   },
   "cases": [
     {
       "case": "triage",
-      "elapsedMs": 23,
+      "elapsedMs": 38,
       "checks": [
         {
           "name": "triage.mode",
@@ -51,7 +51,7 @@
     },
     {
       "case": "narrative",
-      "elapsedMs": 25,
+      "elapsedMs": 27,
       "checks": [
         {
           "name": "narrative.conclusion",
@@ -78,7 +78,7 @@
     },
     {
       "case": "log_explain",
-      "elapsedMs": 20,
+      "elapsedMs": 27,
       "checks": [
         {
           "name": "log_explain.mode",
@@ -95,7 +95,7 @@
     },
     {
       "case": "refusal",
-      "elapsedMs": 16,
+      "elapsedMs": 22,
       "checks": [
         {
           "name": "refusal.mode",
@@ -112,7 +112,7 @@
     },
     {
       "case": "case_draft",
-      "elapsedMs": 26,
+      "elapsedMs": 23,
       "checks": [
         {
           "name": "case_draft.mode",
@@ -134,9 +134,9 @@
     },
     {
       "case": "stream",
-      "streamId": "11579fa1-3e3e-49c6-9b21-be24f578a9dd",
-      "elapsedMs": 75,
-      "firstTokenMs": 25,
+      "streamId": "7adc40b0-11da-4ed5-b3f5-1ae7649e8f6f",
+      "elapsedMs": 89,
+      "firstTokenMs": 29,
       "events": [
         "meta",
         "citations",
@@ -146,10 +146,10 @@
         "done"
       ],
       "done": {
-        "firstTokenMs": 0,
+        "mode": "NO_EVIDENCE",
+        "elapsedMs": 37,
         "citationCount": 0,
-        "elapsedMs": 36,
-        "mode": "NO_EVIDENCE"
+        "firstTokenMs": 0
       },
       "checks": [
         {
@@ -160,12 +160,12 @@
         {
           "name": "stream.first_token",
           "pass": true,
-          "detail": "firstDeltaMs=25 budget=3000"
+          "detail": "firstDeltaMs=29 budget=3000"
         },
         {
           "name": "stream.done",
           "pass": true,
-          "detail": "{\"firstTokenMs\": 0, \"citationCount\": 0, \"elapsedMs\": 36, \"mode\": \"NO_EVIDENCE\"}"
+          "detail": "{\"mode\": \"NO_EVIDENCE\", \"elapsedMs\": 37, \"citationCount\": 0, \"firstTokenMs\": 0}"
         },
         {
           "name": "stream.deltas",

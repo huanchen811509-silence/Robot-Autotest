@@ -1,0 +1,22 @@
+mysql: [Warning] Using a password on the command line interface can be insecure.
+[contract] api=http://127.0.0.1:8081 db=robot_dev project=29 code=qa-e2e-fixture root=/home/evergreen/robot-autotest/backend/workspace mode=export
+[contract] ---- export ----
+[PASS] E1 导出 PROJECT 返回 200
+[PASS] E1 包路径=项目 code（qa-e2e-fixture）
+[PASS] E1 报告含文件数（24）
+[PASS] E2 契约目录/文件齐全
+[PASS] E2 project.json granularity=project rootPath=null
+[PASS] E2 manifest 有签名（keyId=server-local-v1）
+[PASS] E2 包结构 + HMAC 机检通过
+[PASS] E3 改字节 → 预检 400（INVALID_ARGUMENT）
+[PASS] E3 改签名 → 预检 400（INVALID_ARGUMENT）
+[PASS] E4 越界 rootPath → 400
+mysql: [Warning] Using a password on the command line interface can be insecure.
+[PASS] E4 失败任务落 FAILED
+[PASS] E4 失败未破坏旧包
+[PASS] E4 无残留临时/回收目录
+mysql: [Warning] Using a password on the command line interface can be insecure.
+[PASS] E4 失败审计留痕
+[PASS] E5 viewer 可列出包（CASE:READ）
+[PASS] E5 非成员导出 403
+RESULT PASS passes=16 fails=0 skips=0

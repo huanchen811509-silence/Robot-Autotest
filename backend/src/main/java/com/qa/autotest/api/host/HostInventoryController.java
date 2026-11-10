@@ -57,7 +57,7 @@ public class HostInventoryController {
         return ApiResponse.ok(inventory.find(projectId, id));
     }
 
-    /** 显式触发采集。 */
+    /** 显式触发采集；远程主机必须带 credentialId 与 confirm=true（FR-v4.2-03）。 */
     @PostMapping("/collect")
     public ApiResponse<HostInventoryRecord> collect(@RequestBody CollectRequest request) {
         if (request == null || request.projectId() == null) {
@@ -65,7 +65,8 @@ public class HostInventoryController {
         }
         access.requireProjectAccess(request.projectId());
         return ApiResponse.ok(inventory.collect(request.projectId(), request.host(),
-                request.deviceId(), request.operatorId()));
+                request.deviceId(), request.operatorId(), request.username(), request.credentialId(),
+                Boolean.TRUE.equals(request.confirm())));
     }
 
     /**
@@ -80,7 +81,13 @@ public class HostInventoryController {
         return ApiResponse.ok(HostInventoryCollector.COMMANDS);
     }
 
-    /** @param operatorId 可选：不传则记为空（审计列可空，不猜操作人） */
-    public record CollectRequest(Long projectId, String host, Long deviceId, Long operatorId) {
+    /**
+     * @param operatorId   可选：不传则记为空（审计列可空，不猜操作人）
+     * @param username     远程 SSH 账号；不传则用凭据里登记的账号
+     * @param credentialId 远程采集必填：凭据库里的 SSH 口令/私钥（明文只在执行瞬间解密）
+     * @param confirm      远程采集必填 true：二次确认，避免误触把命令发到生产机器
+     */
+    public record CollectRequest(Long projectId, String host, Long deviceId, Long operatorId,
+                                 String username, Long credentialId, Boolean confirm) {
     }
 }

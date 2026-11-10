@@ -1,0 +1,725 @@
+{
+  "generatedAt": "2026-11-09T12:43:00.162Z",
+  "selfcheck": true,
+  "rail": 64,
+  "padRight": 28,
+  "browser": "HeadlessChrome/157.0.8103.38",
+  "snapshots": [
+    {
+      "label": "1024x768",
+      "innerWidth": 1024,
+      "docScrollW": 1024,
+      "bodyScrollW": 1024,
+      "main": {
+        "x": 200,
+        "y": 53,
+        "w": 824,
+        "h": 715
+      },
+      "mainScrollW": 814,
+      "mainClientW": 814,
+      "sideW": 200,
+      "padRight": "28px",
+      "shellCols": "200px 824px",
+      "collapsed": false,
+      "toggleRect": {
+        "x": 159,
+        "y": 19,
+        "w": 28,
+        "h": 28
+      },
+      "toggleCenter": {
+        "x": 173,
+        "y": 33
+      },
+      "toggleHit": true,
+      "hitClass": "[object SVGAnimatedString]",
+      "contentRightGap": 38
+    },
+    {
+      "label": "1280x800",
+      "innerWidth": 1280,
+      "docScrollW": 1280,
+      "bodyScrollW": 1280,
+      "main": {
+        "x": 200,
+        "y": 53,
+        "w": 1080,
+        "h": 747
+      },
+      "mainScrollW": 1070,
+      "mainClientW": 1070,
+      "sideW": 200,
+      "padRight": "28px",
+      "shellCols": "200px 1080px",
+      "collapsed": false,
+      "toggleRect": {
+        "x": 159,
+        "y": 19,
+        "w": 28,
+        "h": 28
+      },
+      "toggleCenter": {
+        "x": 173,
+        "y": 33
+      },
+      "toggleHit": true,
+      "hitClass": "[object SVGAnimatedString]",
+      "contentRightGap": 38
+    },
+    {
+      "label": "1440x900",
+      "innerWidth": 1440,
+      "docScrollW": 1440,
+      "bodyScrollW": 1440,
+      "main": {
+        "x": 200,
+        "y": 53,
+        "w": 1240,
+        "h": 847
+      },
+      "mainScrollW": 1230,
+      "mainClientW": 1230,
+      "sideW": 200,
+      "padRight": "28px",
+      "shellCols": "200px 1240px",
+      "collapsed": false,
+      "toggleRect": {
+        "x": 159,
+        "y": 19,
+        "w": 28,
+        "h": 28
+      },
+      "toggleCenter": {
+        "x": 173,
+        "y": 33
+      },
+      "toggleHit": true,
+      "hitClass": "[object SVGAnimatedString]",
+      "contentRightGap": 38
+    },
+    {
+      "label": "1920x1080",
+      "innerWidth": 1920,
+      "docScrollW": 1920,
+      "bodyScrollW": 1920,
+      "main": {
+        "x": 200,
+        "y": 53,
+        "w": 1720,
+        "h": 1027
+      },
+      "mainScrollW": 1710,
+      "mainClientW": 1710,
+      "sideW": 200,
+      "padRight": "28px",
+      "shellCols": "200px 1720px",
+      "collapsed": false,
+      "toggleRect": {
+        "x": 159,
+        "y": 19,
+        "w": 28,
+        "h": 28
+      },
+      "toggleCenter": {
+        "x": 173,
+        "y": 33
+      },
+      "toggleHit": true,
+      "hitClass": "[object SVGAnimatedString]",
+      "contentRightGap": 173
+    },
+    {
+      "label": "1440@125%(1152)",
+      "innerWidth": 1152,
+      "docScrollW": 1152,
+      "bodyScrollW": 1152,
+      "main": {
+        "x": 200,
+        "y": 53,
+        "w": 952,
+        "h": 667
+      },
+      "mainScrollW": 942,
+      "mainClientW": 942,
+      "sideW": 200,
+      "padRight": "28px",
+      "shellCols": "200px 952px",
+      "collapsed": false,
+      "toggleRect": {
+        "x": 159,
+        "y": 19,
+        "w": 28,
+        "h": 28
+      },
+      "toggleCenter": {
+        "x": 173,
+        "y": 33
+      },
+      "toggleHit": true,
+      "hitClass": "[object SVGAnimatedString]",
+      "contentRightGap": 38
+    },
+    {
+      "label": "1440@150%(960)",
+      "innerWidth": 960,
+      "docScrollW": 960,
+      "bodyScrollW": 960,
+      "main": {
+        "x": 200,
+        "y": 53,
+        "w": 760,
+        "h": 547
+      },
+      "mainScrollW": 750,
+      "mainClientW": 750,
+      "sideW": 200,
+      "padRight": "28px",
+      "shellCols": "200px 760px",
+      "collapsed": false,
+      "toggleRect": {
+        "x": 159,
+        "y": 19,
+        "w": 28,
+        "h": 28
+      },
+      "toggleCenter": {
+        "x": 173,
+        "y": 33
+      },
+      "toggleHit": true,
+      "hitClass": "[object SVGAnimatedString]",
+      "contentRightGap": 38
+    },
+    {
+      "label": "1920@125%(1536)",
+      "innerWidth": 1536,
+      "docScrollW": 1536,
+      "bodyScrollW": 1536,
+      "main": {
+        "x": 200,
+        "y": 53,
+        "w": 1336,
+        "h": 811
+      },
+      "mainScrollW": 1326,
+      "mainClientW": 1326,
+      "sideW": 200,
+      "padRight": "28px",
+      "shellCols": "200px 1336px",
+      "collapsed": false,
+      "toggleRect": {
+        "x": 159,
+        "y": 19,
+        "w": 28,
+        "h": 28
+      },
+      "toggleCenter": {
+        "x": 173,
+        "y": 33
+      },
+      "toggleHit": true,
+      "hitClass": "[object SVGAnimatedString]",
+      "contentRightGap": 38
+    },
+    {
+      "label": "1920@150%(1280)",
+      "innerWidth": 1280,
+      "docScrollW": 1280,
+      "bodyScrollW": 1280,
+      "main": {
+        "x": 200,
+        "y": 53,
+        "w": 1080,
+        "h": 667
+      },
+      "mainScrollW": 1070,
+      "mainClientW": 1070,
+      "sideW": 200,
+      "padRight": "28px",
+      "shellCols": "200px 1080px",
+      "collapsed": false,
+      "toggleRect": {
+        "x": 159,
+        "y": 19,
+        "w": 28,
+        "h": 28
+      },
+      "toggleCenter": {
+        "x": 173,
+        "y": 33
+      },
+      "toggleHit": true,
+      "hitClass": "[object SVGAnimatedString]",
+      "contentRightGap": 38
+    },
+    {
+      "label": "1024x768 collapsed",
+      "innerWidth": 1024,
+      "docScrollW": 1024,
+      "bodyScrollW": 1024,
+      "main": {
+        "x": 64,
+        "y": 53,
+        "w": 960,
+        "h": 715
+      },
+      "mainScrollW": 950,
+      "mainClientW": 950,
+      "sideW": 64,
+      "padRight": "28px",
+      "shellCols": "64px 960px",
+      "collapsed": true,
+      "toggleRect": {
+        "x": 18,
+        "y": 16,
+        "w": 28,
+        "h": 28
+      },
+      "toggleCenter": {
+        "x": 32,
+        "y": 30
+      },
+      "toggleHit": true,
+      "hitClass": "[object SVGAnimatedString]",
+      "contentRightGap": 38
+    },
+    {
+      "label": "1280x800 collapsed",
+      "innerWidth": 1280,
+      "docScrollW": 1280,
+      "bodyScrollW": 1280,
+      "main": {
+        "x": 64,
+        "y": 53,
+        "w": 1216,
+        "h": 747
+      },
+      "mainScrollW": 1206,
+      "mainClientW": 1206,
+      "sideW": 64,
+      "padRight": "28px",
+      "shellCols": "64px 1216px",
+      "collapsed": true,
+      "toggleRect": {
+        "x": 18,
+        "y": 16,
+        "w": 28,
+        "h": 28
+      },
+      "toggleCenter": {
+        "x": 32,
+        "y": 30
+      },
+      "toggleHit": true,
+      "hitClass": "[object SVGAnimatedString]",
+      "contentRightGap": 38
+    },
+    {
+      "label": "1440x900 collapsed",
+      "innerWidth": 1440,
+      "docScrollW": 1440,
+      "bodyScrollW": 1440,
+      "main": {
+        "x": 64,
+        "y": 53,
+        "w": 1376,
+        "h": 847
+      },
+      "mainScrollW": 1366,
+      "mainClientW": 1366,
+      "sideW": 64,
+      "padRight": "28px",
+      "shellCols": "64px 1376px",
+      "collapsed": true,
+      "toggleRect": {
+        "x": 18,
+        "y": 16,
+        "w": 28,
+        "h": 28
+      },
+      "toggleCenter": {
+        "x": 32,
+        "y": 30
+      },
+      "toggleHit": true,
+      "hitClass": "[object SVGAnimatedString]",
+      "contentRightGap": 38
+    },
+    {
+      "label": "1920x1080 collapsed",
+      "innerWidth": 1920,
+      "docScrollW": 1920,
+      "bodyScrollW": 1920,
+      "main": {
+        "x": 64,
+        "y": 53,
+        "w": 1856,
+        "h": 1027
+      },
+      "mainScrollW": 1846,
+      "mainClientW": 1846,
+      "sideW": 64,
+      "padRight": "28px",
+      "shellCols": "64px 1856px",
+      "collapsed": true,
+      "toggleRect": {
+        "x": 18,
+        "y": 16,
+        "w": 28,
+        "h": 28
+      },
+      "toggleCenter": {
+        "x": 32,
+        "y": 30
+      },
+      "toggleHit": true,
+      "hitClass": "[object SVGAnimatedString]",
+      "contentRightGap": 241
+    },
+    {
+      "label": "selfcheck-1024 collapsed",
+      "innerWidth": 1024,
+      "docScrollW": 1024,
+      "bodyScrollW": 1024,
+      "main": {
+        "x": 56,
+        "y": 53,
+        "w": 968,
+        "h": 715
+      },
+      "mainScrollW": 958,
+      "mainClientW": 958,
+      "sideW": 56,
+      "padRight": "4px",
+      "shellCols": "56px 968px",
+      "collapsed": true,
+      "toggleRect": {
+        "x": 14,
+        "y": 16,
+        "w": 28,
+        "h": 28
+      },
+      "toggleCenter": {
+        "x": 28,
+        "y": 30
+      },
+      "toggleHit": true,
+      "hitClass": "[object SVGAnimatedString]",
+      "contentRightGap": 14
+    }
+  ],
+  "rows": [
+    {
+      "name": "[1024x768] 右内边距=28px",
+      "ok": true,
+      "detail": "paddingRight=28px"
+    },
+    {
+      "name": "[1024x768] 内容右留白≥28px",
+      "ok": true,
+      "detail": "gap=38"
+    },
+    {
+      "name": "[1024x768] 整页无横滚",
+      "ok": true,
+      "detail": "docScrollW=1024 innerWidth=1024"
+    },
+    {
+      "name": "[1024x768] 工作区无横向溢出",
+      "ok": true,
+      "detail": "scrollW=814 clientW=814"
+    },
+    {
+      "name": "[1280x800] 右内边距=28px",
+      "ok": true,
+      "detail": "paddingRight=28px"
+    },
+    {
+      "name": "[1280x800] 内容右留白≥28px",
+      "ok": true,
+      "detail": "gap=38"
+    },
+    {
+      "name": "[1280x800] 整页无横滚",
+      "ok": true,
+      "detail": "docScrollW=1280 innerWidth=1280"
+    },
+    {
+      "name": "[1280x800] 工作区无横向溢出",
+      "ok": true,
+      "detail": "scrollW=1070 clientW=1070"
+    },
+    {
+      "name": "[1440x900] 右内边距=28px",
+      "ok": true,
+      "detail": "paddingRight=28px"
+    },
+    {
+      "name": "[1440x900] 内容右留白≥28px",
+      "ok": true,
+      "detail": "gap=38"
+    },
+    {
+      "name": "[1440x900] 整页无横滚",
+      "ok": true,
+      "detail": "docScrollW=1440 innerWidth=1440"
+    },
+    {
+      "name": "[1440x900] 工作区无横向溢出",
+      "ok": true,
+      "detail": "scrollW=1230 clientW=1230"
+    },
+    {
+      "name": "[1920x1080] 右内边距=28px",
+      "ok": true,
+      "detail": "paddingRight=28px"
+    },
+    {
+      "name": "[1920x1080] 内容右留白≥28px",
+      "ok": true,
+      "detail": "gap=173"
+    },
+    {
+      "name": "[1920x1080] 整页无横滚",
+      "ok": true,
+      "detail": "docScrollW=1920 innerWidth=1920"
+    },
+    {
+      "name": "[1920x1080] 工作区无横向溢出",
+      "ok": true,
+      "detail": "scrollW=1710 clientW=1710"
+    },
+    {
+      "name": "[1440@125%(1152)] 右内边距=28px",
+      "ok": true,
+      "detail": "paddingRight=28px"
+    },
+    {
+      "name": "[1440@125%(1152)] 内容右留白≥28px",
+      "ok": true,
+      "detail": "gap=38"
+    },
+    {
+      "name": "[1440@125%(1152)] 整页无横滚",
+      "ok": true,
+      "detail": "docScrollW=1152 innerWidth=1152"
+    },
+    {
+      "name": "[1440@125%(1152)] 工作区无横向溢出",
+      "ok": true,
+      "detail": "scrollW=942 clientW=942"
+    },
+    {
+      "name": "[1440@150%(960)] 右内边距=28px",
+      "ok": true,
+      "detail": "paddingRight=28px"
+    },
+    {
+      "name": "[1440@150%(960)] 内容右留白≥28px",
+      "ok": true,
+      "detail": "gap=38"
+    },
+    {
+      "name": "[1440@150%(960)] 整页无横滚",
+      "ok": true,
+      "detail": "docScrollW=960 innerWidth=960"
+    },
+    {
+      "name": "[1440@150%(960)] 工作区无横向溢出",
+      "ok": true,
+      "detail": "scrollW=750 clientW=750"
+    },
+    {
+      "name": "[1920@125%(1536)] 右内边距=28px",
+      "ok": true,
+      "detail": "paddingRight=28px"
+    },
+    {
+      "name": "[1920@125%(1536)] 内容右留白≥28px",
+      "ok": true,
+      "detail": "gap=38"
+    },
+    {
+      "name": "[1920@125%(1536)] 整页无横滚",
+      "ok": true,
+      "detail": "docScrollW=1536 innerWidth=1536"
+    },
+    {
+      "name": "[1920@125%(1536)] 工作区无横向溢出",
+      "ok": true,
+      "detail": "scrollW=1326 clientW=1326"
+    },
+    {
+      "name": "[1920@150%(1280)] 右内边距=28px",
+      "ok": true,
+      "detail": "paddingRight=28px"
+    },
+    {
+      "name": "[1920@150%(1280)] 内容右留白≥28px",
+      "ok": true,
+      "detail": "gap=38"
+    },
+    {
+      "name": "[1920@150%(1280)] 整页无横滚",
+      "ok": true,
+      "detail": "docScrollW=1280 innerWidth=1280"
+    },
+    {
+      "name": "[1920@150%(1280)] 工作区无横向溢出",
+      "ok": true,
+      "detail": "scrollW=1070 clientW=1070"
+    },
+    {
+      "name": "[1024x768 collapsed] 右内边距=28px",
+      "ok": true,
+      "detail": "paddingRight=28px"
+    },
+    {
+      "name": "[1024x768 collapsed] 内容右留白≥28px",
+      "ok": true,
+      "detail": "gap=38"
+    },
+    {
+      "name": "[1024x768 collapsed] 整页无横滚",
+      "ok": true,
+      "detail": "docScrollW=1024 innerWidth=1024"
+    },
+    {
+      "name": "[1024x768 collapsed] 工作区无横向溢出",
+      "ok": true,
+      "detail": "scrollW=950 clientW=950"
+    },
+    {
+      "name": "[1024x768 collapsed] 折叠窄轨=64px",
+      "ok": true,
+      "detail": "sideW=64"
+    },
+    {
+      "name": "[1024x768 collapsed] 折叠按钮命中自身",
+      "ok": true,
+      "detail": "hit=[object SVGAnimatedString]"
+    },
+    {
+      "name": "[1280x800 collapsed] 右内边距=28px",
+      "ok": true,
+      "detail": "paddingRight=28px"
+    },
+    {
+      "name": "[1280x800 collapsed] 内容右留白≥28px",
+      "ok": true,
+      "detail": "gap=38"
+    },
+    {
+      "name": "[1280x800 collapsed] 整页无横滚",
+      "ok": true,
+      "detail": "docScrollW=1280 innerWidth=1280"
+    },
+    {
+      "name": "[1280x800 collapsed] 工作区无横向溢出",
+      "ok": true,
+      "detail": "scrollW=1206 clientW=1206"
+    },
+    {
+      "name": "[1280x800 collapsed] 折叠窄轨=64px",
+      "ok": true,
+      "detail": "sideW=64"
+    },
+    {
+      "name": "[1280x800 collapsed] 折叠按钮命中自身",
+      "ok": true,
+      "detail": "hit=[object SVGAnimatedString]"
+    },
+    {
+      "name": "[1440x900 collapsed] 右内边距=28px",
+      "ok": true,
+      "detail": "paddingRight=28px"
+    },
+    {
+      "name": "[1440x900 collapsed] 内容右留白≥28px",
+      "ok": true,
+      "detail": "gap=38"
+    },
+    {
+      "name": "[1440x900 collapsed] 整页无横滚",
+      "ok": true,
+      "detail": "docScrollW=1440 innerWidth=1440"
+    },
+    {
+      "name": "[1440x900 collapsed] 工作区无横向溢出",
+      "ok": true,
+      "detail": "scrollW=1366 clientW=1366"
+    },
+    {
+      "name": "[1440x900 collapsed] 折叠窄轨=64px",
+      "ok": true,
+      "detail": "sideW=64"
+    },
+    {
+      "name": "[1440x900 collapsed] 折叠按钮命中自身",
+      "ok": true,
+      "detail": "hit=[object SVGAnimatedString]"
+    },
+    {
+      "name": "[1920x1080 collapsed] 右内边距=28px",
+      "ok": true,
+      "detail": "paddingRight=28px"
+    },
+    {
+      "name": "[1920x1080 collapsed] 内容右留白≥28px",
+      "ok": true,
+      "detail": "gap=241"
+    },
+    {
+      "name": "[1920x1080 collapsed] 整页无横滚",
+      "ok": true,
+      "detail": "docScrollW=1920 innerWidth=1920"
+    },
+    {
+      "name": "[1920x1080 collapsed] 工作区无横向溢出",
+      "ok": true,
+      "detail": "scrollW=1846 clientW=1846"
+    },
+    {
+      "name": "[1920x1080 collapsed] 折叠窄轨=64px",
+      "ok": true,
+      "detail": "sideW=64"
+    },
+    {
+      "name": "[1920x1080 collapsed] 折叠按钮命中自身",
+      "ok": true,
+      "detail": "hit=[object SVGAnimatedString]"
+    },
+    {
+      "name": "[selfcheck-1024 collapsed] 右内边距=28px",
+      "ok": false,
+      "detail": "paddingRight=4px"
+    },
+    {
+      "name": "[selfcheck-1024 collapsed] 内容右留白≥28px",
+      "ok": false,
+      "detail": "gap=14"
+    },
+    {
+      "name": "[selfcheck-1024 collapsed] 整页无横滚",
+      "ok": true,
+      "detail": "docScrollW=1024 innerWidth=1024"
+    },
+    {
+      "name": "[selfcheck-1024 collapsed] 工作区无横向溢出",
+      "ok": true,
+      "detail": "scrollW=958 clientW=958"
+    },
+    {
+      "name": "[selfcheck-1024 collapsed] 折叠窄轨=64px",
+      "ok": false,
+      "detail": "sideW=56"
+    },
+    {
+      "name": "[selfcheck-1024 collapsed] 折叠按钮命中自身",
+      "ok": true,
+      "detail": "hit=[object SVGAnimatedString]"
+    }
+  ],
+  "fails": 3
+}

@@ -1,0 +1,96 @@
+{
+  "generatedAt" : "2026-11-09T20:22:46.702339070+08:00",
+  "maskedToken" : "<redacted>",
+  "source" : "SecretRedactorEvidenceTest",
+  "cases" : [ {
+    "id" : "kv-password",
+    "class" : "kv",
+    "surface" : "run-log",
+    "input" : "mysql -uroot password=hunter2 -e 'select 1'",
+    "secret" : "hunter2",
+    "masked" : "mysql -uroot password=<redacted> -e 'select 1'",
+    "leakedBefore" : true,
+    "leakedAfter" : false,
+    "innocent" : false
+  }, {
+    "id" : "kv-json",
+    "class" : "kv",
+    "surface" : "api-json",
+    "input" : "{\"token\":\"tk_9f8e7d6c\"}",
+    "secret" : "tk_9f8e7d6c",
+    "masked" : "{\"token\":\"<redacted>\"}",
+    "leakedBefore" : true,
+    "leakedAfter" : false,
+    "innocent" : false
+  }, {
+    "id" : "bearer",
+    "class" : "bearer",
+    "surface" : "http",
+    "input" : "Authorization: Bearer eyJhbGciOi.eyJzdWIi.c2ln",
+    "secret" : "eyJhbGciOi.eyJzdWIi.c2ln",
+    "masked" : "Authorization: Bearer <redacted>",
+    "leakedBefore" : true,
+    "leakedAfter" : false,
+    "innocent" : false
+  }, {
+    "id" : "url-embedded",
+    "class" : "url",
+    "surface" : "report",
+    "input" : "jdbc:mysql://root:s3cretP@10.0.0.1:3306/qa",
+    "secret" : "s3cretP",
+    "masked" : "jdbc:mysql://root:<redacted>@10.0.0.1:3306/qa",
+    "leakedBefore" : true,
+    "leakedAfter" : false,
+    "innocent" : false
+  }, {
+    "id" : "cli-user",
+    "class" : "cli",
+    "surface" : "console",
+    "input" : "robot -u admin:Adm1nPw -t smoke.robot",
+    "secret" : "Adm1nPw",
+    "masked" : "robot -u admin:<redacted> -t smoke.robot",
+    "leakedBefore" : true,
+    "leakedAfter" : false,
+    "innocent" : false
+  }, {
+    "id" : "cli-sshpass",
+    "class" : "cli",
+    "surface" : "console",
+    "input" : "sshpass -p Tp9xQ ssh root@10.0.0.1",
+    "secret" : "Tp9xQ",
+    "masked" : "sshpass -p <redacted> ssh root@10.0.0.1",
+    "leakedBefore" : true,
+    "leakedAfter" : false,
+    "innocent" : false
+  }, {
+    "id" : "cli-long-opt",
+    "class" : "cli",
+    "surface" : "console",
+    "input" : "mysql --password=Pg9wX -h 10.0.0.2",
+    "secret" : "Pg9wX",
+    "masked" : "mysql --password=<redacted> -h 10.0.0.2",
+    "leakedBefore" : true,
+    "leakedAfter" : false,
+    "innocent" : false
+  }, {
+    "id" : "ok-ssh-port",
+    "class" : "innocent",
+    "surface" : "console",
+    "input" : "ssh -p 22 -u root@10.0.0.1 uptime",
+    "secret" : "",
+    "masked" : "ssh -p 22 -u root@10.0.0.1 uptime",
+    "leakedBefore" : false,
+    "leakedAfter" : false,
+    "innocent" : true
+  }, {
+    "id" : "ok-rf-variable",
+    "class" : "innocent",
+    "surface" : "console",
+    "input" : "robot --variable TIMEOUT:30s smoke.robot",
+    "secret" : "",
+    "masked" : "robot --variable TIMEOUT:30s smoke.robot",
+    "leakedBefore" : false,
+    "leakedAfter" : false,
+    "innocent" : true
+  } ]
+}

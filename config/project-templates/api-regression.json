@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "1.0",
+  "key": "api-regression",
+  "nameKey": "projectWizard.templates.api.name",
+  "descKey": "projectWizard.templates.api.desc",
+  "testKernel": "robot",
+  "visibility": "project",
+  "codePrefix": "API",
+  "defaultRoleCode": "engineer",
+  "tags": ["api", "regression"]
+}

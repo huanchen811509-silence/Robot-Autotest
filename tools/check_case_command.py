@@ -69,7 +69,99 @@ STATIC_CHECKS = [
      ["commandText", "reports.command.label"], "打印页命令列"),
     ("frontend/src/locales/zh-CN.ts", ["notCollected", "本用例未下发外部命令"], "中文文案"),
     ("frontend/src/locales/en-US.ts", ["notCollected", "No external command"], "英文文案"),
+    # v4.0：全表面脱敏（FR-v4.0-01）。规则只允许一处，四个写入面只做接入。
+    ("backend/src/main/java/com/qa/autotest/common/security/SecretRedactor.java",
+     ["MASK", "redact(", "hasLeak(", "assertClean("], "唯一脱敏规则源"),
+    ("backend/src/main/java/com/qa/autotest/application/execution/EvidenceLogWriter.java",
+     ["SecretRedactor"], "运行日志脱敏接入"),
+    ("backend/src/main/java/com/qa/autotest/application/report/ReportViewRenderer.java",
+     ["SecretRedactor"], "报告视图脱敏接入"),
+    ("backend/src/main/java/com/qa/autotest/application/report/ReportExportService.java",
+     ["SecretRedactor", "assertNoSecrets"], "导出前兜底阻断"),
+    ("backend/src/main/java/com/qa/autotest/application/iam/AuditService.java",
+     ["SecretRedactor"], "审计脱敏接入"),
 ]
+
+# 全表面脱敏的证据（FR-v4.0-01 / TC-v4.0-03）。三类写真 + 不误伤样本由
+# SecretRedactorEvidenceTest 产出，scripts/redaction-evidence.sh 拷进 docs。
+V40_EVIDENCE = ROOT / "docs/evidence/v4.0.0/EW40-01/redaction-cases.json"
+REDACTION_CLASSES = ["kv", "bearer", "url", "cli"]
+SECRET_WORDS = ("password", "passwd", "bearer", "token", "secret")
+SECRET_SOURCE = "backend/src/main/java/com/qa/autotest/common/security/SecretRedactor.java"
+
+
+def check_single_source() -> list[str]:
+    """规则只能有一份：任何其他 Java 源再写凭据正则，迟早与 SecretRedactor 漂移。
+
+    判据用「Pattern.compile 行里出现凭据关键词」这条窄规则，宁窄不宽：
+    扫全量源码找 `password` 会命中字段名、注释与 SQL，恒红反而没人看。
+    """
+    problems: list[str] = []
+    base = ROOT / "backend/src/main/java"
+    for path in base.rglob("*.java"):
+        rel = path.relative_to(ROOT).as_posix()
+        if rel == SECRET_SOURCE:
+            continue
+        try:
+            lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+        except OSError:
+            continue
+        for no, line in enumerate(lines, 1):
+            if "Pattern.compile" not in line:
+                continue
+            low = line.lower()
+            if any(word in low for word in SECRET_WORDS):
+                problems.append(f"{rel}:{no} 绕过 SecretRedactor 自写凭据正则：{line.strip()[:80]}")
+    return problems
+
+
+def check_redaction(payload: dict) -> list[str]:
+    """全表面脱敏证据（TC-v4.0-03）：三类写真必脱敏、不误伤样本必原样保留。"""
+    problems: list[str] = []
+    if payload.get("maskedToken") != "<redacted>":
+        problems.append(f"证据里的占位符与实现不一致：{payload.get('maskedToken')!r}")
+
+    cases = payload.get("cases") or []
+    if not cases:
+        problems.append("脱敏证据里没有任何样本")
+        return problems
+
+    classes = {case.get("class") for case in cases}
+    for need in REDACTION_CLASSES:
+        if need not in classes:
+            problems.append(f"缺少 {need} 类脱敏样本（三类写法 + 命令行都要有）")
+
+    innocents = [case for case in cases if case.get("innocent")]
+    if len(innocents) < 2:
+        problems.append(f"不误伤样本 {len(innocents)} 条 < 2（正常命令被误脱敏无法被发现）")
+
+    for case in cases:
+        cid = case.get("id") or "<无 id>"
+        inp = case.get("input") or ""
+        masked = case.get("masked") or ""
+        if not inp:
+            problems.append(f"{cid} 没有原文样本")
+            continue
+        if case.get("innocent"):
+            if case.get("leakedBefore") or case.get("leakedAfter"):
+                problems.append(f"{cid} 正常命令被判为含凭据（误伤）")
+            if masked != inp:
+                problems.append(f"{cid} 正常命令被改动：{masked!r}")
+            continue
+        secret = case.get("secret") or ""
+        if not secret:
+            problems.append(f"{cid} 未给出明文口令，无法证明真的脱敏")
+        if not case.get("leakedBefore"):
+            problems.append(f"{cid} 原文未被判为含凭据（样本本身无效）")
+        if case.get("leakedAfter"):
+            problems.append(f"{cid} 脱敏后仍被判为含凭据")
+        if secret and secret in masked:
+            problems.append(f"{cid} 脱敏结果仍含口令原文")
+        if masked == inp:
+            problems.append(f"{cid} 脱敏前后无变化")
+        if not masked.count("<redacted>"):
+            problems.append(f"{cid} 没有使用统一占位符 <redacted>")
+    return problems
 
 
 def check_static() -> list[str]:
@@ -206,6 +298,54 @@ def self_check() -> int:
         else:
             print("  SELFCHECK 静态缺片段: RED（符合预期）")
 
+    # 脱敏判据负向自证（TC-v4.0-03）：干净证据必须绿，漏脱敏必须红。
+    good_redaction = {
+        "maskedToken": "<redacted>",
+        "cases": [
+            {"id": "kv", "class": "kv", "input": "password=hunter2", "secret": "hunter2",
+             "masked": "password=<redacted>", "leakedBefore": True, "leakedAfter": False,
+             "innocent": False},
+            {"id": "bearer", "class": "bearer", "input": "Authorization: Bearer tk.abc",
+             "secret": "tk.abc", "masked": "Authorization: Bearer <redacted>",
+             "leakedBefore": True, "leakedAfter": False, "innocent": False},
+            {"id": "url", "class": "url", "input": "mysql://root:pw@h/db", "secret": "pw",
+             "masked": "mysql://root:<redacted>@h/db", "leakedBefore": True,
+             "leakedAfter": False, "innocent": False},
+            {"id": "cli", "class": "cli", "input": "sshpass -p pw ssh h", "secret": "pw",
+             "masked": "sshpass -p <redacted> ssh h", "leakedBefore": True,
+             "leakedAfter": False, "innocent": False},
+            {"id": "ok-port", "class": "innocent", "input": "ssh -p 22 -u root h",
+             "secret": "", "masked": "ssh -p 22 -u root h", "leakedBefore": False,
+             "leakedAfter": False, "innocent": True},
+            {"id": "ok-var", "class": "innocent",
+             "input": "robot --variable TIMEOUT:30s a.robot", "secret": "",
+             "masked": "robot --variable TIMEOUT:30s a.robot", "leakedBefore": False,
+             "leakedAfter": False, "innocent": True},
+        ],
+    }
+    bad_residual = json.loads(json.dumps(good_redaction))
+    bad_residual["cases"][0]["masked"] = "password=hunter2"
+    bad_residual["cases"][0]["leakedAfter"] = True
+    bad_missing_class = json.loads(json.dumps(good_redaction))
+    bad_missing_class["cases"] = [
+        case for case in bad_missing_class["cases"] if case["class"] != "url"]
+    bad_overmask = json.loads(json.dumps(good_redaction))
+    bad_overmask["cases"][4]["masked"] = "ssh -p <redacted> -u root h"
+
+    for label, payload, expect_pass in [
+        ("脱敏干净证据", good_redaction, True),
+        ("脱敏后残留口令", bad_residual, False),
+        ("缺少 URL 类样本", bad_missing_class, False),
+        ("正常命令被误脱敏", bad_overmask, False),
+    ]:
+        problems = check_redaction(payload)
+        ok = not problems
+        if ok == expect_pass:
+            print(f"  SELFCHECK {label}: {'PASS' if ok else 'RED'}（符合预期）")
+        else:
+            print(f"  SELFCHECK {label}: 不符合预期，problems={problems}")
+            fails += 1
+
     print(f"SELFCHECK_RESULT FAILS={fails}")
     return 1 if fails else 0
 
@@ -220,6 +360,7 @@ def main() -> int:
         return self_check()
 
     problems = check_static()
+    problems.extend(check_single_source())
 
     payload = load_evidence(Path(args.evidence))
     if payload is None:
@@ -227,6 +368,13 @@ def main() -> int:
                         "（先跑 tools/case_command_report.py 取真实 run 数据）")
     else:
         problems.extend(check_evidence(payload))
+
+    redaction = load_evidence(V40_EVIDENCE)
+    if redaction is None:
+        problems.append(f"脱敏证据缺失或不可解析：{V40_EVIDENCE}"
+                        "（先跑 scripts/redaction-evidence.sh 重新取证）")
+    else:
+        problems.extend(check_redaction(redaction))
 
     if problems:
         print("CASE_COMMAND FAIL")

@@ -80,6 +80,13 @@ export const NAVIGATION: NavNode[] = [
         path: '/workbench',
       },
       {
+        // v4.1 / FR-v4.1-05：项目工作区导出 / 导入 / 任务中心。
+        key: 'workbench-workspace',
+        labelKey: 'menu.projectWorkspace',
+        icon: 'download',
+        path: '/workspace',
+      },
+      {
         key: 'workbench-board',
         labelKey: 'menu.overview',
         icon: 'reports',

@@ -1,0 +1,304 @@
+{
+  "at": "2026-11-09T15:39:26.011Z",
+  "app": "http://localhost:8001",
+  "cdp": "http://127.0.0.1:9222",
+  "wizard": {
+    "at": "2026-11-09T15:39:26.012Z",
+    "checks": {
+      "admin-five-steps": true,
+      "four-templates": true,
+      "template-required": true,
+      "keyboard-select": true,
+      "template-single-select": true,
+      "code-required": true,
+      "template-defaults": true,
+      "back-keeps-input": true,
+      "member-added": true,
+      "create-success": true
+    },
+    "fails": [],
+    "login": {
+      "ok": true,
+      "user": "qa-e2e-admin",
+      "roles": [
+        "admin"
+      ]
+    },
+    "steps": {
+      "count": 5,
+      "labels": [
+        "1模板",
+        "2基本信息",
+        "3运行设置",
+        "4成员",
+        "5确认"
+      ],
+      "progress": "第 1/5 步",
+      "cards": [
+        {
+          "name": "空白项目",
+          "meta": "Robot Framework · 私有（仅成员）",
+          "pressed": "false"
+        },
+        {
+          "name": "接口回归",
+          "meta": "Robot Framework · 项目内公开",
+          "pressed": "false"
+        },
+        {
+          "name": "Web UI",
+          "meta": "Robot Framework · 项目内公开",
+          "pressed": "false"
+        },
+        {
+          "name": "pytest 服务",
+          "meta": "pytest · 私有（仅成员）",
+          "pressed": "false"
+        }
+      ],
+      "theme": "dark",
+      "lang": "zh-CN"
+    },
+    "noTemplateMessage": "请先选择一个模板",
+    "keyboard": {
+      "focusedIndex": 2,
+      "selectedIndex": 2,
+      "pressed": [
+        "false",
+        "false",
+        "true",
+        "false"
+      ]
+    },
+    "selected": {
+      "selectedCount": 1,
+      "pressed": [
+        "false",
+        "true",
+        "false",
+        "false"
+      ]
+    },
+    "basicsEmptyMessage": "请填写项目代号",
+    "form": {
+      "code": "W41E2E-769631",
+      "name": "W41 向导探针 W41E2E-769631"
+    },
+    "runtimeDefaults": {
+      "kernel": [
+        "robot",
+        "project"
+      ]
+    },
+    "backToBasics": {
+      "code": "W41E2E-769631",
+      "name": "W41 向导探针 W41E2E-769631",
+      "activeStep": "2基本信息"
+    },
+    "memberPick": {
+      "value": "18",
+      "label": "HTTP E2E nobody"
+    },
+    "members": {
+      "picked": [
+        "HTTP E2E nobody测试工程师移除"
+      ]
+    },
+    "review": [
+      {
+        "k": "项目代号",
+        "v": "W41E2E-769631"
+      },
+      {
+        "k": "项目名称",
+        "v": "W41 向导探针 W41E2E-769631"
+      },
+      {
+        "k": "说明",
+        "v": "CDP 向导探针创建的临时项目"
+      },
+      {
+        "k": "测试内核",
+        "v": "Robot Framework"
+      },
+      {
+        "k": "可见性",
+        "v": "项目内公开"
+      },
+      {
+        "k": "成员（可选）",
+        "v": "HTTP E2E nobody(测试工程师)"
+      }
+    ],
+    "progressAtReview": "第 5/5 步",
+    "created": true,
+    "result": {
+      "title": "项目已创建",
+      "hint": "成员添加失败会在下方逐条列出，不影响项目本身。",
+      "warnings": [],
+      "projectId": "85",
+      "beforeProjectId": "29"
+    },
+    "code": "W41E2E-769631",
+    "projectId": "85"
+  },
+  "viewerWizard": {
+    "at": "2026-11-09T15:39:31.919Z",
+    "checks": {
+      "viewer-four-steps": true,
+      "viewer-no-members-step": true,
+      "viewer-no-member-form": true
+    },
+    "fails": [],
+    "login": {
+      "ok": true,
+      "user": "qa-e2e-viewer",
+      "roles": []
+    },
+    "steps": {
+      "count": 4,
+      "labels": [
+        "1模板",
+        "2基本信息",
+        "3运行设置",
+        "4确认"
+      ],
+      "progress": "第 1/4 步",
+      "memberForm": false,
+      "roles": ""
+    }
+  },
+  "workspace": {
+    "at": "2026-11-09T15:39:34.440Z",
+    "checks": {
+      "three-cards": true,
+      "granularity-three": true,
+      "strategy-three": true,
+      "bundles-listed": true,
+      "retry-only-failed": true,
+      "no-raw-i18n-key": true,
+      "dir-reveals-root": true,
+      "project-hides-root": true,
+      "load-bundle": true,
+      "import-gated": true,
+      "preflight-report": true,
+      "quarantine-gate": true,
+      "import-enabled-after-ok": true,
+      "retry-entry-works": true,
+      "labels-present": true
+    },
+    "fails": [],
+    "login": {
+      "ok": true,
+      "user": "qa-e2e-admin",
+      "roles": [
+        "admin"
+      ]
+    },
+    "layout": {
+      "cards": 3,
+      "granularityOptions": [
+        "PROJECT",
+        "DIR",
+        "FILE"
+      ],
+      "strategyOptions": [
+        "SKIP",
+        "OVERWRITE",
+        "RENAME"
+      ],
+      "bundleRows": 1,
+      "firstBundle": {
+        "cells": [
+          "qa-e2e-fixture",
+          "project",
+          "11/9/2026, 11:19:12 PM",
+          "75.2 KB",
+          "24",
+          "已签名",
+          "载入"
+        ],
+        "badgeClass": "badge badge-ok",
+        "loadButton": "载入"
+      },
+      "jobRows": 20,
+      "jobStatuses": [
+        "失败",
+        "失败",
+        "失败",
+        "失败",
+        "失败",
+        "失败",
+        "SUCCESS",
+        "SUCCESS",
+        "SUCCESS",
+        "失败",
+        "失败",
+        "SUCCESS",
+        "SUCCESS",
+        "SUCCESS",
+        "SUCCESS",
+        "SUCCESS",
+        "失败",
+        "SUCCESS",
+        "SUCCESS",
+        "SUCCESS"
+      ],
+      "retryButtons": 9,
+      "failedRows": 9,
+      "failedRowsWithRetry": 9,
+      "rawKeyText": false
+    },
+    "dirMode": {
+      "rootInput": true,
+      "placeholder": "例如 cases/login.robot"
+    },
+    "projectMode": {
+      "rootInput": false
+    },
+    "loadedBundle": {
+      "value": "qa-e2e-fixture",
+      "reportVisible": false
+    },
+    "importDisabledBefore": true,
+    "preflight": {
+      "badge": "可导入",
+      "badgeClass": "badge badge-ok",
+      "counts": [
+        "错误码: OK",
+        "导入完成",
+        "0 导入 / 494 跳过 / 2 隔离",
+        "第 11 行：Robot Evaluate 可执行内联 Python",
+        "第 9 行：Robot Evaluate 可执行内联 Python"
+      ],
+      "itemRows": 496,
+      "quarantine": 2,
+      "confirmCheckbox": true,
+      "bodyText": "预检 / 导入报告 可导入错误码: OK导入完成0 导入 / 494 跳过 / 2 隔离类别键动作原因FILEexamples/01_quick_check.robot隔离命中可疑脚本，已隔离；确认后可重新导入FILEexamples/02_list_ops.robot跳过同路径已存在（策略 SKIP）FILEexamples/03_math.robot隔离命中可疑脚本，已隔离；确认后可重新导入FILEexamples/04_string_ops.robot跳过同路径已存在（策略 SKIP）FILEexamples/05_dict_ops.robot跳过同路径已存在（策略 SKIP）FILEexamples/06_timing.robot跳过同路径已存在（策略 SKIP）FILEguard.robot跳过同路径已存在（策略 SKIP）FILEqa-e2e/edt09-save-chain."
+    },
+    "importEnabledAfter": false,
+    "retryClicked": {
+      "status": "失败",
+      "id": "84"
+    },
+    "retryOutcome": {
+      "message": null,
+      "reportBadge": "可导入",
+      "jobRows": 20,
+      "errorLine": "路径含非法段: ../x技术详情INVALID_ARGUMENT (40001)"
+    },
+    "retryRowDelta": 0,
+    "a11y": {
+      "htmlLang": "zh-CN",
+      "labelledSelects": true,
+      "labelledInputs": true,
+      "tableHeaders": [
+        7,
+        4,
+        7
+      ]
+    }
+  }
+}
+WIZARD_PROJECT code=W41E2E-769631 id=85
+W41_PROBE PASS

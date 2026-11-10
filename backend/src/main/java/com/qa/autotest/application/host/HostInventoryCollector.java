@@ -72,23 +72,31 @@ public class HostInventoryCollector {
     }
 
     public HostInventory collect(String host, Long deviceId) {
+        return collect(host, deviceId, null);
+    }
+
+    /**
+     * 采集清单（FR-v4.2-03）：{@code access} 为 null 表示平台本机（不需要凭据），
+     * 非 null 表示远程主机（凭据已在服务层解密并校验过权限/二次确认）。
+     */
+    public HostInventory collect(String host, Long deviceId, HostAccess access) {
         Instant started = Instant.now();
         List<HostInventoryItem> items = new ArrayList<>();
-        items.add(os(host));
-        items.add(kernel(host));
-        items.add(cpu(host));
-        items.add(memory(host));
-        items.add(disk(host));
-        items.add(gpu(host));
-        items.add(nic(host));
-        items.add(ip(host));
-        items.add(roce(host));
-        items.add(route(host));
+        items.add(os(host, access));
+        items.add(kernel(host, access));
+        items.add(cpu(host, access));
+        items.add(memory(host, access));
+        items.add(disk(host, access));
+        items.add(gpu(host, access));
+        items.add(nic(host, access));
+        items.add(ip(host, access));
+        items.add(roce(host, access));
+        items.add(route(host, access));
         return new HostInventory(host, deviceId, started, HostInventory.statusOf(items), items);
     }
 
-    private HostCommandRunner.Outcome run(String host, String category) {
-        return runner.run(host, COMMANDS.get(category), TIMEOUT);
+    private HostCommandRunner.Outcome run(String host, String category, HostAccess access) {
+        return runner.run(host, COMMANDS.get(category), TIMEOUT, access);
     }
 
     private HostInventoryItem item(String host, String category, HostCommandRunner.Outcome out,
@@ -105,33 +113,33 @@ public class HostInventoryCollector {
                 Instant.now(), parsed);
     }
 
-    private HostInventoryItem os(String host) {
-        HostCommandRunner.Outcome out = run(host, "OS");
+    private HostInventoryItem os(String host, HostAccess access) {
+        HostCommandRunner.Outcome out = run(host, "OS", access);
         return item(host, "OS", out, parseOs(out.stdout()));
     }
 
-    private HostInventoryItem kernel(String host) {
-        HostCommandRunner.Outcome out = run(host, "KERNEL");
+    private HostInventoryItem kernel(String host, HostAccess access) {
+        HostCommandRunner.Outcome out = run(host, "KERNEL", access);
         return item(host, "KERNEL", out, parseKernel(out.stdout()));
     }
 
-    private HostInventoryItem cpu(String host) {
-        HostCommandRunner.Outcome out = run(host, "CPU");
+    private HostInventoryItem cpu(String host, HostAccess access) {
+        HostCommandRunner.Outcome out = run(host, "CPU", access);
         return item(host, "CPU", out, parseCpu(out.stdout()));
     }
 
-    private HostInventoryItem memory(String host) {
-        HostCommandRunner.Outcome out = run(host, "MEMORY");
+    private HostInventoryItem memory(String host, HostAccess access) {
+        HostCommandRunner.Outcome out = run(host, "MEMORY", access);
         return item(host, "MEMORY", out, parseMemory(out.stdout()));
     }
 
-    private HostInventoryItem disk(String host) {
-        HostCommandRunner.Outcome out = run(host, "DISK");
+    private HostInventoryItem disk(String host, HostAccess access) {
+        HostCommandRunner.Outcome out = run(host, "DISK", access);
         return item(host, "DISK", out, parseDisk(out.stdout()));
     }
 
-    private HostInventoryItem gpu(String host) {
-        HostCommandRunner.Outcome out = run(host, "GPU");
+    private HostInventoryItem gpu(String host, HostAccess access) {
+        HostCommandRunner.Outcome out = run(host, "GPU", access);
         Object parsed = parseGpu(out.stdout());
         if (parsed == null && out.ok()) {
             // nvidia-smi 退出 0 但没输出 = 机器上没有 GPU，这不是解析失败
@@ -145,18 +153,18 @@ public class HostInventoryCollector {
         return result;
     }
 
-    private HostInventoryItem nic(String host) {
-        HostCommandRunner.Outcome out = run(host, "NIC");
+    private HostInventoryItem nic(String host, HostAccess access) {
+        HostCommandRunner.Outcome out = run(host, "NIC", access);
         return item(host, "NIC", out, parseNic(out.stdout()));
     }
 
-    private HostInventoryItem ip(String host) {
-        HostCommandRunner.Outcome out = run(host, "IP");
+    private HostInventoryItem ip(String host, HostAccess access) {
+        HostCommandRunner.Outcome out = run(host, "IP", access);
         return item(host, "IP", out, parseIp(out.stdout()));
     }
 
-    private HostInventoryItem roce(String host) {
-        HostCommandRunner.Outcome out = run(host, "ROCE");
+    private HostInventoryItem roce(String host, HostAccess access) {
+        HostCommandRunner.Outcome out = run(host, "ROCE", access);
         Object parsed = parseRoce(out.stdout());
         HostInventoryItem result = item(host, "ROCE", out, parsed);
         if (!result.collected() && (parsed == null || ((List<?>) parsed).isEmpty())) {
@@ -166,8 +174,8 @@ public class HostInventoryCollector {
         return result;
     }
 
-    private HostInventoryItem route(String host) {
-        HostCommandRunner.Outcome out = run(host, "ROUTE");
+    private HostInventoryItem route(String host, HostAccess access) {
+        HostCommandRunner.Outcome out = run(host, "ROUTE", access);
         return item(host, "ROUTE", out, parseRoute(out.stdout()));
     }
 

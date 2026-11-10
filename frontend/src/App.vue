@@ -26,7 +26,6 @@ import AppIcon from '@/components/AppIcon.vue'
 import AppLogo from '@/components/AppLogo.vue'
 import AppHeader from '@/components/AppHeader.vue'
 import AppNav from '@/components/AppNav.vue'
-import AppearanceDialog from '@/components/AppearanceDialog.vue'
 import ConfirmModal from '@/components/ConfirmModal.vue'
 import CommandPalette from '@/components/CommandPalette.vue'
 import ShortcutPanel from '@/components/ShortcutPanel.vue'
@@ -60,7 +59,19 @@ theme.init()
 accent.init()
 density.init()
 
-const appearanceOpen = ref(false)
+/**
+ * FR-v4.0-02：浮层一律从顶栏下沿开始，遮罩不压顶栏。
+ *
+ * 顶栏高度由内容决定（按钮 + padding），不能在 CSS 里猜一个 56/64 的魔数。
+ * 这里量出真实高度写进 `--header-h`，SidePanel / CommandPalette / NModal 共用。
+ * 顶栏不可见（登录页 / 打印页）时写 0，模态遮罩恢复全屏。
+ */
+let headerObserver: ResizeObserver | null = null
+function syncHeaderHeight(): void {
+  const header = document.querySelector<HTMLElement>('.app-header')
+  const height = header ? Math.round(header.getBoundingClientRect().height) : 0
+  document.documentElement.style.setProperty('--header-h', `${height}px`)
+}
 
 // 两级导航：结构在 config/navigation.ts，这里只管「按能力过滤 + 展开态」。
 // v2.0 起不再是单一 adminOnly：四角色能力集决定入口显隐，越权仍由后端 403 兜底。
@@ -109,6 +120,23 @@ async function logout(): Promise<void> {
 
 onMounted(() => window.addEventListener('keydown', onGlobalKeydown))
 onUnmounted(() => window.removeEventListener('keydown', onGlobalKeydown))
+
+onMounted(() => {
+  syncHeaderHeight()
+  const header = document.querySelector<HTMLElement>('.app-header')
+  if (header && typeof ResizeObserver !== 'undefined') {
+    headerObserver = new ResizeObserver(syncHeaderHeight)
+    headerObserver.observe(header)
+  } else {
+    window.addEventListener('resize', syncHeaderHeight)
+  }
+})
+onUnmounted(() => {
+  headerObserver?.disconnect()
+  headerObserver = null
+  window.removeEventListener('resize', syncHeaderHeight)
+  document.documentElement.style.removeProperty('--header-h')
+})
 
 // FR-3.2-06：首屏稳定后空闲预取高频路由，路由切换不再等下载
 onMounted(() => {
@@ -210,7 +238,6 @@ onMounted(async () => {
         :ai-enabled="aiEnabled"
         @open-palette="paletteOpen = true"
         @open-shortcuts="shortcutsOpen = true"
-        @open-appearance="appearanceOpen = true"
         @logout="logout"
       />
 
@@ -222,7 +249,6 @@ onMounted(async () => {
         </section>
       </main>
 
-      <AppearanceDialog v-model:open="appearanceOpen" />
       <ConfirmModal />
       <CommandPalette v-model:open="paletteOpen" />
       <ShortcutPanel v-model:open="shortcutsOpen" />

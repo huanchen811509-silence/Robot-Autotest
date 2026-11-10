@@ -71,6 +71,14 @@ app:
     max-size: ${APP_ASYNC_MAX:4}
     queue-capacity: ${APP_ASYNC_QUEUE:1024}
     shutdown-timeout-seconds: ${APP_ASYNC_SHUTDOWN_SECONDS:10}
+  workspace:
+    # v4.1 工作区：项目级导出/导入的根目录、配额与签名密钥（ADR-4X-12/15）
+    root: ${WORKSPACE_ROOT:./workspace}
+    signing-key: ${WORKSPACE_SIGNING_KEY:}
+    max-files: ${WORKSPACE_MAX_FILES:20000}
+    max-bytes: ${WORKSPACE_MAX_BYTES:536870912}
+    max-file-bytes: ${WORKSPACE_MAX_FILE_BYTES:2097152}
+    timeout-seconds: ${WORKSPACE_TIMEOUT_SECONDS:300}
 
 report:
   retention:

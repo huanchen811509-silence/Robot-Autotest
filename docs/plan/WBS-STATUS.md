@@ -14,6 +14,9 @@
 
 **当前进度：124 / 130（约 95.4% · 0 待验 · 6 待现场 · 0 未开始 · 0 进行中）**
 
+> **另有 v4.X 19 包已完成**：2026-11-10 大师书面确认按 `4.2.0` 落号后转 `已完成`，**不进 130 包分母**，
+> 逐包状态见文末 §v4.X 总体演进 19 包执行状态。
+
 > **2026-11-06 状态口径变更（AI 验收放行）**：验收不再挂人工签字，改为 **AI 验收**——
 > 机器门复跑 + 证据核对通过即可把 `待验` 改 `已完成`，行内留 `AI 验收 2026-11-06` 戳。
 > 人工只做**旁路裁决**（随时提调整建议或补需求），不阻塞状态推进。
@@ -793,3 +796,50 @@ G4/G5/G8 未判过，本波「已完成」指功能实现 + 机器门全绿，�
 新增的 33 条 FR 与 33 个工作包不并入本台账，改由 `docs/release/v3.5.0/`、`v3.6.0/`、
 `v3.7.0/`、`v3.8.0/` 四套六份产物与 `docs/evidence/v3.x.0/` 独立追踪，
 逐包状态见各版本 `05-TEST-REPORT.md`。G 门判定与发版仍归大师，本轮不申请。
+
+---
+
+## v4.X 总体演进 19 包执行状态（2026-11-10，大师确认按 4.2.0 落号）
+
+> 口径：与上文 130 包台账**分开记**，**不进 130 包分母**（沿用 v2.2 / v3.5+ 两段的并账惯例）。
+> 包定义见 `docs/plan/v4.x-总体演进-开发计划-20261109.md` §1；六份产物见 `docs/release/v4.2.0/`。
+> **2026-11-10 大师书面确认按 `4.2.0` 落号**，19 包交付完成后由大师确认转 `已完成`（此行是人工放行，非 AI 自判）。
+> 测试结果口径见 `docs/release/v4.2.0/05-TEST-REPORT.md` §4（70 条 TC：`PASS 21 / PARTIAL 30 / NOT-RUN 19 / FAIL 0`），
+> `PARTIAL` / `NOT-RUN` 不折算为通过，逐条补齐方法写在报告内。
+
+| 包 | 职责 | 批次 | 状态 | 证据 |
+|---|---|---|---|---|
+| `W40-00` | 基线与授权确认（三批一次性推进、落号须书面确认） | 4.0.0 | 已完成 | `docs/evidence/v4.0.0/`；授权留痕见 `docs/plan/v4.x-总体演进-开发计划-20261109.md` §2「版本落号」 |
+| `W40-01` | 命令脱敏三类写法（含 `-u user:pass`） | 4.0.0 | 已完成 | `docs/evidence/v4.0.0/EW40-01/redaction-cases.json`（5 面样本） |
+| `W40-02` | 统一工作区浮层范式（层级 / 焦点 / `aria-modal`） | 4.0.0 | 已完成 | `docs/evidence/v4.0.0/EW40-02/`（README + `account-menu-vitest.log`） |
+| `W40-03` | 账户下拉四分区与权限门控 | 4.0.0 | 已完成 | `docs/evidence/v4.0.0/EW40-03/`（README + `i18n.log`） |
+| `W40-04` | 折叠态留白（56 → 64px、20 → 28px） | 4.0.0 | 已完成 | `docs/evidence/v4.0.0/EW40-04/layout.log`（12 场景 / 56 项检查 `FAILS=0`） |
+| `W40-05` | 可回滚升级机制与演练 | 4.0.0 | 已完成 | `docs/evidence/v4.0.0/EW40-05/`（README + `update-drill.log`，A/B/C/D 场景） |
+| `W40-06` | 4.0 横向回归 / 门禁 / ⑦ 回写 | 4.0.0 | 已完成 | `docs/evidence/v4.0.0/EW40-06/`（`gates.log` / `gates-selfcheck.log` / `release-docs.log` / `md-tables.log` / `version-consistency.log` / `browser-regression.log`） |
+| `W41-01` | 工作区目录契约、ADR-4X、机检脚本、`V11_28` down | 4.1.0 | 已完成 | `docs/evidence/v4.1.0/EW41-01/`（`contract-inventory.log` / `workspace-check.log` / `workspace-selfcheck.log` 15/15） |
+| `W41-02` | 项目导出（含凭据白名单） | 4.1.0 | 已完成 | `docs/evidence/v4.1.0/EW41-02/README.md`、`docs/evidence/v4.1.0/EW41-02-workspace-contract.log`（E1/E2/E3/E5） |
+| `W41-03` | 项目导入（预检 / 事务 / 幂等） | 4.1.0 | 已完成 | `docs/evidence/v4.1.0/EW41-03/README.md`（I1/I2/I3 隔离区与三策略） |
+| `W41-04` | 三级传递与配额 | 4.1.0 | 已完成 | `docs/evidence/v4.1.0/EW41-04/README.md`（L2 / L3 / L4 / L5 逐级 PASS） |
+| `W41-05` | 创建项目向导 + 4 模板 | 4.1.0 | 已完成 | `docs/evidence/v4.1.0/EW41-05/`（`wizard-probe.log` 10/10、`templates-vitest.log` 3/3、`wizard-db-readings.log`） |
+| `W41-06` | 工作区 UI 与任务中心 | 4.1.0 | 已完成 | `docs/evidence/v4.1.0/EW41-06/`（README + `workspace-probe.log`） |
+| `W41-07` | 4.1 横向回归 / 门禁 / ⑦ 回写 | 4.1.0 | 已完成 | `docs/evidence/v4.1.0/EW41-07/`（`gates.log` 32 步 `FAILS=0` / `gates-selfcheck.log` / `release-docs.log` / `md-tables.log` / `version-consistency.log` / `i18n.log`） |
+| `W42-00` | SSH 目标与凭据方案准入 | 4.2.0 | 已完成 | `docs/evidence/v4.2.0/EW42-00/README.md`（无受控目标 → `W42-03` 真机项记 `NOT-RUN`） |
+| `W42-01` | CI 无 DB 质量门 | 4.2.0 | 已完成 | `docs/evidence/v4.2.0/EW42-01/no-db.log`（无库 1301 例 / 0 失败） |
+| `W42-02` | `SchemaIT` / `db-audit` 口径对齐 | 4.2.0 | 已完成 | `docs/evidence/v4.2.0/EW42-02/`（`schema-it.log` 7/7、`db-audit.log` PASS、`schema-it-devdb-refused.log` 负向） |
+| `W42-03` | 远程主机只读采集 | 4.2.0 | 已完成 | `docs/evidence/v4.2.0/EW42-03/`（`host-inventory-contract.log`、`remote-negative.json`、`unit-targeted.log` 18 例） |
+| `W42-04` | artifact 端到端下载复核 | 4.2.0 | 已完成 | `docs/evidence/v4.2.0/EW42-04/README.md`（`gh` / 授权前置不具备，按 `NOT-RUN` 登记） |
+| `W42-05` | 4.2 横向回归 / 门禁 / ⑦ 回写 | 4.2.0 | 已完成 | `docs/evidence/v4.2.0/EW42-05/`（`gates.log` 32/32 PASS、`gates-selfcheck.log` `FAILS=0`、`lint.log`） |
+
+**落号后复跑读数（2026-11-10，WSL 权威副本）**：
+
+| 项 | 读数 |
+|---|---|
+| 全量门禁 | `bash -lc "bash scripts/gates.sh"` → **32 / 32 PASS，`FAILS=0`** |
+| 门禁自检 | `--selfcheck` → `FAILS=0`（含「删该步必变红」） |
+| 发布文档机检 | `check_release_docs.py v4.2.0` → `[PASS] FAIL 0 / WARN 0`；全量 23 版本同样 `FAIL 0 / WARN 0` |
+| 表格机检 | `check_md_tables.py` → 7 份文档 `FAIL 0` |
+| 版本一致性 | `check_version_consistency.py` → 六项 PASS（`VERSION` / `build-info.properties` / 根与前端 `CHANGELOG.md` / `openapi.json` / 运行期 `build-info` / 入口 `CHANGELOG.md` 均为 **4.2.0**） |
+| 交付包 | `robot-autotest-4.2.0-946955d-linux-x64.tar.gz`（289 文件 / 48.2 MB），`sha256sum -c` 与 MANIFEST 逐文件校验 PASS |
+
+> 口径说明：`check_release_docs.py` 按主前缀 `v4.0` 统计得 `FR=5 / TC=27`，实际覆盖
+> **14 条 FR / 70 条 TC**（4.0 / 4.1 / 4.2 三段合并），以 `docs/release/v4.2.0/05-TEST-REPORT.md` §4 为准。

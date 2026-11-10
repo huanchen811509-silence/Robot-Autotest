@@ -136,11 +136,30 @@ loginctl enable-linger "$USER"     # 需要开机自起
 | 看后端日志 | `bin/logs.sh --service backend --lines 200 -f` |
 | 重启 | `bin/ctl.sh restart` |
 | 备份 | `bin/backup.sh`（dry-run）→ `bin/backup.sh --apply` |
-| 升级 | 重新解压新包 → `./install.sh --prefix <同一目录> --apply --upgrade`（保留 env / logs / var / backups） |
-| 回滚 | 见 `docs/ROLLBACK.md`；先 `bin/backup.sh --apply`，再按三步回滚 |
+| 升级 | `bin/update.sh --package <新包目录>`（默认 dry-run）→ 确认后 `--apply`，见 §5.1 |
+| 回滚 | 升级失败由 `bin/update.sh` 自动回滚；人工处置见 `docs/ROLLBACK.md` |
 
 备份产物落在 `<prefix>/backups/<库名>-<时间戳>.sql.gz`，另有一份 `.env-keys.txt`
 **只记录键名，不记录值**；口令经 `MYSQL_PWD` 传递，不出现在命令行与日志。
+
+### 5.1 可回滚升级（`bin/update.sh`）
+
+```bash
+bin/update.sh --package /tmp/robot-autotest-4.2.0            # 默认 dry-run：只列迁移清单
+bin/update.sh --package /tmp/robot-autotest-4.2.0 --apply    # 交互输入 UPDATE 才写盘
+```
+
+| 护栏 | 口径 |
+|---|---|
+| 默认态 | dry-run；`--apply` 且输入 `UPDATE` 才写盘 |
+| 版本 | 同版本必须 `--force`；降级必须 `--force --restore-db`（RPO = 0） |
+| 备份 | `--apply` 之前强制 DB 全量备份，失败立即中止；原包归档到 `backups/artifacts/` |
+| 迁移 | 仅 expand 迁移允许 `--schema=keep`；否则回滚恢复 DB 备份 |
+| 健康 | 起服后打 `:8081/actuator/health`（无 DUT 时降级为登录 + 报告列表） |
+| 失败 | 任一步失败自动回滚；回滚失败按 `docs/ROLLBACK.md` 人工恢复 |
+| 留痕 | `<prefix>/UPDATE-HISTORY.md`（表头 `时间 / 原版本 / 目标版本 / 结论 / 备注`）与 `var/update/state` |
+| 留存 | 默认保留最近 3 版归档（`--keep N`） |
+| 数据 | `workspace/` 与库数据不动；凭据文件哈希一致 |
 
 ---
 

@@ -1,0 +1,69 @@
+[cdp] HeadlessChrome/157.0.8103.38  [app] http://localhost:8001  [selfcheck]
+
+[PASS] [1024x768] 右内边距=28px  paddingRight=28px
+[PASS] [1024x768] 内容右留白≥28px  gap=38
+[PASS] [1024x768] 整页无横滚  docScrollW=1024 innerWidth=1024
+[PASS] [1024x768] 工作区无横向溢出  scrollW=814 clientW=814
+[PASS] [1280x800] 右内边距=28px  paddingRight=28px
+[PASS] [1280x800] 内容右留白≥28px  gap=38
+[PASS] [1280x800] 整页无横滚  docScrollW=1280 innerWidth=1280
+[PASS] [1280x800] 工作区无横向溢出  scrollW=1070 clientW=1070
+[PASS] [1440x900] 右内边距=28px  paddingRight=28px
+[PASS] [1440x900] 内容右留白≥28px  gap=38
+[PASS] [1440x900] 整页无横滚  docScrollW=1440 innerWidth=1440
+[PASS] [1440x900] 工作区无横向溢出  scrollW=1230 clientW=1230
+[PASS] [1920x1080] 右内边距=28px  paddingRight=28px
+[PASS] [1920x1080] 内容右留白≥28px  gap=173
+[PASS] [1920x1080] 整页无横滚  docScrollW=1920 innerWidth=1920
+[PASS] [1920x1080] 工作区无横向溢出  scrollW=1710 clientW=1710
+[PASS] [1440@125%(1152)] 右内边距=28px  paddingRight=28px
+[PASS] [1440@125%(1152)] 内容右留白≥28px  gap=38
+[PASS] [1440@125%(1152)] 整页无横滚  docScrollW=1152 innerWidth=1152
+[PASS] [1440@125%(1152)] 工作区无横向溢出  scrollW=942 clientW=942
+[PASS] [1440@150%(960)] 右内边距=28px  paddingRight=28px
+[PASS] [1440@150%(960)] 内容右留白≥28px  gap=38
+[PASS] [1440@150%(960)] 整页无横滚  docScrollW=960 innerWidth=960
+[PASS] [1440@150%(960)] 工作区无横向溢出  scrollW=750 clientW=750
+[PASS] [1920@125%(1536)] 右内边距=28px  paddingRight=28px
+[PASS] [1920@125%(1536)] 内容右留白≥28px  gap=38
+[PASS] [1920@125%(1536)] 整页无横滚  docScrollW=1536 innerWidth=1536
+[PASS] [1920@125%(1536)] 工作区无横向溢出  scrollW=1326 clientW=1326
+[PASS] [1920@150%(1280)] 右内边距=28px  paddingRight=28px
+[PASS] [1920@150%(1280)] 内容右留白≥28px  gap=38
+[PASS] [1920@150%(1280)] 整页无横滚  docScrollW=1280 innerWidth=1280
+[PASS] [1920@150%(1280)] 工作区无横向溢出  scrollW=1070 clientW=1070
+[PASS] [1024x768 collapsed] 右内边距=28px  paddingRight=28px
+[PASS] [1024x768 collapsed] 内容右留白≥28px  gap=38
+[PASS] [1024x768 collapsed] 整页无横滚  docScrollW=1024 innerWidth=1024
+[PASS] [1024x768 collapsed] 工作区无横向溢出  scrollW=950 clientW=950
+[PASS] [1024x768 collapsed] 折叠窄轨=64px  sideW=64
+[PASS] [1024x768 collapsed] 折叠按钮命中自身  hit=[object SVGAnimatedString]
+[PASS] [1280x800 collapsed] 右内边距=28px  paddingRight=28px
+[PASS] [1280x800 collapsed] 内容右留白≥28px  gap=38
+[PASS] [1280x800 collapsed] 整页无横滚  docScrollW=1280 innerWidth=1280
+[PASS] [1280x800 collapsed] 工作区无横向溢出  scrollW=1206 clientW=1206
+[PASS] [1280x800 collapsed] 折叠窄轨=64px  sideW=64
+[PASS] [1280x800 collapsed] 折叠按钮命中自身  hit=[object SVGAnimatedString]
+[PASS] [1440x900 collapsed] 右内边距=28px  paddingRight=28px
+[PASS] [1440x900 collapsed] 内容右留白≥28px  gap=38
+[PASS] [1440x900 collapsed] 整页无横滚  docScrollW=1440 innerWidth=1440
+[PASS] [1440x900 collapsed] 工作区无横向溢出  scrollW=1366 clientW=1366
+[PASS] [1440x900 collapsed] 折叠窄轨=64px  sideW=64
+[PASS] [1440x900 collapsed] 折叠按钮命中自身  hit=[object SVGAnimatedString]
+[PASS] [1920x1080 collapsed] 右内边距=28px  paddingRight=28px
+[PASS] [1920x1080 collapsed] 内容右留白≥28px  gap=241
+[PASS] [1920x1080 collapsed] 整页无横滚  docScrollW=1920 innerWidth=1920
+[PASS] [1920x1080 collapsed] 工作区无横向溢出  scrollW=1846 clientW=1846
+[PASS] [1920x1080 collapsed] 折叠窄轨=64px  sideW=64
+[PASS] [1920x1080 collapsed] 折叠按钮命中自身  hit=[object SVGAnimatedString]
+[FAIL] [selfcheck-1024 collapsed] 右内边距=28px  paddingRight=4px
+[FAIL] [selfcheck-1024 collapsed] 内容右留白≥28px  gap=14
+[PASS] [selfcheck-1024 collapsed] 整页无横滚  docScrollW=1024 innerWidth=1024
+[PASS] [selfcheck-1024 collapsed] 工作区无横向溢出  scrollW=958 clientW=958
+[FAIL] [selfcheck-1024 collapsed] 折叠窄轨=64px  sideW=56
+[PASS] [selfcheck-1024 collapsed] 折叠按钮命中自身  hit=[object SVGAnimatedString]
+
+LAYOUT_PROBE cases=13 checks=62 FAILS=3
+[collapse] before=false after=true rail=64 toggleHit=true
+[out] docs/evidence/v4.0.0/EW40-04/layout-selfcheck.json
+[selfcheck] PASS 注入 4px 留白 + 56px 窄轨后判据变红

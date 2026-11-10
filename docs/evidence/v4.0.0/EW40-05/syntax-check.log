@@ -1,0 +1,2 @@
+bash -n: OK
+shellcheck: NOT-INSTALLED（以 bash -n 替代，待装后复跑）
