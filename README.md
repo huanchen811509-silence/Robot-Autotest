@@ -19,7 +19,8 @@
 | 交付物 | linux-x64 tarball | GitHub Actions `delivery.yml` 产出，见 [交付指南](docs/DELIVERY-GUIDE.md) |
 
 **口径**：`4.9.2` 是**内部交付版本**，已按 [发布说明](docs/release/v4.9.2/RELEASE-NOTES.md) 部署到统一入口 `:8001`；
-G4 / G5 / G7 / G8 **门禁仍未判过**，真库迁移 down→up 演练与真实 DUT / 负载未执行
+G4 / G5 / G7 / G8 **门禁仍未判过**，真库 down→up 全量演练与真实 DUT / 负载未执行
+（`V11_30`–`V11_37` 正向迁移已于 2026-11-10 在开发库实跑）
 （见 [已知限制](docs/release/v4.9.2/KNOWN-LIMITATIONS.md)），**不得对外称 GA**。
 开发期遵守 [ADR-0013](docs/adr/ADR-0013-执行安全分级与开发期禁跑令.md)：不在真实 DUT / 交换机执行台账用例。
 版本历史见 [版本地图](docs/release/README.md) 与 [CHANGELOG](CHANGELOG.md)；「关于」页和「版本迭代」页分别读构建信息与本 CHANGELOG。

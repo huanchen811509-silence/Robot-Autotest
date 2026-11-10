@@ -1,5 +1,6 @@
 -- v4.8.0 / FR-v4.8-01：模板持久化与共享范围。
--- 现有 project_template 只有 name/config_json/archived；这里补编号、内核、可见性、内置标记与生命周期。
+-- 现有 project_template 已有 name/config_json/archived 与审计四列
+-- （created_at / created_by / updated_at / updated_by），这里只补业务列。
 ALTER TABLE `project_template`
     ADD COLUMN `code`        VARCHAR(64)  NULL COMMENT '模板编号：前缀-引擎-年月-序号',
     ADD COLUMN `kernel`      VARCHAR(16)  NULL COMMENT 'robot / pytest',
@@ -8,10 +9,6 @@ ALTER TABLE `project_template`
     ADD COLUMN `status`      VARCHAR(16)  NOT NULL DEFAULT 'active' COMMENT 'active / disabled',
     ADD COLUMN `owner_id`    BIGINT       NULL,
     ADD COLUMN `description` VARCHAR(512) NULL,
-    ADD COLUMN `created_at`  DATETIME(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    ADD COLUMN `created_by`  BIGINT       NULL,
-    ADD COLUMN `updated_at`  DATETIME(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
-    ADD COLUMN `updated_by`  BIGINT       NULL,
     ADD UNIQUE KEY `uk_project_template_code` (`code`),
     ADD KEY `idx_project_template_visibility` (`visibility`, `status`);
 

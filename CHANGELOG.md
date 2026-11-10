@@ -31,6 +31,7 @@
 - 模板更新接口补齐 `status` 参数；模板内核读取改取项目实际列 `test_kernel`
 - 公共分类回填改从历史唯一分类列 `case_kind` 取值，修正迁移引用不存在列导致无法升级的问题
 - 全局项目页 `GlobalProjectsView.vue` 对工作台视图的相对导入改为 `../WorkbenchView.vue`，修复 `vite build` 生产构建无法解析模块（部署阶段实测发现，单测与 `vue-tsc` 未拦截）
+- `V11_36` 不再重复添加 `project_template` 已存在的审计四列（`created_at` / `created_by` / `updated_at` / `updated_by`），修复真库执行迁移时报 `Duplicate column name 'created_at'`；`db/down/V11_36` 同步不再删除既有审计列（登录 500 的根因是 `project.kind` 缺失，即该迁移未成功应用）
 
 ### 破坏性变更 <!-- breaking -->
 - 无。新增列均可空或带默认值；新增接口路径为增量；旧数据在迁移中按 `case_kind` / `case_code` 回填，无需人工干预

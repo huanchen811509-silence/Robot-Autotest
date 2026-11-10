@@ -9,10 +9,6 @@ DELETE FROM `project_template`
 ALTER TABLE `project_template`
     DROP KEY `idx_project_template_visibility`,
     DROP KEY `uk_project_template_code`,
-    DROP COLUMN `updated_by`,
-    DROP COLUMN `updated_at`,
-    DROP COLUMN `created_by`,
-    DROP COLUMN `created_at`,
     DROP COLUMN `description`,
     DROP COLUMN `owner_id`,
     DROP COLUMN `status`,
