@@ -45,6 +45,9 @@ export const useUiModeStore = defineStore('uiMode', {
       localStorage.setItem(MODE_KEY, this.mode)
     },
     async setMode(mode: UiMode): Promise<boolean> {
+      // 登录发生在 SPA 内时外壳不会重挂，load() 只跑过一次或根本没跑；
+      // 能力码没拿到就把按钮变成死键（点「全局」无反应），这里按需补一次。
+      if (!this.ready) await this.load()
       if (mode === 'global' && !this.globalEnter) return false
       this.mode = mode
       localStorage.setItem(MODE_KEY, mode)

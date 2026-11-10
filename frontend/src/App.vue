@@ -176,6 +176,25 @@ watch(
   },
 )
 
+// 登录发生在 SPA 内时外壳不会重挂：onMounted 里的身份与能力码只跑过一次，
+// 之后再点顶栏「全局」会因 globalEnter 仍为 false 而静默失败。
+// 这里在登录态置位后补一次，保证模式切换与「上次模式」还原在二次登录同样生效。
+watch(
+  () => auth.authenticated,
+  async (ok) => {
+    if (!ok) return
+    try {
+      await Promise.all([auth.loadMe(), auth.loadProjects()])
+    } catch {
+      return
+    }
+    await uiMode.load()
+    if (uiMode.mode === 'global' && route.path === '/workbench') {
+      await router.replace('/g/projects')
+    }
+  },
+)
+
 // FR-AI-07：state 是发现端点，ai.enabled=false 时也返回 enabled=false，据此隐藏入口。
 watch(
   () => auth.projectId,
@@ -229,9 +248,11 @@ onMounted(async () => {
 
       <aside class="app-side">
         <!-- v2.3 / FR-UI-18：折叠按钮从顶栏移到侧栏头部——它是外壳控制，不是页面动作。
-             折叠后品牌区隐藏，按钮居中保留（否则侧栏折叠后无法展开，只能清缓存）。 -->
+             4.9.2 修复：折叠后品牌区仍保留（只显示标记、不显字标），否则窄轨顶部空一块。 -->
         <div class="app-side-head">
-          <div class="app-brand"><AppLogo with-wordmark /></div>
+          <div class="app-brand">
+            <AppLogo :with-wordmark="!sideCollapsed" :size="sideCollapsed ? 24 : 28" />
+          </div>
           <button
             class="btn btn-ghost app-side-toggle"
             type="button"

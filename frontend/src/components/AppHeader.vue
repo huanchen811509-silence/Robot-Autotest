@@ -17,7 +17,6 @@ import { useAuthStore } from '@/stores/auth'
 import { useUiModeStore, type UiMode } from '@/stores/uiMode'
 import { useAiDrawer } from '@/composables/useAiDrawer'
 import AppIcon from '@/components/AppIcon.vue'
-import AppLogo from '@/components/AppLogo.vue'
 import AccountMenu from '@/components/AccountMenu.vue'
 import NotificationCenter from '@/components/NotificationCenter.vue'
 
@@ -67,7 +66,6 @@ async function changeProject(event: Event): Promise<void> {
 <template>
   <header class="app-header">
     <span class="app-header-brand">
-      <AppLogo :size="22" />
       <span class="app-header-title">{{ t('app.subtitle') }}</span>
     </span>
 

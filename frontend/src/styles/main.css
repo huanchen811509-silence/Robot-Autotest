@@ -978,10 +978,16 @@ select option:disabled {
  * 窄轨（rail）只有两种来源：用户显式折叠、或视口窄到放不下 200px 侧栏。
  * 两者必须**同时**改宽度与文字显隐——v2.3 之前只改宽度不藏文字，
  * 文字被 .app-side 的 overflow 裁掉，看起来就是「菜单只剩图标没有文字」。
+ * 4.9.2 修复：窄轨保留品牌标记（只藏字标），图标在轨道内居中，右侧不再贴边。
  */
-.app-shell.side-collapsed .app-side { padding: 16px 8px; }
-.app-shell.side-collapsed .app-side .app-brand,
+.app-shell.side-collapsed .app-side { padding: 16px 12px; }
 .app-shell.side-collapsed .app-side .app-nav-item span { display: none; }
+.app-shell.side-collapsed .app-side .app-nav-item {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+.app-shell.side-collapsed .app-side-head { flex-direction: column; gap: 8px; }
 
 .ai-drawer {
   grid-area: 2 / 3 / 3 / 4;   /* 与工作区同一行：顶端对齐工作区，不占顶栏 */
@@ -1016,10 +1022,15 @@ select option:disabled {
     grid-template-columns: var(--rail-w-collapsed) minmax(0, 1fr);
   }
 
-  .app-side { padding: 16px 8px; }
-  .app-side .app-brand,
+  .app-side { padding: 16px 12px; }
   .app-side .app-nav-item span { display: none; }
-  .app-side-head { justify-content: center; }
+  .app-side .app-logo__word { display: none; }
+  .app-side .app-nav-item {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .app-side-head { flex-direction: column; gap: 8px; justify-content: center; }
   .app-side-toggle { margin: 0 auto; }
 
   .app-header,
