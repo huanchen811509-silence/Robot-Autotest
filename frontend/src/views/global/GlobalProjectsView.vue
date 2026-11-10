@@ -6,7 +6,7 @@
  * 差别只在导航上下文；卡片上的 own/joined/readonly 标注由 /api/global/projects 提供，
  * 4.6 起替换为带标注的列表。这里先保证路由、导航与鉴权链路可用。
  */
-import WorkbenchView from './WorkbenchView.vue'
+import WorkbenchView from '../WorkbenchView.vue'
 </script>
 
 <template>
