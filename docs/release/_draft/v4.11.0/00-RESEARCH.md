@@ -30,6 +30,9 @@
 - **项目模式**：单项目执行闭环，路由无前缀，当前 7 个一级组 / 32 个二级项。
 - **一级 / 二级**：一级 = 侧栏可折叠分组头；二级 = 分组内可点击叶子。二者都进 `NavNode` 树。
 - 本文只调研**菜单与入口**，不涉及各页面内部信息架构（页面内 tab 不算二级菜单）。
+- **2026-11-11 大师补充约束（记为 N1'）**：全局模式**每个一级菜单至少 2 个二级项**。
+  页面内 tab 若要计入二级，必须同时满足「URL query 可寻址」+「侧栏可点」两条，形如 `/g/assets?tab=devices`；
+  只在页面里切换、地址栏不变的 tab 不算二级菜单。
 
 ## 3. 事实清单 A：全局模式菜单
 
@@ -43,6 +46,14 @@
 | A6 | 侧栏渲染层 `AppNav.vue` **已经支持分组**：`NavNode` 泛型入参，分组渲染 chevron + `aria-expanded` + 展开态持久化 `localStorage['robot.nav.expanded']` | [已核实] | `frontend/src/components/AppNav.vue:28,76-129` |
 | A7 | `activeGroupKey()` **只遍历项目 `NAVIGATION`**，不认全局树 → 全局若改成分组，激活组不会被判定、也不会自动展开 | [已核实] | `frontend/src/config/navigation.ts:410-415` |
 | A8 | 全局准入按**角色**在路由守卫拦：只允许 admin / pm 进入 `/g/*`（`canEnterGlobalMode`）；顶栏模式切换按钮同口径 | [已核实] | `frontend/src/router/index.ts:457-468`；`frontend/src/components/AppHeader.vue:45-48` |
+| A9 | 全局资产页**已有 2 个页签**（设备 `DEVICE` / 凭据 `CREDENTIAL`），但 `type` 是组件内 `ref`，**未接 `?tab=`**；项目资产页已实现 `tabFromQuery()` 与 URL 双向同步 → 全局照搬即可把 2 个页签提为可寻址二级项 | [已核实] | `frontend/src/views/global/GlobalAssetsView.vue:22,49,199-208`；`frontend/src/views/AssetsView.vue:51-63,273-275` |
+| A10 | 全局用例页的「导入批次」是页内折叠块 `<details class="batches">`，数据端点 `GET /api/global/cases/import/batches` 已存在 → 可提级为「导入记录」二级项，**不需要新端点** | [已核实] | `frontend/src/views/global/GlobalCasesView.vue:183-195,327-340`；`frontend/src/api/globalCases.ts:128-130` |
+| A11 | 模板行自带 `builtin` 布尔（内置模板只读：不可编辑、不可删），但列表**无该维度筛选** → 可拆「内置模板 / 自定义模板」两个二级项 | [已核实] | `frontend/src/api/globalTemplates.ts:11`；`GlobalTemplatesView.vue:97,196,203`；`db/migration/V11_36__project_template_persist.sql:7,44-62` |
+| A12 | `/api/global/projects` 返回 `GlobalProject(project, own, joined, readonly)` **三元标注** → 可支撑「我参与的」类视图，无需新增端点 | [已核实] | `backend/src/main/java/com/qa/autotest/api/iam/GlobalProjectController.java:29-30,44` |
+| A13 | 全局准入**只有前端守卫** `canEnterGlobalMode`（纯函数，只看角色码）；`/api/global/*` 四个控制器**无角色注解** → 「不放宽准入」只改一处纯函数，不涉后端 | [已核实] | `frontend/src/router/index.ts:25-28,463`；四个 Global*Controller 均无 `@PreAuthorize` |
+| A14 | `/g/projects` 的实际渲染体是 `WorkbenchView`，取数用 `projectCardsApi.list()`（`/api/projects/cards`），**不是** `/api/global/projects`。卡片含 `myRole`（= 该项目 `member_role`，无成员关系为 `null`），但**全局 admin 无成员关系时 `myRole` 也给 `admin`** （`ProjectCardService.myRole(memberRole, admin)`）→ 用 `myRole != null` 判「我参与的」**对 ADMIN 不成立**，要做该视图必须补 `own`/`joined` 显式标注 | [已核实] | `frontend/src/views/WorkbenchView.vue:69`；`frontend/src/api/projectCards.ts:9-30`；`application/iam/ProjectCardService.java:41,124`；`domain/iam/ProjectCard.java:18` |
+| A15 | `AboutView` 内含「查看完整版本迭代」链接（`aboutPage.viewAllChangelog` → `/changelog`）→ 项目侧即使只保留「关于」一个叶子，工程师仍可从关于页到达版本迭代，**不算入口丢失** | [已核实] | `frontend/src/views/AboutView.vue:181-186`；`router/index.ts:237-242` |
+| A16 | `/api/me` 当前**只有** `GET /ui-mode` / `POST /ui-mode`，没有「我的信息」端点；用户身份只能从 `auth` store 取 → 新增「我的账户」类页面不依赖新后端，但「关联项目」仍需项目列表接口 | [已核实] | `backend/src/main/java/com/qa/autotest/api/iam/MeController.java:23,37` |
 
 ## 4. 事实清单 B：项目模式菜单
 
@@ -53,6 +64,8 @@
 | B3 | 项目「系统设置」组 6 项由 `SETTINGS_NAV` 派生，与全局同名同序 | [已核实] | `navigation.ts:111-131` |
 | B4 | 项目导航按服务端能力集过滤，`has()` 来自 `stores/menuCapabilities`，未就绪时不渲染导航（防「先全显再收起」） | [已核实] | `App.vue:84-89`；`navigation.ts:457-478` |
 | B5 | 菜单可见性真源是服务端能力集，前端不再有硬编码角色→能力表 | [已核实] | `navigation.ts:457-464`；`stores/menuCapabilities.ts` |
+| B6 | 项目 `/settings`（`SettingsView`，能力 `settings:read`）与 `/admin`（`AdminView`，系统级用户 CRUD，能力 `user:write`）**语义不同**：前者是平台配置，后者是**全局用户账号管理** → 「用户管理（仅当前用户和关联项目）」**不能**直接复用 `/admin` | [已核实] | `router/index.ts:180-183,219-222`；`settingsNav.ts:24-27` |
+| B7 | 项目侧 `/changelog`（`ChangelogView`）与 `/about` 都是 `public` 路由（无 `meta.capability`），engineer 现在可直达 | [已核实] | `router/index.ts:237-242`；`settingsNav.ts:28-29` |
 
 ## 5. 事实清单 C：顶栏
 
@@ -99,6 +112,8 @@
 |---|---|---|
 | N1 全局两级菜单 | 全局树 5 项全叶子（A1）；渲染层已支持分组（A6）但激活组判定不认全局树（A7）；全局不过能力过滤（A2） | `AppNav.vue` 可原样复用；`SETTINGS_NAV` 已可作设置组数据源 |
 | N1 迁移评估 | 全局后端只有 4 个域（E1/E2）；执行/报告/环境/维护无全局端点 | 无，需新建或明确不迁 |
+| N1' 全局每组 ≥2 个二级 | 5 组里有 4 组只有 1 条路由（A1）；其中资产已有 2 页签但不可寻址（A9）、用例的导入批次是页内折叠块（A10）、模板缺 `builtin` 筛选（A11） | 4 组补项都可复用已有数据面，仅「项目」组需后端补 2 个布尔（A14） |
+| N1' 项目侧只留「用户管理 + 关于」 | 项目侧「用户管理」现指 `/admin` 系统级账号管理（B6），与「仅当前用户和关联项目」不是一回事 | `own/joined/readonly` 标注可支撑新页（A12）；`/api/me` 无信息端点，用户身份取自 auth store（A16） |
 | N2 顶栏重排 | 账户按钮不在最右（C2）；主题/语言在独立容器（C1） | 纯前端改动 + 2 处断言同步（C5） |
 | N3 执行计划 | 无该菜单项；发起能力已有（D3），但入口只在用例列表（D4）；与 cron 计划命名冲突（D5） | `runCases` + `safetyPrecheck` 可直接复用，预计 0 迁移 |
 
@@ -119,6 +134,8 @@
 | H2 | 「执行计划」为即时发起台，与 cron 计划并存 | **成立** → 新增页，不改 `/plans` | 大师 P-02 选 A |
 | H3 | 跨项目运行/报告汇总本版不做 | **成立** → 列 v4.12 | 按建议默认（P-03=A） |
 | H4 | 主题/语言并入工具段，不新起第四段 | **成立** → 三段两线不变 | 本文件 C5 + 评估 §4.2 |
+| H5 | 「系统设置」迁全局后，项目模式是否保留入口 | **修订（推翻 H1 的落法）**：项目侧**保留该组**，只留「用户管理（仅当前用户和关联项目）」+「关于」2 项；全局侧 6 项全量迁入 | 大师 2026-11-11 19:21 补充（N1'） |
+| H6 | 全局准入是否仍放宽为「所有登录用户」 | **待重申**：项目侧保留「关于」后（A15），engineer 入口不再依赖全局准入；建议维持 admin/pm 准入不变，减少变更面 | 大师补充需求改变了 H1 的前提 → PRD P-08 |
 
 ## 11. 修订记录
 
@@ -126,3 +143,4 @@
 |---|---|---|---|
 | v1.0 | 2026-11-11 | 首版：A/B/C/D/E/F 六组事实清单共 34 条，全部标证据位置；给出 N1~N4 缺口对照与 H1~H4 待收敛假设 | 当日代码走查（`navigation.ts` / `App.vue` / `AppHeader.vue` / `AppNav.vue` / `GlobalSettingsView.vue` / `settingsNav.ts` / `router/index.ts` / `execution.ts` / `CasesView.vue` / `PlanController.java` / 4 个全局 Controller） |
 | v1.1 | 2026-11-11 | 新增 §10.1 假设收敛结果：H1/H2/H4 成立并落地，H3 按建议默认不做；对应大师 P-01/P-02/P-03 拍板 | 大师 2026-11-11 向导答复 |
+| v1.2 | 2026-11-11 | 按大师 19:21 补充（N1'）补 10 条事实：A9~A16（资产页签/用例批次/模板 builtin/项目归属标注/准入只在前端/工作台取数源与 `myRole` 语义边界/关于页链版本迭代/`/api/me` 无信息端点）、B6~B7（`/settings` 与 `/admin` 语义不同、`/about` 与 `/changelog` 均 public）；§2 增 N1' 的「二级项」判定口径；§9 增 2 行缺口；§10.1 增 H5/H6 | 大师 2026-11-11 19:21 补充需求 + 当日二次代码走查 |
