@@ -2,6 +2,8 @@ package com.qa.autotest.api.caseasset;
 
 import com.qa.autotest.application.caseasset.GlobalCaseService;
 import com.qa.autotest.common.ApiResponse;
+import com.qa.autotest.common.BusinessException;
+import com.qa.autotest.common.ErrorCode;
 import com.qa.autotest.domain.common.PageResult;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -73,6 +75,12 @@ public class GlobalCaseController {
     @PostMapping("/import/preview")
     public ApiResponse<GlobalCaseService.PreviewResult> preview(
             @RequestPart("file") MultipartFile file) throws IOException {
+        if (file == null || file.isEmpty()) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "请先选择要导入的工作簿");
+        }
+        if (file.getSize() > 20L * 1024 * 1024) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "文件超过 20MB 上限，请拆分后再导入");
+        }
         return ApiResponse.ok(service.preview(file.getInputStream(), file.getOriginalFilename()));
     }
 

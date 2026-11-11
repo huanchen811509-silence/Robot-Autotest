@@ -62,6 +62,7 @@ export interface GlobalImportPreview {
   replayed: boolean
   rows: ImportPreviewRow[]
   errors: ImportRowError[]
+  skippedSheets: string[]
 }
 
 export interface GlobalImportCommit {

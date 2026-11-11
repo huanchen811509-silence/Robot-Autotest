@@ -67,7 +67,8 @@ public class GlobalCaseService {
 
     public record PreviewResult(long batchId, String sha256, int total, int newCount, int updateCount,
                                 int unchangedCount, int deprecateCount, int errorCount, boolean replayed,
-                                List<PreviewRow> rows, List<CaseImportService.RowError> errors) {
+                                List<PreviewRow> rows, List<CaseImportService.RowError> errors,
+                                List<String> skippedSheets) {
     }
 
     public record CommitResult(long batchId, int inserted, int updated, int unchanged, int deprecated,
@@ -235,10 +236,21 @@ public class GlobalCaseService {
         String sourceFile = notBlank(sourceName) ? sourceName : "upload.xlsx";
         List<CaseImportService.RowError> errors = new ArrayList<>();
         List<PlannedRow> planned = new ArrayList<>();
+        List<String> skippedSheets = new ArrayList<>();
         Map<String, ExistingCase> existing = existingByExternal(projectId);
         Set<String> seen = new LinkedHashSet<>();
 
         for (CaseImportService.ParsedSheet sheet : workbook.sheets()) {
+            // 看板/汇总页是明细的派生视图，导入时跳过，避免同一编号在文件内自撞。
+            if (sheet.sheetName().contains("看板") || sheet.sheetName().contains("汇总")) {
+                skippedSheets.add(sheet.sheetName());
+                continue;
+            }
+            // 环境/说明等工作表不是用例表：既无编号也无标题列时静默跳过，不计入错误行。
+            if (!sheet.columnMap().containsKey("caseCode")
+                    && !sheet.columnMap().containsKey("title")) {
+                continue;
+            }
             if (!sheet.columnMap().containsKey("caseCode") || !sheet.columnMap().containsKey("title")) {
                 errors.add(new CaseImportService.RowError(sheet.headerRowNum(), "columns",
                         "工作表「" + sheet.sheetName() + "」缺少必需列：用例编号 / 标题"));
@@ -294,6 +306,12 @@ public class GlobalCaseService {
             }
         }
 
+        // FR-v4.6-20 防护：单文件行数上限，避免误传大表把导入拖成小时级。
+        if (planned.size() > 20_000) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                    "单文件用例行数 " + planned.size() + " 超过 20000 上限");
+        }
+
         int newCount = count(planned, "NEW");
         int updateCount = count(planned, "UPDATE");
         int unchanged = count(planned, "UNCHANGED");
@@ -301,7 +319,7 @@ public class GlobalCaseService {
         String fileSha = workbook.sha256();
 
         Optional<Map<String, Object>> existingBatch = jdbc.queryForList(
-                "SELECT * FROM import_batch WHERE project_id = ? AND checksum = ?",
+                "SELECT * FROM import_batch WHERE project_id = ? AND kind = 'global' AND checksum = ?",
                 projectId, fileSha).stream().findFirst();
 
         long batchId;
@@ -309,7 +327,7 @@ public class GlobalCaseService {
         if (existingBatch.isPresent() && "COMMITTED".equals(existingBatch.get().get("status"))) {
             batchId = ((Number) existingBatch.get().get("id")).longValue();
             replayed = true;
-            return replayPreview(batchId, fileSha, sourceFile);
+            return replayPreview(batchId, fileSha, skippedSheets);
         }
         if (existingBatch.isPresent()) {
             batchId = ((Number) existingBatch.get().get("id")).longValue();
@@ -368,10 +386,10 @@ public class GlobalCaseService {
                 "sha=" + fileSha + " new=" + newCount + " update=" + updateCount
                         + " unchanged=" + unchanged + " deprecate=" + deprecate);
         return new PreviewResult(batchId, fileSha, planned.size(), newCount, updateCount, unchanged,
-                deprecate, errors.size(), replayed, previewRows, errors);
+                deprecate, errors.size(), replayed, previewRows, errors, skippedSheets);
     }
 
-    private PreviewResult replayPreview(long batchId, String fileSha, String sourceFile) {
+    private PreviewResult replayPreview(long batchId, String fileSha, List<String> skippedSheets) {
         List<Map<String, Object>> items = jdbc.queryForList(
                 "SELECT row_no, case_code, action, message, payload_json FROM import_item"
                         + " WHERE batch_id = ? ORDER BY row_no", batchId);
@@ -399,7 +417,7 @@ public class GlobalCaseService {
                     row.sourceSheet(), row.sourceRow()));
         }
         return new PreviewResult(batchId, fileSha, rows.size(), newCount, updateCount, unchanged,
-                deprecate, 0, true, rows, List.of());
+                deprecate, 0, true, rows, List.of(), skippedSheets);
     }
 
     private CaseImportService.ImportRow readRow(String json) {
@@ -483,10 +501,65 @@ public class GlobalCaseService {
                        new_count = ?, updated_count = ?, unchanged_count = ?, deprecated_count = ?
                  WHERE id = ?
                 """, inserted, updated, unchanged, deprecated, batchId);
+        int categories = syncCategories(projectId, operator);
         audit.record("global.case.import.commit", "import_batch", String.valueOf(batchId),
                 "inserted=" + inserted + " updated=" + updated + " unchanged=" + unchanged
-                        + " deprecated=" + deprecated);
+                        + " deprecated=" + deprecated + " categories=" + categories);
         return new CommitResult(batchId, inserted, updated, unchanged, deprecated, false);
+    }
+
+    /** 从用例表反推分类字典（FR-v4.6-10）：导入后一级/二级分类可见、可筛选。 */
+    private int syncCategories(long projectId, Long operator) {
+        List<String> level1 = jdbc.queryForList("""
+                SELECT DISTINCT category_l1 FROM test_case
+                 WHERE project_id = ? AND category_l1 IS NOT NULL AND category_l1 <> ''
+                 ORDER BY category_l1
+                """, String.class, projectId);
+        Map<String, Long> parentIds = new HashMap<>();
+        int created = 0;
+        for (String name : level1) {
+            parentIds.put(name, ensureCategory(projectId, 1, null, name, operator));
+            created++;
+        }
+        List<Map<String, Object>> level2 = jdbc.queryForList("""
+                SELECT DISTINCT category_l1, category_l2 FROM test_case
+                 WHERE project_id = ? AND category_l2 IS NOT NULL AND category_l2 <> ''
+                """, projectId);
+        for (Map<String, Object> row : level2) {
+            String parent = row.get("category_l1") == null ? "" : String.valueOf(row.get("category_l1"));
+            ensureCategory(projectId, 2, parentIds.get(parent), String.valueOf(row.get("category_l2")),
+                    operator);
+            created++;
+        }
+        return created;
+    }
+
+    private long ensureCategory(long projectId, int level, Long parentId, String name, Long operator) {
+        List<Long> found = jdbc.queryForList("""
+                SELECT id FROM case_category
+                 WHERE project_id = ? AND level = ? AND name = ? AND IFNULL(parent_id, 0) = IFNULL(?, 0)
+                """, Long.class, projectId, level, truncate(name, 128), parentId);
+        if (!found.isEmpty()) {
+            return found.get(0);
+        }
+        KeyHolder keys = new GeneratedKeyHolder();
+        jdbc.update(con -> {
+            var ps = con.prepareStatement("""
+                    INSERT INTO case_category (project_id, level, parent_id, name, sort_no, created_by)
+                    VALUES (?, ?, ?, ?, 0, ?)
+                    """, new String[]{"id"});
+            ps.setLong(1, projectId);
+            ps.setInt(2, level);
+            if (parentId == null) {
+                ps.setNull(3, java.sql.Types.BIGINT);
+            } else {
+                ps.setLong(3, parentId);
+            }
+            ps.setString(4, truncate(name, 128));
+            ps.setObject(5, operator);
+            return ps;
+        }, keys);
+        return keys.getKey() == null ? 0 : keys.getKey().longValue();
     }
 
     private long insertCase(long projectId, String externalId, CaseImportService.ImportRow row,
@@ -504,7 +577,8 @@ public class GlobalCaseService {
                         ?, ?, ?, ?, ?, ?, ?, ?, 'active', 1, ?, ?)
                     """, new String[]{"id"});
             ps.setLong(1, projectId);
-            ps.setString(2, truncate(row.caseCode().trim(), 64));
+            ps.setString(2, notBlank(row.caseCode()) ? truncate(row.caseCode().trim(), 64)
+                    : truncate(externalId, 64));
             ps.setString(3, externalId);
             ps.setString(4, row.title());
             ps.setString(5, truncate(row.category(), 32));
@@ -689,10 +763,10 @@ public class GlobalCaseService {
             String sha = sha256Hex(content);
             String fileName = "ed202-cases-" + sha.substring(0, 12) + ".xlsx";
             jdbc.update("""
-                    INSERT IGNORE INTO export_record (project_id, kind, content_sha, file_name,
-                                                      size_bytes, row_count, created_by)
-                    VALUES (?, 'cases', ?, ?, ?, ?, ?)
-                    """, projectId, sha, fileName, content.length, rows.size(),
+                    INSERT INTO export_record (project_id, run_key, export_format, file_name,
+                                               sha256, size_bytes, export_status, created_by)
+                    VALUES (?, ?, 'xlsx', ?, ?, ?, 'created', ?)
+                    """, projectId, "global-cases", fileName, sha, content.length,
                     TenantContext.userId());
             audit.record("global.case.export", "test_case", String.valueOf(projectId),
                     "rows=" + rows.size() + " sha=" + sha.substring(0, 12));

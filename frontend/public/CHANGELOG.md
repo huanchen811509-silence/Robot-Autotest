@@ -18,14 +18,25 @@
 - **模板中心（4.8.0）**：`project_template` / `project_template_item` / `project_template_asset` 持久化，4 个内置模板；模板以**引用**保存用例与资产、不复制正文；创建向导新增「内容」步，选中的公共用例复制进项目用例集、资产按引用挂载
 - **存量同步（4.9.0）**：`sync_job` / `sync_job_item` 记录预览与执行；NEW / UPDATE / CONFLICT / UNCHANGED / SKIP 五态差异，冲突逐条选择「保留本地 / 接受公共库 / 另存副本」；执行后可整单回滚；`local_override` 用例永不被同步覆盖；每日预览定时任务默认关闭（`sync.auto.enabled=false`）
 - **错误追踪号（4.9.1）**：接口错误展示服务端 `X-Trace-Id`，用户可连同错误码一起复制给运维定位
+- **公共用例导入（730 条实测）**：样本工作簿 `基本功能导入测试v0.5.0.0.xlsx` 五张明细表全部落位（730 用例 / 2779 步骤 / 32 个一级分类），派生「测试用例看板」页自动跳过；提交后按用例反推并同步两级分类字典
+- **资产导入校验和与重放**：资产预览落 `import_batch(kind='asset')` 并展示 `sha256` 前 12 位、批次号；同文件再次提交返回首批次结果（`replayed=true`），业务表零写入
+- **资产采集关联与显式补采**：资产列表新增端口数、采集次数、最近采集时间、采集状态；「立即采集」需选已有凭据并二次确认（`confirm=true`），复用主机清单采集通道，导入的凭据引用不落明文口令
+- **资产状态补充**：导入结果新增 `statusSupplemented` 计数；设备补充 `operating_system` / `kernel_version` / `bmc_address` / `login_mode` / `account` 采集字段
 
 ### 变更 <!-- changed -->
-- 新增 8 组迁移 `V11_30`–`V11_37`，均附 `db/down/` 回滚脚本；`test_case` 增公共库列与索引，`import_batch` / `import_item` / `export_record` / `case_version` / `sync_job` / `sync_job_item` 等表建立
+- 新增 10 组迁移 `V11_30`–`V11_39`（`V11_38` 资产状态与采集字段、`V11_39` 批次唯一键含 `kind`），均附 `db/down/` 回滚脚本；`test_case` 增公共库列与索引，`import_batch` / `import_item` / `export_record` / `case_version` / `sync_job` / `sync_job_item` 等表建立
 - 用例导入改为「预览 → 提交」两段式：预览只读并可重复回放（同一文件 sha 命中已提交批次时不重复建批次）；提交写入用例、步骤、版本快照与审计
 - 侧栏「维护与恢复」新增「存量同步」入口（`/sync`）；全局模式导航独立于项目导航，避免项目内页面误挂全局
+- `import_batch` 唯一键由 `(project_id, checksum)` 改为 `(project_id, kind, checksum)`（`V11_39`）：同一工作簿可同时声明用例批次与资产批次，重放判定各自独立
+- 资产软失效状态统一为 `deprecated`（对齐 PRD），历史 `inactive` 在 `V11_38` 中迁移；前端筛选项、导出与 i18n 同步改名
+- 用例导入跳过派生看板页与「既无用例编号也无标题」的说明页，预览区展示校验和、批次号与跳过页清单
 - 关于页版本与依赖继续取自构建产物 `build-info.properties`，本版发布口径为 `4.9.2`
 
 ### 修复 <!-- fixed -->
+- 资产解析把 RDMA 端点映射、环境事实、Bond 配置、已知限制等汇总节当成资产行，样本工作簿解析出 32 台设备和 49 个端口（正确为 12 台 / 58 个）；现以「整行单格即分节标题」重置表头并跳过汇总节，一行多个网口按行拆成多条端口
+- 「当前测试环境」交换机节没有主机名时整节被丢弃，「网口」不在端口列别名、`速率(Mb/s)` 未换算成 Gbps、端口状态 / MAC / MTU / IP 未落库，已逐项修正
+- 同一工作簿先导用例再导资产时，资产预览报 `Duplicate entry ... uk_batch_checksum` 500；`V11_39` 把 `kind` 纳入唯一键后两条链路各自成批
+- 用例预览把「当前测试环境」说明页误报为缺列（`errorCount=1`）；既无用例编号也无标题的工作表现在静默跳过，只在 `skippedSheets` 中列出
 - 公共用例导入的 `case_code` 按列宽 64 截断，超长编号不再整行失败；`safety_level` 缺省补 `LX`，避免以 NULL 写 NOT NULL 列
 - 公共资产删除改为按真实引用计数判定：0 引用可直接删，被引用才返回 409，修正此前平台资产无引用也拒绝删除的问题
 - 模板更新接口补齐 `status` 参数；模板内核读取改取项目实际列 `test_kernel`

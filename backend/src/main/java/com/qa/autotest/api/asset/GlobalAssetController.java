@@ -2,6 +2,9 @@ package com.qa.autotest.api.asset;
 
 import com.qa.autotest.application.asset.GlobalAssetService;
 import com.qa.autotest.common.ApiResponse;
+import com.qa.autotest.common.BusinessException;
+import com.qa.autotest.common.ErrorCode;
+import com.qa.autotest.domain.common.PageResult;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -19,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
- * 公共资产库接口（v4.7.0 / FR-v4.7-01..09）。
+ * 公共资产库接口（v4.7.0 / FR-v4.7-01..09、v4.9.3 校验和与采集）。
  *
  * <p>资产本体沿用 device / device_port / credential；这里只暴露公共（owner_scope=PLATFORM）视角，
  * 项目私有资产仍走 /api/projects/{id}/assets。
@@ -27,6 +30,9 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequestMapping("/api/global/assets")
 public class GlobalAssetController {
+
+    /** FR-v4.6-20 同口径防护：单文件 20MB 上限。 */
+    private static final long MAX_FILE_BYTES = 20L * 1024 * 1024;
 
     private final GlobalAssetService service;
 
@@ -51,13 +57,29 @@ public class GlobalAssetController {
     @PostMapping("/import/preview")
     public ApiResponse<GlobalAssetService.AssetPreview> preview(
             @RequestPart("file") MultipartFile file) throws IOException {
-        return ApiResponse.ok(service.preview(file.getInputStream()));
+        return ApiResponse.ok(service.preview(bytes(file), file.getOriginalFilename()));
     }
 
     @PostMapping("/import/commit")
     public ApiResponse<GlobalAssetService.AssetImportResult> commit(
             @RequestPart("file") MultipartFile file) throws IOException {
-        return ApiResponse.ok(service.importAssets(file.getInputStream()));
+        return ApiResponse.ok(service.importAssets(bytes(file), file.getOriginalFilename()));
+    }
+
+    @GetMapping("/import/batches")
+    public ApiResponse<PageResult<Map<String, Object>>> batches(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ApiResponse.ok(service.batches(page, size));
+    }
+
+    @PostMapping("/{id}/collect")
+    public ApiResponse<GlobalAssetService.CollectResult> collect(
+            @PathVariable long id,
+            @RequestParam(required = false) Long credentialId,
+            @RequestParam(required = false) String username,
+            @RequestParam(defaultValue = "false") boolean confirm) {
+        return ApiResponse.ok(service.collect(id, credentialId, username, confirm));
     }
 
     @PostMapping("/{type}/{id}/reference")
@@ -91,5 +113,16 @@ public class GlobalAssetController {
                         "attachment; filename=\"" + file.fileName() + "\"")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .body(file.content());
+    }
+
+    private static byte[] bytes(MultipartFile file) throws IOException {
+        if (file == null || file.isEmpty()) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "请先选择要导入的工作簿");
+        }
+        if (file.getSize() > MAX_FILE_BYTES) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                    "文件超过 20MB 上限，请拆分后再导入");
+        }
+        return file.getBytes();
     }
 }

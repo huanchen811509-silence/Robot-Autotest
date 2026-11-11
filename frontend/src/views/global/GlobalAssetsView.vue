@@ -1,9 +1,10 @@
 <script setup lang="ts">
 /**
- * 公共资产库（v4.7.0 / FR-v4.7-01..09、v4.7.1 / FR-v4.7-11..13）。
+ * 公共资产库（v4.7.0 / FR-v4.7-01..09、v4.7.1 / FR-v4.7-11..13、v4.9.3 采集与状态）。
  *
- * 资产来自「当前测试环境」分节导入：服务器/交换机/端口/凭据各自成节，按业务键 upsert，
- * 源文件已无的资产软失效；被项目引用的资产删除返回 409。
+ * 资产来自「当前测试环境」分节导入：服务器/交换机/端口各自成节，按业务键 upsert，
+ * 源文件已无的资产软失效（deprecated）；被项目引用的资产删除返回 409。
+ * 导入按整份工作簿的 SHA-256 幂等；采集记录挂到设备上，可对单台设备显式补采。
  */
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -25,6 +26,9 @@ const rows = ref<GlobalAssetRow[]>([])
 const loading = ref(false)
 const failed = ref('')
 const canWrite = computed(() => auth.isAdmin)
+const columnCount = computed(
+  () => 4 + (type.value === 'DEVICE' ? 2 : 0) + 1 + (canWrite.value ? 1 : 0),
+)
 
 async function load() {
   loading.value = true
@@ -46,6 +50,8 @@ function switchType(next: 'DEVICE' | 'CREDENTIAL') {
   type.value = next
   void load()
 }
+
+// ---------------------------------------------------------------- 导入
 
 const importOpen = ref(false)
 const preview = ref<AssetPreview | null>(null)
@@ -69,6 +75,7 @@ async function onFilePicked(event: Event) {
   pickedFile = file
   importing.value = true
   importError.value = ''
+  result.value = null
   try {
     preview.value = await globalAssetApi.preview(file)
   } catch (error) {
@@ -91,6 +98,56 @@ async function commitImport() {
   }
 }
 
+// ---------------------------------------------------------------- 采集
+
+const collectOpen = ref(false)
+const collectTarget = ref<GlobalAssetRow | null>(null)
+const credentialOptions = ref<GlobalAssetRow[]>([])
+const collectCredentialId = ref<number | null>(null)
+const collectUsername = ref('')
+const collectBusy = ref(false)
+const collectError = ref('')
+const collectDone = ref('')
+
+async function openCollect(row: GlobalAssetRow) {
+  collectTarget.value = row
+  collectOpen.value = true
+  collectError.value = ''
+  collectDone.value = ''
+  collectCredentialId.value = null
+  collectUsername.value = ''
+  try {
+    credentialOptions.value = await globalAssetApi.list({ type: 'CREDENTIAL' })
+  } catch {
+    credentialOptions.value = []
+  }
+}
+
+async function runCollect() {
+  if (!collectTarget.value) return
+  collectBusy.value = true
+  collectError.value = ''
+  try {
+    const collected = await globalAssetApi.collect(collectTarget.value.id, {
+      credentialId: collectCredentialId.value ?? undefined,
+      username: collectUsername.value || undefined,
+      confirm: true,
+    })
+    collectDone.value = t('global.assetCollectDone', {
+      status: collected.status,
+      nics: collected.nicCount,
+      roce: collected.rocePorts,
+    })
+    await load()
+  } catch (error) {
+    collectError.value = error instanceof Error ? error.message : t('global.loadFailed')
+  } finally {
+    collectBusy.value = false
+  }
+}
+
+// ---------------------------------------------------------------- 其他
+
 async function exportAssets() {
   const blob = await globalAssetApi.export()
   const url = URL.createObjectURL(blob)
@@ -109,6 +166,16 @@ async function removeAsset(row: GlobalAssetRow) {
   } catch (error) {
     window.alert(error instanceof Error ? error.message : t('global.loadFailed'))
   }
+}
+
+function collectLabel(row: GlobalAssetRow): string {
+  if (!row.collectCount) return t('global.assetCollectNever')
+  const status = row.collectStatus ?? '-'
+  return row.lastCollectedAt ? `${status} · ${row.lastCollectedAt}` : status
+}
+
+function shortSha(sha: string): string {
+  return sha.length > 16 ? `${sha.slice(0, 12)}…${sha.slice(-4)}` : sha
 }
 
 onMounted(load)
@@ -152,7 +219,7 @@ onMounted(load)
       <select v-model="availability" class="select" @change="load">
         <option value="">{{ t('global.assetAllStatus') }}</option>
         <option value="active">{{ t('global.assetStatusActive') }}</option>
-        <option value="inactive">{{ t('global.assetStatusInactive') }}</option>
+        <option value="deprecated">{{ t('global.assetStatusDeprecated') }}</option>
       </select>
     </div>
 
@@ -166,6 +233,8 @@ onMounted(load)
           <th>{{ t('global.assetDetail') }}</th>
           <th>{{ t('global.assetIp') }}</th>
           <th>{{ t('global.colStatus') }}</th>
+          <th v-if="type === 'DEVICE'">{{ t('global.assetPorts') }}</th>
+          <th v-if="type === 'DEVICE'">{{ t('global.assetCollectStatus') }}</th>
           <th>{{ t('global.assetRefs') }}</th>
           <th v-if="canWrite">{{ t('global.colActions') }}</th>
         </tr>
@@ -180,19 +249,24 @@ onMounted(load)
               {{
                 row.status === 'active'
                   ? t('global.assetStatusActive')
-                  : t('global.assetStatusInactive')
+                  : t('global.assetStatusDeprecated')
               }}
             </span>
           </td>
+          <td v-if="type === 'DEVICE'">{{ row.portCount }}</td>
+          <td v-if="type === 'DEVICE'" class="muted">{{ collectLabel(row) }}</td>
           <td>{{ row.referenceCount }}</td>
           <td v-if="canWrite">
+            <button v-if="type === 'DEVICE'" class="link" @click="openCollect(row)">
+              {{ t('global.assetCollect') }}
+            </button>
             <button class="link danger" @click="removeAsset(row)">
               {{ t('global.assetDelete') }}
             </button>
           </td>
         </tr>
         <tr v-if="rows.length === 0">
-          <td :colspan="canWrite ? 6 : 5" class="muted empty">{{ t('global.empty') }}</td>
+          <td :colspan="columnCount" class="muted empty">{{ t('global.empty') }}</td>
         </tr>
       </tbody>
     </table>
@@ -209,6 +283,11 @@ onMounted(load)
         <p v-if="importError" class="error">{{ importError }}</p>
 
         <template v-if="preview">
+          <p class="muted mono">
+            {{ t('global.assetChecksum') }}：{{ shortSha(preview.sha256) }} ·
+            {{ t('global.assetBatch') }} #{{ preview.batchId }}
+          </p>
+          <p v-if="preview.replayed" class="warning">{{ t('global.assetReplayed') }}</p>
           <div class="diff-cards">
             <span class="diff-card new">{{ t('global.assetDevice') }} {{ preview.devices }}</span>
             <span class="diff-card update">{{ t('global.assetPorts') }} {{ preview.ports }}</span>
@@ -217,7 +296,7 @@ onMounted(load)
             </span>
           </div>
           <ul v-if="preview.samples.length" class="samples">
-            <li v-for="sample in preview.samples" :key="sample">{{ sample }}</li>
+            <li v-for="(sample, index) in preview.samples" :key="index">{{ sample }}</li>
           </ul>
           <p v-for="warning in preview.warnings" :key="warning" class="warning">{{ warning }}</p>
 
@@ -228,6 +307,7 @@ onMounted(load)
                 ports: result.ports,
                 credentials: result.credentials,
                 deprecations: result.deprecations,
+                supplemented: result.statusSupplemented,
               })
             }}
           </p>
@@ -238,6 +318,47 @@ onMounted(load)
             </button>
           </div>
         </template>
+      </div>
+    </div>
+
+    <div v-if="collectOpen" class="modal-mask" @click.self="collectOpen = false">
+      <div class="modal narrow">
+        <header class="modal-head">
+          <h2>{{ t('global.assetCollectTitle') }}</h2>
+          <button class="link" @click="collectOpen = false">{{ t('global.close') }}</button>
+        </header>
+        <p class="muted">{{ t('global.assetCollectHint') }}</p>
+        <p class="mono">{{ collectTarget?.name }} · {{ collectTarget?.managementIp }}</p>
+        <p v-if="credentialOptions.length === 0" class="warning">
+          {{ t('global.assetCollectNoCredential') }}
+        </p>
+        <template v-else>
+          <label class="field">
+            <span>{{ t('global.assetCollectCredential') }}</span>
+            <select v-model="collectCredentialId" class="select">
+              <option :value="null">-</option>
+              <option v-for="item in credentialOptions" :key="item.id" :value="item.id">
+                {{ item.name }}
+              </option>
+            </select>
+          </label>
+          <label class="field">
+            <span>{{ t('global.assetCollectUsername') }}</span>
+            <input v-model="collectUsername" class="input" />
+          </label>
+        </template>
+        <p v-if="collectError" class="error">{{ collectError }}</p>
+        <p v-if="collectDone" class="success">{{ collectDone }}</p>
+        <div class="modal-actions">
+          <button class="btn" @click="collectOpen = false">{{ t('global.close') }}</button>
+          <button
+            class="btn btn-primary"
+            :disabled="collectBusy || credentialOptions.length === 0"
+            @click="runCollect"
+          >
+            {{ t('global.assetCollectConfirm') }}
+          </button>
+        </div>
       </div>
     </div>
   </section>
@@ -327,7 +448,7 @@ onMounted(load)
   color: var(--ok);
 }
 
-.badge.inactive {
+.badge.deprecated {
   color: var(--fail);
 }
 
@@ -356,6 +477,10 @@ onMounted(load)
   padding: var(--space-4);
 }
 
+.modal.narrow {
+  width: min(480px, 92vw);
+}
+
 .modal-head {
   display: flex;
   align-items: center;
@@ -367,6 +492,15 @@ onMounted(load)
   justify-content: flex-end;
   gap: var(--space-2);
   margin-top: var(--space-3);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: var(--space-2) 0;
+  font-size: 12px;
+  color: var(--text-muted);
 }
 
 .diff-cards {
@@ -408,6 +542,7 @@ onMounted(load)
   color: var(--accent, #2563eb);
   cursor: pointer;
   padding: 0;
+  margin-right: var(--space-2);
 }
 
 .link.danger {
