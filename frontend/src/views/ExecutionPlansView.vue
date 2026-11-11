@@ -433,7 +433,7 @@ onMounted(async () => {
 
 .grid {
   display: grid;
-  grid-template-columns: minmax(280px, 1fr) minmax(320px, 1.2fr);
+  grid-template-columns: minmax(240px, 1fr) minmax(320px, 1.2fr);
   gap: var(--space-4);
   margin-top: var(--space-4);
 }
@@ -493,7 +493,7 @@ onMounted(async () => {
 
 .params {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: var(--space-3);
 }
 
@@ -509,7 +509,7 @@ onMounted(async () => {
   padding: 6px 8px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  background: var(--surface);
+  background: var(--panel);
   color: var(--text);
 }
 

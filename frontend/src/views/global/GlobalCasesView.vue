@@ -640,7 +640,7 @@ onMounted(async () => {
 }
 
 .modal {
-  width: min(980px, 92vw);
+  width: min(900px, 92vw);
   max-height: 86vh;
   overflow: auto;
   background: var(--panel);
