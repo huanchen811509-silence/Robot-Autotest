@@ -148,3 +148,5 @@
 |---|---|---|---|
 | v0.1 | 2026-11-11 | 学徒 | 首版：8 组 27 个 WBS，每条带验收命令 |
 | v0.2 | 2026-11-11 | 学徒 | W-D-05 判据按实测修订（详见 PRD §8 v0.2）；实际完成情况：W-D-01~05 全部完成，17 条采集记录 = 8 台 Linux 管理面 8 条 + 4 台交换机 4 条 + 5 台 BMC 5 条；偏差：原判据 `host_inventory` 表名有误（实际落 `device_host_spec`），考核指标与 PRD G1 同步改为「≥17 条 + 6 条 OK」 |
+| v0.3 | 2026-11-11 | 学徒 | W-D-04 判据更正：原写「`management_credential_id IS NULL` = 5（4 台纯带外交换机不采业务面）」被实测推翻 —— 交换机也走 SSH 采集基础 6 类，mgmt 凭据必须绑，实测 = **0**；改为「mgmt = 0 / `bmc_credential_id IS NULL` = 4（4 台交换机不采带外）」。纯带外假设不成立的原因是决策 C2「交换机只采基础信息」走的是 SSH 通道，不是 BMC |
+| v0.4 | 2026-11-11 | 学徒 | **⑦ 回写落定（整版完成情况）**：8 组 27 个 WBS 全部完成，无一条降级。W-A~W-C 由 `mvn test` 1428 例与 `vitest` 102 文件/761 例锁定；W-D 见 v0.2/v0.3；W-E/W-F/W-G 由 8 个新增/改动 spec 锁定行为（`GlobalSettingsView.vue` 及其 spec 已删除，`check_navigation.py` 绿）。W-H-04 实测：`scripts/gates.sh` **32 步 / PASS 31 / FAIL 1**，唯一失败=第 13 步 `browser_regression`（CDP `:9222` 按令关闭，决策性未跑），达成「除 CDP 外全绿」判据；W-H-01~03 全 PASS。偏差与遗留：5 条判据按实测改写（见 `05-TEST-REPORT.md` §7）、6 条 PARTIAL 与 2 条 NOT-RUN 的原因见 §6；交付包 `robot-autotest-4.12.0-f11c704-linux-x64.tar.gz`（357 文件 / `sha256 9fc0480…221d`） |
