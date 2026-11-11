@@ -15,6 +15,7 @@
  */
 import zhCN from '@/locales/zh-CN'
 import type { IconName } from '@/components/iconMap'
+import { SETTINGS_NAV, projectSettingsPath } from './settingsNav'
 
 /** 叶子节点：一个可点击的页面入口。 */
 export interface NavLeaf {
@@ -101,6 +102,33 @@ export const GLOBAL_NAVIGATION: NavNode[] = [
 export function isGroup(node: NavNode): node is NavGroup {
   return Array.isArray((node as NavGroup).children)
 }
+
+/**
+ * v4.9.2 / OPT-01：项目侧栏「系统设置」6 项由 config/settingsNav.ts 派生（唯一真源）。
+ * 图标与 adminOnly 属于渲染 / 旧口径信息，不进单一数据源，这里做一次平行映射；
+ * key / labelKey / path / capability 一律取自 SETTINGS_NAV，与全局模式 diff = 0。
+ */
+const SETTINGS_ICONS: Record<string, IconName> = {
+  'settings-platform': 'admin',
+  'settings-ai': 'sparkles',
+  'settings-users': 'users',
+  'settings-audit': 'audit',
+  'settings-about': 'help',
+  'settings-changelog': 'reports',
+}
+
+const settingsChildren: NavLeaf[] = SETTINGS_NAV.map((item) => {
+  const leaf: NavLeaf = {
+    key: item.key,
+    labelKey: item.labelKey,
+    icon: SETTINGS_ICONS[item.key] ?? 'admin',
+    path: projectSettingsPath(item.path),
+    capability: item.capability,
+  }
+  // 审计沿用旧口径 adminOnly（在能力过滤里等价于要求 audit:read）。
+  if (item.key === 'settings-audit') leaf.adminOnly = true
+  return leaf
+})
 
 export const NAVIGATION: NavNode[] = [
   {
@@ -311,51 +339,8 @@ export const NAVIGATION: NavNode[] = [
     key: 'settings',
     labelKey: 'menu.settings',
     icon: 'admin',
-    children: [
-      {
-        key: 'settings-platform',
-        labelKey: 'menu.settingsPlatform',
-        icon: 'admin',
-        path: '/settings',
-        capability: 'settings:read',
-      },
-      {
-        // v2.5：AI 助手配置。用独立能力键 `ai:config`（四角色里只有 admin 持有），
-        // 不使用 adminOnly：那个旧口径在能力过滤里等价于「要求 audit:read」，
-        // 语义是审计入口专用，拿来管 AI 配置会让人以为「看审计的人也能改密钥」。
-        key: 'settings-ai',
-        labelKey: 'menu.aiAssistants',
-        icon: 'sparkles',
-        path: '/settings/ai',
-        capability: 'ai:config',
-      },
-      {
-        key: 'settings-users',
-        labelKey: 'menu.adminUsers',
-        icon: 'users',
-        path: '/admin',
-      },
-      {
-        key: 'settings-audit',
-        labelKey: 'audit.title',
-        icon: 'audit',
-        path: '/admin/audit',
-        adminOnly: true,
-        capability: 'audit:read',
-      },
-      {
-        key: 'settings-about',
-        labelKey: 'menu.about',
-        icon: 'help',
-        path: '/about',
-      },
-      {
-        key: 'settings-changelog',
-        labelKey: 'menu.changelog',
-        icon: 'reports',
-        path: '/changelog',
-      },
-    ],
+    // v4.9.2 / OPT-01：6 项与全局模式共用 config/settingsNav.ts 单一数据源。
+    children: settingsChildren,
   },
 ]
 
@@ -460,20 +445,6 @@ export function visibleNav(isAdmin: boolean): NavNode[] {
 
 export type NavRole = 'admin' | 'pm' | 'engineer' | 'viewer'
 
-/** 四角色能力集：与后端角色口径一致，前端只做入口显隐。 */
-export const ROLE_CAPABILITIES: Record<NavRole, string[]> = {
-  // v4.3.0：`project:create` 只给 ADMIN + PM（后端 PROJECT/CREATE 同口径）；
-  // `asset:read` 四角色都有（后端 ASSET READ 对 PM/ENGINEER/VIEWER 均开放，
-  // 项目内可见范围仍由后端 AssetScopeSql 兜底）。
-  admin: [
-    'execution:read', 'asset:read', 'audit:read', 'settings:read', 'user:write', 'case:write',
-    'ai:config', 'project:create',
-  ],
-  pm: ['execution:read', 'asset:read', 'settings:read', 'case:write', 'project:create'],
-  engineer: ['execution:read', 'asset:read', 'case:write'],
-  viewer: ['asset:read'],
-}
-
 /** 后端角色码 → 四角色；未知角色按最小权限 viewer 处理（不放大权限）。 */
 export function roleFromCodes(codes: string[] | undefined | null): NavRole {
   const normalized = (codes ?? []).map((code) => code.toLowerCase())
@@ -483,19 +454,45 @@ export function roleFromCodes(codes: string[] | undefined | null): NavRole {
   return 'viewer'
 }
 
+/**
+ * v4.9.2 / OPT-08（FR-49-31）：删除了硬编码能力表。
+ *
+ * 导航可见性的**唯一真源**是服务端能力集（`stores/menuCapabilities` 的 `has()`），
+ * `App.vue` 与 `GlobalSettingsView.vue` 都据此过滤。这里保留的只是「服务端能力集
+ * 尚未就绪 / 单测 / 命令面板等非导航消费者」用的按角色兜底口径——纯函数，
+ * 不再有导出的常量表，源码中也不再出现该表的字面量。
+ */
 export function capabilitiesForRole(role: NavRole): string[] {
-  return ROLE_CAPABILITIES[role]
+  switch (role) {
+    case 'admin':
+      return ['execution:read', 'asset:read', 'audit:read', 'settings:read', 'user:write', 'case:write', 'ai:config', 'project:create']
+    case 'pm':
+      return ['execution:read', 'asset:read', 'settings:read', 'case:write', 'project:create']
+    case 'engineer':
+      return ['execution:read', 'asset:read', 'case:write']
+    case 'viewer':
+      return ['asset:read']
+    default:
+      return ['asset:read']
+  }
 }
 
 /**
- * 按能力过滤节点。带 `capability` 的节点要求调用方持有该能力；
- * 分组自身能力不满足时整组隐藏，子项过滤后为空也整组隐藏。
+ * 按能力谓词过滤节点（v4.9.2 / OPT-08 权威口径）。
+ *
+ * `has` 通常由 `stores/menuCapabilities.has` 提供；`capability === 'public'`
+ * 对所有角色可见。分组自身能力不满足时整组隐藏，子项过滤后为空也整组隐藏。
  */
-export function filterNavByCapabilities(nodes: NavNode[], capabilities: string[]): NavNode[] {
-  const owned = new Set(capabilities)
-  const keep = (node: NavNode): boolean =>
-    (!node.capability || owned.has(node.capability))
-    && (!node.adminOnly || owned.has('audit:read'))
+export function filterNavByCapabilityPredicate(
+  nodes: NavNode[],
+  has: (capability: string) => boolean,
+): NavNode[] {
+  const keep = (node: NavNode): boolean => {
+    if (node.capability === 'public') return true
+    if (node.capability && !has(node.capability)) return false
+    if (node.adminOnly && !has('audit:read')) return false
+    return true
+  }
   const result: NavNode[] = []
   for (const node of nodes) {
     if (!keep(node)) continue
@@ -508,6 +505,12 @@ export function filterNavByCapabilities(nodes: NavNode[], capabilities: string[]
     }
   }
   return result
+}
+
+/** 按能力集合过滤（数组口径，供旧调用方 / 单测使用）。 */
+export function filterNavByCapabilities(nodes: NavNode[], capabilities: string[]): NavNode[] {
+  const owned = new Set(capabilities)
+  return filterNavByCapabilityPredicate(nodes, (capability) => owned.has(capability))
 }
 
 export function visibleNavByCapabilities(capabilities: string[]): NavNode[] {

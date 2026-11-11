@@ -367,6 +367,8 @@ public class ProjectSyncService {
                        domain_tag = ?, description = ?, precondition = ?, expected = ?, capability = ?,
                        category_l1 = ?, category_l2 = ?, source_priority = ?,
                        case_class = ?, test_category = ?, ed202_coverage = ?, source_sheet = ?,
+                       a_side_command = ?, b_side_command = ?, switch_config = ?, test_result = ?,
+                       test_resource = ?,
                        content_sha = ?, lifecycle_status = 'active', updated_by = ?
                  WHERE id = ? AND project_id = ?
                 """, str(remote.get("title")), str(remote.get("case_kind")), str(remote.get("priority")),
@@ -376,8 +378,11 @@ public class ProjectSyncService {
                 str(remote.get("category_l1")), str(remote.get("category_l2")),
                 str(remote.get("source_priority")), str(remote.get("case_class")),
                 str(remote.get("test_category")), str(remote.get("ed202_coverage")),
-                str(remote.get("source_sheet")), str(remote.get("content_sha")), operator,
-                localId, projectId);
+                str(remote.get("source_sheet")),
+                str(remote.get("a_side_command")), str(remote.get("b_side_command")),
+                str(remote.get("switch_config")), str(remote.get("test_result")),
+                str(remote.get("test_resource")),
+                str(remote.get("content_sha")), operator, localId, projectId);
         jdbc.update("DELETE FROM test_case_step WHERE test_case_id = ?", localId);
         jdbc.update("""
                 INSERT INTO test_case_step (test_case_id, step_no, action, expectation, source_row,
@@ -396,6 +401,8 @@ public class ProjectSyncService {
                            domain_tag = ?, description = ?, precondition = ?, expected = ?, capability = ?,
                            category_l1 = ?, category_l2 = ?, source_priority = ?,
                            case_class = ?, test_category = ?, ed202_coverage = ?, source_sheet = ?,
+                           a_side_command = ?, b_side_command = ?, switch_config = ?, test_result = ?,
+                           test_resource = ?,
                            content_sha = ?, lifecycle_status = COALESCE(?, 'active'),
                            source = COALESCE(?, 'import')
                      WHERE id = ? AND project_id = ?
@@ -405,7 +412,11 @@ public class ProjectSyncService {
                     before.get("capability"), before.get("category_l1"), before.get("category_l2"),
                     before.get("source_priority"), before.get("case_class"),
                     before.get("test_category"), before.get("ed202_coverage"),
-                    before.get("source_sheet"), before.get("content_sha"),
+                    before.get("source_sheet"),
+                    before.get("a_side_command"), before.get("b_side_command"),
+                    before.get("switch_config"), before.get("test_result"),
+                    before.get("test_resource"),
+                    before.get("content_sha"),
                     before.get("lifecycle_status"), before.get("source"), localId, projectId);
         } catch (Exception ex) {
             throw new BusinessException(ErrorCode.INTERNAL_ERROR, "同步回滚失败：" + ex.getMessage());
@@ -434,9 +445,10 @@ public class ProjectSyncService {
                         precondition, expected, review_status, source, capability,
                         category_l1, category_l2, source_priority, case_class, test_category,
                         ed202_coverage, source_sheet, content_sha, lifecycle_status, version_no,
+                        a_side_command, b_side_command, switch_config, test_result, test_resource,
                         created_by, updated_by)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', 'import', ?, ?,
-                        ?, ?, ?, ?, ?, ?, ?, 'active', 1, ?, ?)
+                        ?, ?, ?, ?, ?, ?, ?, 'active', 1, ?, ?, ?, ?, ?, ?, ?)
                     """, new String[]{"id"});
             ps.setLong(1, projectId);
             ps.setString(2, truncate(code, 64));
@@ -461,8 +473,13 @@ public class ProjectSyncService {
             ps.setString(20, str(remote.get("ed202_coverage")));
             ps.setString(21, str(remote.get("source_sheet")));
             ps.setString(22, str(remote.get("content_sha")));
-            ps.setLong(23, operator);
-            ps.setLong(24, operator);
+            ps.setString(23, str(remote.get("a_side_command")));
+            ps.setString(24, str(remote.get("b_side_command")));
+            ps.setString(25, str(remote.get("switch_config")));
+            ps.setString(26, str(remote.get("test_result")));
+            ps.setString(27, str(remote.get("test_resource")));
+            ps.setLong(28, operator);
+            ps.setLong(29, operator);
             return ps;
         }, keys);
         long newId = keys.getKey() == null ? 0 : keys.getKey().longValue();

@@ -88,6 +88,8 @@ export const TEMPLATE_PROBLEMS: string[] = (() => {
     codes.add(template.code)
     validateTemplate(template).forEach((problem) => list.push(`#${index}:${problem}`))
   })
-  if (PROJECT_TEMPLATES.length !== 4) list.push(`count=${PROJECT_TEMPLATES.length}`)
+  // K6 / FR-49-21：不再硬校验「恰好 4 个」。内置模板数量随版本增减，
+  // 持久化模板（V11_36）落地后「4」已不是真值，这里只守「至少要有 1 个可用模板」。
+  if (PROJECT_TEMPLATES.length === 0) list.push(`count=${PROJECT_TEMPLATES.length}`)
   return list
 })()

@@ -8,7 +8,41 @@
 > `<!-- current -->` 是给解析器用的语言无关标识（Markdown 渲染时不可见）。
 > 因此代码里不需要硬编码中文，界面显示文案一律走 i18n 语言包 `changelog.*`。
 
-## v4.9.2-ga（2026-11-10） <!-- current -->
+## v4.10.0（2026-11-11） <!-- current -->
+
+### 新增 <!-- added -->
+- **统一用例详情（OPT-02）**：公共用例、项目用例、由公共用例分配给项目的副本三类详情共用同一字段契约，按「标识 / 分类 / 内容 / 执行 / 溯源 / 版本」六组展示，覆盖参考工作簿 14 列基线；源表无此列时显式写「源表无此列」而非留空；副本额外显示 `external_id`、同步批次号、`local_override` 徽章
+- **两级分类与按分类组集（OPT-07）**：`case_category` 作用域扩到「平台 + 项目」，用例落 `category_l1_id` / `category_l2_id` 逻辑外键；支持「全选一级 / 全选二级 / 跨表交集」三种筛选批量入用例集（`item_source='category_filter'`）、按分类导出 CSV、场景 CRUD 复用 `test_set.kind=scenario` 三态
+- **资产详情三分区（OPT-04）**：硬件 / 软件与带外 / 状态三分区聚合 `device`、`device_port`、`device_host_spec`，四层证据（采集时间、命令原文、原始输出、结构化值）齐全；采集四态（未采集 / 采集中 / PARTIAL / FAILED），触发采集需选凭据 + 二次确认，失败后仍展示上次成功快照
+- **模板卡片与模板工作台（OPT-05）**：模板卡片与项目卡片同栅格同 token，展示用例 / 用例集 / 场景 / 资产四类计数与内核、最近更新；全局模式 `/g/templates/{id}` 可直接增删模板内容清单并持久化（`builtin` 只读），新建模板内容为空时前端拦截
+- **从模板建项目（OPT-06）**：`POST /api/projects/from-template` 单事务完成「建项目 → 生成用例 / 用例集 / 场景 → 引用资产 → 写审计」，默认 `mode=copy`（项目副本与公共库解耦）；同一模板同一编码重复提交返回 409；失败整体回滚零残留
+- **顶栏主题与语言快捷切换（OPT-03）**：右上角新增两个循环按钮，主题 `system → light → dark → system`（复用 `useTheme().cycle()`），语言 `zh-CN ↔ en-US`，与账户菜单内的既有控件双向同步
+- **服务端菜单能力（OPT-08）**：新增 `GET /api/me/menu-capabilities`，按当前登录角色求值返回能力集合；前端渲染导航前先取能力，失败降级为最小能力集
+- **内置模板自带真实内容**：`V11_44` 从项目 88 的 730 条台账中按分类取真实用例，为「接口回归」补 20 条、「Web UI 巡检」补 20 条、「Pytest 服务」补 18 条，各配 1 个场景与设备 / 凭据引用；「空白项目」按设计保持空白。从此「从模板建项目」建出的是有内容的项目，不再是空壳
+
+### 变更 <!-- changed -->
+- **全局模式系统设置改为二级菜单（OPT-01）**：`/g/settings` 等 6 项与项目模式共用 `config/settingsNav.ts` 单一数据源，补齐此前漏掉的「AI 助手」，两模式菜单名称与顺序 diff 为 0；卡片形态移除
+- **导入列映射扩展（OPT-02）**：`HEADER_ALIASES` 新增「A端命令 / B端命令 / 交换机配置 / 测试结果」四类别名，「测试资源」从 `ed202_coverage` 拆为独立列，14 列对账命中 14；幂等依据仍为 `external_id` + `content_sha`，重复导入不新增用例与版本
+- **权限判定改由服务端驱动（OPT-08）**：移除前端 `ROLE_CAPABILITIES` 硬编码能力表，`PermissionMatrix` 增 MENU 维度求值（ADMIN / PM / ENGINEER / VIEWER × 6 能力）；`ai:config`、`user:write`、`audit:read` 三个敏感能力在接口层由 `AccessControlService.require()` 兜底，只做前端隐藏不算通过
+- 新增 5 组迁移 `V11_40`–`V11_44`，均配 `db/down/` 回滚脚本：`V11_40` 用例四列、`V11_41` 分类作用域与逻辑外键、`V11_42` 回填后收紧约束与索引、`V11_43` 审计口径补齐、`V11_44` 内置模板内容种子
+- 新增端点：`GET /api/global/cases/{id}`、`PUT /api/global/cases/{id}/categories`、`GET /api/global/cases/export/category.csv`、`POST /api/test-sets/{id}/items/category-filter`、分类作用域四个端点、场景组三个端点、`GET /api/global/templates/{id}`、`POST /api/projects/from-template`、`POST /api/projects/{id}/save-as-template`、`GET /api/asset-host-inventory/detail`、`GET /api/me/menu-capabilities`、`POST /api/assets/{id}/collect`
+- 前端新增 5 条路由：`/g/cases/:id`、`/g/assets/:id`、`/assets/:id`、`/g/templates/:id`、`/scenarios`，均由 `import.meta.glob` 预注册，URL 复制后可直达
+- 内置模板校验去掉 `count === 4` 的硬编码数量断言，改为按内容完整性判定
+
+### 修复 <!-- fixed -->
+- **全局设置点击即被弹回项目模式（R6）**：`/g/**` 设置路由缺 `meta.global`，全局模式守卫误判后强制切回项目模式；现拆成 `shouldPreserveGlobalMode(route)`（只看 `meta.global`）与 `canEnterGlobalMode(role)`（只看角色）两个独立判据
+- **四列导入即丢**：「A端命令 / B端命令 / 交换机配置 / 测试结果」此前不在别名表内，导入后内容不可恢复；现独立落列并可回填存量
+- **门禁第 12 步 `db_audit` 长期判红**：`V11_30` / `V11_33` / `V11_34` / `V11_36` / `V11_37` 建的 8 张表中 7 张缺审计四列、2 张主键不是单列 `id`；`V11_43` 按「可变表补列、真 append-only 表（`case_version`）走契约豁免、两张表改代理主键」处置，`db_audit` 复跑 PASS
+- **序号分配在代理主键下返回错值**：`project_code_sequence` 加自增主键后，首次分配被 MySQL 覆盖成自增 id（实测返回 6 而非 1）；`nextCodeSequence` 改用 `ROW_COUNT()` 区分插入 / 更新分支
+- **模板有内容时「从模板建项目」直接 500**：`copyCase` 的 INSERT 引用了早已重命名掉的 `category` 列（现为 `category_l1`），报 `Unknown column 'category' in 'field list'`。此前四个内置模板内容全为空，这段代码从 v4.9.2 起一次都没被执行过，属假绿；现改为 `INSERT ... SELECT` 整列搬迁，并顺带把本版新增的 A端/B端/交换机/测试结果/测试资源五列与两级分类 id 一并复制（否则模板建出的项目会丢补录内容），新增真实库集成测试 `ProjectTemplateCopyIT` 逐列锁死
+
+### 破坏性变更 <!-- breaking -->
+- `project_code_sequence` 主键由 `scope` 改为代理 `id`（保留 `uk_project_code_sequence_scope` 唯一键）、`project_member_role` 主键由 `(project_id,user_id,role_code)` 改为 `id`（原主键降级为唯一键）；两表均无外来外键引用，`INSERT ... ON DUPLICATE KEY` / `INSERT IGNORE` 语义不变；回滚见 `V11_43` 的 down 脚本
+- `import_item` / `project_template_item` / `project_template_asset` / `sync_job` / `sync_job_item` 新增审计列，`updated_at` 为 `NOT NULL DEFAULT CURRENT_TIMESTAMP(3)`，历史行按迁移时间回填
+- 前端不再导出 `ROLE_CAPABILITIES`；任何依赖该常量的外部脚本需改读 `GET /api/me/menu-capabilities`
+- `SchemaIT` 与 `scripts/db-audit.sh` 的 append-only 清单新增 `case_version`（`db/schema-contract.json` 单一真源，两处同读）
+
+## v4.9.2-ga（2026-11-10）
 
 ### 新增 <!-- added -->
 - **成员多角色（4.4.0）**：一个成员可同时持有多个项目角色，权限按并集求值；成员批量添加与角色回显；项目编码由 `GET /api/projects/next-code` 统一发号，支持改码与审核留痕
@@ -18,14 +52,25 @@
 - **模板中心（4.8.0）**：`project_template` / `project_template_item` / `project_template_asset` 持久化，4 个内置模板；模板以**引用**保存用例与资产、不复制正文；创建向导新增「内容」步，选中的公共用例复制进项目用例集、资产按引用挂载
 - **存量同步（4.9.0）**：`sync_job` / `sync_job_item` 记录预览与执行；NEW / UPDATE / CONFLICT / UNCHANGED / SKIP 五态差异，冲突逐条选择「保留本地 / 接受公共库 / 另存副本」；执行后可整单回滚；`local_override` 用例永不被同步覆盖；每日预览定时任务默认关闭（`sync.auto.enabled=false`）
 - **错误追踪号（4.9.1）**：接口错误展示服务端 `X-Trace-Id`，用户可连同错误码一起复制给运维定位
+- **公共用例导入（730 条实测）**：样本工作簿 `基本功能导入测试v0.5.0.0.xlsx` 五张明细表全部落位（730 用例 / 2779 步骤 / 32 个一级分类），派生「测试用例看板」页自动跳过；提交后按用例反推并同步两级分类字典
+- **资产导入校验和与重放**：资产预览落 `import_batch(kind='asset')` 并展示 `sha256` 前 12 位、批次号；同文件再次提交返回首批次结果（`replayed=true`），业务表零写入
+- **资产采集关联与显式补采**：资产列表新增端口数、采集次数、最近采集时间、采集状态；「立即采集」需选已有凭据并二次确认（`confirm=true`），复用主机清单采集通道，导入的凭据引用不落明文口令
+- **资产状态补充**：导入结果新增 `statusSupplemented` 计数；设备补充 `operating_system` / `kernel_version` / `bmc_address` / `login_mode` / `account` 采集字段
 
 ### 变更 <!-- changed -->
-- 新增 8 组迁移 `V11_30`–`V11_37`，均附 `db/down/` 回滚脚本；`test_case` 增公共库列与索引，`import_batch` / `import_item` / `export_record` / `case_version` / `sync_job` / `sync_job_item` 等表建立
+- 新增 10 组迁移 `V11_30`–`V11_39`（`V11_38` 资产状态与采集字段、`V11_39` 批次唯一键含 `kind`），均附 `db/down/` 回滚脚本；`test_case` 增公共库列与索引，`import_batch` / `import_item` / `export_record` / `case_version` / `sync_job` / `sync_job_item` 等表建立
 - 用例导入改为「预览 → 提交」两段式：预览只读并可重复回放（同一文件 sha 命中已提交批次时不重复建批次）；提交写入用例、步骤、版本快照与审计
 - 侧栏「维护与恢复」新增「存量同步」入口（`/sync`）；全局模式导航独立于项目导航，避免项目内页面误挂全局
+- `import_batch` 唯一键由 `(project_id, checksum)` 改为 `(project_id, kind, checksum)`（`V11_39`）：同一工作簿可同时声明用例批次与资产批次，重放判定各自独立
+- 资产软失效状态统一为 `deprecated`（对齐 PRD），历史 `inactive` 在 `V11_38` 中迁移；前端筛选项、导出与 i18n 同步改名
+- 用例导入跳过派生看板页与「既无用例编号也无标题」的说明页，预览区展示校验和、批次号与跳过页清单
 - 关于页版本与依赖继续取自构建产物 `build-info.properties`，本版发布口径为 `4.9.2`
 
 ### 修复 <!-- fixed -->
+- 资产解析把 RDMA 端点映射、环境事实、Bond 配置、已知限制等汇总节当成资产行，样本工作簿解析出 32 台设备和 49 个端口（正确为 12 台 / 58 个）；现以「整行单格即分节标题」重置表头并跳过汇总节，一行多个网口按行拆成多条端口
+- 「当前测试环境」交换机节没有主机名时整节被丢弃，「网口」不在端口列别名、`速率(Mb/s)` 未换算成 Gbps、端口状态 / MAC / MTU / IP 未落库，已逐项修正
+- 同一工作簿先导用例再导资产时，资产预览报 `Duplicate entry ... uk_batch_checksum` 500；`V11_39` 把 `kind` 纳入唯一键后两条链路各自成批
+- 用例预览把「当前测试环境」说明页误报为缺列（`errorCount=1`）；既无用例编号也无标题的工作表现在静默跳过，只在 `skippedSheets` 中列出
 - 公共用例导入的 `case_code` 按列宽 64 截断，超长编号不再整行失败；`safety_level` 缺省补 `LX`，避免以 NULL 写 NOT NULL 列
 - 公共资产删除改为按真实引用计数判定：0 引用可直接删，被引用才返回 409，修正此前平台资产无引用也拒绝删除的问题
 - 模板更新接口补齐 `status` 参数；模板内核读取改取项目实际列 `test_kernel`

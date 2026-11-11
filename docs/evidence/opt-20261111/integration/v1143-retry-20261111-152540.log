@@ -1,0 +1,60 @@
+=== 半成品现状（失败前已落地的列） ===
+import_item	id,created_at,created_by,updated_at,updated_by
+project_code_sequence	updated_at,created_at,created_by,updated_by
+project_member_role	created_at,created_by
+project_template_asset	id,created_at,created_by,updated_at,updated_by
+project_template_item	id,created_at,created_by,updated_at,updated_by
+sync_job	id,created_at,created_by,updated_at,updated_by
+sync_job_item	id,created_at,created_by,updated_at,updated_by
+=== 回滚半成品（与 V11_43 前半段严格对称） ===
+=== 清除失败的 flyway 记录 ===
+11.42	project case category tighten	1
+11.41	project case category	1
+11.40	case import extra columns	1
+=== 重跑 migrate ===
+[db-migrate] robot@127.0.0.1:3306/robot_dev
+[db-migrate] 完成；当前业务表数：
+mysql: [Warning] Using a password on the command line interface can be insecure.
+98
+MIGRATE_RC=0
+=== 结果核对 ===
+11.43	1
+11.42	1
+project_code_sequence	id
+project_code_sequence	scope
+project_code_sequence	next_no
+project_code_sequence	updated_at
+project_code_sequence	created_at
+project_code_sequence	created_by
+project_code_sequence	updated_by
+project_member_role	id
+project_member_role	project_id
+project_member_role	user_id
+project_member_role	role_code
+project_member_role	created_at
+project_member_role	created_by
+project_member_role	updated_at
+project_member_role	updated_by
+project_code_sequence	id
+project_member_role	id
+member_role_rows	9
+code_seq_rows	0
+=== db-audit ===
+[db-audit] robot@127.0.0.1:3306/robot_dev
+mysql: [Warning] Using a password on the command line interface can be insecure.
+  OK    业务表数 = 98（98）
+mysql: [Warning] Using a password on the command line interface can be insecure.
+  OK    缺审计四列的表的数量 = 0（0）
+mysql: [Warning] Using a password on the command line interface can be insecure.
+  OK    append-only 历史表都有 created_at（9）
+mysql: [Warning] Using a password on the command line interface can be insecure.
+  OK    主键不是单列 id 的表数量 = 0（0）
+mysql: [Warning] Using a password on the command line interface can be insecure.
+  OK    缺主键的表数量 = 0（0）
+mysql: [Warning] Using a password on the command line interface can be insecure.
+  OK    时间列不是 datetime(3) 的表数量 = 0（0）
+mysql: [Warning] Using a password on the command line interface can be insecure.
+  OK    非 utf8mb4 的表数量 = 0（0）
+--------------------------------------------------------------
+db-audit: PASS
+AUDIT_RC=0

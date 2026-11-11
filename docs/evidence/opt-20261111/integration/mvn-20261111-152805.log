@@ -1,0 +1,46 @@
+=== mvn test (unit, 排除 IT) 2026-11-11 15:28:05 ===
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in com.qa.autotest.common.query.PageQueryTest
+[INFO] Running com.qa.autotest.common.async.BoundedExecutorTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.011 s -- in com.qa.autotest.common.async.BoundedExecutorTest
+[INFO] Running com.qa.autotest.common.security.SecretRedactorTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in com.qa.autotest.common.security.SecretRedactorTest
+[INFO] Running com.qa.autotest.common.security.SecretRedactorEvidenceTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.007 s -- in com.qa.autotest.common.security.SecretRedactorEvidenceTest
+[INFO] Running com.qa.autotest.common.security.SecretCipherTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.007 s -- in com.qa.autotest.common.security.SecretCipherTest
+[INFO] Running com.qa.autotest.common.tenant.TenantGuardMetaTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in com.qa.autotest.common.tenant.TenantGuardMetaTest
+[INFO] Running com.qa.autotest.common.cache.TtlCacheTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 s -- in com.qa.autotest.common.cache.TtlCacheTest
+[INFO] Running com.qa.autotest.arch.LayerRulesTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.641 s -- in com.qa.autotest.arch.LayerRulesTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[WARNING] Tests run: 1376, Failures: 0, Errors: 0, Skipped: 4
+[INFO] 
+[INFO] 
+[INFO] --- jacoco-maven-plugin:0.8.12:report (report) @ robot-autotest-backend ---
+[INFO] Loading execution data file /tmp/jacoco-robot-autotest.exec
+[INFO] Analyzed bundle 'robot-autotest-backend' with 938 classes
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  02:39 min
+[INFO] Finished at: 2026-11-11T15:30:46+08:00
+[INFO] ------------------------------------------------------------------------
+TEST_RC=0
+=== mvn package -DskipTests ===
+[INFO] --- maven-jar-plugin:3.4.2:jar (default-jar) @ robot-autotest-backend ---
+[INFO] Building jar: /home/evergreen/robot-autotest/backend/target/robot-autotest-backend-0.1.0-SNAPSHOT.jar
+[INFO] 
+[INFO] --- spring-boot-maven-plugin:3.3.5:repackage (repackage) @ robot-autotest-backend ---
+[INFO] Replacing main artifact /home/evergreen/robot-autotest/backend/target/robot-autotest-backend-0.1.0-SNAPSHOT.jar with repackaged archive, adding nested dependencies in BOOT-INF/.
+[INFO] The original artifact has been renamed to /home/evergreen/robot-autotest/backend/target/robot-autotest-backend-0.1.0-SNAPSHOT.jar.original
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  7.331 s
+[INFO] Finished at: 2026-11-11T15:30:55+08:00
+[INFO] ------------------------------------------------------------------------
+PKG_RC=0

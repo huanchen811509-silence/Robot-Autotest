@@ -1,0 +1,89 @@
+{
+ "1": {
+  "name": "空白项目",
+  "builtin": true,
+  "itemCount": 0,
+  "cases": [],
+  "counts": {
+   "cases": 0,
+   "caseSets": 0,
+   "scenarios": 0,
+   "assets": 0
+  }
+ },
+ "2": {
+  "name": "接口回归",
+  "builtin": true,
+  "itemCount": 24,
+  "cases": [
+   {
+    "refId": 1216,
+    "name": "LLDP邻居发现"
+   },
+   {
+    "refId": 1217,
+    "name": "光模块DDM指标监控"
+   },
+   {
+    "refId": 1218,
+    "name": "网卡/光模块传感器比对"
+   }
+  ],
+  "counts": {
+   "cases": 20,
+   "caseSets": 0,
+   "scenarios": 1,
+   "assets": 3
+  }
+ },
+ "3": {
+  "name": "Web UI 巡检",
+  "builtin": true,
+  "itemCount": 23,
+  "cases": [
+   {
+    "refId": 1760,
+    "name": "双PF整卡直通VM的LACP接入与回收"
+   },
+   {
+    "refId": 1761,
+    "name": "SR-IOV VF分配、识别与回收"
+   },
+   {
+    "refId": 1762,
+    "name": "virtio经OVS及vhost-user接入"
+   }
+  ],
+  "counts": {
+   "cases": 20,
+   "caseSets": 0,
+   "scenarios": 1,
+   "assets": 2
+  }
+ },
+ "4": {
+  "name": "Pytest 服务",
+  "builtin": true,
+  "itemCount": 21,
+  "cases": [
+   {
+    "refId": 1132,
+    "name": "BMC/BIOS网卡资产识别"
+   },
+   {
+    "refId": 1133,
+    "name": "BMC SMBus/I2C网卡识别"
+   },
+   {
+    "refId": 1134,
+    "name": "BMC MCTP/SMBus端点识别"
+   }
+  ],
+  "counts": {
+   "cases": 18,
+   "caseSets": 0,
+   "scenarios": 1,
+   "assets": 2
+  }
+ }
+}

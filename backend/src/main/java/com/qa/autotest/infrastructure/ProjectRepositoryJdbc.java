@@ -327,7 +327,13 @@ public class ProjectRepositoryJdbc implements ProjectRepository {
                 VALUES (?, LAST_INSERT_ID(1))
                 ON DUPLICATE KEY UPDATE next_no = LAST_INSERT_ID(next_no + 1)
                 """, scope);
-        Long value = jdbc.queryForObject("SELECT LAST_INSERT_ID()", Long.class);
+        // V11_43 给本表加了代理自增主键 id：INSERT 分支执行成功后 MySQL 会把
+        // LAST_INSERT_ID() 覆盖成自增 id，导致首次分配返回错值（实测返回 6 而非 1）。
+        // 因此用 ROW_COUNT() 区分分支（1=新插入，2=命中唯一键走 UPDATE），
+        // 新插入固定返回 1；UPDATE 分支仍用语句内 LAST_INSERT_ID(next_no + 1)。
+        // 两条语句依赖同一连接，调用方 ProjectService.nextCode 已标注 @Transactional。
+        Long value = jdbc.queryForObject(
+                "SELECT IF(ROW_COUNT() = 1, 1, LAST_INSERT_ID())", Long.class);
         return value == null ? 1 : value;
     }
 

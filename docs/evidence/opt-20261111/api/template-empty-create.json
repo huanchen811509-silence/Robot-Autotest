@@ -1,0 +1,10 @@
+{
+  "status": 400,
+  "body": {
+    "code": 40001,
+    "codeName": "INVALID_ARGUMENT",
+    "message": "模板 items 不能为空",
+    "data": null,
+    "success": false
+  }
+}

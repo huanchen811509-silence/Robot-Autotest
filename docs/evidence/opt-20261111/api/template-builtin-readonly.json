@@ -1,0 +1,14 @@
+{
+ "putContent": {
+  "http": 409,
+  "message": "内置模板内容不可改写，items 保持不变"
+ },
+ "delete": {
+  "http": 409,
+  "message": "内置模板不可删除，只能停用"
+ },
+ "putMeta": {
+  "http": 200,
+  "nameAfter": "接口回归"
+ }
+}

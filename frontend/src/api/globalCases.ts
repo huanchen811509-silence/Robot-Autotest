@@ -62,6 +62,7 @@ export interface GlobalImportPreview {
   replayed: boolean
   rows: ImportPreviewRow[]
   errors: ImportRowError[]
+  skippedSheets: string[]
 }
 
 export interface GlobalImportCommit {
@@ -101,6 +102,12 @@ export const globalCaseApi = {
   categories() {
     return request<CaseCategoryRow[]>('/global/cases/categories')
   },
+  /** FR-49-26：分类作用域扩到「平台 + 项目」，按项目取两级分类树。 */
+  categoriesInScope(projectId?: number | string) {
+    return request<CaseCategoryRow[]>(
+      `/global/cases/categories/scope${toQuery({ projectId })}`,
+    )
+  },
   createCategory(body: { level: number; parentId?: number; name: string; sortNo?: number }) {
     return request<CaseCategoryRow>('/global/cases/categories', {
       method: 'POST',
@@ -126,6 +133,15 @@ export const globalCaseApi = {
   },
   export(params: { categoryL1?: string; lifecycleStatus?: string }) {
     return requestBlob(`/api/global/cases/export${toQuery(params)}`, 60_000)
+  },
+  /** FR-49-30：按分类筛选导出 CSV，每行含 external_id；返回字节流，走 requestBlob。 */
+  exportCategoryCsv(params: {
+    projectId?: number | string
+    categoryL1?: string
+    categoryL2?: string
+    intersectWithSetId?: number
+  }) {
+    return requestBlob(`/global/cases/export/category.csv${toQuery(params)}`, 60_000)
   },
   deprecate(id: number) {
     return request<{ deprecated: boolean }>(`/global/cases/${id}/deprecate`, { method: 'POST' })

@@ -1,0 +1,62 @@
+=== 迁移前备份（8 表） ===
+mysqldump: [Warning] Using a password on the command line interface can be insecure.
+BACKUP_RC=0 SIZE=2217505
+=== 行数基线 ===
+import_item	730
+project_code_sequence	0
+project_member_role	9
+project_template_item	0
+sync_job	0
+sync_job_item	0
+case_version	730
+=== flyway migrate ===
+[db-migrate] robot@127.0.0.1:3306/robot_dev
+[ERROR] Migration of schema `robot_dev` to version "11.43 - schema audit compliance" failed! Please restore backups and roll back database and code!
+[ERROR] Failed to execute goal org.flywaydb:flyway-maven-plugin:10.10.0:migrate (default-cli) on project robot-autotest-backend: org.flywaydb.core.internal.command.DbMigrate$FlywayMigrateException: Migration V11_43__schema_audit_compliance.sql failed
+[ERROR] ----------------------------------------------------
+[ERROR] SQL State  : 42000
+[ERROR] Error Code : 1064
+[ERROR] Message    : (conn=100) You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'COMMENT '代理主键（v4.4.0 起 PK 为 scope，本次改为 id）',
+[ERROR]   ADD PRI' at line 3
+[ERROR] Location   : /home/evergreen/robot-autotest/backend/../db/migration/V11_43__schema_audit_compliance.sql (/home/evergreen/robot-autotest/backend/../db/migration/V11_43__schema_audit_compliance.sql)
+[ERROR] Line       : 57
+[ERROR] Statement  : ALTER TABLE `project_code_sequence`
+[ERROR]   DROP PRIMARY KEY,
+[ERROR]   ADD COLUMN `id` BIGINT NOT NULL AUTO_INCREMENT FIRST COMMENT '代理主键（v4.4.0 起 PK 为 scope，本次改为 id）',
+[ERROR]   ADD PRIMARY KEY (`id`)
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException
+MIGRATE_RC=1
+=== 迁移后：flyway + 行数 + 新列 ===
+11.43	schema audit compliance	0
+11.42	project case category tighten	1
+11.41	project case category	1
+import_item	730
+project_code_sequence	0
+project_member_role	9
+project_code_sequence	scope,next_no,updated_at,created_at,created_by,updated_by
+project_member_role	project_id,user_id,role_code,created_at,created_by
+=== db-audit ===
+[db-audit] robot@127.0.0.1:3306/robot_dev
+mysql: [Warning] Using a password on the command line interface can be insecure.
+  OK    业务表数 = 98（98）
+mysql: [Warning] Using a password on the command line interface can be insecure.
+  FAIL  缺审计四列的表的数量 = 0（期望 0，实测 1）
+mysql: [Warning] Using a password on the command line interface can be insecure.
+  OK    append-only 历史表都有 created_at（9）
+mysql: [Warning] Using a password on the command line interface can be insecure.
+  FAIL  主键不是单列 id 的表数量 = 0（期望 0，实测 2）
+mysql: [Warning] Using a password on the command line interface can be insecure.
+  OK    缺主键的表数量 = 0（0）
+mysql: [Warning] Using a password on the command line interface can be insecure.
+  OK    时间列不是 datetime(3) 的表数量 = 0（0）
+mysql: [Warning] Using a password on the command line interface can be insecure.
+  OK    非 utf8mb4 的表数量 = 0（0）
+--------------------------------------------------------------
+db-audit: FAIL（2 项不符）
+AUDIT_RC=1

@@ -1,12 +1,17 @@
 package com.qa.autotest.api.iam;
 
+import com.qa.autotest.application.iam.CreateProjectFromTemplateRequest;
 import com.qa.autotest.application.iam.ProjectService;
+import com.qa.autotest.application.iam.ProjectTemplateService;
 import com.qa.autotest.common.ApiResponse;
+import com.qa.autotest.common.BusinessException;
+import com.qa.autotest.common.ErrorCode;
 import com.qa.autotest.common.tenant.TenantContext;
 import com.qa.autotest.domain.iam.Project;
 import com.qa.autotest.domain.iam.ProjectMember;
 import java.util.List;
 import java.util.Map;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -43,9 +48,17 @@ public class ProjectController {
     }
 
     private final ProjectService projects;
+    /** 可为 null：仅旧装配（单测 standaloneSetup）走一参构造，生产由 @Autowired 二参构造注入。 */
+    private final ProjectTemplateService templates;
 
     public ProjectController(ProjectService projects) {
+        this(projects, null);
+    }
+
+    @Autowired
+    public ProjectController(ProjectService projects, ProjectTemplateService templates) {
         this.projects = projects;
+        this.templates = templates;
     }
 
     @GetMapping
@@ -77,6 +90,16 @@ public class ProjectController {
     public ApiResponse<Project> create(@RequestBody CreateProjectRequest request) {
         return ApiResponse.ok(projects.create(request.code(), request.name(),
                 request.description(), request.visibility(), request.testKernel()));
+    }
+
+    /** 从模板建项目（OPT-06 / FR-49-22）：独立入参，不影响既有 POST /api/projects。 */
+    @PostMapping("/from-template")
+    public ApiResponse<Project> createFromTemplate(
+            @RequestBody CreateProjectFromTemplateRequest request) {
+        if (templates == null) {
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR, "模板服务未装配");
+        }
+        return ApiResponse.ok(templates.createProjectFromTemplate(request));
     }
 
     @PutMapping("/{projectId}")

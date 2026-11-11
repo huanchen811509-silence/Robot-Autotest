@@ -1,0 +1,147 @@
+===== [md_all] python3 docs/evidence/v1.0/policy-20261106/check_md_tables.py =====
+扫描 7 份文档 / 163 个表格块 / 1332 个数据行
+[PASS] 表格列数一致性：全部表格块内列数一致（转义竖线已按非分隔符处理）
+----- [md_all] EXIT=0 -----
+===== [release_all] python3 tools/check_release_docs.py =====
+==============================================================================
+版本开发流程机检（docs/process/版本开发流程.md §8）
+==============================================================================
+
+[IDLE] v0.1-foundation   FR=22 TC=60 WBS=9
+   INFO  未启动流程（缺 2 项，含 00-RESEARCH / 01-ASSESSMENT），按 §9 不计为违规
+
+[IDLE] v0.2-ledger   FR=63 TC=55 WBS=18
+   INFO  未启动流程（缺 2 项，含 00-RESEARCH / 01-ASSESSMENT），按 §9 不计为违规
+
+[IDLE] v0.3-editor   FR=27 TC=41 WBS=11
+   INFO  未启动流程（缺 2 项，含 00-RESEARCH / 01-ASSESSMENT），按 §9 不计为违规
+
+[IDLE] v0.4-execution   FR=34 TC=49 WBS=10
+   INFO  未启动流程（缺 2 项，含 00-RESEARCH / 01-ASSESSMENT），按 §9 不计为违规
+
+[IDLE] v0.5-report   FR=35 TC=66 WBS=7
+   INFO  未启动流程（缺 2 项，含 00-RESEARCH / 01-ASSESSMENT），按 §9 不计为违规
+
+[IDLE] v0.6-automation   FR=21 TC=52 WBS=4
+   INFO  未启动流程（缺 2 项，含 00-RESEARCH / 01-ASSESSMENT），按 §9 不计为违规
+
+[IDLE] v1.0-ga   FR=25 TC=43 WBS=4
+   INFO  未启动流程（缺 2 项，含 00-RESEARCH / 01-ASSESSMENT），按 §9 不计为违规
+
+[PASS] v2.0-platform   FR=61 TC=67 WBS=0
+
+[IDLE] v2.1-platform   FR=26 TC=32 WBS=0
+   INFO  未启动流程（缺 3 项，含 00-RESEARCH / 01-ASSESSMENT），按 §9 不计为违规
+
+[IDLE] v2.2-experience   FR=0 TC=0 WBS=0
+   INFO  未启动流程（缺 3 项，含 00-RESEARCH / 01-ASSESSMENT），按 §9 不计为违规
+
+[IDLE] v2.3-ui-theme   FR=0 TC=0 WBS=0
+   INFO  未启动流程（缺 3 项，含 00-RESEARCH / 01-ASSESSMENT），按 §9 不计为违规
+
+[IDLE] v2.4-cli-agents   FR=0 TC=0 WBS=0
+   INFO  未启动流程（缺 3 项，含 00-RESEARCH / 01-ASSESSMENT），按 §9 不计为违规
+
+[PASS] v2.5-ai-config   FR=11 TC=18 WBS=0
+
+[PASS] v2.6-assistant-ux   FR=8 TC=24 WBS=0
+
+[PASS] v2.7-dual-kernel-demo   FR=6 TC=12 WBS=0
+
+[PASS] v3.10.0   FR=3 TC=18 WBS=0
+
+[PASS] v3.11.0   FR=3 TC=18 WBS=0
+
+[PASS] v3.5.0   FR=10 TC=10 WBS=0
+
+[PASS] v3.6.0   FR=11 TC=11 WBS=0
+
+[PASS] v3.7.0   FR=8 TC=8 WBS=0
+
+[PASS] v3.8.0   FR=4 TC=4 WBS=0
+
+[PASS] v3.9.0   FR=7 TC=22 WBS=0
+
+[PASS] v4.10.0   FR=38 TC=52 WBS=0
+
+[PASS] v4.2.0   FR=5 TC=27 WBS=0
+
+[PASS] v4.3.0   FR=9 TC=41 WBS=0
+
+[PASS] v4.9.2   FR=8 TC=10 WBS=0
+
+------------------------------------------------------------------------------
+合计：26 个版本  |  FAIL 0 项  |  WARN 0 项  |  未启动 11 个
+未启动的版本：正式开工前须先走 ① 调研 → ② 评估，再写 PRD。
+==============================================================================
+----- [release_all] EXIT=0 -----
+===== [release_410] python3 tools/check_release_docs.py v4.10.0 =====
+==============================================================================
+版本开发流程机检（docs/process/版本开发流程.md §8）
+==============================================================================
+
+[PASS] v4.10.0   FR=38 TC=52 WBS=0
+
+------------------------------------------------------------------------------
+合计：1 个版本  |  FAIL 0 项  |  WARN 0 项  |  未启动 0 个
+==============================================================================
+----- [release_410] EXIT=0 -----
+===== [i18n] python3 tools/check_i18n.py =====
+[1/5] 语言包解析：zh-CN 2280 键 / en-US 2280 键
+[2/5] 键集相等：通过
+[3/5] 源码扫描：201 个文件，硬编码中文 0 处
+[4/5] 同值漏译与键引用：通过
+[5/5] 受控词表：27 个值逐个核对，全部有键
+[RESULT] 通过：键集相等 / 无硬编码中文 / 无同值漏译 / 键引用完整 / 枚举全覆盖
+----- [i18n] EXIT=0 -----
+===== [api_prefix] python3 tools/check_api_prefix.py =====
+[OK] request() URL 前缀检查通过（扫描 48 个 API 模块）
+----- [api_prefix] EXIT=0 -----
+===== [host_inv] python3 tools/check_host_inventory.py =====
+HOST_INVENTORY PASS
+  命令白名单 10 类，全部只读；接口自述与源码逐字一致
+  远程采集硬约束 18 条齐全（指纹/BatchMode/拒绝提权/输出上限/二次确认）
+  真实采集 localhost status=PARTIAL 9/10 项有值
+    OS      有值
+    KERNEL  有值
+    CPU     有值
+    MEMORY  有值
+    DISK    有值
+    GPU     未采集到 | 未采集到 GPU 信息：sh: 1: nvidia-smi: not found
+    NIC     有值
+    IP      有值
+    ROCE    有值
+    ROUTE   有值
+----- [host_inv] EXIT=0 -----
+===== [wbs] python3 tools/check_wbs_consistency.py =====
+[PASS] WBS 自洽：130 个包 / 未开始 0 / 进行中 0 / 待验 0 / 待现场 6 / 已完成 124
+----- [wbs] EXIT=0 -----
+===== [api_contract] python3 tools/gen_api_contract.py --check =====
+endpoints=353 paths=288
+PASS API 契约快照与控制器源码一致
+----- [api_contract] EXIT=0 -----
+===== [version] =====
+INFO  VERSION=4.10.0  build-info=4.10.0
+INFO  运行期 build-info=4.10.0 (source=file)
+INFO  入口托管 CHANGELOG=4.10.0
+VERSION_CONSISTENCY PASS (0 项)
+----- [version] EXIT=0 -----
+===== [db_audit] env DB_NAME=robot_dev bash scripts/db-audit.sh =====
+[db-audit] robot@127.0.0.1:3306/robot_dev
+mysql: [Warning] Using a password on the command line interface can be insecure.
+  OK    业务表数 = 98（98）
+mysql: [Warning] Using a password on the command line interface can be insecure.
+  OK    缺审计四列的表的数量 = 0（0）
+mysql: [Warning] Using a password on the command line interface can be insecure.
+  OK    append-only 历史表都有 created_at（9）
+mysql: [Warning] Using a password on the command line interface can be insecure.
+  OK    主键不是单列 id 的表数量 = 0（0）
+mysql: [Warning] Using a password on the command line interface can be insecure.
+  OK    缺主键的表数量 = 0（0）
+mysql: [Warning] Using a password on the command line interface can be insecure.
+  OK    时间列不是 datetime(3) 的表数量 = 0（0）
+mysql: [Warning] Using a password on the command line interface can be insecure.
+  OK    非 utf8mb4 的表数量 = 0（0）
+--------------------------------------------------------------
+db-audit: PASS
+----- [db_audit] EXIT=0 -----

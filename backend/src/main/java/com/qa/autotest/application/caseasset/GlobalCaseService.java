@@ -8,6 +8,8 @@ import com.qa.autotest.common.BusinessException;
 import com.qa.autotest.common.ErrorCode;
 import com.qa.autotest.common.tenant.TenantContext;
 import com.qa.autotest.domain.common.PageResult;
+import com.qa.autotest.domain.iam.PermissionAction;
+import com.qa.autotest.domain.iam.PermissionResource;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.security.MessageDigest;
@@ -67,11 +69,41 @@ public class GlobalCaseService {
 
     public record PreviewResult(long batchId, String sha256, int total, int newCount, int updateCount,
                                 int unchangedCount, int deprecateCount, int errorCount, boolean replayed,
-                                List<PreviewRow> rows, List<CaseImportService.RowError> errors) {
+                                List<PreviewRow> rows, List<CaseImportService.RowError> errors,
+                                List<String> skippedSheets) {
     }
 
     public record CommitResult(long batchId, int inserted, int updated, int unchanged, int deprecated,
                                boolean replayed) {
+    }
+
+    /**
+     * 统一用例详情契约（OPT-02 / FR-49-07）：公共库 /api/global/cases/{id} 与项目用例详情
+     * 共用同一字段集。四列补录 + 来源徽章（external_id / syncJobId / localOverride / sourceBadge）。
+     *
+     * <p>脱敏硬规则：响应体不得含 secret / 明文口令；凭据类字段只允许 {@code keyMasked} 前缀，
+     * 且只放掩码（此处恒为 "****"），绝不序列化任何凭据原文。
+     */
+    public record CaseDetailView(
+            long id, String caseCode, String externalId, String title,
+            String categoryL1, String categoryL2, String priority, String safetyLevel,
+            String lifecycleStatus, int versionNo, String sourceSheet, String contentSha,
+            String aSideCommand, String bSideCommand, String switchConfig,
+            String testResult, String testResource,
+            Long syncJobId, boolean localOverride, String sourceBadge,
+            String keyMaskedCredential) {
+    }
+
+    /** OPT-07 / FR-49-28：全选一级 / 全选二级 / 跨表交集三种筛选共用条件。 */
+    public record CategoryFilter(String categoryL1, String categoryL2, Long intersectWithSetId) {
+    }
+
+    /** FR-49-28：删除结果携带引用数，供 4xx 响应体显式回传。 */
+    public record CategoryDeleteResult(boolean deleted, long referenceCount) {
+    }
+
+    /** FR-49-30：按分类筛选导出的 CSV。 */
+    public record ExportCsv(String fileName, byte[] content, int rowCount) {
     }
 
     private final JdbcTemplate jdbc;
@@ -145,6 +177,52 @@ public class GlobalCaseService {
                         rs.getString("source_sheet"), rs.getString("content_sha")),
                 listArgs.toArray());
         return new PageResult<>(rows, total == null ? 0 : total, safePage, safeSize);
+    }
+
+    /** FR-49-07：GET /api/global/cases/{id} 详情（统一契约、脱敏）。 */
+    public CaseDetailView detail(long id) {
+        access.requireGlobalEnter();
+        return findDetail(platform.id(), id);
+    }
+
+    /** FR-49-07：项目用例详情，与公共库共用同一字段契约。 */
+    public CaseDetailView detailForProject(long projectId, long caseId) {
+        access.bindProject(projectId);
+        access.require(PermissionResource.CASE, PermissionAction.READ);
+        return findDetail(projectId, caseId);
+    }
+
+    private CaseDetailView findDetail(long projectId, long caseId) {
+        List<Map<String, Object>> rows = jdbc.queryForList("""
+                SELECT id, case_code, external_id, title, category_l1, category_l2, priority,
+                       safety_level, lifecycle_status, version_no, source_sheet, content_sha,
+                       a_side_command, b_side_command, switch_config, test_result, test_resource,
+                       source
+                  FROM test_case WHERE id = ? AND project_id = ?
+                """, caseId, projectId);
+        if (rows.isEmpty()) {
+            throw new BusinessException(ErrorCode.NOT_FOUND, "用例不存在");
+        }
+        Map<String, Object> r = rows.get(0);
+        Long syncJobId = jdbc.queryForObject("""
+                SELECT MAX(sji.job_id) FROM sync_job_item sji
+                 WHERE sji.local_id = ? OR sji.remote_id = ?
+                """, Long.class, caseId, caseId);
+        boolean localOverride = "local_override".equals(text(r.get("source")));
+        String badge = localOverride ? "LOCAL_OVERRIDE"
+                : syncJobId != null ? "GLOBAL_SYNC" : "LOCAL";
+        // 凭据类字段只允许 keyMasked 前缀，且只放掩码；绝不把任何凭据原文放进响应。
+        return new CaseDetailView(
+                ((Number) r.get("id")).longValue(), text(r.get("case_code")),
+                text(r.get("external_id")), text(r.get("title")),
+                text(r.get("category_l1")), text(r.get("category_l2")),
+                text(r.get("priority")), text(r.get("safety_level")),
+                text(r.get("lifecycle_status")), ((Number) r.get("version_no")).intValue(),
+                text(r.get("source_sheet")), text(r.get("content_sha")),
+                text(r.get("a_side_command")), text(r.get("b_side_command")),
+                text(r.get("switch_config")), text(r.get("test_result")),
+                text(r.get("test_resource")),
+                syncJobId, localOverride, badge, "****");
     }
 
     // ---------------------------------------------------------------- 分类
@@ -225,6 +303,159 @@ public class GlobalCaseService {
         audit.record("global.case.category.delete", "case_category", String.valueOf(id), name);
     }
 
+    private void requireScopeRead(Long projectId) {
+        if (projectId == null) {
+            access.requireGlobalEnter();
+            return;
+        }
+        access.bindProject(projectId);
+        access.require(PermissionResource.CASE, PermissionAction.READ);
+    }
+
+    private void requireScopeWrite(Long projectId) {
+        if (projectId == null) {
+            requireGlobalWrite();
+            return;
+        }
+        access.bindProject(projectId);
+        access.require(PermissionResource.CASE, PermissionAction.UPDATE);
+    }
+
+    /** FR-49-26：项目域分类列表（scope=project 按真实 project_id 隔离）。 */
+    public List<CategoryRow> categoriesInScope(Long projectId) {
+        requireScopeRead(projectId);
+        long scopeProject = projectId == null ? platform.id() : projectId;
+        return jdbc.query("""
+                SELECT c.id, c.level, c.parent_id, c.name, c.sort_no, c.status,
+                       (SELECT COUNT(*) FROM test_case t
+                         WHERE t.project_id = c.project_id AND t.lifecycle_status = 'active'
+                           AND (t.category_l1_id = c.id OR t.category_l2_id = c.id
+                                OR (t.category_l1_id IS NULL AND t.category_l1 = c.name)
+                                OR (t.category_l2_id IS NULL AND t.category_l2 = c.name)))
+                       AS case_count
+                  FROM case_category c
+                 WHERE c.project_id = ?
+                 ORDER BY c.level, c.sort_no, c.name
+                """, (rs, i) -> new CategoryRow(rs.getLong("id"), rs.getInt("level"),
+                rs.getObject("parent_id") == null ? null : rs.getLong("parent_id"),
+                rs.getString("name"), rs.getInt("sort_no"), rs.getString("status"),
+                rs.getLong("case_count")), scopeProject);
+    }
+
+    /** FR-49-26：项目域建分类，显式写 scope=project；平台域沿用默认 scope。 */
+    public CategoryRow createCategoryInScope(Long projectId, int level, Long parentId,
+                                             String name, int sortNo) {
+        requireScopeWrite(projectId);
+        if (level != 1 && level != 2) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "分类层级只能是 1 或 2");
+        }
+        if (!notBlank(name)) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "分类名称不能为空");
+        }
+        if (level == 2 && parentId == null) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "二级分类必须指定一级分类");
+        }
+        long scopeProject = projectId == null ? platform.id() : projectId;
+        String scope = projectId == null ? "platform" : "project";
+        if (level == 2) {
+            List<Long> parents = jdbc.queryForList(
+                    "SELECT id FROM case_category WHERE id = ? AND project_id = ? AND level = 1",
+                    Long.class, parentId, scopeProject);
+            if (parents.isEmpty()) {
+                throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                        "非法父子组合：父分类不是该作用域下的一级分类");
+            }
+        }
+        try {
+            KeyHolder keys = new GeneratedKeyHolder();
+            jdbc.update(con -> {
+                var ps = con.prepareStatement("""
+                        INSERT INTO case_category (project_id, scope, level, parent_id, name,
+                                                  sort_no, created_by)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                        """, new String[]{"id"});
+                ps.setLong(1, scopeProject);
+                ps.setString(2, scope);
+                ps.setInt(3, level);
+                if (parentId == null) {
+                    ps.setNull(4, java.sql.Types.BIGINT);
+                } else {
+                    ps.setLong(4, parentId);
+                }
+                ps.setString(5, name.trim());
+                ps.setInt(6, sortNo);
+                ps.setObject(7, TenantContext.userId());
+                return ps;
+            }, keys);
+            long id = keys.getKey() == null ? 0 : keys.getKey().longValue();
+            return new CategoryRow(id, level, parentId, name.trim(), sortNo, "active", 0);
+        } catch (org.springframework.dao.DuplicateKeyException ex) {
+            throw new BusinessException(ErrorCode.CONFLICT, "分类已存在：" + name);
+        }
+    }
+
+    /** FR-49-28：删除有引用分类拒绝，返回引用数供 4xx 响应显式带出。 */
+    public CategoryDeleteResult deleteCategoryInScope(Long projectId, long id) {
+        requireScopeWrite(projectId);
+        long scopeProject = projectId == null ? platform.id() : projectId;
+        List<Map<String, Object>> rows = jdbc.queryForList(
+                "SELECT name FROM case_category WHERE id = ? AND project_id = ?", id, scopeProject);
+        if (rows.isEmpty()) {
+            throw new BusinessException(ErrorCode.NOT_FOUND, "分类不存在");
+        }
+        String name = text(rows.get(0).get("name"));
+        Long used = jdbc.queryForObject("""
+                SELECT COUNT(*) FROM test_case
+                 WHERE project_id = ? AND (category_l1_id = ? OR category_l2_id = ?
+                    OR (category_l1_id IS NULL AND category_l1 = ?)
+                    OR (category_l2_id IS NULL AND category_l2 = ?))
+                """, Long.class, scopeProject, id, id, name, name);
+        long count = used == null ? 0 : used;
+        if (count > 0) {
+            return new CategoryDeleteResult(false, count);
+        }
+        jdbc.update("DELETE FROM case_category WHERE id = ? AND project_id = ?", id, scopeProject);
+        audit.record("global.case.category.delete", "case_category", String.valueOf(id), name);
+        return new CategoryDeleteResult(true, 0);
+    }
+
+    /** FR-49-28：设置二级分类时二级必须属于所选一级（纯校验，非法组合 → 400）。 */
+    public void validateCategoryPair(Long projectId, Long categoryL1Id, Long categoryL2Id) {
+        if (categoryL2Id == null) {
+            return;
+        }
+        if (categoryL1Id == null) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                    "设置二级分类必须同时指定一级分类");
+        }
+        long scopeProject = projectId == null ? platform.id() : projectId;
+        List<Map<String, Object>> rows = jdbc.queryForList(
+                "SELECT parent_id FROM case_category WHERE id = ? AND project_id = ? AND level = 2",
+                categoryL2Id, scopeProject);
+        if (rows.isEmpty()) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "二级分类不存在");
+        }
+        Object parent = rows.get(0).get("parent_id");
+        if (parent == null || ((Number) parent).longValue() != categoryL1Id) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                    "非法父子组合：二级分类 " + categoryL2Id + " 不属于一级分类 " + categoryL1Id);
+        }
+    }
+
+    /** FR-49-28：绑定项目用例两级分类 id（先校验父子，再写可空外键列）。 */
+    public void bindCaseCategory(long projectId, long caseId, Long categoryL1Id, Long categoryL2Id) {
+        access.bindProject(projectId);
+        access.require(PermissionResource.CASE, PermissionAction.UPDATE);
+        validateCategoryPair(projectId, categoryL1Id, categoryL2Id);
+        int changed = jdbc.update("""
+                UPDATE test_case SET category_l1_id = ?, category_l2_id = ?, updated_by = ?
+                 WHERE id = ? AND project_id = ?
+                """, categoryL1Id, categoryL2Id, TenantContext.userId(), caseId, projectId);
+        if (changed == 0) {
+            throw new BusinessException(ErrorCode.NOT_FOUND, "用例不存在");
+        }
+    }
+
     // ------------------------------------------------------------ 导入预览
 
     @Transactional
@@ -235,10 +466,21 @@ public class GlobalCaseService {
         String sourceFile = notBlank(sourceName) ? sourceName : "upload.xlsx";
         List<CaseImportService.RowError> errors = new ArrayList<>();
         List<PlannedRow> planned = new ArrayList<>();
+        List<String> skippedSheets = new ArrayList<>();
         Map<String, ExistingCase> existing = existingByExternal(projectId);
         Set<String> seen = new LinkedHashSet<>();
 
         for (CaseImportService.ParsedSheet sheet : workbook.sheets()) {
+            // 看板/汇总页是明细的派生视图，导入时跳过，避免同一编号在文件内自撞。
+            if (sheet.sheetName().contains("看板") || sheet.sheetName().contains("汇总")) {
+                skippedSheets.add(sheet.sheetName());
+                continue;
+            }
+            // 环境/说明等工作表不是用例表：既无编号也无标题列时静默跳过，不计入错误行。
+            if (!sheet.columnMap().containsKey("caseCode")
+                    && !sheet.columnMap().containsKey("title")) {
+                continue;
+            }
             if (!sheet.columnMap().containsKey("caseCode") || !sheet.columnMap().containsKey("title")) {
                 errors.add(new CaseImportService.RowError(sheet.headerRowNum(), "columns",
                         "工作表「" + sheet.sheetName() + "」缺少必需列：用例编号 / 标题"));
@@ -294,6 +536,12 @@ public class GlobalCaseService {
             }
         }
 
+        // FR-v4.6-20 防护：单文件行数上限，避免误传大表把导入拖成小时级。
+        if (planned.size() > 20_000) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                    "单文件用例行数 " + planned.size() + " 超过 20000 上限");
+        }
+
         int newCount = count(planned, "NEW");
         int updateCount = count(planned, "UPDATE");
         int unchanged = count(planned, "UNCHANGED");
@@ -301,7 +549,7 @@ public class GlobalCaseService {
         String fileSha = workbook.sha256();
 
         Optional<Map<String, Object>> existingBatch = jdbc.queryForList(
-                "SELECT * FROM import_batch WHERE project_id = ? AND checksum = ?",
+                "SELECT * FROM import_batch WHERE project_id = ? AND kind = 'global' AND checksum = ?",
                 projectId, fileSha).stream().findFirst();
 
         long batchId;
@@ -309,7 +557,7 @@ public class GlobalCaseService {
         if (existingBatch.isPresent() && "COMMITTED".equals(existingBatch.get().get("status"))) {
             batchId = ((Number) existingBatch.get().get("id")).longValue();
             replayed = true;
-            return replayPreview(batchId, fileSha, sourceFile);
+            return replayPreview(batchId, fileSha, skippedSheets);
         }
         if (existingBatch.isPresent()) {
             batchId = ((Number) existingBatch.get().get("id")).longValue();
@@ -368,10 +616,10 @@ public class GlobalCaseService {
                 "sha=" + fileSha + " new=" + newCount + " update=" + updateCount
                         + " unchanged=" + unchanged + " deprecate=" + deprecate);
         return new PreviewResult(batchId, fileSha, planned.size(), newCount, updateCount, unchanged,
-                deprecate, errors.size(), replayed, previewRows, errors);
+                deprecate, errors.size(), replayed, previewRows, errors, skippedSheets);
     }
 
-    private PreviewResult replayPreview(long batchId, String fileSha, String sourceFile) {
+    private PreviewResult replayPreview(long batchId, String fileSha, List<String> skippedSheets) {
         List<Map<String, Object>> items = jdbc.queryForList(
                 "SELECT row_no, case_code, action, message, payload_json FROM import_item"
                         + " WHERE batch_id = ? ORDER BY row_no", batchId);
@@ -399,7 +647,7 @@ public class GlobalCaseService {
                     row.sourceSheet(), row.sourceRow()));
         }
         return new PreviewResult(batchId, fileSha, rows.size(), newCount, updateCount, unchanged,
-                deprecate, 0, true, rows, List.of());
+                deprecate, 0, true, rows, List.of(), skippedSheets);
     }
 
     private CaseImportService.ImportRow readRow(String json) {
@@ -483,10 +731,65 @@ public class GlobalCaseService {
                        new_count = ?, updated_count = ?, unchanged_count = ?, deprecated_count = ?
                  WHERE id = ?
                 """, inserted, updated, unchanged, deprecated, batchId);
+        int categories = syncCategories(projectId, operator);
         audit.record("global.case.import.commit", "import_batch", String.valueOf(batchId),
                 "inserted=" + inserted + " updated=" + updated + " unchanged=" + unchanged
-                        + " deprecated=" + deprecated);
+                        + " deprecated=" + deprecated + " categories=" + categories);
         return new CommitResult(batchId, inserted, updated, unchanged, deprecated, false);
+    }
+
+    /** 从用例表反推分类字典（FR-v4.6-10）：导入后一级/二级分类可见、可筛选。 */
+    private int syncCategories(long projectId, Long operator) {
+        List<String> level1 = jdbc.queryForList("""
+                SELECT DISTINCT category_l1 FROM test_case
+                 WHERE project_id = ? AND category_l1 IS NOT NULL AND category_l1 <> ''
+                 ORDER BY category_l1
+                """, String.class, projectId);
+        Map<String, Long> parentIds = new HashMap<>();
+        int created = 0;
+        for (String name : level1) {
+            parentIds.put(name, ensureCategory(projectId, 1, null, name, operator));
+            created++;
+        }
+        List<Map<String, Object>> level2 = jdbc.queryForList("""
+                SELECT DISTINCT category_l1, category_l2 FROM test_case
+                 WHERE project_id = ? AND category_l2 IS NOT NULL AND category_l2 <> ''
+                """, projectId);
+        for (Map<String, Object> row : level2) {
+            String parent = row.get("category_l1") == null ? "" : String.valueOf(row.get("category_l1"));
+            ensureCategory(projectId, 2, parentIds.get(parent), String.valueOf(row.get("category_l2")),
+                    operator);
+            created++;
+        }
+        return created;
+    }
+
+    private long ensureCategory(long projectId, int level, Long parentId, String name, Long operator) {
+        List<Long> found = jdbc.queryForList("""
+                SELECT id FROM case_category
+                 WHERE project_id = ? AND level = ? AND name = ? AND IFNULL(parent_id, 0) = IFNULL(?, 0)
+                """, Long.class, projectId, level, truncate(name, 128), parentId);
+        if (!found.isEmpty()) {
+            return found.get(0);
+        }
+        KeyHolder keys = new GeneratedKeyHolder();
+        jdbc.update(con -> {
+            var ps = con.prepareStatement("""
+                    INSERT INTO case_category (project_id, level, parent_id, name, sort_no, created_by)
+                    VALUES (?, ?, ?, ?, 0, ?)
+                    """, new String[]{"id"});
+            ps.setLong(1, projectId);
+            ps.setInt(2, level);
+            if (parentId == null) {
+                ps.setNull(3, java.sql.Types.BIGINT);
+            } else {
+                ps.setLong(3, parentId);
+            }
+            ps.setString(4, truncate(name, 128));
+            ps.setObject(5, operator);
+            return ps;
+        }, keys);
+        return keys.getKey() == null ? 0 : keys.getKey().longValue();
     }
 
     private long insertCase(long projectId, String externalId, CaseImportService.ImportRow row,
@@ -499,12 +802,14 @@ public class GlobalCaseService {
                         precondition, expected, review_status, source, capability,
                         category_l1, category_l2, source_priority, case_class, test_category,
                         ed202_coverage, source_sheet, content_sha, lifecycle_status, version_no,
+                        a_side_command, b_side_command, switch_config, test_result, test_resource,
                         created_by, updated_by)
                     VALUES (?, ?, ?, ?, ?, 'ledger', ?, ?, ?, 1, ?, ?, ?, 'draft', 'import', ?,
-                        ?, ?, ?, ?, ?, ?, ?, ?, 'active', 1, ?, ?)
+                        ?, ?, ?, ?, ?, ?, ?, ?, 'active', 1, ?, ?, ?, ?, ?, ?, ?)
                     """, new String[]{"id"});
             ps.setLong(1, projectId);
-            ps.setString(2, truncate(row.caseCode().trim(), 64));
+            ps.setString(2, notBlank(row.caseCode()) ? truncate(row.caseCode().trim(), 64)
+                    : truncate(externalId, 64));
             ps.setString(3, externalId);
             ps.setString(4, row.title());
             ps.setString(5, truncate(row.category(), 32));
@@ -523,8 +828,13 @@ public class GlobalCaseService {
             ps.setString(18, row.ed202Coverage());
             ps.setString(19, truncate(row.sourceSheet(), 128));
             ps.setString(20, contentSha(row, externalId));
-            ps.setObject(21, operator);
-            ps.setObject(22, operator);
+            ps.setString(21, row.aSideCommand());
+            ps.setString(22, row.bSideCommand());
+            ps.setString(23, row.switchConfig());
+            ps.setString(24, row.testResult());
+            ps.setString(25, row.testResource());
+            ps.setObject(26, operator);
+            ps.setObject(27, operator);
             return ps;
         }, keys);
         return keys.getKey() == null ? 0 : keys.getKey().longValue();
@@ -538,6 +848,8 @@ public class GlobalCaseService {
                        capability = ?, category_l1 = ?, category_l2 = ?,
                        source_priority = ?, case_class = ?, test_category = ?, ed202_coverage = ?,
                        source_sheet = ?, content_sha = ?, lifecycle_status = 'active',
+                       a_side_command = ?, b_side_command = ?, switch_config = ?, test_result = ?,
+                       test_resource = ?,
                        version_no = ?, external_id = ?, updated_by = ?
                  WHERE project_id = ? AND id = ?
                 """, row.title(), truncate(row.category(), 32), row.priority(),
@@ -547,6 +859,8 @@ public class GlobalCaseService {
                 truncate(row.sourcePriority(), 16), truncate(row.caseClass(), 64),
                 truncate(row.testCategory(), 64), row.ed202Coverage(),
                 truncate(row.sourceSheet(), 128), contentSha(row, externalId),
+                row.aSideCommand(), row.bSideCommand(), row.switchConfig(),
+                row.testResult(), row.testResource(),
                 nextVersion, externalId, operator, projectId, caseId);
     }
 
@@ -689,10 +1003,10 @@ public class GlobalCaseService {
             String sha = sha256Hex(content);
             String fileName = "ed202-cases-" + sha.substring(0, 12) + ".xlsx";
             jdbc.update("""
-                    INSERT IGNORE INTO export_record (project_id, kind, content_sha, file_name,
-                                                      size_bytes, row_count, created_by)
-                    VALUES (?, 'cases', ?, ?, ?, ?, ?)
-                    """, projectId, sha, fileName, content.length, rows.size(),
+                    INSERT INTO export_record (project_id, run_key, export_format, file_name,
+                                               sha256, size_bytes, export_status, created_by)
+                    VALUES (?, ?, 'xlsx', ?, ?, ?, 'created', ?)
+                    """, projectId, "global-cases", fileName, sha, content.length,
                     TenantContext.userId());
             audit.record("global.case.export", "test_case", String.valueOf(projectId),
                     "rows=" + rows.size() + " sha=" + sha.substring(0, 12));
@@ -758,6 +1072,109 @@ public class GlobalCaseService {
         return csv.toString();
     }
 
+    /** FR-49-30：按分类筛选导出 CSV，每行含 external_id，数据行数 = 筛选条数。 */
+    public ExportCsv exportCategoryCsv(Long projectId, String categoryL1, String categoryL2,
+                                       Long intersectWithSetId) {
+        requireScopeRead(projectId);
+        long scope = projectId == null ? platform.id() : projectId;
+        List<Object> args = new ArrayList<>();
+        args.add(scope);
+        String where = categoryWhere(
+                new CategoryFilter(categoryL1, categoryL2, intersectWithSetId), args);
+        List<Map<String, Object>> rows = jdbc.queryForList(
+                "SELECT external_id, case_code, title, category_l1, category_l2, priority,"
+                        + " a_side_command, b_side_command, switch_config, test_result, test_resource"
+                        + " FROM test_case WHERE project_id = ?" + where
+                        + " ORDER BY category_l1, case_code", args.toArray());
+        StringBuilder csv = new StringBuilder(
+                "external_id,case_code,title,category_l1,category_l2,priority,"
+                        + "a_side_command,b_side_command,switch_config,test_result,test_resource\n");
+        for (Map<String, Object> r : rows) {
+            csv.append(csvCell(text(r.get("external_id"), r.get("case_code")))).append(',')
+                    .append(csvCell(r.get("case_code"))).append(',')
+                    .append(csvCell(r.get("title"))).append(',')
+                    .append(csvCell(r.get("category_l1"))).append(',')
+                    .append(csvCell(r.get("category_l2"))).append(',')
+                    .append(csvCell(r.get("priority"))).append(',')
+                    .append(csvCell(r.get("a_side_command"))).append(',')
+                    .append(csvCell(r.get("b_side_command"))).append(',')
+                    .append(csvCell(r.get("switch_config"))).append(',')
+                    .append(csvCell(r.get("test_result"))).append(',')
+                    .append(csvCell(r.get("test_resource"))).append('\n');
+        }
+        byte[] content = csv.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        String sha = sha256Hex(content).substring(0, 12);
+        return new ExportCsv("cases-" + sha + ".csv", content, rows.size());
+    }
+
+    /** FR-49-28：三种筛选口径的公共 WHERE 片段（占位参数按序追加到 args）。 */
+    public static String categoryWhere(CategoryFilter filter, List<Object> args) {
+        if (filter == null) {
+            return "";
+        }
+        StringBuilder where = new StringBuilder();
+        if (notBlank(filter.categoryL1())) {
+            where.append(" AND category_l1 = ?");
+            args.add(filter.categoryL1().trim());
+        }
+        if (notBlank(filter.categoryL2())) {
+            where.append(" AND category_l2 = ?");
+            args.add(filter.categoryL2().trim());
+        }
+        if (filter.intersectWithSetId() != null && filter.intersectWithSetId() > 0) {
+            where.append(" AND id IN (SELECT test_case_id FROM test_set_item"
+                    + " WHERE test_set_id = ?)");
+            args.add(filter.intersectWithSetId());
+        }
+        return where.toString();
+    }
+
+    /**
+     * FR-49-27：幂等回填（与 V11_42 同口径，可重复执行）。只回填仍为 NULL 的行；
+     * 字符串唯一匹配（HAVING COUNT(*)=1）才写 id，非唯一匹配不写入并标记
+     * category_match_review='AMBIGUOUS' 待人工复核，绝不制造脏数据。
+     */
+    public int backfillCategoryIds(long projectId) {
+        int l1 = jdbc.update("""
+                UPDATE test_case t
+                  JOIN (SELECT c.project_id, c.name, MIN(c.id) AS cat_id
+                          FROM case_category c WHERE c.level = 1 AND c.project_id = ?
+                         GROUP BY c.project_id, c.name HAVING COUNT(*) = 1) m
+                    ON m.project_id = t.project_id AND m.name = t.category_l1
+                   SET t.category_l1_id = m.cat_id
+                 WHERE t.project_id = ? AND t.category_l1_id IS NULL
+                """, projectId, projectId);
+        int l2 = jdbc.update("""
+                UPDATE test_case t
+                  JOIN (SELECT c.project_id, c.name, MIN(c.id) AS cat_id
+                          FROM case_category c WHERE c.level = 2 AND c.project_id = ?
+                         GROUP BY c.project_id, c.name HAVING COUNT(*) = 1) m
+                    ON m.project_id = t.project_id AND m.name = t.category_l2
+                   SET t.category_l2_id = m.cat_id
+                 WHERE t.project_id = ? AND t.category_l2_id IS NULL
+                """, projectId, projectId);
+        jdbc.update("""
+                UPDATE test_case t
+                  JOIN (SELECT c.project_id, c.name
+                          FROM case_category c WHERE c.level = 1 AND c.project_id = ?
+                         GROUP BY c.project_id, c.name HAVING COUNT(*) > 1) m
+                    ON m.project_id = t.project_id AND m.name = t.category_l1
+                   SET t.category_match_review = 'AMBIGUOUS'
+                 WHERE t.project_id = ? AND t.category_l1_id IS NULL
+                """, projectId, projectId);
+        jdbc.update("""
+                UPDATE test_case t
+                  JOIN (SELECT c.project_id, c.name
+                          FROM case_category c WHERE c.level = 2 AND c.project_id = ?
+                         GROUP BY c.project_id, c.name HAVING COUNT(*) > 1) m
+                    ON m.project_id = t.project_id AND m.name = t.category_l2
+                   SET t.category_match_review = 'AMBIGUOUS'
+                 WHERE t.project_id = ? AND t.category_l2_id IS NULL
+                   AND t.category_match_review IS NULL
+                """, projectId, projectId);
+        return l1 + l2;
+    }
+
     // ---------------------------------------------------------------- 内部
 
     private record PlannedRow(int rowNum, String externalId, String action, String message,
@@ -809,12 +1226,22 @@ public class GlobalCaseService {
 
     /** 内容指纹：只含业务字段，不含行号/来源，保证同一内容重复导入判定为 UNCHANGED。 */
     static String contentSha(CaseImportService.ImportRow row, String externalId) {
-        String canonical = String.join("\u0001",
+        String base = String.join("\u0001",
                 nz(externalId), nz(row.title()), nz(row.category()), nz(row.categoryL2()),
                 nz(row.priority()), nz(row.precondition()), nz(row.expected()),
                 nz(row.caseClass()), nz(row.testCategory()), nz(row.ed202Coverage()),
                 nz(row.safetyLevel()), String.join("\u0002", row.steps() == null
                         ? List.of() : row.steps()));
+        // FR-49-05：补录列参与指纹，内容变化才触发 UPDATE；无补录列的旧台账 base 不变，
+        // 存量 content_sha 不被整体改写，保证同一文件重复导入不新增版本。
+        boolean hasExtra = notBlank(row.aSideCommand()) || notBlank(row.bSideCommand())
+                || notBlank(row.switchConfig()) || notBlank(row.testResult())
+                || notBlank(row.testResource());
+        String canonical = hasExtra
+                ? base + "\u0001" + String.join("\u0001", nz(row.aSideCommand()),
+                        nz(row.bSideCommand()), nz(row.switchConfig()),
+                        nz(row.testResult()), nz(row.testResource()))
+                : base;
         return sha256Hex(canonical.getBytes(java.nio.charset.StandardCharsets.UTF_8));
     }
 

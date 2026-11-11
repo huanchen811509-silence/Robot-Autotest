@@ -9,6 +9,8 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import { templateApi, type TemplateRequest, type TemplateRow } from '@/api/globalTemplates'
+import { templateProjectsApi, type TemplateItemRow } from '@/api/templateProjects'
+import TemplateCard from '@/components/TemplateCard.vue'
 
 const { t } = useI18n()
 const auth = useAuthStore()
@@ -44,6 +46,36 @@ const form = reactive<TemplateRequest>({
 const saving = ref(false)
 const dialogError = ref('')
 
+/** FR-49-20：新建模板至少要关联 1 条用例或 1 个用例集。 */
+const itemDraft = ref<TemplateItemRow[]>([])
+const draftType = ref<'CASE' | 'CASE_SET'>('CASE')
+const draftRefId = ref('')
+const draftName = ref('')
+
+function addDraftItem(): void {
+  const name = draftName.value.trim()
+  if (!name) return
+  // 后端 insertItems 跳过 refId==null 的明细：引用项必须带引用 ID，否则新建后 itemCount 仍为 0。
+  const refId = Number(draftRefId.value.trim())
+  if (!draftRefId.value.trim() || !Number.isFinite(refId) || refId <= 0) {
+    dialogError.value = t("templateCenter.refIdRequired")
+    return
+  }
+  itemDraft.value = [...itemDraft.value, {
+    itemType: draftType.value,
+    refId,
+    mode: 'reference',
+    name,
+  }]
+  dialogError.value = ''
+  draftRefId.value = ''
+  draftName.value = ''
+}
+
+function removeDraftItem(index: number): void {
+  itemDraft.value = itemDraft.value.filter((_, i) => i !== index)
+}
+
 function openCreate() {
   editing.value = null
   Object.assign(form, {
@@ -53,6 +85,10 @@ function openCreate() {
     visibility: 'team',
     description: '',
   })
+  itemDraft.value = []
+  draftType.value = 'CASE'
+  draftRefId.value = ''
+  draftName.value = ''
   dialogError.value = ''
   dialogOpen.value = true
 }
@@ -78,7 +114,19 @@ async function save() {
     if (editing.value) {
       await templateApi.update(editing.value.id, { ...form, code: undefined })
     } else {
-      await templateApi.create(form)
+      // FR-49-20：itemCount = 0 前端即拦截，错误文案可见，不发请求、不新增模板记录
+      if (itemDraft.value.length === 0) {
+        dialogError.value = t("templateCenter.needItems")
+        return
+      }
+      await templateProjectsApi.create({
+        name: form.name ?? '',
+        code: form.code,
+        kernel: form.kernel,
+        visibility: form.visibility,
+        description: form.description,
+        items: itemDraft.value,
+      })
     }
     dialogOpen.value = false
     await load()
@@ -107,12 +155,6 @@ async function removeTemplate(row: TemplateRow) {
   } catch (error) {
     window.alert(error instanceof Error ? error.message : t('global.loadFailed'))
   }
-}
-
-function visibilityLabel(value: string) {
-  if (value === 'private') return t('global.visibilityPrivate')
-  if (value === 'public') return t('global.visibilityPublic')
-  return t('global.visibilityTeam')
 }
 
 onMounted(load)
@@ -147,19 +189,10 @@ onMounted(load)
     <div v-if="loading" class="muted">{{ t('global.loading') }}</div>
 
     <div v-else class="template-grid">
-      <article v-for="row in rows" :key="row.id" class="template-card">
-        <header class="card-head">
-          <strong>{{ row.name }}</strong>
-          <span v-if="row.builtin" class="badge builtin">{{ t('global.templateBuiltin') }}</span>
-          <span class="badge" :class="row.status">{{ row.status }}</span>
-        </header>
-        <p class="mono muted">{{ row.code }}</p>
-        <p class="muted small">
-          {{ row.kernel }} · {{ visibilityLabel(row.visibility) }} ·
-          {{ t('global.templateItems', { count: row.itemCount }) }}
-        </p>
-        <p class="desc">{{ row.description }}</p>
-        <footer class="card-actions">
+      <!-- FR-49-17：用新 TemplateCard 替换旧展示，保留列表逻辑与既有管理动作 -->
+      <div v-for="row in rows" :key="row.id" class="template-entry">
+        <TemplateCard :template="row" />
+        <footer class="template-entry__actions">
           <button v-if="!row.builtin" class="link" @click="openEdit(row)">
             {{ t('global.templateEdit') }}
           </button>
@@ -171,7 +204,7 @@ onMounted(load)
             {{ t('global.templateDelete') }}
           </button>
         </footer>
-      </article>
+      </div>
       <p v-if="rows.length === 0" class="muted empty">{{ t('global.empty') }}</p>
     </div>
 
@@ -213,7 +246,44 @@ onMounted(load)
           <span>{{ t('global.templateDescription') }}</span>
           <textarea v-model="form.description" class="input" rows="3" />
         </label>
-        <p v-if="dialogError" class="error">{{ dialogError }}</p>
+
+        <!-- FR-49-20：新建模板必须关联至少 1 条用例或 1 个用例集 -->
+        <div v-if="!editing" class="field">
+          <span>{{ t("templateCenter.itemsTitle") }}</span>
+          <p class="muted small">{{ t("templateCenter.itemsHint") }}</p>
+          <div class="draft-row">
+            <select v-model="draftType" class="select">
+              <option value="CASE">{{ t("templateCenter.itemCase") }}</option>
+              <option value="CASE_SET">{{ t("templateCenter.itemCaseSet") }}</option>
+            </select>
+            <input
+              v-model="draftRefId"
+              class="input mono"
+              :placeholder='t("templateCenter.refIdPlaceholder")'
+            />
+            <input
+              v-model="draftName"
+              class="input"
+              :placeholder='t("templateCenter.namePlaceholder")'
+            />
+            <button type="button" class="btn" data-testid="template-add-item" @click="addDraftItem">
+              {{ t("templateCenter.addItem") }}
+            </button>
+          </div>
+          <ul class="draft-list">
+            <li v-for="(item, index) in itemDraft" :key="index" data-testid="template-draft-item">
+              {{ item.itemType }} · {{ item.name }} · {{ item.refId ?? '—' }}
+              <button type="button" class="link" @click="removeDraftItem(index)">
+                {{ t('global.templateDelete') }}
+              </button>
+            </li>
+          </ul>
+          <p class="muted small" data-testid="template-items-count">
+            {{ t("templateCenter.itemsCount", { count: itemDraft.length }) }}
+          </p>
+        </div>
+
+        <p v-if="dialogError" class="error" data-testid="template-dialog-error">{{ dialogError }}</p>
         <div class="modal-actions">
           <button class="btn" @click="dialogOpen = false">{{ t('global.close') }}</button>
           <button class="btn btn-primary" :disabled="saving" @click="save">
@@ -254,8 +324,42 @@ onMounted(load)
 
 .template-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: var(--space-3);
+}
+
+.template-entry {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.template-entry__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.draft-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.draft-list {
+  list-style: none;
+  margin: var(--space-1) 0 0;
+  padding: 0;
+  font-size: var(--font-size-sm);
+}
+
+.draft-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: 2px 0;
 }
 
 .template-card {
@@ -287,7 +391,7 @@ onMounted(load)
 }
 
 .badge.builtin {
-  color: var(--accent, #2563eb);
+  color: var(--accent);
 }
 
 .mono {
@@ -362,7 +466,7 @@ onMounted(load)
 .link {
   border: 0;
   background: transparent;
-  color: var(--accent, #2563eb);
+  color: var(--accent);
   cursor: pointer;
   padding: 0;
 }
@@ -381,8 +485,8 @@ onMounted(load)
 }
 
 .btn-primary {
-  background: var(--accent, #2563eb);
-  border-color: var(--accent, #2563eb);
-  color: #fff;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-contrast);
 }
 </style>

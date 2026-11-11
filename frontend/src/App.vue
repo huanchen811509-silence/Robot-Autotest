@@ -36,11 +36,11 @@ import { useAiDrawer } from '@/composables/useAiDrawer'
 import { performLogout } from '@/composables/useLogout'
 import {
   GLOBAL_NAVIGATION,
-  capabilitiesForRole,
-  roleFromCodes,
-  visibleNavByCapabilities,
+  NAVIGATION,
+  filterNavByCapabilityPredicate,
   type NavNode,
 } from '@/config/navigation'
+import { useMenuCapabilitiesStore } from '@/stores/menuCapabilities'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -48,6 +48,7 @@ const router = useRouter()
 const localeStore = useLocaleStore()
 const auth = useAuthStore()
 const uiMode = useUiModeStore()
+const menuCaps = useMenuCapabilitiesStore()
 const theme = useTheme()
 const accent = useAccent()
 const density = useDensity()
@@ -77,13 +78,15 @@ function syncHeaderHeight(): void {
 }
 
 // 两级导航：结构在 config/navigation.ts，这里只管「按能力过滤 + 展开态」。
-// v2.0 起不再是单一 adminOnly：四角色能力集决定入口显隐，越权仍由后端 403 兜底。
+// v4.9.2 / OPT-08：能力集来自服务端（stores/menuCapabilities）；load() 完成
+// （含失败降级为最小能力集）之前不渲染导航，避免「先全显再收起」的闪烁。
 // v4.5.0：全局模式使用独立导航（项目 / 公共用例 / 公共资产 / 模板 / 系统设置）。
-const nav = computed<NavNode[]>(() =>
-  uiMode.isGlobal
+const nav = computed<NavNode[]>(() => {
+  if (!menuCaps.ready) return []
+  return uiMode.isGlobal
     ? GLOBAL_NAVIGATION
-    : visibleNavByCapabilities(capabilitiesForRole(roleFromCodes(auth.user?.roles))),
-)
+    : filterNavByCapabilityPredicate(NAVIGATION, (capability) => menuCaps.has(capability))
+})
 
 // NAV-04：命令面板全局快捷键。打印页/登录页不响应，避免无头打印被快捷键干扰。
 const paletteOpen = ref(false)
@@ -123,6 +126,7 @@ watch(
 async function logout(): Promise<void> {
   await performLogout(router)
   uiMode.clear()
+  menuCaps.$reset()
 }
 
 onMounted(() => window.addEventListener('keydown', onGlobalKeydown))
@@ -189,6 +193,7 @@ watch(
       return
     }
     await uiMode.load()
+    await menuCaps.load()
     if (uiMode.mode === 'global' && route.path === '/workbench') {
       await router.replace('/g/projects')
     }
@@ -225,6 +230,7 @@ onMounted(async () => {
   }
   // v4.5.0 / FR-v4.5-02：记住上次模式；首屏落在工作台且上次是全局时直接还原。
   await uiMode.load()
+  await menuCaps.load()
   if (uiMode.mode === 'global' && route.path === '/workbench') {
     await router.replace('/g/projects')
   }

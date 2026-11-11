@@ -1,11 +1,16 @@
 package com.qa.autotest.api.caseasset;
 
+import com.qa.autotest.application.caseasset.GlobalCaseService;
 import com.qa.autotest.application.caseasset.TestSetService;
+import com.qa.autotest.application.group.ScenarioService;
 import com.qa.autotest.common.ApiResponse;
+import com.qa.autotest.common.BusinessException;
+import com.qa.autotest.common.ErrorCode;
 import com.qa.autotest.domain.caseasset.TestCase;
 import com.qa.autotest.domain.caseasset.TestSet;
 import com.qa.autotest.domain.common.PageResult;
 import java.util.List;
+import java.util.Map;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -33,10 +38,34 @@ public class TestSetController {
     public record OrderRequest(List<Long> caseIds) {
     }
 
+    /** FR-49-28：分类筛选（全选一级 / 全选二级 / 跨表交集）。 */
+    public record CategoryFilterRequest(String categoryL1, String categoryL2,
+                                        Long intersectWithSetId) {
+    }
+
+    /** FR-49-29：场景创建 / 编组（一层，复用 test_set.kind=scenario）。 */
+    public record ScenarioGroupRequest(String setCode, String name, List<Long> caseSetIds) {
+    }
+
     private final TestSetService sets;
+
+    /** 可选装配：既有测试用 1 参构造器直接 new，未注入时场景端点报可读错误。 */
+    private ScenarioService scenarios;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setScenarios(ScenarioService scenarios) {
+        this.scenarios = scenarios;
+    }
 
     public TestSetController(TestSetService sets) {
         this.sets = sets;
+    }
+
+    private ScenarioService requireScenarios() {
+        if (scenarios == null) {
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR, "场景服务未装配");
+        }
+        return scenarios;
     }
 
     @GetMapping
@@ -96,5 +125,40 @@ public class TestSetController {
                                      @RequestBody OrderRequest request) {
         sets.reorder(projectId, id, request.caseIds());
         return ApiResponse.ok(null);
+    }
+
+    /** FR-49-28：按分类筛选批量加入，新增条数 = 筛选条数，item_source='category_filter'。 */
+    @PostMapping("/{id}/items/category-filter")
+    public ApiResponse<TestSetService.CategoryFilterResult> addByCategoryFilter(
+            @PathVariable long projectId, @PathVariable long id,
+            @RequestBody CategoryFilterRequest request) {
+        return ApiResponse.ok(sets.addByCategoryFilter(projectId, id,
+                new GlobalCaseService.CategoryFilter(request.categoryL1(), request.categoryL2(),
+                        request.intersectWithSetId())));
+    }
+
+    /** FR-49-29：创建场景（复用 test_set.kind=scenario 三态，仍限一层）。 */
+    @PostMapping("/scenario-groups")
+    public ApiResponse<Long> createScenarioGroup(
+            @PathVariable long projectId, @RequestBody ScenarioGroupRequest request) {
+        return ApiResponse.ok(requireScenarios().createScenarioGroup(
+                projectId, request.setCode(), request.name(), request.caseSetIds()));
+    }
+
+    /** FR-49-29：编组（更新场景引用的用例集 id 逗号串，不新建中间表）。 */
+    @PutMapping("/scenario-groups/{scenarioId}/case-sets")
+    public ApiResponse<Map<String, Boolean>> regroupScenario(
+            @PathVariable long projectId, @PathVariable long scenarioId,
+            @RequestBody ScenarioGroupRequest request) {
+        requireScenarios().regroupCaseSets(projectId, scenarioId, request.caseSetIds());
+        return ApiResponse.ok(Map.of("regrouped", true));
+    }
+
+    /** FR-49-29：删除场景（连同 kind=scenario 的 test_set 行）。 */
+    @DeleteMapping("/scenario-groups/{scenarioId}")
+    public ApiResponse<Map<String, Boolean>> deleteScenarioGroup(
+            @PathVariable long projectId, @PathVariable long scenarioId) {
+        requireScenarios().deleteScenarioGroup(projectId, scenarioId);
+        return ApiResponse.ok(Map.of("deleted", true));
     }
 }

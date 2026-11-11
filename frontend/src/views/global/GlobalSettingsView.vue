@@ -1,29 +1,25 @@
 <script setup lang="ts">
-/** 全局系统设置入口（v4.5.0 / FR-v4.5-03）：管理入口从账户菜单迁到这里。 */
+/**
+ * 全局系统设置（v4.5.0 迁移 → v4.9.2 / OPT-01 / FR-49-01~04）。
+ *
+ * 旧实现是 8 张卡片，且漏了「AI 助手」、混入了执行节点 / 运维 / 归档等无关项。
+ * 现改为与项目侧栏一致的「二级菜单树」：6 项直接取自 config/settingsNav.ts 单一数据源，
+ * 每项按服务端能力集过滤（public 对所有角色可见），点击后进入 /g/... 命名空间。
+ */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useAuthStore } from '@/stores/auth'
+import { SETTINGS_NAV } from '@/config/settingsNav'
+import { useMenuCapabilitiesStore } from '@/stores/menuCapabilities'
 
 const { t } = useI18n()
-const auth = useAuthStore()
+const menuCaps = useMenuCapabilitiesStore()
 
-const links = computed(() => {
-  const items = [
-    { to: '/settings', label: t('menu.platformSettings'), desc: t('global.settingsPlatform') },
-    { to: '/about', label: t('menu.about'), desc: t('global.settingsAbout') },
-    { to: '/changelog', label: t('menu.changelog'), desc: t('global.settingsChangelog') },
-    { to: '/nodes', label: t('menu.nodes'), desc: t('global.settingsNodes') },
-  ]
-  if (auth.isAdmin) {
-    items.push(
-      { to: '/admin', label: t('menu.users'), desc: t('global.settingsUsers') },
-      { to: '/admin/audit', label: t('menu.audit'), desc: t('global.settingsAudit') },
-      { to: '/admin/ops', label: t('menu.ops'), desc: t('global.settingsOps') },
-      { to: '/admin/archive', label: t('menu.archive'), desc: t('global.settingsArchive') },
-    )
-  }
-  return items
-})
+// 能力集未就绪时不渲染菜单，避免「先全显再收起」闪烁；就绪后按 capability 过滤。
+const links = computed(() =>
+  menuCaps.ready
+    ? SETTINGS_NAV.filter((item) => menuCaps.has(item.capability))
+    : [],
+)
 </script>
 
 <template>
@@ -32,26 +28,30 @@ const links = computed(() => {
       <h1>{{ t('global.settingsTitle') }}</h1>
       <p class="muted">{{ t('global.settingsHint') }}</p>
     </header>
-    <div class="global-settings-grid">
-      <RouterLink v-for="link in links" :key="link.to" class="global-settings-card" :to="link.to">
-        <strong>{{ link.label }}</strong>
-        <span class="muted">{{ link.desc }}</span>
+    <nav class="global-settings-menu" :aria-label="t('global.settingsTitle')">
+      <RouterLink
+        v-for="link in links"
+        :key="link.key"
+        class="global-settings-item"
+        :to="link.path"
+      >
+        <span class="global-settings-item-label">{{ t(link.labelKey) }}</span>
       </RouterLink>
-    </div>
+    </nav>
   </section>
 </template>
 
 <style scoped>
-.global-settings-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: var(--space-3);
-}
-
-.global-settings-card {
+.global-settings-menu {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
+  max-width: 420px;
+}
+
+.global-settings-item {
+  display: flex;
+  align-items: center;
   padding: var(--space-3);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
@@ -60,7 +60,11 @@ const links = computed(() => {
   text-decoration: none;
 }
 
-.global-settings-card:hover {
+.global-settings-item:hover {
   border-color: var(--border-strong);
+}
+
+.global-settings-item.router-link-active {
+  border-color: var(--accent);
 }
 </style>

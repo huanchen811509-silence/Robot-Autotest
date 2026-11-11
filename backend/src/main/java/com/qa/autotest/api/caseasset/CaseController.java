@@ -3,6 +3,7 @@ package com.qa.autotest.api.caseasset;
 import com.qa.autotest.application.caseasset.CaseImportService;
 import com.qa.autotest.common.query.PageQuery;
 import com.qa.autotest.application.caseasset.CapabilityService;
+import com.qa.autotest.application.caseasset.GlobalCaseService;
 import com.qa.autotest.application.caseasset.TestCaseService;
 import com.qa.autotest.common.ApiResponse;
 import com.qa.autotest.domain.caseasset.CapabilityStat;
@@ -48,6 +49,14 @@ public class CaseController {
     private final CapabilityService capabilities;
     private final CaseImportService importer;
 
+    /** OPT-02：统一详情契约的可选装配；既有测试用 3 参构造器直接 new，未注入时降级。 */
+    private GlobalCaseService globalCases;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setGlobalCases(GlobalCaseService globalCases) {
+        this.globalCases = globalCases;
+    }
+
     public CaseController(TestCaseService cases, CapabilityService capabilities,
                           CaseImportService importer) {
         this.cases = cases;
@@ -75,10 +84,26 @@ public class CaseController {
                 capability, safetyLevel, paging));
     }
 
+    /** FR-49-07：项目用例详情与公共库共用同一字段契约（四列补录 + 来源徽章 + 脱敏）。 */
     @GetMapping("/cases/{id}")
-    public ApiResponse<TestCaseService.CaseDetail> get(@PathVariable long projectId,
-                                                       @PathVariable long id) {
-        return ApiResponse.ok(cases.get(projectId, id));
+    public ApiResponse<GlobalCaseService.CaseDetailView> get(@PathVariable long projectId,
+                                                             @PathVariable long id) {
+        if (globalCases != null) {
+            return ApiResponse.ok(globalCases.detailForProject(projectId, id));
+        }
+        // 纯单测装配（无 Spring 上下文）：仍返回同一 DTO 契约，库级补录/来源字段留空，
+        // 且对 mock 返回 null 保持与原实现一致（data=null），不引入 NPE。
+        TestCaseService.CaseDetail detail = cases.get(projectId, id);
+        TestCase tc = detail == null ? null : detail.testCase();
+        if (tc == null) {
+            return ApiResponse.ok(null);
+        }
+        boolean localOverride = "local_override".equals(tc.source());
+        return ApiResponse.ok(new GlobalCaseService.CaseDetailView(
+                tc.id() == null ? 0L : tc.id(), tc.caseCode(), tc.caseCode(), tc.title(),
+                tc.category(), "", tc.priority(), tc.safetyLevel(), "active", 1, "", "",
+                "", "", "", "", "", null, localOverride,
+                localOverride ? "LOCAL_OVERRIDE" : "LOCAL", "****"));
     }
 
     @PostMapping("/cases")

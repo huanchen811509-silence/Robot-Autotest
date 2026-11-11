@@ -1,7 +1,54 @@
+import type { Component } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useUiModeStore } from '@/stores/uiMode'
 import { capabilitiesForRole, roleFromCodes } from '@/config/navigation'
+
+/* --------------------------------------------------------------------------
+ * v4.9.2 / OPT-01（FR-49-10~12）：全局模式守卫的两条独立判据。
+ *
+ * 拆成两个纯函数是为了可独立测试、互不耦合：
+ *   - shouldPreserveGlobalMode 只看 meta.global，决定「是否保持全局模式」；
+ *   - canEnterGlobalMode 只看角色，决定「是否允许进入全局模式」。
+ * 二者都不读对方关心的字段，改一处不会悄悄改变另一处的行为。
+ * -------------------------------------------------------------------------- */
+export interface GlobalModeRouteLike {
+  meta?: Record<string, unknown>
+}
+
+/** 模式保持：只看 meta.global，严格等于 true 才保持全局模式。 */
+export function shouldPreserveGlobalMode(route: GlobalModeRouteLike | null | undefined): boolean {
+  return route?.meta?.global === true
+}
+
+/** 角色准入：只看角色码（大小写不敏感）；ADMIN / PM 允许，其余一律拒绝。 */
+export function canEnterGlobalMode(role: string | null | undefined): boolean {
+  const normalized = (role ?? '').toLowerCase()
+  return normalized === 'admin' || normalized === 'pm'
+}
+
+/* --------------------------------------------------------------------------
+ * v4.9.2：同批次其他 Agent 创建的视图（懒加载动态 import）。
+ *
+ * 用 import.meta.glob 生成懒加载器——Vite 会为每个匹配到的 .vue 文件生成
+ * `() => import('./file.vue').then(m => m.default)`。文件暂不存在时 glob 返回空
+ * 对象：既不报 TS2307，也不触发 vite:import-analysis 的「文件不存在」错误，
+ * 因此现在（视图未落地）vue-tsc 与全量单测都能过；视图落地后自动生效，无需改此处。
+ * 非空断言对应批次约定「最终都会存在」；万一缺失，该路由组件为 undefined，
+ * router-view 渲染空内容，不影响其余路由与守卫。
+ * -------------------------------------------------------------------------- */
+const OPTIONAL_VIEWS = import.meta.glob<Component>([
+  '../views/global/GlobalCaseDetailView.vue',
+  '../views/global/GlobalAssetDetailView.vue',
+  '../views/AssetDetailView.vue',
+  '../views/global/TemplateWorkbenchView.vue',
+  '../views/ScenariosView.vue',
+], { import: 'default' })
+
+/** 懒加载器：等价于 `() => import('@/views/...')`，路径相对本文件。 */
+function optionalView(path: string): () => Promise<Component> {
+  return OPTIONAL_VIEWS[path]!
+}
 
 // 7 个一级菜单（工作台 / 执行与报告 / 用例 / 资产 / 环境与拓扑 / 维护与恢复 / 系统设置）
 // history 模式要求服务端回退到 index.html，否则刷新 404（TC-v0.1-041）
@@ -320,6 +367,68 @@ const router = createRouter({
       meta: { global: true },
       component: () => import('@/views/global/GlobalSettingsView.vue'),
     },
+    // v4.9.2 / OPT-01（FR-49-01~04）：全局系统设置的 6 个目标路由，复用现有设置视图。
+    // 全部带 meta.global = true —— 点击后 ui_mode 保持 global，不会回 /workbench。
+    {
+      path: '/g/settings/ai',
+      name: 'global-settings-ai',
+      meta: { global: true },
+      component: () => import('@/views/AiAssistantsView.vue'),
+    },
+    {
+      path: '/g/admin',
+      name: 'global-admin',
+      meta: { global: true },
+      component: () => import('@/views/AdminView.vue'),
+    },
+    {
+      path: '/g/admin/audit',
+      name: 'global-admin-audit',
+      meta: { global: true },
+      component: () => import('@/views/AuditView.vue'),
+    },
+    {
+      path: '/g/about',
+      name: 'global-about',
+      meta: { global: true },
+      component: () => import('@/views/AboutView.vue'),
+    },
+    {
+      path: '/g/changelog',
+      name: 'global-changelog',
+      meta: { global: true },
+      component: () => import('@/views/ChangelogView.vue'),
+    },
+    // 同批次其他 Agent 创建的视图：一律用 import.meta.glob 懒加载动态 import。
+    // 文件暂不存在时 loader 为 undefined（渲染空内容），落地后自动生效。
+    {
+      path: '/g/cases/:id',                 // @/views/global/GlobalCaseDetailView.vue
+      name: 'global-case-detail',
+      meta: { global: true },
+      component: optionalView('../views/global/GlobalCaseDetailView.vue'),
+    },
+    {
+      path: '/g/assets/:id',                // @/views/global/GlobalAssetDetailView.vue
+      name: 'global-asset-detail',
+      meta: { global: true },
+      component: optionalView('../views/global/GlobalAssetDetailView.vue'),
+    },
+    {
+      path: '/assets/:id',                  // @/views/AssetDetailView.vue
+      name: 'asset-detail',
+      component: optionalView('../views/AssetDetailView.vue'),
+    },
+    {
+      path: '/g/templates/:id',             // @/views/global/TemplateWorkbenchView.vue
+      name: 'global-template-workbench',
+      meta: { global: true },
+      component: optionalView('../views/global/TemplateWorkbenchView.vue'),
+    },
+    {
+      path: '/scenarios',                   // @/views/ScenariosView.vue
+      name: 'scenarios',
+      component: optionalView('../views/ScenariosView.vue'),
+    },
     {
       path: '/:pathMatch(.*)*',
       name: 'not-found',
@@ -345,16 +454,22 @@ router.beforeEach((to) => {
     const owned = capabilitiesForRole(roleFromCodes(auth.user.roles))
     if (!owned.includes(capability)) return { path: '/403' }
   }
-  // 全局模式只对 ADMIN / PM 开放（FR-v4.5-06）；未加载 user 时先放行，后端会 403。
+  // v4.9.2 / OPT-01：模式保持与角色准入是两条独立判据（见文件头部纯函数）。
   const uiMode = useUiModeStore()
-  if (to.meta.global && auth.user) {
-    const roles = auth.user.roles ?? []
-    if (!roles.includes('admin') && !roles.includes('pm')) return { path: '/403' }
+  if (shouldPreserveGlobalMode(to)) {
+    // 角色准入只判角色；未加载 user 时先放行，后端会 403（FR-v4.5-06）。
+    if (auth.user) {
+      const roles = auth.user.roles ?? []
+      if (!roles.some((role) => canEnterGlobalMode(role))) return { path: '/403' }
+    }
     if (uiMode.mode !== 'global') void uiMode.setMode('global')
-  } else if (!to.meta.public) {
+    // 全局路由一律早返回：不调用 rememberProjectPath、不切回 project 模式。
+    return true
+  }
+  if (!to.meta.public) {
     uiMode.rememberProjectPath(to.fullPath)
-    if (to.meta.global !== true && uiMode.mode === 'global' && !to.path.startsWith('/g')) {
-      if (uiMode.ready) void uiMode.setMode('project')
+    if (uiMode.mode === 'global' && !to.path.startsWith('/g') && uiMode.ready) {
+      void uiMode.setMode('project')
     }
   }
   return true

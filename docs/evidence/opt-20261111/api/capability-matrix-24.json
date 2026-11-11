@@ -1,0 +1,12 @@
+{
+  "status": 200,
+  "capabilities": [
+    "settings:read",
+    "ai:config",
+    "user:write",
+    "audit:read",
+    "about",
+    "changelog"
+  ],
+  "user": "qa-e2e-admin"
+}

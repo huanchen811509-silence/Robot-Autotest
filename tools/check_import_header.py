@@ -40,6 +40,17 @@ REQUIRED = ("caseCode", "title")
 # 与 Java 侧 findHeaderRow 一致：只在前 10 行里找表头
 HEADER_SCAN_ROWS = 10
 
+# OPT-02 / FR-49-05：参考《基本功能导入测试》5 张「详细测试流程」表（表头第 3 行）
+# 的 14 列规范。用「字段名」而非表头名对账，兼容「用例编号/测试编号」
+# 「用例名称/测试用例」等逐 sheet 变体。
+# 注意：「测试资源」沿用 ed202Coverage 别名（兼容既有别名单测），其值在导入器里
+# 分流到独立列 test_resource，不再写入 ed202_coverage（FR-49-06）。
+EXPECTED_14_FIELDS = (
+    "caseCode", "category", "categoryL2", "title", "caseClass", "priority",
+    "precondition", "steps", "aSideCommand", "bSideCommand", "switchConfig",
+    "expected", "testResult", "ed202Coverage",
+)
+
 
 def strip_java_comments(src: str) -> str:
     """剥掉 // 行注释与 /* */ 块注释，字符串字面量整段原样保留。
@@ -122,6 +133,8 @@ def main() -> int:
     ap.add_argument("excel", help="待对账的 xlsx")
     ap.add_argument("--java", default=DEFAULT_JAVA, help="CaseImportService.java 路径")
     ap.add_argument("--sheet", help="指定工作表（默认第一张）")
+    ap.add_argument("--expect-14", action="store_true",
+                    help="按 14 列规范对账（仅显式启用；旧口径 14 列台账列名不同，不能自动判定）")
     args = ap.parse_args()
 
     java_path = Path(args.java)
@@ -172,6 +185,17 @@ def main() -> int:
     hit = len(mapped)
     total = len([h for h in header if h])
     print("列命中     : %d / %d" % (hit, total))
+
+    # OPT-02 / FR-49-05：仅 --expect-14 显式启用时做 14 列规范对账。
+    # 不按「表头恰好 14 列」自动判定：v0.2.9.2 等旧口径台账也是 14 列但列名带括号后缀，
+    # 自动判定会把它们误判为缺列。默认行为保持与旧版完全一致。
+    if args.expect_14:
+        hit14 = [f for f in EXPECTED_14_FIELDS if f in mapped]
+        print("14 列对账  : %d / %d" % (len(hit14), len(EXPECTED_14_FIELDS)))
+        if len(hit14) != len(EXPECTED_14_FIELDS):
+            print("[FAIL] 14 列规范未全命中，缺字段：%s" % " / ".join(
+                f for f in EXPECTED_14_FIELDS if f not in mapped))
+            return 1
 
     # 多列撞同一字段 = 后面的列会被静默丢掉（Java 侧 columns 用 containsKey 判重，
     # 先出现的那列赢）。命中数看着好看，实际丢数据 —— 必须显式点出来。

@@ -2,6 +2,7 @@ package com.qa.autotest.application.group;
 
 import com.qa.autotest.common.BusinessException;
 import com.qa.autotest.common.ErrorCode;
+import com.qa.autotest.common.tenant.TenantContext;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -82,6 +83,79 @@ public class ScenarioService {
             }
         }
         return violations;
+    }
+
+    /**
+     * FR-49-29：创建场景 —— 复用 {@code test_set.kind='scenario'} 三态作为场景容器，
+     * 编组明细仍写 {@code test_scenario.case_set_ids} 逗号串（一层，parent_scenario_id 恒 NULL）。
+     * 不新建表、不把 case_set_ids 改成中间表；返回 test_scenario.id。
+     */
+    public long createScenarioGroup(long projectId, String setCode, String name,
+                                    List<Long> caseSetIds) {
+        if (name == null || name.isBlank()) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "场景名不能为空");
+        }
+        if (setCode == null || setCode.isBlank()) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "场景编号不能为空");
+        }
+        String joined = joinCaseSetIds(caseSetIds);
+        jdbc.update("""
+                INSERT INTO test_set (project_id, set_code, name, description, kind, created_by)
+                VALUES (?, ?, ?, '', 'scenario', ?)
+                """, projectId, setCode.trim(), name.trim(), TenantContext.userId());
+        Long setId = jdbc.queryForObject("SELECT LAST_INSERT_ID()", Long.class);
+        long sid = setId == null ? 0L : setId;
+        jdbc.update("""
+                INSERT INTO test_scenario (project_id, name, case_set_ids, parent_scenario_id,
+                                           step_order, set_id)
+                VALUES (?, ?, ?, NULL, 0, ?)
+                """, projectId, name.trim(), joined, sid);
+        Long id = jdbc.queryForObject("SELECT LAST_INSERT_ID()", Long.class);
+        return id == null ? 0L : id;
+    }
+
+    /** FR-49-29：编组 —— 只改一层场景的 case_set_ids 逗号串，父场景固定为 NULL。 */
+    public void regroupCaseSets(long projectId, long scenarioId, List<Long> caseSetIds) {
+        String joined = joinCaseSetIds(caseSetIds);
+        int changed = jdbc.update("""
+                UPDATE test_scenario SET case_set_ids = ?, parent_scenario_id = NULL
+                 WHERE id = ? AND project_id = ?
+                """, joined, scenarioId, projectId);
+        if (changed == 0) {
+            throw new BusinessException(ErrorCode.NOT_FOUND, "场景不存在");
+        }
+    }
+
+    /** FR-49-29：删除场景 —— 连同其 kind=scenario 的 test_set 行与成员一起删。 */
+    public void deleteScenarioGroup(long projectId, long scenarioId) {
+        List<Long> setIds = jdbc.queryForList(
+                "SELECT set_id FROM test_scenario"
+                        + " WHERE id = ? AND project_id = ? AND set_id IS NOT NULL",
+                Long.class, scenarioId, projectId);
+        jdbc.update("DELETE FROM test_scenario WHERE id = ? AND project_id = ?",
+                scenarioId, projectId);
+        for (Long setId : setIds) {
+            jdbc.update("DELETE FROM test_set_item WHERE test_set_id = ?", setId);
+            jdbc.update("DELETE FROM test_set"
+                    + " WHERE id = ? AND project_id = ? AND kind = 'scenario'",
+                    setId, projectId);
+        }
+    }
+
+    /** 与 createScenario 相同的一层边界：用例集数量 1~50、id 必须为正。 */
+    private static String joinCaseSetIds(List<Long> caseSetIds) {
+        if (caseSetIds == null || caseSetIds.isEmpty()) {
+            return "";
+        }
+        if (caseSetIds.size() > 50) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "用例集数量须在 1~50");
+        }
+        for (Long id : caseSetIds) {
+            if (id == null || id <= 0) {
+                throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "非法用例集 id");
+            }
+        }
+        return String.join(",", caseSetIds.stream().map(String::valueOf).toList());
     }
 
     public long createTemplate(String name, String configJson) {

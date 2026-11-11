@@ -19,6 +19,8 @@ import { useAiDrawer } from '@/composables/useAiDrawer'
 import AppIcon from '@/components/AppIcon.vue'
 import AccountMenu from '@/components/AccountMenu.vue'
 import NotificationCenter from '@/components/NotificationCenter.vue'
+import ThemeCycleButton from '@/components/ThemeCycleButton.vue'
+import LocaleCycleButton from '@/components/LocaleCycleButton.vue'
 
 const props = defineProps<{ aiEnabled: boolean }>()
 const emit = defineEmits<{
@@ -156,6 +158,13 @@ async function changeProject(event: Event): Promise<void> {
         />
       </div>
     </div>
+
+    <!-- v4.9.2 / OPT-03：主题 / 语言循环快捷按钮。独立于 header-actions 段，
+         与账户菜单共用同一 store / composable，状态天然双向同步。 -->
+    <div class="app-header-quick" data-testid="header-quick">
+      <ThemeCycleButton />
+      <LocaleCycleButton />
+    </div>
   </header>
 </template>
 
@@ -194,5 +203,23 @@ async function changeProject(event: Event): Promise<void> {
 .app-mode-btn:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
+}
+
+/* v4.9.2 / OPT-03：快捷按钮不参与伸缩（flex-shrink:0），窄屏靠 gap 收敛；
+   顶栏本身已在 main.css 开启 flex-wrap:wrap，空间不足时整组换行而非横向溢出。 */
+.app-header-quick {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  margin-left: 12px;
+}
+
+@media (max-width: 1080px) {
+  .app-header-quick { gap: 4px; margin-left: 8px; }
+}
+
+@media (max-width: 760px) {
+  .app-header-quick { gap: 4px; margin-left: 6px; }
 }
 </style>

@@ -1,0 +1,10 @@
+{
+  "zh-CN": {
+    "nav.themeCycle": "切换主题（系统 / 浅色 / 深色）",
+    "nav.localeCycle": "切换语言（中文 / English）"
+  },
+  "en-US": {
+    "nav.themeCycle": "Cycle theme (system / light / dark)",
+    "nav.localeCycle": "Cycle language (中文 / English)"
+  }
+}

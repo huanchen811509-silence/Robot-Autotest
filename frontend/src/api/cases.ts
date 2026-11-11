@@ -122,6 +122,13 @@ export interface BatchRequest {
   safetyLevel?: string
 }
 
+/** FR-49-28：分类批量加入结果，matched 必须等于 added（筛选条数 = 加入条数）。 */
+export interface CategoryFilterResult {
+  matched: number
+  added: number
+  itemSource: string
+}
+
 /** 逐条结果：失败带稳定错误码名（NOT_FOUND / CONFLICT）。 */
 export interface BatchItemResult {
   id: number
@@ -138,7 +145,7 @@ export interface BatchResult {
   items: BatchItemResult[]
 }
 
-const base = (projectId: number): string => `/projects/${projectId}`
+const base = (projectId: number | string): string => `/projects/${projectId}`
 
 export const caseApi = {
   page(projectId: number, params: {
@@ -242,6 +249,56 @@ export const caseSetApi = {
       method: 'PUT',
       body: JSON.stringify({ caseIds }),
     })
+  },
+  /** FR-49-28：全选一级 / 全选二级 / 跨表交集三种筛选批量加入用例集。 */
+  addByCategoryFilter(
+    projectId: number | string,
+    id: number | string,
+    body: { categoryL1?: string; categoryL2?: string; intersectWithSetId?: number },
+  ) {
+    return request<CategoryFilterResult>(
+      `${base(projectId)}/case-sets/${id}/items/category-filter`,
+      { method: 'POST', body: JSON.stringify(body) },
+    )
+  },
+}
+
+/** FR-49-29：场景仍限一层（case_set_ids 逗号串，不新建中间表）。 */
+export interface ScenarioRow {
+  id: number
+  name: string
+  case_set_ids: string | null
+  step_order: number
+  parent_scenario_id: number | null
+}
+
+export const scenarioApi = {
+  /** GET /api/scenarios?projectId= —— 同时回传一层违规清单。 */
+  list(projectId: number | string) {
+    return request<{ items: ScenarioRow[]; oneLevelViolations: string[] }>(
+      `/scenarios${toQuery({ projectId })}`,
+    )
+  },
+  /** 创建场景：复用 test_set.kind=scenario 三态。 */
+  create(projectId: number | string, body: { setCode: string; name: string; caseSetIds: number[] }) {
+    return request<number>(`${base(projectId)}/case-sets/scenario-groups`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    })
+  },
+  /** 编组：只更新场景引用的一层用例集 id 串。 */
+  regroup(projectId: number | string, scenarioId: number | string, caseSetIds: number[]) {
+    return request<{ regrouped: boolean }>(
+      `${base(projectId)}/case-sets/scenario-groups/${scenarioId}/case-sets`,
+      { method: 'PUT', body: JSON.stringify({ caseSetIds }) },
+    )
+  },
+  /** 删除场景（连同 kind=scenario 的用例集行）。 */
+  remove(projectId: number | string, scenarioId: number | string) {
+    return request<{ deleted: boolean }>(
+      `${base(projectId)}/case-sets/scenario-groups/${scenarioId}`,
+      { method: 'DELETE' },
+    )
   },
 }
 

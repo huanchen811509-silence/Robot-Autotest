@@ -386,6 +386,13 @@ onMounted(async () => {
               </span>
             </div>
             <p v-if="preview.replayed" class="muted">{{ t('global.importReplayed') }}</p>
+            <p class="muted mono">
+              {{ t('global.assetChecksum') }}：{{ preview.sha256.slice(0, 16) }} ·
+              {{ t('global.assetBatch') }} #{{ preview.batchId }}
+            </p>
+            <p v-if="preview.skippedSheets?.length" class="muted">
+              {{ t('global.importSkippedSheets', { sheets: preview.skippedSheets.join('、') }) }}
+            </p>
             <p v-if="preview.errorCount" class="error">
               {{ t('global.importErrorHint', { count: preview.errorCount }) }}
               <button class="link" @click="downloadErrorReport">
@@ -588,7 +595,7 @@ onMounted(async () => {
 }
 
 .modal {
-  width: min(920px, 92vw);
+  width: min(900px, 92vw);
   max-height: 86vh;
   overflow: auto;
   background: var(--panel);
@@ -657,7 +664,7 @@ onMounted(async () => {
 .link {
   border: 0;
   background: transparent;
-  color: var(--accent, #2563eb);
+  color: var(--accent);
   cursor: pointer;
   padding: 0;
 }
@@ -672,9 +679,9 @@ onMounted(async () => {
 }
 
 .btn-primary {
-  background: var(--accent, #2563eb);
-  border-color: var(--accent, #2563eb);
-  color: #fff;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-contrast);
 }
 
 .btn:disabled {

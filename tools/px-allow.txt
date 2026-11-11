@@ -27,6 +27,7 @@
 44px
 56px
 64px
+72px
 84px
 90px
 100px

@@ -47,8 +47,16 @@ public class TemplateController {
 
     @PostMapping
     public ApiResponse<ProjectTemplateService.TemplateRow> create(
-            @RequestBody ProjectTemplateService.TemplateRequest request) {
+            @RequestBody ProjectTemplateService.CreateTemplateRequest request) {
         return ApiResponse.ok(service.create(request));
+    }
+
+    /** 模板清单更新（OPT-05 / FR-49-20/21）：builtin 内容改写 4xx 且 items 不变。 */
+    @PutMapping("/{id}/content")
+    public ApiResponse<ProjectTemplateService.TemplateRow> replaceContent(
+            @PathVariable long id,
+            @RequestBody ProjectTemplateService.CreateTemplateRequest request) {
+        return ApiResponse.ok(service.replaceContent(id, request));
     }
 
     @PutMapping("/{id}")

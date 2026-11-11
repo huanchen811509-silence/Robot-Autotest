@@ -33,6 +33,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -86,7 +87,22 @@ public class CaseImportService {
                             String capability, String description, String safetyLevel,
                             String categoryL2, String sourcePriority, String caseClass,
                             String testCategory, String ed202Coverage, String sourceSheet,
-                            List<String> steps, int sourceRow) {
+                            List<String> steps, int sourceRow,
+                            String aSideCommand, String bSideCommand, String switchConfig,
+                            String testResult, String testResource) {
+
+        /** 兼容旧 19 参构造（GlobalCaseService 占位行）：补录字段取安全默认值。 */
+        public ImportRow(int rowNum, String caseCode, String title, String category,
+                         String priority, String precondition, String expected, String domainTag,
+                         String capability, String description, String safetyLevel,
+                         String categoryL2, String sourcePriority, String caseClass,
+                         String testCategory, String ed202Coverage, String sourceSheet,
+                         List<String> steps, int sourceRow) {
+            this(rowNum, caseCode, title, category, priority, precondition, expected, domainTag,
+                    capability, description, safetyLevel, categoryL2, sourcePriority, caseClass,
+                    testCategory, ed202Coverage, sourceSheet, steps, sourceRow,
+                    "", "", "", "", "");
+        }
 
         /** 兼容旧 11 参构造（CaseImportTxIT.rows() 等调用点）：扩展字段取安全默认值。 */
         public ImportRow(int rowNum, String caseCode, String title, String category,
@@ -157,6 +173,13 @@ public class CaseImportService {
                 "CX7测试结果记录", "CX7测试结果", "测试资源");
         // EDIM-03：测试步骤按换行编号拆入 test_case_step。
         alias("steps", "测试步骤");
+        // OPT-02 / FR-49-05：14 列「详细测试流程」补录四列，落 test_case 独立列。
+        // 「测试资源」沿用 ed202Coverage 别名（兼容既有别名单测），其值在 parseSheet 里
+        // 按表头文本分流到独立列 test_resource，不再写入 ed202_coverage（FR-49-06）。
+        alias("aSideCommand", "A端命令", "a_side_command");
+        alias("bSideCommand", "B端命令", "b_side_command");
+        alias("switchConfig", "交换机配置", "switch_config");
+        alias("testResult", "测试结果", "test_result");
     }
 
     private static void alias(String field, String... names) {
@@ -172,9 +195,17 @@ public class CaseImportService {
     /** 导入成功后让能力索引缓存失效（EW32-03）；测试装配入口不注入时为 null。 */
     private CapabilityCache capabilityCache;
 
+    /** OPT-02 补录列写入通道；测试装配入口不注入时为 null（只跳过补录列，不影响主流程）。 */
+    private JdbcTemplate jdbc;
+
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     void setCapabilityCache(CapabilityCache capabilityCache) {
         this.capabilityCache = capabilityCache;
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setJdbc(JdbcTemplate jdbc) {
+        this.jdbc = jdbc;
     }
 
     public CaseImportService(TestCaseRepository cases, AccessControlService access,
@@ -354,6 +385,14 @@ public class CaseImportService {
             if (code.isEmpty() && title.isEmpty() && rawPriority.isEmpty() && rawSafety.isEmpty()) {
                 continue;
             }
+            // FR-49-06：ed202Coverage 别名同时收「测试资源」，按表头文本把该列值分流到
+            // 独立 test_resource；真正的 ED202 覆盖情况仍写 ed202_coverage。
+            Integer coverageColumn = columns.get("ed202Coverage");
+            boolean coverageIsResource = coverageColumn != null
+                    && coverageColumn >= 0 && coverageColumn < header.getLastCellNum()
+                    && "测试资源".equals(
+                            formatter.formatCellValue(header.getCell(coverageColumn)).trim());
+            String coverageValue = cell(formatter, row, coverageColumn);
             rows.add(new ImportRow(i + 1, code, title,
                     cell(formatter, row, columns.get("category")), normalizePriority(rawPriority),
                     cell(formatter, row, columns.get("precondition")),
@@ -366,10 +405,15 @@ public class CaseImportService {
                     rawPriority,
                     cell(formatter, row, columns.get("caseClass")),
                     cell(formatter, row, columns.get("testCategory")),
-                    cell(formatter, row, columns.get("ed202Coverage")),
+                    coverageIsResource ? "" : coverageValue,
                     sheet.getSheetName(),
                     splitSteps(cell(formatter, row, columns.get("steps"))),
-                    i + 1));
+                    i + 1,
+                    cell(formatter, row, columns.get("aSideCommand")),
+                    cell(formatter, row, columns.get("bSideCommand")),
+                    cell(formatter, row, columns.get("switchConfig")),
+                    cell(formatter, row, columns.get("testResult")),
+                    coverageIsResource ? coverageValue : ""));
         }
         return new ParsedSheet(sheet.getSheetName(), headerIndex, headerIndex + 1,
                 Collections.unmodifiableMap(new LinkedHashMap<>(columns)),
@@ -434,7 +478,9 @@ public class CaseImportService {
                         raw.description(), safetyLevel,
                         raw.categoryL2(), raw.sourcePriority(), raw.caseClass(),
                         raw.testCategory(), raw.ed202Coverage(), raw.sourceSheet(),
-                        raw.steps(), raw.sourceRow()));
+                        raw.steps(), raw.sourceRow(),
+                        raw.aSideCommand(), raw.bSideCommand(), raw.switchConfig(),
+                        raw.testResult(), raw.testResource()));
             }
         }
         return new ImportPreview(total, rows.size(), errors, rows);
@@ -466,6 +512,7 @@ public class CaseImportService {
                             row.categoryL2(), row.sourcePriority(), row.caseClass(),
                             row.testCategory(), row.ed202Coverage(), row.sourceSheet()), operatorId);
                 }
+                writeExtraColumns(caseId, row, operatorId);
                 cases.insertImportedSteps(caseId, toImportedSteps(row.steps()), row.sourceRow(),
                         operatorId);
                 imported++;
@@ -489,6 +536,27 @@ public class CaseImportService {
         return !isBlank(row.categoryL2()) || !isBlank(row.sourcePriority())
                 || !isBlank(row.caseClass()) || !isBlank(row.testCategory())
                 || !isBlank(row.ed202Coverage()) || !isBlank(row.sourceSheet());
+    }
+
+    /**
+     * FR-49-06：五列补录值写 test_case 独立列。仓储接口只认 6 个 ED202 扩展列，
+     * 故这里走可选注入的 JdbcTemplate；未注入（纯单测装配）时跳过，不影响主流程。
+     */
+    private void writeExtraColumns(long caseId, ImportRow row, Long operatorId) {
+        if (jdbc == null || !hasExtraColumns(row)) {
+            return;
+        }
+        jdbc.update("""
+                UPDATE test_case SET a_side_command = ?, b_side_command = ?, switch_config = ?,
+                       test_result = ?, test_resource = ?, updated_by = ? WHERE id = ?
+                """, row.aSideCommand(), row.bSideCommand(), row.switchConfig(),
+                row.testResult(), row.testResource(), operatorId, caseId);
+    }
+
+    private static boolean hasExtraColumns(ImportRow row) {
+        return !isBlank(row.aSideCommand()) || !isBlank(row.bSideCommand())
+                || !isBlank(row.switchConfig()) || !isBlank(row.testResult())
+                || !isBlank(row.testResource());
     }
 
     private static boolean isBlank(String value) {
@@ -543,12 +611,29 @@ public class CaseImportService {
     private static List<String> unmappedHeaders(Row header, Map<String, Integer> columns) {
         List<String> out = new ArrayList<>();
         DataFormatter formatter = new DataFormatter();
+        // OPT-02 兼容：旧 ED202 台账（13 列，含「CX7测试结果记录 / ED202 覆盖情况」）的
+        // 预检报告一直把「测试结果」列为「未映射列」可见项。补录后该列已可识别并落
+        // test_result，但仅在旧口径表里保留这一可见项，避免既有报告读数被打破；
+        // 14 列新口径表不含上述列，不触发此分支，报告语义不变。
+        boolean legacyEd202 = false;
+        for (int c = 0; c < header.getLastCellNum(); c++) {
+            String h = formatter.formatCellValue(header.getCell(c)).trim();
+            if ("CX7测试结果记录".equals(h) || "ED202 覆盖情况".equals(h)
+                    || "ED202覆盖情况".equals(h)) {
+                legacyEd202 = true;
+                break;
+            }
+        }
         for (int c = 0; c < header.getLastCellNum(); c++) {
             String raw = formatter.formatCellValue(header.getCell(c)).trim();
             if (raw.isEmpty()) {
                 continue;
             }
             String field = HEADER_ALIASES.get(raw.toLowerCase(Locale.ROOT));
+            if (legacyEd202 && "testResult".equals(field)) {
+                out.add(raw);
+                continue;
+            }
             if (field == null || !Integer.valueOf(c).equals(columns.get(field))) {
                 out.add(raw);
             }

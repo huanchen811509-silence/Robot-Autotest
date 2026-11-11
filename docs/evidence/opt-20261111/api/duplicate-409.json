@@ -1,0 +1,11 @@
+{
+  "first": 200,
+  "second": 409,
+  "secondBody": {
+    "code": 40900,
+    "codeName": "CONFLICT",
+    "message": "该模板已用于创建同名/同编码项目：__opt_ft_1794382577",
+    "data": null,
+    "success": false
+  }
+}

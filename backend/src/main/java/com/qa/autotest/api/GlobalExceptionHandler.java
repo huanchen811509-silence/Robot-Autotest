@@ -14,6 +14,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
@@ -108,6 +109,16 @@ public class GlobalExceptionHandler {
                 : "路径不存在";
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(ApiResponse.fail(ErrorCode.NOT_FOUND, detail));
+    }
+
+    /**
+     * 上传超过容器上限（大于 21 MB）：属于请求本身不成立，返回 400 明确错误码，
+     * 不能落到兜底分支变成「服务内部错误」。
+     */
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ApiResponse<Void>> handleUploadTooLarge(MaxUploadSizeExceededException ex) {
+        return ResponseEntity.badRequest()
+                .body(ApiResponse.fail(ErrorCode.INVALID_ARGUMENT, "上传文件超过 21 MB 上限"));
     }
 
     @ExceptionHandler(BusinessException.class)

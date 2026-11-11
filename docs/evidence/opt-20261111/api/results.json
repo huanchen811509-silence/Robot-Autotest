@@ -1,0 +1,182 @@
+[
+  {
+    "tc": "PRE",
+    "name": "登录 qa-e2e-admin",
+    "pass": true,
+    "detail": {
+      "status": 200
+    }
+  },
+  {
+    "tc": "TC-49-42",
+    "name": "ADMIN 能力集含四项敏感能力",
+    "pass": true,
+    "detail": {
+      "status": 200,
+      "missing": []
+    }
+  },
+  {
+    "tc": "TC-49-42b",
+    "name": "能力点校验 ai:config",
+    "pass": true,
+    "detail": {
+      "status": 200,
+      "data": [
+        "ai:config"
+      ]
+    }
+  },
+  {
+    "tc": "TC-49-44a",
+    "name": "未登录访问能力接口被拒",
+    "pass": true,
+    "detail": {
+      "status": 401
+    }
+  },
+  {
+    "tc": "TC-49-08a",
+    "name": "公共用例列表可取样本",
+    "pass": true,
+    "detail": {
+      "status": 200,
+      "caseId": 1667,
+      "rowKeys": [
+        "caseCode",
+        "categoryL1",
+        "categoryL2",
+        "contentSha",
+        "externalId",
+        "id",
+        "lifecycleStatus",
+        "priority",
+        "safetyLevel",
+        "sourceSheet",
+        "title",
+        "versionNo"
+      ]
+    }
+  },
+  {
+    "tc": "TC-49-08b",
+    "name": "详情含 14 列基线中的四列 + 资源列",
+    "pass": true,
+    "detail": {
+      "status": 200,
+      "present": [
+        "asidecommand",
+        "bsidecommand",
+        "switchconfig",
+        "testresult",
+        "testresource"
+      ],
+      "missing": []
+    }
+  },
+  {
+    "tc": "TC-49-12",
+    "name": "详情响应无敏感键",
+    "pass": true,
+    "detail": {
+      "sensitiveKeys": []
+    }
+  },
+  {
+    "tc": "TC-49-40a",
+    "name": "按分类导出 CSV 含 external_id 表头",
+    "pass": true,
+    "detail": {
+      "rows": 731,
+      "header": "external_id,case_code,title,category_l1,category_l2,priority,a_side_command,b_side_command,switch_config,test_result,test_resource"
+    }
+  },
+  {
+    "tc": "TC-49-23a",
+    "name": "模板列表可取",
+    "pass": true,
+    "detail": {
+      "status": 200,
+      "count": 4,
+      "tplId": 4
+    }
+  },
+  {
+    "tc": "TC-49-23b",
+    "name": "模板详情返回四类明细",
+    "pass": true,
+    "detail": {
+      "status": 200,
+      "templateId": 4,
+      "counts": {
+        "cases": 0,
+        "caseSets": 0,
+        "scenarios": 0,
+        "assets": 0
+      }
+    }
+  },
+  {
+    "tc": "TC-49-25a",
+    "name": "空内容建模板被拒（4xx）",
+    "pass": true,
+    "detail": {
+      "status": 400
+    }
+  },
+  {
+    "tc": "TC-49-30",
+    "name": "从模板建项目成功",
+    "pass": true,
+    "detail": {
+      "status": 200,
+      "projectId": 90
+    }
+  },
+  {
+    "tc": "TC-49-32",
+    "name": "同模板同名重复提交返回 409",
+    "pass": true,
+    "detail": {
+      "first": 200,
+      "second": 409
+    }
+  },
+  {
+    "tc": "PRE2",
+    "name": "取设备样本",
+    "pass": true,
+    "detail": {
+      "projectId": 90,
+      "deviceId": 15,
+      "count": 13
+    }
+  },
+  {
+    "tc": "TC-49-18",
+    "name": "资产详情三分区 + 四层证据",
+    "pass": true,
+    "detail": {
+      "status": 200,
+      "sections": [
+        "deviceId",
+        "projectId",
+        "name",
+        "hardware",
+        "softwareAndOutOfBand",
+        "status",
+        "evidence",
+        "derived",
+        "credential"
+      ]
+    }
+  },
+  {
+    "tc": "TC-49-18b",
+    "name": "资产详情无敏感键",
+    "pass": true,
+    "detail": {
+      "sensitiveKeys": []
+    }
+  }
+]

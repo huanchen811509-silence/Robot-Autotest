@@ -1,0 +1,13 @@
+{
+  "status": 200,
+  "present": [
+    "asidecommand",
+    "bsidecommand",
+    "switchconfig",
+    "testresult",
+    "testresource"
+  ],
+  "missing": [],
+  "sensitiveKeys": [],
+  "keyCount": 21
+}

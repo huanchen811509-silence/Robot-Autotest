@@ -1,14 +1,23 @@
 package com.qa.autotest.domain.iam;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Stream;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /** 权限矩阵单测（PRD §3.1，IAM-03；v4.4.0 起含全局/模板/同步资源）。 */
 class PermissionMatrixTest {
@@ -180,5 +189,78 @@ class PermissionMatrixTest {
                 PermissionAction.READ));
         assertFalse(PermissionMatrix.allows(RoleCode.VIEWER, PermissionResource.EXECUTION,
                 PermissionAction.CREATE));
+    }
+
+    // ---------------------------------------------------------------- MENU 维度（OPT-08 / FR-49-31）
+
+    /**
+     * MENU 期望表：写死 PRD 口径，<b>不调用生产矩阵推导</b>。
+     * settings:read 四角色全有；ai:config/user:write 仅 ADMIN；audit:read ADMIN+PM；
+     * about/changelog public（四角色全有）。
+     */
+    private static final Map<RoleCode, Set<String>> MENU_EXPECTED = menuExpected();
+
+    private static Map<RoleCode, Set<String>> menuExpected() {
+        Map<RoleCode, Set<String>> matrix = new EnumMap<>(RoleCode.class);
+        matrix.put(RoleCode.ADMIN, Set.of(
+                "settings:read", "ai:config", "user:write", "audit:read", "about", "changelog"));
+        matrix.put(RoleCode.PM, Set.of(
+                "settings:read", "audit:read", "about", "changelog"));
+        matrix.put(RoleCode.ENGINEER, Set.of(
+                "settings:read", "about", "changelog"));
+        matrix.put(RoleCode.VIEWER, Set.of(
+                "settings:read", "about", "changelog"));
+        return matrix;
+    }
+
+    static Stream<Arguments> menuCells() {
+        List<Arguments> cells = new ArrayList<>();
+        for (RoleCode role : List.of(RoleCode.ADMIN, RoleCode.PM, RoleCode.ENGINEER, RoleCode.VIEWER)) {
+            for (String capability : PermissionMatrix.MENU_CAPABILITIES) {
+                cells.add(Arguments.of(role, capability, MENU_EXPECTED.get(role).contains(capability)));
+            }
+        }
+        return cells.stream();
+    }
+
+    @Test
+    @DisplayName("MENU 矩阵维度：4 角色 × 6 能力 = 24 格")
+    void menu矩阵维度() {
+        assertThat(MENU_EXPECTED.keySet()).hasSize(4);
+        assertThat(PermissionMatrix.MENU_CAPABILITIES).hasSize(6);
+        assertThat(menuCells().count()).isEqualTo(24);
+    }
+
+    @ParameterizedTest(name = "{0} / {1} -> {2}")
+    @MethodSource("menuCells")
+    @DisplayName("24 格逐格断言：menuAllows 与 menuCapabilities 口径一致")
+    void menu逐格断言(RoleCode role, String capability, boolean expected) {
+        assertThat(PermissionMatrix.menuAllows(role, capability))
+                .as("menuAllows %s / %s", role, capability).isEqualTo(expected);
+        assertThat(PermissionMatrix.menuCapabilities(role).contains(capability))
+                .as("menuCapabilities %s / %s", role, capability).isEqualTo(expected);
+    }
+
+    @Test
+    @DisplayName("public 能力：about / changelog / settings:read 四角色全有")
+    void menuPublic能力() {
+        for (RoleCode role : RoleCode.values()) {
+            assertThat(PermissionMatrix.menuCapabilities(role))
+                    .as("%s", role).contains("about", "changelog", "settings:read");
+        }
+    }
+
+    @Test
+    @DisplayName("能力移除后 ADMIN 不再含 ai:config（供负向验证注入）")
+    void menu能力移除负向验证() {
+        assertThat(PermissionMatrix.menuCapabilities(RoleCode.ADMIN)).contains("ai:config");
+        assertThat(PermissionMatrix.removeMenuCapability(RoleCode.ADMIN, "ai:config")).isTrue();
+        assertThat(PermissionMatrix.menuAllows(RoleCode.ADMIN, "ai:config")).isFalse();
+        assertThat(PermissionMatrix.menuCapabilities(RoleCode.ADMIN)).doesNotContain("ai:config");
+    }
+
+    @AfterEach
+    void restoreMenuMatrix() {
+        PermissionMatrix.restoreMenuCapabilities();
     }
 }

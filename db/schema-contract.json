@@ -12,7 +12,8 @@
     "device_host_spec",
     "alert_event",
     "archived_run",
-    "release_record"
+    "release_record",
+    "case_version"
   ],
   "createdAtRequired": [
     "resource_lease_history",
@@ -22,12 +23,13 @@
     "ai_action",
     "ai_message",
     "slo_daily",
-    "device_host_spec"
+    "device_host_spec",
+    "case_version"
   ],
   "appendOnlyTimeColumns": {
     "alert_event": "detected_at",
     "archived_run": "archived_at",
     "release_record": "deployed_at"
   },
-  "notes": "FR-v4.2-02 同源常量：SchemaIT 与 scripts/db-audit.sh 都读这一个文件。append-only 表没有 updated_*，但必须能看出「何时发生」：要么有 created_at（createdAtRequired），要么有业务时间锚点（appendOnlyTimeColumns）；每张 append-only 表必须二选一，否则解析器判红。"
+  "notes": "FR-v4.2-02 同源常量：SchemaIT 与 scripts/db-audit.sh 都读这一个文件。append-only 表没有 updated_*，但必须能看出「何时发生」：要么有 created_at（createdAtRequired），要么有业务时间锚点（appendOnlyTimeColumns）；每张 append-only 表必须二选一，否则解析器判红。2026-11-11（L-49-01）补入 case_version：版本快照表全代码库无 UPDATE，属真 append-only，故走本豁免而不补 updated_*，避免逼业务写假值；其余同批入审计口径的表由 V11_43 补列。"
 }

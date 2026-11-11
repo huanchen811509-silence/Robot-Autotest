@@ -1,0 +1,17 @@
+{
+  "status": 200,
+  "projectId": 90,
+  "mode": "standard",
+  "keys": [
+    "code",
+    "codeChangedAt",
+    "description",
+    "enabled",
+    "id",
+    "kind",
+    "name",
+    "ownerId",
+    "testKernel",
+    "visibility"
+  ]
+}

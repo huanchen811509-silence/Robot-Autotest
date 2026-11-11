@@ -16,6 +16,7 @@ import com.qa.autotest.domain.iam.PermissionResource;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +30,18 @@ public class TestSetService {
     public static final String KIND_EXECUTION_SELECTION = "execution_selection";
     public static final Set<String> ALLOWED_KINDS =
             Set.of(KIND_CASE_SET, KIND_SCENARIO, KIND_EXECUTION_SELECTION);
+
+    /** FR-49-28：批量加入结果（新增条数 = 筛选结果条数）。 */
+    public record CategoryFilterResult(int matched, int added, String itemSource) {
+    }
+
+    /** 批量加入通道；既有测试用 5 参构造器直接 new，未注入时报可读错误。 */
+    private JdbcTemplate jdbc;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setJdbc(JdbcTemplate jdbc) {
+        this.jdbc = jdbc;
+    }
 
     private final TestSetRepository sets;
     private final TestCaseRepository cases;
@@ -152,6 +165,54 @@ public class TestSetService {
         // 顺序算内容：改顺序必须涨版本，否则引用方永远收不到「平台库换序了」的提示
         assetVersions.onChanged(projectId, setId);
         audit.record("set.reorder", "test_set", String.valueOf(setId), "size=" + caseIds.size());
+    }
+
+    /**
+     * FR-49-28：全选某一级 / 全选某二级 / 跨表交集三种筛选，批量加入 test_set_item。
+     * 每条写 item_source='category_filter'；新增条数 = 筛选结果条数。
+     * 筛选条件与 GlobalCaseService.exportCategoryCsv 共用 categoryWhere，口径一致。
+     */
+    @Transactional
+    public CategoryFilterResult addByCategoryFilter(long projectId, long setId,
+                                                    GlobalCaseService.CategoryFilter filter) {
+        access.bindProject(projectId);
+        access.require(PermissionResource.CASE, PermissionAction.UPDATE);
+        get(projectId, setId);
+        if (jdbc == null) {
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR, "按分类批量加入未装配数据源");
+        }
+        List<Object> args = new ArrayList<>();
+        args.add(projectId);
+        String where = GlobalCaseService.categoryWhere(filter, args);
+        List<Long> ids = jdbc.queryForList(
+                "SELECT id FROM test_case WHERE project_id = ?" + where + " ORDER BY id",
+                Long.class, args.toArray());
+        if (ids == null) {
+            ids = List.of();
+        }
+        Integer maxSeq = jdbc.queryForObject(
+                "SELECT COALESCE(MAX(seq_no), 0) FROM test_set_item WHERE test_set_id = ?",
+                Integer.class, setId);
+        int seq = maxSeq == null ? 0 : maxSeq;
+        Long operator = TenantContext.userId();
+        int added = 0;
+        for (Long caseId : ids) {
+            seq++;
+            jdbc.update("""
+                    INSERT INTO test_set_item (test_set_id, test_case_id, seq_no, item_source,
+                                               created_by, updated_by)
+                    VALUES (?, ?, ?, 'category_filter', ?, ?)
+                    """, setId, caseId, seq, operator, operator);
+            added++;
+        }
+        if (added > 0 && assetVersions != null) {
+            assetVersions.onChanged(projectId, setId);
+        }
+        if (audit != null) {
+            audit.record("set.add-by-category", "test_set_item", String.valueOf(setId),
+                    "matched=" + ids.size() + " added=" + added + " item_source=category_filter");
+        }
+        return new CategoryFilterResult(ids.size(), added, "category_filter");
     }
 
     // ---------------------------------------------------------------- N9 平台用例集库

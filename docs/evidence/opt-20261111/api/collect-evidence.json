@@ -1,0 +1,16 @@
+{
+  "status": 200,
+  "keyCount": 27,
+  "sections": [
+    "deviceId",
+    "projectId",
+    "name",
+    "hardware",
+    "softwareAndOutOfBand",
+    "status",
+    "evidence",
+    "derived",
+    "credential"
+  ],
+  "sensitiveKeys": []
+}

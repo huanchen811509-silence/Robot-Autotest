@@ -1,0 +1,18 @@
+{
+  "status": 200,
+  "sampleCount": 5,
+  "firstKeys": [
+    "caseCode",
+    "categoryL1",
+    "categoryL2",
+    "contentSha",
+    "externalId",
+    "id",
+    "lifecycleStatus",
+    "priority",
+    "safetyLevel",
+    "sourceSheet",
+    "title",
+    "versionNo"
+  ]
+}

@@ -1,0 +1,44 @@
+{
+ "request": {
+  "templateId": 3,
+  "name": "OPT-D1-人工核对样本-84862",
+  "mode": "copy"
+ },
+ "http": 200,
+ "projectId": 93,
+ "code": "PRJ-RF-202611-002",
+ "dbCounts": [
+  [
+   "20",
+   "1",
+   "1",
+   "2",
+   "20"
+  ]
+ ],
+ "fillRate": [
+  [
+   "20",
+   "20",
+   "20",
+   "20",
+   "20",
+   "20"
+  ]
+ ],
+ "fingerprintDecoupled": [
+  [
+   "20"
+  ]
+ ],
+ "sourceSameFillRate": [
+  [
+   "20",
+   "20",
+   "20",
+   "20",
+   "20",
+   "20"
+  ]
+ ]
+}

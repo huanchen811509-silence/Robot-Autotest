@@ -96,6 +96,34 @@ public class AccessControlService {
         }
     }
 
+    /**
+     * 当前登录用户的菜单能力集（v4.9.2 / OPT-08 / FR-49-32）：服务端按最高优先级全局角色
+     * 求值，不信任前端传来的能力表；前端导航只按此数组做显隐。
+     */
+    public List<String> currentMenuCapabilities() {
+        long userId = TenantContext.requireUserId();
+        return PermissionMatrix.menuCapabilities(effectiveRole(userId, null));
+    }
+
+    /**
+     * 菜单能力兜底（FR-49-33）：敏感设置页接口在真正读数据前调用本方法，
+     * 不具备对应 capability 的角色一律 403，不能只靠前端把菜单藏起来。
+     * 未知 / 空 capability 视为参数错误（400），不静默放行。
+     */
+    public void requireCapability(String capability) {
+        if (capability == null || capability.isBlank()) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "缺少 capability");
+        }
+        String normalized = capability.trim();
+        if (!PermissionMatrix.MENU_CAPABILITIES.contains(normalized)) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "未知 capability：" + normalized);
+        }
+        long userId = TenantContext.requireUserId();
+        if (!PermissionMatrix.menuAllows(effectiveRole(userId, null), normalized)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "无权限：" + normalized);
+        }
+    }
+
     /** 是否可进入全局模式（ADMIN / PM）。 */
     public boolean canEnterGlobal(long userId) {
         return PermissionMatrix.allows(effectiveRoles(userId, null),

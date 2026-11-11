@@ -1,8 +1,11 @@
 package com.qa.autotest.domain.iam;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumMap;
 import java.util.EnumSet;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -17,6 +20,20 @@ public final class PermissionMatrix {
 
     private static final Map<RoleCode, Map<PermissionResource, Set<PermissionAction>>> MATRIX =
             build();
+
+    /**
+     * 菜单 capability 维度（v4.9.2 / OPT-08 / FR-49-31~34）：4 角色 × 6 能力。
+     *
+     * <p>口径：{@code settings:read} 四角色全有；{@code ai:config} / {@code user:write} 仅 ADMIN；
+     * {@code audit:read} ADMIN + PM；{@code about} / {@code changelog} public（四角色全有）。
+     * 前端导航只按 capability 做显隐，<b>真正的越权仍由 {@code AccessControlService.requireCapability}
+     * 在接口层 403 兜底</b>。本映射刻意做成可变副本：单测需要「移除能力」做负向注入验证。
+     */
+    private static Map<RoleCode, Set<String>> MENU_MATRIX = buildMenuMatrix();
+
+    /** 6 个菜单能力固定顺序，服务端下发能力数组时按此顺序，避免前端拿到散序集合。 */
+    public static final List<String> MENU_CAPABILITIES = List.of(
+            "settings:read", "ai:config", "user:write", "audit:read", "about", "changelog");
 
     private PermissionMatrix() {
     }
@@ -44,6 +61,54 @@ public final class PermissionMatrix {
             }
         }
         return false;
+    }
+
+    // ------------------------------------------------------------ 菜单能力（MENU 维度）
+
+    /** 单角色是否具备某菜单能力；public 能力（about/changelog）对四角色一律放行。 */
+    public static boolean menuAllows(RoleCode role, String capability) {
+        if (role == null || capability == null) {
+            return false;
+        }
+        return MENU_MATRIX.getOrDefault(role, Set.of()).contains(capability);
+    }
+
+    /** 按 {@link #MENU_CAPABILITIES} 固定顺序输出该角色的能力数组（防御性副本）。 */
+    public static List<String> menuCapabilities(RoleCode role) {
+        List<String> result = new ArrayList<>();
+        for (String capability : MENU_CAPABILITIES) {
+            if (menuAllows(role, capability)) {
+                result.add(capability);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * 负向验证注入口（供单测）：移除某角色的某个能力，返回是否命中。
+     * 生产不会调用；调用后 {@code menuCapabilities} 立即不再返回该能力。
+     */
+    public static boolean removeMenuCapability(RoleCode role, String capability) {
+        Set<String> caps = MENU_MATRIX.get(role);
+        return caps != null && caps.remove(capability);
+    }
+
+    /** 恢复为初始矩阵（单测 {@code @AfterEach} 清理，避免静态状态污染后续用例）。 */
+    public static void restoreMenuCapabilities() {
+        MENU_MATRIX = buildMenuMatrix();
+    }
+
+    private static Map<RoleCode, Set<String>> buildMenuMatrix() {
+        Map<RoleCode, Set<String>> matrix = new EnumMap<>(RoleCode.class);
+        matrix.put(RoleCode.ADMIN, new LinkedHashSet<>(List.of(
+                "settings:read", "ai:config", "user:write", "audit:read", "about", "changelog")));
+        matrix.put(RoleCode.PM, new LinkedHashSet<>(List.of(
+                "settings:read", "audit:read", "about", "changelog")));
+        matrix.put(RoleCode.ENGINEER, new LinkedHashSet<>(List.of(
+                "settings:read", "about", "changelog")));
+        matrix.put(RoleCode.VIEWER, new LinkedHashSet<>(List.of(
+                "settings:read", "about", "changelog")));
+        return matrix;
     }
 
     private static Set<PermissionAction> set(PermissionAction... actions) {

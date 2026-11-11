@@ -1,0 +1,35 @@
+=== 1) OpenAPI 快照重生成 ===
+endpoints=353 paths=288
+WROTE /home/evergreen/robot-autotest/docs/contracts/openapi.json (365221 bytes)
+GEN_RC=0
+openapi.info.version = 4.10.0
+paths = 288
+endpoints = 353
+=== 2) build-info ===
+[build-info] backend/src/main/resources/build-info.properties · version=4.10.0 (file) commit=31631cd deps=23
+app.version=4.10.0
+app.version.source=file
+git.commit=31631cd
+=== 3) CHANGELOG 同步到 public ===
+SYNCED=1 (1=一致)
+=== 4) 后端打包（带新 build-info） ===
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  6.126 s
+[INFO] Finished at: 2026-11-11T15:32:54+08:00
+[INFO] ------------------------------------------------------------------------
+PKG_RC=0
+=== 5) 前端构建 ===
+dist/assets/AssetsView-k0z7Kro8.js                 62.60 kB │ gzip:  16.99 kB
+dist/assets/vue-FvC_n5AI.js                        87.84 kB │ gzip:  34.56 kB
+dist/assets/DatePicker-BZ_unGao.js                167.09 kB │ gzip:  37.34 kB
+dist/assets/DataTable-Lz9cUdnJ.js                 269.54 kB │ gzip:  76.84 kB
+dist/assets/index-CQFH2ycg.js                     540.71 kB │ gzip: 181.07 kB
+dist/assets/editor-D6z4SpI8.js                    840.24 kB │ gzip: 259.46 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 12.37s
+FE_BUILD_RC=0

@@ -1,14 +1,14 @@
 {
-  "generatedAt": "2026-11-10T01:23:47.744181+00:00",
+  "generatedAt": "2026-11-11T08:19:33.847045+00:00",
   "database": "robot_dev",
   "counts": {
-    "testCase": 1068,
-    "testResult": 575,
-    "keywordResult": 150,
-    "run": 491,
-    "auditLog": 6950
+    "testCase": 1838,
+    "testResult": 570,
+    "keywordResult": 142,
+    "run": 490,
+    "auditLog": 7131
   },
-  "currentSizeMb": 8.0,
+  "currentSizeMb": 10.7,
   "indexes": [
     "PRIMARY",
     "fk_run_test_set",
@@ -33,7 +33,7 @@
     "cases": 50000,
     "results": 1000000
   },
-  "projectedSizeMb": 442.0,
+  "projectedSizeMb": 484.7,
   "budgetMb": 2048.0,
   "verdict": "PASS"
 }

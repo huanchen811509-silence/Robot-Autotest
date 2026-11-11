@@ -313,6 +313,39 @@ function openWorkspace(): void {
 function openWorkbench(): void {
   void router.push('/workbench')
 }
+
+// ---------------------------------------------------------------- 存为模板（FR-49-25）
+// 项目创建成功后提供入口：确认弹层列出将收纳的用例 / 用例集 / 资产数与 reference 语义，
+// 再调既有 templateApi.saveAsTemplate；模板以引用收纳，不复制用例正文。
+const saveTemplateOpen = ref(false)
+const saveTemplateName = ref('')
+const saveTemplateBusy = ref(false)
+const saveTemplateResult = ref('')
+const saveTemplateError = ref('')
+/** 内容步会把选中的用例装进 1 个用例集；没选用例则 0 个。 */
+const caseSetCount = computed(() => (selectedCaseIds.value.length ? 1 : 0))
+
+function openSaveTemplate(): void {
+  saveTemplateOpen.value = true
+  saveTemplateName.value = `${form.name || form.code}-template`
+  saveTemplateResult.value = ''
+  saveTemplateError.value = ''
+}
+
+async function confirmSaveTemplate(): Promise<void> {
+  if (!created.value || !saveTemplateName.value.trim()) return
+  saveTemplateBusy.value = true
+  saveTemplateError.value = ''
+  try {
+    const row = await templateApi.saveAsTemplate(created.value, saveTemplateName.value.trim())
+    saveTemplateResult.value = t("saveTemplate.done", { name: row.name })
+    saveTemplateOpen.value = false
+  } catch (e) {
+    saveTemplateError.value = localizeError(e).summary
+  } finally {
+    saveTemplateBusy.value = false
+  }
+}
 </script>
 
 <template>
@@ -338,7 +371,13 @@ function openWorkbench(): void {
         <button type="button" class="btn" @click="openWorkbench">
           {{ t('projectWizard.backToWorkbench') }}
         </button>
+        <button type="button" class="btn" data-testid="open-save-template" @click="openSaveTemplate">
+          {{ t("saveTemplate.open") }}
+        </button>
       </div>
+      <p v-if="saveTemplateResult" class="wizard-hint" data-testid="save-template-result">
+        {{ saveTemplateResult }}
+      </p>
     </div>
 
     <template v-else>
@@ -585,6 +624,42 @@ function openWorkbench(): void {
         </button>
       </div>
     </template>
+
+    <div v-if="saveTemplateOpen" class="modal-mask" data-testid="save-template-modal" @click.self="saveTemplateOpen = false">
+      <div class="modal">
+        <header class="modal-head">
+          <h2>{{ t("saveTemplate.title") }}</h2>
+          <button type="button" class="link" @click="saveTemplateOpen = false">
+            {{ t('common.close') }}
+          </button>
+        </header>
+        <p class="wizard-hint">{{ t("saveTemplate.referenceHint") }}</p>
+        <dl class="wizard-review">
+          <div><dt>{{ t("saveTemplate.cases") }}</dt><dd>{{ selectedCaseIds.length }}</dd></div>
+          <div><dt>{{ t("saveTemplate.caseSets") }}</dt><dd>{{ caseSetCount }}</dd></div>
+          <div><dt>{{ t("saveTemplate.assets") }}</dt><dd>{{ selectedAssetIds.length }}</dd></div>
+        </dl>
+        <label class="wizard-field">
+          <span>{{ t("saveTemplate.name") }}</span>
+          <input v-model="saveTemplateName" class="input wide" data-testid="save-template-name" />
+        </label>
+        <p v-if="saveTemplateError" class="wizard-message" data-testid="save-template-error">
+          {{ saveTemplateError }}
+        </p>
+        <div class="toolbar">
+          <button type="button" class="btn" @click="saveTemplateOpen = false">
+            {{ t('common.cancel') }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-primary"
+            data-testid="save-template-confirm"
+            :disabled="saveTemplateBusy"
+            @click="confirmSaveTemplate"
+          >{{ t("saveTemplate.confirm") }}</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -884,5 +959,38 @@ function openWorkbench(): void {
   margin-top: var(--space-3);
   color: var(--text-muted);
   font-size: var(--font-size-sm);
+}
+
+.modal-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.modal {
+  width: min(520px, 92vw);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+}
+
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.link {
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  padding: 0;
 }
 </style>
