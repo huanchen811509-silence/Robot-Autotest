@@ -119,7 +119,21 @@
 - 后端 4 个文件均为**加字段**，无 DDL、无数据迁移，回滚无残留；
 - `check_navigation.py` 为新增机检，若规则过严可先降级为 WARN（不删脚本）。
 
-## 6. 修订记录
+## 6. 完成情况与偏差（⑦ 测试后回写，2026-11-11）
+
+33 项 WBS **全部完成**，无未开工项。实测偏差 5 处，逐条写明原因与处理：
+
+| WBS | 计划 | 实际 | 偏差原因与处理 |
+|---|---|---|---|
+| W-A-04 | 新建 `tools/check_navigation.py`（层级/每组叶数/query 互异/唯一默认值） | 完成并接入 `scripts/lint.sh` | 解析器第一版按「单行 = 一个对象」写，`key:` 与 `path:` 分行的条目全被判「叶子没有 path」，38 行假红。改为「按 `key:` 行开块、后续行归块」+ `PATH_RE` 去掉尾逗号要求，同时支持多行与单行对象 |
+| W-A-08 | `ProjectCard` 增 `own`/`joined` | 完成 | 对应的 `ProjectCardServiceTest.ownAndJoinedIgnoreAdminFallback` 首跑红：第二段断言前没切 `TenantContext`，当前用户仍是 ENGINEER(15) 而 gamma 的 `owner_id` 是 ADMIN(17)，`own` 恒 false——**用例假断言**，非实现错误。已在测试里补 `TenantContext.set(ADMIN, …)` 并注释「只换角色不换登录用户是不够的」；实现侧把 `== userId` 改成显式 `longValue()` 比较，防以后被重写成两个 `Long` 相比 |
+| W-E-03/04 | 6 处原生 `<table>` 改 `DataTable` | 完成（`ProjectSyncView` 2 / `GlobalAssetsView` 1 / `GlobalCasesView` 3） | 换壳后单元格样式会**静默失效**：列由 `render()` 的 `h()` 渲染在 `NDataTable` 内部，拿不到组件 scope id。全部改 `:deep()` 并删除残留 `.asset-table` 死样式；`MIN_TABLES` 由 19 上调到 55、`MIN_VUE_FILES` 20 → 100，自检基线跟随下限 |
+| W-E-05 | 两个新 spec（≥5 / ≥4 例） | 完成（9 例 / 7 例） | 断言过程踩到两处坑：`list.at(-1)` 拿到的是 `SCENARIO`（保存顺序是 cases → caseSets → others），改用 `find(refId===99)`；未 mock `vue-router` 导致 `route.params.id` 为空、detail 收到 `''` |
+| W-F-01~06 | 版本同源 / 文档收口 / 重打交付包 / 门禁 / 双远程 | 完成 | 首轮门禁第 06 / 15 步红：新视图引用了不存在的 `--surface`（应为 `--panel`）、三处 px（280/160/980）不在白名单。**这是本版新写的真实缺陷**，已修（→ `--panel` / 240 / 180 / 900）；第 2 轮 31 PASS / 1 FAIL（仅第 13 步 CDP） |
+
+**里程碑达成**：M1~M5 全部达成，判据与 `05-TEST-REPORT.md` 一致（FR-16 与 FR-21 的验收因执行器未安装 / CDP 取消降级，见该报告 §6）。
+
+## 7. 修订记录
 
 | 版本 | 日期 | 变更 |
 |---|---|---|

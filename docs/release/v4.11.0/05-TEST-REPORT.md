@@ -3,7 +3,7 @@
 | 项 | 内容 |
 |---|---|
 | 编号 | `RA-TR-v4.11-001` |
-| 版本 | `4.11.0`（`VERSION=4.11.0`；代码提交 `695626f`） |
+| 版本 | `4.11.0`（`VERSION=4.11.0`；代码提交 `695626f` + 样式令牌修复 `b214a9b`，产物与交付包按 `b214a9b` 重建） |
 | 执行时间 | 2026-11-11 20:40 ~ 21:35（GMT+8；含两轮门禁复跑与 1 轮样式令牌修复） |
 | 执行环境 | WSL `Ubuntu-24.04` ext4 副本 `/home/evergreen/robot-autotest`；后端 `:8081`（systemd user）、入口 `:8001`；MySQL / 库 `robot`（业务表 71）、集成测试库 `robot_it` |
 | 上游 | `TEST-PLAN.md`（49 条 TC）、`PRD.md` v1.2（30 条 FR）、`DEV-PLAN.md` v1.0（33 项 WBS） |
@@ -28,7 +28,7 @@
 | L3 接口 | 真实 HTTP（登录后携 token） | **12 项**断言落盘到 `api/*.json`（版本、菜单能力、越权三态、卡牌归属、批次、预览两态、build-info） |
 | L4 数据 | 真库 `robot_it` | `ProjectTemplateCopyIT` **2 例**、`GlobalCasePreviewForceIT` **1 例**；`robot` 库 force 前后快照逐行一致 |
 | L5 机检 | `tools/*.py` | 菜单 / 表格 / i18n / 版本 / 发布文档 / 样式令牌 / CSS 变量 / 对比度 **8 类全绿** |
-| L6 门禁 | `scripts/gates.sh` | **32 步 29 PASS / FAIL 3**（第 07 待本报告落盘后转绿、第 13 为 CDP 取消、其余全绿；最终轮读数见 §5） |
+| L6 门禁 | `scripts/gates.sh` | **32 步 31 PASS / FAIL 1**（唯一失败为第 13 步浏览器回归，CDP `:9222` 按令关闭；读数见 §5） |
 
 ## 2. 用例结果（A 组：菜单 / 顶栏 / 执行计划，TC-v4.11-01 ~ 33）
 
@@ -83,11 +83,11 @@
 | TC-v4.11-42 | FR-v4.11-22 | UT/机检 | PASS | 键集相等（2334 = 2334）+ 受控词表 27 个值全部有键；`menu.*` / `settingsUsers.*` 新键中英成对。**未做逐串 EN 渲染断言**（机检已覆盖漏译，渲染风险低） |
 | TC-v4.11-43 | FR-v4.11-23 | 机检 | PASS | `check-version.log`：`INFO VERSION=4.11.0 build-info=4.11.0` → `VERSION_CONSISTENCY PASS (0 项)`（含运行期 build-info 与入口托管 CHANGELOG 两项在线校验） |
 | TC-v4.11-44 | FR-v4.11-23 | 机检 | PASS | `cmp CHANGELOG.md frontend/public/CHANGELOG.md` 退出码 0（两份逐字节一致） |
-| TC-v4.11-45 | FR-v4.11-23 | API | PASS | `api/build-info.json`：`version=4.11.0`、`gitCommit=695626f`（= 提交后 HEAD）、`versionSource=file` |
+| TC-v4.11-45 | FR-v4.11-23 | API | PASS | `api/build-info.json`：`version=4.11.0`、`gitCommit=` 代码提交短 sha（最终 `b214a9b`）、`versionSource=file`。注：本报告的回写提交晚于代码提交，不改代码，故关于页 commit 与代码提交同源 |
 | TC-v4.11-46 | FR-v4.11-24 | 机检 | PASS | `RELEASE-NOTES.md` 首表含「**本版 0 迁移、0 处 DDL**」；门禁第 12 步 `db_audit` PASS |
-| TC-v4.11-47 | — | 门禁 | PASS | `scripts/gates.sh` 32 步：**29 PASS / 0 FAIL**（第 13 步 CDP 取消，按既有口径不计 FAIL）；两轮复跑读数见 §5 |
-| TC-v4.11-48 | — | 门禁 | PASS | `check_release_docs.py v4.11.0`：`FR=30 TC=49`，FAIL 0（本报告落盘后转绿） |
-| TC-v4.11-49 | — | 机检 | PASS | `check_delivery_bundle.py` PASS，版本 `4.11.0` 与 `VERSION` 一致；交付包 `robot-autotest-4.11.0-695626f-linux-x64.tar.gz`（357 文件 / sha256 `eac0601d…`） |
+| TC-v4.11-47 | — | 门禁 | PASS | `scripts/gates.sh` **32 步：31 PASS / FAIL 1**，唯一失败为第 13 步 `browser_regression`（CDP `:9222` 按令取消，按既有口径不计 FAIL）；两轮复跑读数见 §5 |
+| TC-v4.11-48 | — | 门禁 | PASS | `check_release_docs.py v4.11.0`：`[PASS] v4.11.0 FR=30 TC=49`，FAIL 0 / WARN 0 |
+| TC-v4.11-49 | — | 机检 | PASS | 门禁第 30 步 `delivery_bundle` PASS；交付包 `robot-autotest-4.11.0-b214a9b-linux-x64.tar.gz`（357 文件），过期包已移入 `releases/archive/` |
 
 ## 4. 证据索引
 
@@ -101,15 +101,16 @@
 | `raw/legacy-routes.txt` | 七条路由 HTTP 码与 SPA 挂载点 |
 | `raw/git-diff-appnav.txt` | AppNav 改动范围（仅 2 处调用行） |
 | `api/*.json` | 12 份接口响应原件（含 403/400 反例） |
+| `raw/gates-final.log` | 最终轮 32 步门禁逐步读数（每步原始日志在 `docs/evidence/gates/logs/`） |
 | `ui/` | 说明文件；截图因 CDP 关闭为空 |
 
 ## 5. 门禁读数（32 步）
 
 | 轮次 | 结果 | 说明 |
 |---|---|---|
-| 第 1 轮 | 30 PASS / **FAIL 4** | 06-lint（样式令牌 4 项违规）、07-release_docs（缺本报告）、13-browser_regression（CDP 关闭）、15-css_vars（`--surface` 悬空） |
-| 修复 | — | `--surface` → `--panel`；`280px/160px/980px` → 白名单档位 `240/180/900`；输出本报告 |
-| 第 2 轮 | **29 PASS / 0 FAIL** | 第 13 步按既有口径记 CDP 取消；第 06 / 07 / 15 三步转绿 |
+| 第 1 轮 | 28 PASS / **FAIL 4** | 06-lint（样式令牌 4 项违规）、07-release_docs（缺本报告）、13-browser_regression（CDP 关闭）、15-css_vars（`--surface` 悬空） |
+| 修复 | — | `--surface` → `--panel`；`280px/160px/980px` → 白名单档位 `240/180/900`；输出本报告；按最终提交 `b214a9b` 重建 jar / dist / 交付包并重启后端 |
+| 第 2 轮 | **31 PASS / FAIL 1** | 第 06 / 07 / 15 三步全部转绿；**唯一失败是第 13 步浏览器回归**（CDP `:9222` 已按令取消，按既有口径不计入本版 FAIL） |
 
 > 第 1 轮的 4 项红不是环境噪声，第 06 / 15 两步抓的是本版新写的真实缺陷（引用了不存在的 CSS 变量、写了未登记的 px）——`--surface` 写错不会报错，属性会静默回落，SVG `fill` 直接变黑。这正是把机检放在门禁里的意义。
 

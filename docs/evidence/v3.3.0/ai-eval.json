@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-11T13:26:56.008814+00:00",
+  "generatedAt": "2026-11-11T13:36:58.975926+00:00",
   "engine": "grounded-answer-factory",
   "realCli": false,
   "fakeCliContract": true,
@@ -13,13 +13,13 @@
     "factTargetPct": 95.0,
     "severeHallucinations": 0,
     "citationCoveragePct": 100.0,
-    "firstTokenMs": 52,
+    "firstTokenMs": 56,
     "firstTokenBudgetMs": 3000
   },
   "cases": [
     {
       "case": "triage",
-      "elapsedMs": 111,
+      "elapsedMs": 119,
       "checks": [
         {
           "name": "triage.mode",
@@ -51,7 +51,7 @@
     },
     {
       "case": "narrative",
-      "elapsedMs": 58,
+      "elapsedMs": 48,
       "checks": [
         {
           "name": "narrative.conclusion",
@@ -78,7 +78,7 @@
     },
     {
       "case": "log_explain",
-      "elapsedMs": 53,
+      "elapsedMs": 45,
       "checks": [
         {
           "name": "log_explain.mode",
@@ -112,7 +112,7 @@
     },
     {
       "case": "case_draft",
-      "elapsedMs": 31,
+      "elapsedMs": 43,
       "checks": [
         {
           "name": "case_draft.mode",
@@ -134,9 +134,9 @@
     },
     {
       "case": "stream",
-      "streamId": "90d21866-4666-4178-a452-bb5675301085",
-      "elapsedMs": 118,
-      "firstTokenMs": 52,
+      "streamId": "befe35b7-b2e3-449e-b849-bbe6dd9930da",
+      "elapsedMs": 127,
+      "firstTokenMs": 56,
       "events": [
         "meta",
         "citations",
@@ -146,9 +146,9 @@
         "done"
       ],
       "done": {
-        "firstTokenMs": 2,
-        "citationCount": 0,
         "elapsedMs": 39,
+        "citationCount": 0,
+        "firstTokenMs": 1,
         "mode": "NO_EVIDENCE"
       },
       "checks": [
@@ -160,12 +160,12 @@
         {
           "name": "stream.first_token",
           "pass": true,
-          "detail": "firstDeltaMs=52 budget=3000"
+          "detail": "firstDeltaMs=56 budget=3000"
         },
         {
           "name": "stream.done",
           "pass": true,
-          "detail": "{\"firstTokenMs\": 2, \"citationCount\": 0, \"elapsedMs\": 39, \"mode\": \"NO_EVIDENCE\"}"
+          "detail": "{\"elapsedMs\": 39, \"citationCount\": 0, \"firstTokenMs\": 1, \"mode\": \"NO_EVIDENCE\"}"
         },
         {
           "name": "stream.deltas",
