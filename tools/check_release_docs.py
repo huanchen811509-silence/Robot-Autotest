@@ -204,9 +204,17 @@ def main():
         print("找不到 {0}，请在仓库根目录运行".format(RELEASE_DIR))
         return 1
 
+    # 约定：`_` 前缀目录是**草案/暂存区**，不是版本目录。
+    # 例：`docs/release/_draft/v4.11.0/` 放「已写 ① 调研②评估③ PRD、尚未进 ④」的版本，
+    # 若按版本扫描会因「已启动但六份不齐」判 FAIL，等于逼着团队提前编造测试报告。
+    # 这里显式跳过并打印，保持「六份齐全」这条对**真实版本**的约束不放宽。
+    skipped = sorted(
+        d for d in os.listdir(RELEASE_DIR)
+        if d.startswith("_") and os.path.isdir(os.path.join(RELEASE_DIR, d))
+    )
     vdirs = sorted(
         os.path.join(RELEASE_DIR, d) for d in os.listdir(RELEASE_DIR)
-        if os.path.isdir(os.path.join(RELEASE_DIR, d))
+        if os.path.isdir(os.path.join(RELEASE_DIR, d)) and not d.startswith("_")
     )
     if only:
         vdirs = [d for d in vdirs if os.path.basename(d) == only]
@@ -218,6 +226,8 @@ def main():
     print("=" * 78)
     print("版本开发流程机检（docs/process/版本开发流程.md §8）")
     print("=" * 78)
+    if skipped:
+        print("INFO  跳过草案区（`_` 前缀，非版本目录）：" + ", ".join(skipped))
 
     for vdir in vdirs:
         name, fails, warns, stats = check_version(vdir)
