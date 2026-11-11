@@ -3,7 +3,7 @@
 | 项 | 内容 |
 |---|---|
 | 编号 | `RA-TR-v4.10-001` |
-| 版本 | `4.10.0`（`VERSION=4.10.0`，`git HEAD=31631cd` + 本批未提交改动） |
+| 版本 | `4.10.0`（`VERSION=4.10.0`；已提交 `f6d59ae` 并推送双远程。下表读数采集时点 HEAD=`31631cd` + 当批未提交改动，提交后已按 `f6d59ae` 复验，见 §8 v1.3） |
 | 执行时间 | 2026-11-11 15:19 ~ 16:30（GMT+8；含 16:18 整轮门禁复跑与模板内容补测） |
 | 执行环境 | WSL `Ubuntu-24.04` ext4 副本 `/home/evergreen/robot-autotest`；后端 `:8081`、入口 `:8001`；MySQL 8.0.46 / 库 `robot_dev`（业务表 98）；集成测试库 `robot_it` |
 | 上游 | `TEST-PLAN.md`（52 条 TC）、`PRD.md`（38 条 FR）、`DEV-PLAN.md`（OPT-01~08） |
@@ -182,3 +182,4 @@
 | v1.0 | 2026-11-11 | 首版：52 条 TC 逐条落结果，PASS 22 / PARTIAL 10 / NOT-RUN 20 / FAIL 0 | 本批实测 |
 | v1.1 | 2026-11-11 | 收口复跑修正：L2 前端全量 `vitest` 复跑 92 文件 / 664 例全过；L7 `lint.sh` 读数由「19 项守门」改为准确实测（24 项检查 / 23 绿 / 1 红，第 24 项 `check_brand` 因 `set -e` 中断后单独补跑 PASS）；新增 L-49-06（`check_tables` 存量债，含 HEAD 对拍） | 终检 `lint_final3.sh` + `check_brand.py` 原始输出 |
 | v1.2 | 2026-11-11 | 按大师 5 项拍板执行后回写：① D1 补内置模板内容（`V11_44`）并修复由此暴露的 `copyCase` 500（L-49-08），TC-27 转 PASS、TC-22/23/30 补证据；② D3 整轮 32 步门禁已跑，5 条 L7 用例由 NOT-RUN 转 PARTIAL；③ 重新计数 PASS 29 / PARTIAL 14 / NOT-RUN 9；④ 新增 L-49-07、L-49-08；⑤ D2/D5 拍板结论记入遗留缺陷处置列 | `template-detail-content.json` / `from-template-with-content.json` / `template-builtin-readonly.json` / `gates-20261111-1642.log` / `ProjectTemplateCopyIT` |
+| v1.3 | 2026-11-11 | 提交与部署复验（① 并入 4.9.2 GA `c9be67f` 后合并提交 `f6d59ae`，冲突 0 处；② `git push origin main` 与 `git push github main` 均成功，`origin/main`=`github/main`=`HEAD`=`f6d59ae`；③ 重跑 `gen_build_info.py` 后重建后端并重启，运行期 `/api/system/build-info` = `4.10.0` / `source=file` / `commit=f6d59ae`；④ 交付包按 HEAD 重打为 `robot-autotest-4.10.0-f6d59ae-linux-x64.tar.gz`（353 files，sha256 `2f2b40e3…`），旧 `72e8714` 包移入 `releases/archive/`；⑤ 四个新增端点按真实路径复验均 200：`/api/projects/93/cases/1882`、`/api/global/cases/categories/scope`、`/api/me/menu-capabilities`、`/api/asset-host-inventory/detail?deviceId=1`） | `verify2.sh` / `verify-case.sh` 原始输出、`check_version_consistency.py` PASS、`check_delivery_bundle.py` PASS |
