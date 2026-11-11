@@ -171,6 +171,46 @@ const columns = computed<DataTableColumns<GlobalAssetRow>>(() => {
 })
 
 /**
+ * 凭据 → 关联设备面板的列（FR-v4.12-15）。
+ *
+ * 这张表原来手写原生 `<table>`，被 `tools/check_tables.py` 拦下 —— 它和多行设备列表
+ * 是同一类东西（数据网格），不是「定义表」那种 th/td 两列的展示块。手写的代价是
+ * 空态、横滚、暗色下表头各有一套，与主表走两套规范；改成壳之后列只剩「有几列、渲染什么」。
+ */
+const bindColumns = computed<DataTableColumns<CredentialDevice>>(() => [
+  { title: t('global.assetName'), key: 'name', minWidth: 160 },
+  {
+    title: t('global.assetPlane'),
+    key: 'plane',
+    width: 100,
+    render: (row) => planeLabel(row.plane),
+  },
+  {
+    title: t('global.assetPlaneAddress'),
+    key: 'address',
+    width: 170,
+    render: (row) => h('span', { class: 'mono' }, row.address || '-'),
+  },
+  {
+    title: t('global.assetChannel'),
+    key: 'channel',
+    width: 140,
+    render: (row) => channelLabel(row.channel),
+  },
+  {
+    title: t('global.assetCollectStatus'),
+    key: 'lastStatus',
+    minWidth: 200,
+    // 没采过的面显示「未采集」而不是空白：空白会被读成「加载失败」
+    render: (row) =>
+      h('span', {}, [
+        row.lastStatus || t('global.assetCollectNever'),
+        ...(row.lastCollectedAt ? [h('span', { class: 'muted' }, ` · ${row.lastCollectedAt}`)] : []),
+      ]),
+  },
+])
+
+/**
  * 能不能点「采集」（FR-v4.12-10）。
  *
  * 判据是**两个地址面至少绑了一条凭据**：没绑凭据的远程采集必然 400，
@@ -659,35 +699,19 @@ onMounted(() => {
         <p class="muted">{{ t('global.assetCredentialDevicesHint') }}</p>
         <p class="mono">{{ bindTarget?.name }} · {{ bindTarget?.detail }}</p>
 
-        <p v-if="bindLoading" class="muted">{{ t('global.loading') }}</p>
-        <p v-else-if="bindDevices.length === 0" class="warning">
-          {{ t('global.assetCredentialNoDevice') }}
-        </p>
-        <table v-else class="bind-table">
-          <thead>
-            <tr>
-              <th>{{ t('global.assetName') }}</th>
-              <th>{{ t('global.assetPlane') }}</th>
-              <th>{{ t('global.assetPlaneAddress') }}</th>
-              <th>{{ t('global.assetChannel') }}</th>
-              <th>{{ t('global.assetCollectStatus') }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="device in bindDevices" :key="`${device.deviceId}-${device.plane}`">
-              <td>{{ device.name }}</td>
-              <td>{{ planeLabel(device.plane) }}</td>
-              <td class="mono">{{ device.address || '-' }}</td>
-              <td>{{ channelLabel(device.channel) }}</td>
-              <td>
-                {{ device.lastStatus || t('global.assetCollectNever') }}
-                <span v-if="device.lastCollectedAt" class="muted">
-                  · {{ device.lastCollectedAt }}
-                </span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <!-- 加载中画骨架、无设备画空态，都交给壳：弹窗里再写一遍 loading / 空文案
+             会和主表出现两套说法（UX-05 / tools/check_tables.py 的同一理由）。 -->
+        <div class="bind-table" data-testid="credential-device-grid">
+          <DataTable
+            :columns="bindColumns"
+            :data="bindDevices"
+            :loading="bindLoading"
+            :row-key="(row: CredentialDevice) => `${row.deviceId}-${row.plane}`"
+            :max-height="260"
+            :empty-title="t('global.assetCredentialNoDevice')"
+            empty-icon="link"
+          />
+        </div>
 
         <template v-if="batchResult">
           <p class="success" data-testid="batch-summary">
@@ -901,23 +925,9 @@ onMounted(() => {
   font-size: 12px;
 }
 
+/* 关联设备面板的表格容器：表头/行/空态全交给 DataTable 壳，这里只管与弹窗文案的间距。 */
 .bind-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
   margin: var(--space-3) 0;
-}
-
-.bind-table th,
-.bind-table td {
-  text-align: left;
-  padding: 6px 8px;
-  border-bottom: 1px solid var(--border);
-}
-
-.bind-table th {
-  color: var(--text-muted);
-  font-weight: 500;
 }
 
 /* 录入表单：两列铺满，字段多但没有层级关系，用 grid 比逐行堆更快扫。 */

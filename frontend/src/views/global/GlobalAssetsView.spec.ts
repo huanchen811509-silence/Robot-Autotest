@@ -287,9 +287,10 @@ describe('GlobalAssetsView 凭据关联设备（FR-v4.12-11/12/15）', () => {
     await nextTick()
 
     expect(globalAssetApi.credentialDevices).toHaveBeenCalledWith(201)
+    // 关联设备表走 DataTable 壳（UX-05），行选择器随之改为壳渲染出的 naive-ui 结构
     const table = root.querySelector('.bind-table')
     expect(table).not.toBeNull()
-    expect(table!.querySelectorAll('tbody tr')).toHaveLength(2)
+    expect(table!.querySelectorAll('.n-data-table-tbody .n-data-table-tr')).toHaveLength(2)
     const text = table!.textContent ?? ''
     expect(text).toContain('业务管理')
     expect(text).toContain('带外')
