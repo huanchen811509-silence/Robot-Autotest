@@ -1,0 +1,49 @@
+########## TC-v4.12-01 建模：alt 两列存在 ##########
+[PASS] device 含列 management_ip_alt
+[PASS] device 含列 bmc_address_alt
+[PASS] device 含列 management_credential_id
+[PASS] device 含列 bmc_credential_id
+[PASS] credential 含列 connect_options
+[PASS] 通道由凭据类型推导（device 无 collect_channel 列，符合 FR-v4.12 设计）
+########## TC-v4.12-20b 口令落密文 ##########
+[PASS] 平台凭证 5 条全部落 cipher_blob
+[PASS] 全库 7 条凭据均为密文（含项目域历史 2 条）
+[PASS] cipher_blob 内无明文口令
+########## TC-v4.12-22 治理：脏字段归零 ##########
+[PASS] 脏行 0
+########## TC-v4.12-23 FK 绑定 ##########
+  在役设备 12 / 无 mgmt 凭证 0 / 无 bmc 凭证 4
+[PASS] 12 台在役平台设备（deprecated 的 leaf-switch-01 不计）
+[PASS] 12 台 mgmt 凭证全绑（交换机走 SSH，也需 mgmt 凭据）
+[PASS] 4 台交换机无 BMC（预期，交换机不采带外）
+########## TC-v4.12-15 凭证反查设备（credential=3 inspur）##########
+  反查 5 台；plane 集合 = ['mgmt']
+[PASS] 5 台且 plane 全 mgmt
+########## TC-v4.12-08 负向：credType=foo → 400 ##########
+[PASS] credType=foo → 400
+########## TC-v4.12-18 负向：同名 409 / 只填 name 400 ##########
+[PASS] 同名设备 → 409
+[PASS] 无地址 → 400
+########## TC-v4.12-19 边界：name 超 128 → 400 ##########
+[PASS] 超长 name → 400
+########## TC-v4.12-06 真注入：清空 credential 7 的 connect_options ##########
+  备份原值(前 60 字): KexAlgorithms=+diffie-hellman-group14-sha1,diffie-hellman-gr
+  注入后 total=4 ok=3 failed=1
+   - 200G RoCE    OK       
+   - 25G Leaf     FAILED   algorithm_mismatch: Unable to negotiate with 10.202.54.93 port 22: no 
+   - 800G RoCE    OK       
+   - OOB 带外       OK       
+[PASS] 定向判据命中 algorithm_mismatch（25G Leaf / Ruijie 老 KEX）
+[PASS] connect_options 已还原（逐字一致）
+[PASS] 还原后重采 4/4 全 OK
+########## TC-v4.12-29/30 改密（含回滚）/ 审计不含口令 ##########
+[PASS] 改密 → 200
+[PASS] 新口令可登录
+[PASS] 旧口令错 → 400
+[PASS] 口令已改回（200）
+[PASS] 原口令恢复可登录
+[PASS] 审计里没有新口令明文
+[PASS] 审计里没有原口令明文
+
+########## 汇总 ##########
+RESULT FAILS=0

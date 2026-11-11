@@ -1,0 +1,23 @@
+########## TC-v4.12-20a 凭据列表响应不含密文/明文 ##########
+  凭据行数 5；字段 = ['assetType', 'bmcCredentialId', 'collectChannel', 'collectCount', 'collectStatus', 'detail', 'environment', 'externalId', 'id', 'lastCollectedAt', 'managementCredentialId', 'managementIp', 'name', 'portCount', 'referenceCount', 'source', 'status']
+[PASS] 响应体不含 cipher/secret/password 字段，也不含现场口令原文
+########## TC-v4.12-24 平台设置改值 → 回读一致 → 还原 ##########
+  改前: {"ai.enabled": "true", "entry.port": "8001", "execution.defaultTimeoutSeconds": "1800", "execution.maxParallel": "4", "report.retentionDays": "90"}
+  改值 HTTP 200
+  改后: {"ai.enabled": "true", "entry.port": "8001", "execution.defaultTimeoutSeconds": "1800", "execution.maxParallel": "5", "report.retentionDays": "90"}
+[PASS] 改值 200 且回读一致
+[PASS] 参数已还原（逐字一致，HTTP 200）
+########## TC-v4.12-27 能力判据单点真源 ##########
+  路由/导航里自拼 includes(capability) 的处数 = 0（应为 0）
+[PASS] 路由与导航都只调 capabilitySatisfied，不再自拼判据
+  navigation.ts（capabilitySatisfied 定义处）里 public 特判代码行 = 1（注释行不算）
+[PASS] public 特判全仓只有一处（navigation.ts:capabilitySatisfied）
+  store 里的 includes(capability) = 1 处（作为 has 数据源，属预期）
+  能力判据单测 {7} 例
+[PASS] capabilitySatisfied 有 {7} 例单测锁定四角色矩阵
+  调用方 3 处
+    frontend/src/router/index.ts:473:  // v4.12.0 / FR-v4.12-21：判据换成 capabilitySatisfied，public 特判从此只有一处。
+    frontend/src/router/index.ts:479:    if (!capabilitySatisfied(capability, (name) => owned.has(name))) return {
+    frontend/src/config/navigation.ts:633:    if (!capabilitySatisfied(node.capability, has)) return false
+
+RESULT2 FAILS=0

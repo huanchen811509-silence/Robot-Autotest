@@ -192,7 +192,7 @@ export const projectApi = {
   },
 }
 
-/** 当前用户偏好（v4.5.0）：记住上次界面模式。 */
+/** 当前用户偏好（v4.5.0）：记住上次界面模式；v4.12.0 增改自己的口令。 */
 export const meApi = {
   uiMode() {
     return request<{ mode: 'global' | 'project' }>('/me/ui-mode')
@@ -201,6 +201,18 @@ export const meApi = {
     return request<{ mode: 'global' | 'project' }>('/me/ui-mode', {
       method: 'PUT',
       body: JSON.stringify({ mode }),
+    })
+  },
+  /**
+   * 改自己的口令（FR-v4.12-23）。
+   *
+   * 路径里没有 userId，身份由会话决定 —— 这不是省略，而是设计：有 id 的接口迟早会被
+   * 传别人的 id 试试，没有 id 就没有这个面。
+   */
+  changePassword(oldPassword: string, newPassword: string) {
+    return request<{ changed: boolean }>('/me/password', {
+      method: 'POST',
+      body: JSON.stringify({ oldPassword, newPassword }),
     })
   },
 }

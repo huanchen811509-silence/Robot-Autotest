@@ -72,18 +72,11 @@ async function changeProject(event: Event): Promise<void> {
     </span>
 
     <div class="app-header-right" data-testid="header-actions">
-      <!-- 段 0 模式：项目 / 全局（v4.5.0 / FR-v4.5-04）；无权限时整组不渲染 -->
+      <!-- 段 0 模式：全局 / 项目（v4.5.0 / FR-v4.5-04；v4.12.0 / FR-v4.12-25 改为「全局在左、项目在右」）。
+           顺序即优先级：全局是跨项目的总览视图，项目是下钻后的上下文，从左到右正好是「先总后分」。
+           无权限时整组不渲染。 -->
       <div v-if="canGlobal" class="app-seg app-mode-switch" data-seg="mode" role="group"
            :aria-label="t('mode.switch')">
-        <button
-          class="app-mode-btn"
-          type="button"
-          :class="{ 'is-active': uiMode.mode === 'project' }"
-          :aria-pressed="uiMode.mode === 'project'"
-          @click="void switchMode('project')"
-        >
-          {{ t('mode.project') }}
-        </button>
         <button
           class="app-mode-btn"
           type="button"
@@ -92,6 +85,15 @@ async function changeProject(event: Event): Promise<void> {
           @click="void switchMode('global')"
         >
           {{ t('mode.global') }}
+        </button>
+        <button
+          class="app-mode-btn"
+          type="button"
+          :class="{ 'is-active': uiMode.mode === 'project' }"
+          :aria-pressed="uiMode.mode === 'project'"
+          @click="void switchMode('project')"
+        >
+          {{ t('mode.project') }}
         </button>
       </div>
 

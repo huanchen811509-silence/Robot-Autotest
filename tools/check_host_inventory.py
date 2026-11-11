@@ -65,6 +65,10 @@ READONLY_BINARIES = {
     "cat", "printf", "basename", "head", "tail", "echo", "awk", "cut", "sort", "wc",
     # shell 控制结构（循环体本身仍会被逐段拆分检查）
     "for", "do", "done", "if", "then", "fi",
+    # shell 内建：只改本进程环境变量，不写盘、不联网、不改系统状态。
+    # v4.12.0 起每条采集命令都以 `export LC_ALL=C;` 开头——远端默认 locale 为 zh_CN 时
+    # `free -m` 会把表头输出成「内存：」，内存整类解析不出来；语言必须由采集方钉住。
+    "export",
 }
 
 # 写操作黑名单：(正则, 说明)。命中即红——只列出「一定不是读」的写法，避免误伤。

@@ -39,22 +39,46 @@ public class HostInventoryCollector {
      */
     public static final Map<String, String> COMMANDS = orderedCommands();
 
+    /**
+     * 10 类只读命令白名单。每条都以 `export LC_ALL=C;` 开头（v4.12.0 W-D 现场缺陷回归）。
+     *
+     * <p><b>为什么必须采集方自己钉住语言</b>：ssh 只有客户端 ssh_config 里配了
+     * `SendEnv LC_ALL` 才会把本地 locale 送过去，而本通道用 `-F /dev/null` 绕开
+     * 系统 ssh_config（防环境串味），于是远端用它**自己的**默认 locale。
+     * 现场 5 台浪潮机器（gpu01~04、storage01）默认 zh_CN：
+     * <ul>
+     *   <li>{@code free -m} 表头输出成「内存：」，取不到 {@code Mem:} 行 →
+     *       内存整类判「输出无法解析」（命令退出码还是 0，看上去像解析器坏了）；</li>
+     *   <li>{@code bash: 行 1: nvidia-smi: 未找到命令} 里的「行」而不是「line」，
+     *       让失败分类匹配不到 command-not-found，被兜底成 unreachable——
+     *       把「没装驱动」误导成「网络不通」。</li>
+     * </ul>
+     * 输出语言不是被采集方的自由变量，必须由采集方固定。{@code export} 写在最前面
+     * 而不是给单个命令加前缀，是为了让 `df … | tail` 这种管道里的每一段都生效。
+     *
+     * <p><b>为什么前缀要逐条内联而不是包一个 {@code cmd()} 辅助方法</b>：
+     * {@code tools/check_host_inventory.py}（门禁第 29 步）是直接从本方法的**字符串字面量**
+     * 里抽命令、再跟接口返回的 `items[].command` 逐字比对的。套一层方法调用后，
+     * 机检只能抽到不含前缀的裸命令，于是 10 类全被判「接口命令与源码不一致（证据漂移）」。
+     * 证据要能对着源码复核，就别让两者之间隔一层间接。
+     */
     private static Map<String, String> orderedCommands() {
         Map<String, String> map = new LinkedHashMap<>();
-        map.put("OS", "grep -m1 '^PRETTY_NAME=' /etc/os-release");
-        map.put("KERNEL", "uname -r");
-        map.put("CPU", "nproc; lscpu | grep -m1 'Model name'");
-        map.put("MEMORY", "free -m | head -2");
-        map.put("DISK", "df -P / | tail -1; echo ---; lsblk -d -o NAME,SIZE,ROTA 2>/dev/null");
-        map.put("GPU", "nvidia-smi --query-gpu=name,memory.total,driver_version "
+        map.put("OS", "export LC_ALL=C; grep -m1 '^PRETTY_NAME=' /etc/os-release");
+        map.put("KERNEL", "export LC_ALL=C; uname -r");
+        map.put("CPU", "export LC_ALL=C; nproc; lscpu | grep -m1 'Model name'");
+        map.put("MEMORY", "export LC_ALL=C; free -m | head -2");
+        map.put("DISK", "export LC_ALL=C; df -P / | tail -1; echo ---; "
+                + "lsblk -d -o NAME,SIZE,ROTA 2>/dev/null");
+        map.put("GPU", "export LC_ALL=C; nvidia-smi --query-gpu=name,memory.total,driver_version "
                 + "--format=csv,noheader");
-        map.put("NIC", "ip -br link; for i in /sys/class/net/*; do "
+        map.put("NIC", "export LC_ALL=C; ip -br link; for i in /sys/class/net/*; do "
                 + "printf '%s %s\\n' \"$(basename $i)\" \"$(cat $i/speed 2>/dev/null)\"; done");
-        map.put("IP", "ip -br addr");
-        map.put("ROCE", "for p in /sys/class/infiniband/*/ports/*; do "
+        map.put("IP", "export LC_ALL=C; ip -br addr");
+        map.put("ROCE", "export LC_ALL=C; for p in /sys/class/infiniband/*/ports/*; do "
                 + "printf '%s|%s|%s\\n' \"$p\" \"$(cat $p/state 2>/dev/null)\" "
                 + "\"$(cat $p/rate 2>/dev/null)\"; done");
-        map.put("ROUTE", "ip route show");
+        map.put("ROUTE", "export LC_ALL=C; ip route show");
         // 用 unmodifiableMap 而不是 Map.copyOf：后者不保序，而这里「顺序即报告顺序」，
         // 机检脚本也会按这个顺序核对 10 类，散序会让证据文件里分类忽前忽后。
         return java.util.Collections.unmodifiableMap(map);
@@ -102,12 +126,16 @@ public class HostInventoryCollector {
     private HostInventoryItem item(String host, String category, HostCommandRunner.Outcome out,
                                    Object parsed) {
         if (!out.ok() && (out.stdout() == null || out.stdout().isBlank())) {
+            // v4.12.0 / FR-v4.12-09：失败原因统一带分类前缀（unreachable / auth_failed /
+            // algorithm_mismatch / command_unsupported），三条通道用同一套口径，
+            // 否则同一句「连不上」在 Linux 与交换机的报告里会长成两种说法。
             return HostInventoryItem.missing(category, LABELS.get(category), COMMANDS.get(category),
-                    Instant.now(), out.reason());
+                    Instant.now(), CollectFailure.describe(out));
         }
         if (parsed == null) {
             return HostInventoryItem.missing(category, LABELS.get(category), COMMANDS.get(category),
-                    Instant.now(), "输出无法解析（命令已执行，退出码 " + out.exitCode() + "）");
+                    Instant.now(), CollectFailure.COMMAND + ": 输出无法解析（命令已执行，退出码 "
+                            + out.exitCode() + "）");
         }
         return HostInventoryItem.ok(category, LABELS.get(category), COMMANDS.get(category),
                 Instant.now(), parsed);
@@ -148,7 +176,7 @@ public class HostInventoryCollector {
         HostInventoryItem result = item(host, "GPU", out, parsed);
         if (!result.collected() && !out.ok()) {
             return HostInventoryItem.missing("GPU", LABELS.get("GPU"), COMMANDS.get("GPU"),
-                    Instant.now(), "未采集到 GPU 信息：" + out.reason());
+                    Instant.now(), "未采集到 GPU 信息：" + CollectFailure.describe(out));
         }
         return result;
     }

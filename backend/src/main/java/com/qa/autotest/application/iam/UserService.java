@@ -108,6 +108,40 @@ public class UserService {
         audit.record("user.reset-password", "app_user", String.valueOf(id), "username=" + user.username());
     }
 
+    /**
+     * 修改**自己**的口令（v4.12.0 / FR-v4.12-23）。
+     *
+     * <p>刻意**不要求** {@code USER_ROLE:UPDATE}：那是「改别人」的能力。要求它，等于把「改自己
+     * 的密码」锁成管理员特权——工程师被要求定期换口令时只能找管理员代改，代改就得把新口令
+     * 口头/微信传一遍，实际安全性更差（00-RESEARCH.md C3）。身份来源固定是 {@code TenantContext}
+     * 的当前登录用户，请求体里没有 userId，所以「改自己」这件事在结构上不可能越权成「改别人」。
+     *
+     * <p>三道校验缺一不可：旧口令必须对（防会话被劫持后直接改掉）、新口令走与
+     * {@link #resetPassword} 同一个 {@link PasswordPolicy}（否则「管理员重置」严、「自己改」松，
+     * 弱口令从这里进来）、新旧不能相同（否则忘了轮换还显示成功）。
+     *
+     * <p>审计 detail 只有用户名，**不含新旧口令任何片段**。
+     */
+    @Transactional
+    public void changeOwnPassword(String oldPassword, String newPassword) {
+        long userId = TenantContext.requireUserId();
+        AppUser user = users.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "当前账号不存在"));
+        if (oldPassword == null || oldPassword.isBlank()
+                || !PasswordHasher.verify(oldPassword, user.passwordHash())) {
+            // 不区分「没传」与「传错了」：对外只给一句话，避免被当成口令探测器
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "原口令不正确");
+        }
+        passwordPolicy.validate(newPassword, user.username());
+        if (PasswordHasher.verify(newPassword, user.passwordHash())) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "新口令不能与原口令相同");
+        }
+        users.updatePassword(userId, PasswordHasher.hash(newPassword),
+                passwordPolicy.expiresAt(Instant.now()), userId);
+        audit.record("user.password.self-change", "app_user", String.valueOf(userId),
+                "username=" + user.username());
+    }
+
     @Audited(action = "user:delete", resource = "app_user")
     @Transactional
     public void delete(long id) {

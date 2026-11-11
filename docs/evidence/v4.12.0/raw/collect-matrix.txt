@@ -1,0 +1,23 @@
+# W-D-05 真机采集矩阵（v4.12.0）
+# 生成时间: 2026-11-11 23:21:48 CST
+# 说明: 采到/总数 = spec_json.items 中有值项 / 分类总数; 一切结果均经真实 HTTP 接口
+
+设备 | 采集地址 | 状态 | 采到 | 缺失项
+--- | --- | --- | --- | ---
+200G RoCE | 10.202.54.92 | OK | 6/6 | -
+25G Leaf | 10.202.54.93 | OK | 6/6 | -
+800G RoCE | 10.202.54.91 | OK | 6/6 | -
+OOB 带外 | 10.202.54.100 | OK | 6/6 | -
+gpu01 | 10.202.54.101 | OK | 10/10 | -
+gpu01 | 10.202.54.11 | OK | 6/6 | -
+gpu02 | 10.202.54.102 | OK | 10/10 | -
+gpu02 | 10.202.54.12 | OK | 6/6 | -
+gpu03 | 10.202.54.103 | OK | 10/10 | -
+gpu03 | 10.202.54.13 | OK | 6/6 | -
+gpu04 | 10.202.54.104 | OK | 10/10 | -
+gpu04 | 10.202.54.14 | OK | 6/6 | -
+server01 | 10.202.54.106 | OK | 10/10 | -
+server02 | 10.202.54.107 | OK | 10/10 | -
+server03 | 10.202.54.108 | PARTIAL | 9/10 | GPU: 未采集到 GPU 信息：command_unsupported: bash: line 1: nvidia-smi: command not found
+storage01 | 10.202.54.105 | PARTIAL | 9/10 | GPU: 未采集到 GPU 信息：command_unsupported: bash: line 1: nvidia-smi: command not found
+storage01 | 10.202.54.15 | OK | 6/6 | -

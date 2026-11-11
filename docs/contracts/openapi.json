@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Robot-Autotest API（构建期静态快照）",
-    "version": "4.11.0",
+    "version": "4.12.0",
     "description": "由 tools/gen_api_contract.py 从控制器源码生成；字段级契约由契约测试保证。"
   },
   "servers": [
@@ -4102,6 +4102,168 @@
         }
       }
     },
+    "/api/global/assets/credentials": {
+      "post": {
+        "operationId": "GlobalAssetController.createCredential",
+        "tags": [
+          "asset"
+        ],
+        "responses": {
+          "200": {
+            "description": "统一信封；业务错误码见 ErrorCode",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "title": "GlobalAssetService.CreateCredentialRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/global/assets/credentials/{id:\\\\d+}/collect": {
+      "post": {
+        "operationId": "GlobalAssetController.collectByCredential",
+        "tags": [
+          "asset"
+        ],
+        "responses": {
+          "200": {
+            "description": "统一信封；业务错误码见 ErrorCode",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        }
+      }
+    },
+    "/api/global/assets/credentials/{id:\\\\d+}/devices": {
+      "get": {
+        "operationId": "GlobalAssetController.credentialDevices",
+        "tags": [
+          "asset"
+        ],
+        "responses": {
+          "200": {
+            "description": "统一信封；业务错误码见 ErrorCode",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        }
+      }
+    },
+    "/api/global/assets/devices": {
+      "post": {
+        "operationId": "GlobalAssetController.createDevice",
+        "tags": [
+          "asset"
+        ],
+        "responses": {
+          "200": {
+            "description": "统一信封；业务错误码见 ErrorCode",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "title": "GlobalAssetService.CreateDeviceRequest"
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/global/assets/export": {
       "get": {
         "operationId": "GlobalAssetController.export",
@@ -6067,6 +6229,52 @@
           },
           "409": {
             "$ref": "#/components/responses/BusinessError"
+          }
+        }
+      }
+    },
+    "/api/me/password": {
+      "post": {
+        "operationId": "MeController.changePassword",
+        "tags": [
+          "iam"
+        ],
+        "responses": {
+          "200": {
+            "description": "统一信封；业务错误码见 ErrorCode",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "title": "ChangePasswordRequest"
+              }
+            }
           }
         }
       }

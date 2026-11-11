@@ -316,10 +316,16 @@ run 28 case_command "python3 tools/check_case_command.py"
 # 29 主机清单（v3.11.0 / FR-v3.11-01）：10 类采集齐全 + 命令白名单只读 + 未采集必有原因。
 #    判据分三段：静态（采集器里的 COMMANDS 是唯一事实来源，含 10 类顺序与只读性质）
 #    + 接口自述一致（GET /commands 的响应必须与源码逐字相同）
-#    + 真实采集证据（docs/evidence/v3.11.0/EW311-01/host-inventory.json）。
+#    + 真实采集证据（<当版证据目录>/host-inventory.json）。
 #    证据由 bash scripts/host-inventory-contract.sh 产出；没有一次真实采集就判红，
 #    因为「10 类齐全」这句话只能由真机输出证明，不能由单测夹具代替。
-run 29 host_inventory "python3 tools/check_host_inventory.py"
+#    证据目录按版本走（v4.12.0 起）：v4.12.0 给 10 类命令统一加了 `export LC_ALL=C;`
+#    前缀，这是有意的行为变更——若继续比对 v3.11.0 的冻结快照，命令表一改就必然报
+#    「接口命令与源码不一致」，把「命令表按设计演进」误判成「证据漂移」。
+#    取当前版本目录；当前版本还没产出证据时回落到脚本默认目录（v3.11.0 那份）。
+HI_VER="$(tr -d '[:space:]' < VERSION)"
+HI_EVID="$(ls -d "docs/evidence/v${HI_VER}"/EW* 2>/dev/null | head -1)"
+run 29 host_inventory "python3 tools/check_host_inventory.py ${HI_EVID:+--evidence-dir $HI_EVID}"
 
 # 30 交付包（v3.11.0 / FR-v3.11-D05）：安装/拆卸/运维脚本 + CI workflow 静态契约，
 #    并以真实 tarball 或入库的 bundle-manifest.json 作证据；两者皆无判红，

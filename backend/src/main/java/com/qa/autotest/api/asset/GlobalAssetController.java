@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -80,6 +81,44 @@ public class GlobalAssetController {
             @RequestParam(required = false) String username,
             @RequestParam(defaultValue = "false") boolean confirm) {
         return ApiResponse.ok(service.collect(id, credentialId, username, confirm));
+    }
+
+    // ------------------------------------------------ 列举与手工录入（v4.12.0）
+    //
+    // 路由坑：本类已有 GET /{type}/{id}/references、POST /{type}/{id}/reference|unreference
+    // 三个「两段路径」映射。上面这条 GET /credentials/{id}/devices 若不把 {id} 写成 \d+，
+    // 会把 /credentials/abc/devices 也匹配进来，进而在 service 层抛 NumberFormatException；
+    // 反过来，写成 \d+ 才能让 Spring 明确区分「段数相同、语义不同」的两组路由。
+
+    @GetMapping("/credentials/{id:\\d+}/devices")
+    public ApiResponse<List<GlobalAssetService.CredentialDevice>> credentialDevices(
+            @PathVariable long id) {
+        return ApiResponse.ok(service.devicesOfCredential(id));
+    }
+
+    @PostMapping("/credentials/{id:\\d+}/collect")
+    public ApiResponse<GlobalAssetService.BatchCollectResult> collectByCredential(
+            @PathVariable long id,
+            @RequestParam(defaultValue = "false") boolean confirm) {
+        return ApiResponse.ok(service.collectByCredential(id, confirm));
+    }
+
+    /**
+     * 手工录入平台凭据。
+     *
+     * <p>路由落在 {@code /credentials}（一段），与 {@code /{type}/{id}/reference} 不冲突；
+     * 当初若把凭据录入设计成 {@code /credentials/create}，就会与 {@code /{type}/{id}} 抢匹配。
+     */
+    @PostMapping("/credentials")
+    public ApiResponse<GlobalAssetService.CredentialView> createCredential(
+            @RequestBody GlobalAssetService.CreateCredentialRequest request) {
+        return ApiResponse.ok(service.createCredential(request));
+    }
+
+    @PostMapping("/devices")
+    public ApiResponse<GlobalAssetService.DeviceView> createDevice(
+            @RequestBody GlobalAssetService.CreateDeviceRequest request) {
+        return ApiResponse.ok(service.createDevice(request));
     }
 
     @PostMapping("/{type}/{id}/reference")

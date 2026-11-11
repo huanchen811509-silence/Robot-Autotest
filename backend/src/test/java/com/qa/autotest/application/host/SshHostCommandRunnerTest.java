@@ -1,6 +1,7 @@
 package com.qa.autotest.application.host;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -176,5 +177,134 @@ class SshHostCommandRunnerTest {
         Files.deleteIfExists(called);
         assertThat(router.run("localhost", "uname -a", TIMEOUT, access("pw")).ok()).isTrue();
         assertThat(Files.exists(called)).isFalse();
+    }
+
+    // ---------------------------------------------------------------- v4.12.0 / FR-v4.12-04
+
+    @Test
+    @DisplayName("连接参数逐项变成独立的 -o，不做 shell 字符串拼接")
+    void connectOptionsBecomeSeparateOFlags() throws Exception {
+        Path argvFile = temp.resolve("argv.txt");
+        Path ssh = script("ssh-opt.sh", "printf '%s\\n' \"$@\" > " + argvFile + "\necho ok\nexit 0");
+        SshHostCommandRunner runner = new SshHostCommandRunner(ssh.toString(),
+                sshpass().toString(), temp.resolve("known_hosts"));
+
+        HostAccess withOptions = new HostAccess(1L, "ehtadmin", 9L, "pw", "network",
+                "KexAlgorithms=+diffie-hellman-group14-sha1,+diffie-hellman-group1-sha1"
+                        + ";HostKeyAlgorithms=+ssh-rsa");
+        assertThat(runner.run(HOST, "show version", TIMEOUT, withOptions).ok()).isTrue();
+
+        List<String> argv = Files.readAllLines(argvFile);
+        assertThat(argv).contains(
+                "KexAlgorithms=+diffie-hellman-group14-sha1,+diffie-hellman-group1-sha1");
+        assertThat(argv).contains("HostKeyAlgorithms=+ssh-rsa");
+        // 每个选项都必须紧跟在独立的 -o 后面，而不是粘成一个 -oKey=Value 或一长串
+        int index = argv.indexOf("HostKeyAlgorithms=+ssh-rsa");
+        assertThat(index).isPositive();
+        assertThat(argv.get(index - 1)).isEqualTo("-o");
+    }
+
+    @Test
+    @DisplayName("连接参数非法（危险键）：整串拒绝，进程根本不启动")
+    void invalidConnectOptionsRejected() throws Exception {
+        Path called = temp.resolve("called-opt.txt");
+        Path ssh = script("ssh-opt-bad.sh", "echo called > " + called + "\nexit 0");
+        SshHostCommandRunner runner = new SshHostCommandRunner(ssh.toString(),
+                sshpass().toString(), temp.resolve("known_hosts"));
+
+        HostAccess bad = new HostAccess(1L, "robot", 9L, "pw", "ssh", "ProxyCommand=nc evil 22");
+        HostCommandRunner.Outcome outcome = runner.run(HOST, "uname -a", TIMEOUT, bad);
+
+        assertThat(outcome.ok()).isFalse();
+        assertThat(outcome.reason()).contains("连接参数被拒绝");
+        assertThat(Files.exists(called)).isFalse();
+    }
+
+    @Test
+    @DisplayName("参数解析：三种分隔写法都认；危险键与非法格式都拒")
+    void parseExtraOptionsRules() {
+        assertThat(SshHostCommandRunner.parseExtraOptions(null)).isEmpty();
+        assertThat(SshHostCommandRunner.parseExtraOptions("   ")).isEmpty();
+        // 单条 + 值内逗号（KEX 算法列表本身是逗号分隔的，不能被当成分隔符）
+        assertThat(SshHostCommandRunner.parseExtraOptions("KexAlgorithms=+a,+b"))
+                .containsExactly("KexAlgorithms=+a,+b");
+        // 分号分隔
+        assertThat(SshHostCommandRunner.parseExtraOptions(
+                "KexAlgorithms=+a;HostKeyAlgorithms=+ssh-rsa"))
+                .containsExactly("KexAlgorithms=+a", "HostKeyAlgorithms=+ssh-rsa");
+        // 逗号 + 下一个 Key=
+        assertThat(SshHostCommandRunner.parseExtraOptions(
+                "KexAlgorithms=+a,HostKeyAlgorithms=+ssh-rsa"))
+                .containsExactly("KexAlgorithms=+a", "HostKeyAlgorithms=+ssh-rsa");
+        assertThatThrownBy(() -> SshHostCommandRunner.parseExtraOptions("ProxyCommand=nc x 22"))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> SshHostCommandRunner.parseExtraOptions("no-equals-sign"))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    /**
+     * 现场真实串（v4.12.0 W-D 取证用）：4 台交换机的 connect_options 就是这个值。
+     *
+     * <p>它同时含「值内逗号」与「分号分隔」两种形态，是最容易切错的一段：
+     * 按逗号硬切会把 `diffie-hellman-group1-sha1` 切成独立一项，直接判格式非法，
+     * 现场表现就是「凭据看着没问题但一台都连不上」。
+     */
+    @Test
+    @DisplayName("参数解析：现场交换机真实参数串切成 3 条，值内逗号保留")
+    void parseRealSwitchOptions() {
+        String real = "KexAlgorithms=+diffie-hellman-group14-sha1,diffie-hellman-group1-sha1"
+                + ";HostKeyAlgorithms=+ssh-rsa;PubkeyAcceptedAlgorithms=+ssh-rsa";
+        assertThat(SshHostCommandRunner.parseExtraOptions(real)).containsExactly(
+                "KexAlgorithms=+diffie-hellman-group14-sha1,diffie-hellman-group1-sha1",
+                "HostKeyAlgorithms=+ssh-rsa",
+                "PubkeyAcceptedAlgorithms=+ssh-rsa");
+    }
+
+    // ---------------------------------------------------------------- v4.12.0 W-D 现场缺陷回归
+
+    /**
+     * 口令模式**必须**是 `BatchMode=no`。
+     *
+     * <p>回归自现场事故：8 台 Linux + 4 台交换机同时报
+     * `Permission denied (publickey,password)`，而用 sshpass 手敲同样参数直连全部 PASS。
+     * 差异只有 `BatchMode=yes` —— 它关闭全部交互式提问，sshpass 等不到 `password:`
+     * 提示符就没有口令可喂，ssh 走完公钥一轮就退出。
+     * 这条断言就是防止有人「为了防卡死」把 BatchMode 改回 yes。
+     */
+    @Test
+    @DisplayName("口令模式放开 BatchMode，给 sshpass 留出提示符")
+    void passwordModeAllowsInteractivePrompt() throws Exception {
+        Path argvFile = temp.resolve("argv-pw-mode.txt");
+        Path ssh = script("ssh-pw-mode.sh", "printf '%s\\n' \"$@\" > " + argvFile + "\necho ok\nexit 0");
+        SshHostCommandRunner runner = new SshHostCommandRunner(ssh.toString(),
+                sshpass().toString(), temp.resolve("known_hosts"));
+
+        assertThat(runner.run(HOST, "uname -a", TIMEOUT, access("pw")).ok()).isTrue();
+
+        List<String> argv = Files.readAllLines(argvFile);
+        assertThat(argv).contains("BatchMode=no");
+        assertThat(argv).doesNotContain("BatchMode=yes");
+        assertThat(argv).contains("PreferredAuthentications=password,keyboard-interactive");
+        // 只问一次口令：错就快速失败，不把批量采集拖成「每台等三遍」
+        assertThat(argv).contains("NumberOfPasswordPrompts=1");
+        // 指纹校验不能因为放开交互而松动
+        assertThat(argv).contains("StrictHostKeyChecking=yes");
+    }
+
+    @Test
+    @DisplayName("私钥模式保持 BatchMode=yes，且不引入口令相关参数")
+    void keyModeKeepsBatchModeYes() throws Exception {
+        Path argvFile = temp.resolve("argv-key-mode.txt");
+        Path ssh = script("ssh-key-mode.sh", "printf '%s\\n' \"$@\" > " + argvFile + "\necho ok\nexit 0");
+        SshHostCommandRunner runner = new SshHostCommandRunner(ssh.toString(), "/bin/false",
+                temp.resolve("known_hosts"));
+        String key = "-----BEGIN OPENSSH PRIVATE KEY-----\nAAAA\n-----END OPENSSH PRIVATE KEY-----";
+
+        assertThat(runner.run(HOST, "uname -a", TIMEOUT,
+                new HostAccess(1L, "robot", 7L, key)).ok()).isTrue();
+
+        List<String> argv = Files.readAllLines(argvFile);
+        assertThat(argv).contains("BatchMode=yes", "PreferredAuthentications=publickey");
+        assertThat(argv).doesNotContain("BatchMode=no", "NumberOfPasswordPrompts=1");
     }
 }

@@ -128,14 +128,29 @@ public class CredentialService {
         String blob = credentials.cipherOf(projectId, id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "凭据未配置内容"));
         audit.record("credential.use", "credential", String.valueOf(id), "host-inventory");
-        return new Material(credential.username(), credential.credType(), cipher.decrypt(blob));
+        // connectOptions 直接取已加载的实体字段，不再补一次单列查询：
+        // 那次多余查询曾在 connect_options 为 NULL 时把整条采集打成 500（v4.12.0 W-D 实测）。
+        return new Material(credential.username(), credential.credType(), cipher.decrypt(blob),
+                credential.connectOptions());
     }
 
-    /** 执行域材料（账号 + 类型 + 明文）；{@code toString} 对明文打码，防止顺手打日志泄漏。 */
-    public record Material(String username, String credType, String secret) {
+    /**
+     * 执行域材料（账号 + 类型 + 明文 + 连接参数）；{@code toString} 对明文打码，防止顺手打日志泄漏。
+     *
+     * @param credType       决定采集通道（ssh / network / bmc）
+     * @param connectOptions SSH 附加参数（老 KEX 兼容），可为 null
+     */
+    public record Material(String username, String credType, String secret, String connectOptions) {
+
+        public Material(String username, String credType, String secret) {
+            this(username, credType, secret, null);
+        }
+
         @Override
         public String toString() {
-            return "Material[username=" + username + ", credType=" + credType + ", secret=***]";
+            return "Material[username=" + username + ", credType=" + credType
+                    + ", connectOptions=" + (connectOptions == null ? "-" : connectOptions)
+                    + ", secret=***]";
         }
     }
 

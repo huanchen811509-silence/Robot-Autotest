@@ -240,6 +240,32 @@ class HostInventoryCollectorTest {
         assertThat(HostInventoryCollector.COMMANDS).hasSize(10);
     }
 
+    /**
+     * 回归自现场事故（v4.12.0 W-D）：5 台浪潮机器内存整类判「输出无法解析」。
+     *
+     * <p>根因是远端默认 locale 为 zh_CN，`free -m` 把表头输出成「内存：」，
+     * 而内存解析靠的是 `Mem:` 这一行。ssh 用 `-F /dev/null` 绕开了系统
+     * ssh_config，`SendEnv LC_ALL` 也就不生效，所以语言必须由采集方自己钉住。
+     */
+    @Test
+    @DisplayName("每条远端命令都自带 locale 固定前缀（否则远端中文输出会把解析带偏）")
+    void commandsForceRemoteLocale() {
+        for (Map.Entry<String, String> entry : HostInventoryCollector.COMMANDS.entrySet()) {
+            assertThat(entry.getValue())
+                    .as(entry.getKey() + " 的命令没有固定远端 locale")
+                    .startsWith("export LC_ALL=C; ");
+        }
+    }
+
+    @Test
+    @DisplayName("中文 free 输出解析不出内存（这就是必须固定 locale 的原因）")
+    void localizedFreeOutputIsUnparsable() {
+        assertThat(HostInventoryCollector.parseMemory(
+                "               total        used        free\n内存：       1031735       13250      998485\n"))
+                .isNull();
+        assertThat(HostInventoryCollector.COMMANDS.get("MEMORY")).startsWith("export LC_ALL=C; ");
+    }
+
     @Test
     @DisplayName("超时 Duration 是常量，不接受调用方传入（避免某处传 0 变成无限等）")
     void 超时是常量() {

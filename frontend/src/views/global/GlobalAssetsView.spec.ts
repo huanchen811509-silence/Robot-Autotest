@@ -29,6 +29,10 @@ vi.mock('@/api/globalAssets', () => ({
     reference: vi.fn(),
     unreference: vi.fn(),
     remove: vi.fn(),
+    credentialDevices: vi.fn(),
+    collectByCredential: vi.fn(),
+    createDevice: vi.fn(),
+    createCredential: vi.fn(),
   },
 }))
 
@@ -63,6 +67,9 @@ const deviceRow = {
   collectCount: 1,
   lastCollectedAt: '2026-11-10T08:00:00',
   collectStatus: 'OK',
+  managementCredentialId: 201 as number | null,
+  bmcCredentialId: null as number | null,
+  collectChannel: null as string | null,
 }
 
 const credentialRow = {
@@ -70,8 +77,11 @@ const credentialRow = {
   id: 201,
   assetType: 'CREDENTIAL',
   name: 'lab-root',
-  detail: '用户名 root',
+  detail: 'ssh / root',
   managementIp: '',
+  managementCredentialId: null,
+  bmcCredentialId: null,
+  collectChannel: 'ssh',
 }
 
 const list = vi.mocked(globalAssetApi.list)
@@ -94,10 +104,18 @@ async function mountView(): Promise<HTMLElement> {
 }
 
 beforeEach(() => {
+  vi.clearAllMocks()
   list.mockReset()
   list.mockImplementation(async (params) =>
     params?.type === 'CREDENTIAL' ? [credentialRow] : [deviceRow],
   )
+  vi.mocked(globalAssetApi.credentialDevices).mockResolvedValue([])
+  vi.mocked(globalAssetApi.collectByCredential).mockResolvedValue({
+    total: 0,
+    ok: 0,
+    failed: 0,
+    items: [],
+  })
   routerState.route = reactive({ query: {}, path: '/g/assets' })
   routerState.push.mockReset()
   routerState.replace.mockReset()
@@ -184,10 +202,13 @@ describe('GlobalAssetsView 页签同步', () => {
 })
 
 describe('GlobalAssetsView 权限', () => {
-  it('admin 有导入/导出与行内操作', async () => {
+  it('admin 有导出 / 录入 / 导入三个入口与行内操作', async () => {
     const root = await mountView()
 
-    expect(root.querySelectorAll('.page-actions button')).toHaveLength(2)
+    // v4.12.0：设备页签多一个「录入设备」，三个按钮的顺序是 导出 → 录入设备 → 导入
+    const actions = Array.from(root.querySelectorAll<HTMLButtonElement>('.page-actions button'))
+    expect(actions).toHaveLength(3)
+    expect(actions[1].textContent).toContain('录入设备')
     expect(root.textContent).toContain(deviceRow.name)
   })
 
@@ -196,8 +217,254 @@ describe('GlobalAssetsView 权限', () => {
     auth.user = { id: 2, username: 'eng', displayName: '工程', roles: ['engineer'] } as never
     const root = await mountView()
 
-    expect(root.querySelectorAll('.page-actions button')).toHaveLength(0)
+    expect(root.querySelectorAll<HTMLButtonElement>('.page-actions button')).toHaveLength(0)
     // 列表数据本身仍可见：读权限与写权限是两件事
     expect(root.textContent).toContain(deviceRow.name)
+  })
+})
+
+/* ------------------------------------------------- v4.12.0 采集通道与录入 */
+
+describe('GlobalAssetsView 采集按钮按通道显隐（FR-v4.12-10）', () => {
+  it('设备未绑定任何凭据：不渲染「采集」按钮，只显示原因', async () => {
+    list.mockImplementation(async () => [
+      { ...deviceRow, managementCredentialId: null, bmcCredentialId: null },
+    ])
+    const root = await mountView()
+
+    const actionButtons = Array.from(root.querySelectorAll<HTMLButtonElement>('.row-actions button')).map(
+      (button) => button.textContent?.trim() ?? '',
+    )
+    expect(actionButtons.some((text) => text.includes('采集'))).toBe(false)
+    expect(root.textContent).toContain('未绑定凭据')
+  })
+
+  it('设备只有带外凭据（纯 BMC 交换机）仍可采集', async () => {
+    list.mockImplementation(async () => [
+      { ...deviceRow, managementCredentialId: null, bmcCredentialId: 202 },
+    ])
+    const root = await mountView()
+
+    const actionButtons = Array.from(root.querySelectorAll<HTMLButtonElement>('.row-actions button')).map(
+      (button) => button.textContent?.trim() ?? '',
+    )
+    expect(actionButtons.some((text) => text.includes('采集'))).toBe(true)
+    expect(root.textContent).not.toContain('未绑定凭据')
+  })
+})
+
+describe('GlobalAssetsView 凭据关联设备（FR-v4.12-11/12/15）', () => {
+  it('凭据页签点「关联设备」：拉取并渲染地址面与通道', async () => {
+    routerState.route = reactive({ query: { tab: 'credentials' }, path: '/g/assets' })
+    vi.mocked(globalAssetApi.credentialDevices).mockResolvedValue([
+      {
+        deviceId: 6,
+        name: 'GPU-01',
+        plane: 'mgmt',
+        address: '172.31.20.101',
+        channel: 'ssh',
+        lastStatus: 'OK',
+        lastCollectedAt: '2026-11-11 10:00:00',
+      },
+      {
+        deviceId: 6,
+        name: 'GPU-01',
+        plane: 'bmc',
+        address: '172.31.10.11',
+        channel: 'bmc',
+        lastStatus: null,
+        lastCollectedAt: null,
+      },
+    ])
+    const root = await mountView()
+
+    const bindButton = Array.from(root.querySelectorAll<HTMLButtonElement>('.row-actions button')).find((button) =>
+      button.textContent?.includes('关联设备'),
+    )
+    expect(bindButton).toBeTruthy()
+    bindButton!.click()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    await nextTick()
+
+    expect(globalAssetApi.credentialDevices).toHaveBeenCalledWith(201)
+    const table = root.querySelector('.bind-table')
+    expect(table).not.toBeNull()
+    expect(table!.querySelectorAll('tbody tr')).toHaveLength(2)
+    const text = table!.textContent ?? ''
+    expect(text).toContain('业务管理')
+    expect(text).toContain('带外')
+    expect(text).toContain('SSH 命令')
+    expect(text).toContain('BMC Redfish')
+    expect(text).toContain('172.31.10.11')
+    // 没采过的面显示「未采集」而不是空白，避免看起来像加载失败
+    expect(text).toContain('未采集')
+  })
+
+  it('「全部采集」：带 confirm=true 调接口并显示 N/N 摘要与失败原因', async () => {
+    routerState.route = reactive({ query: { tab: 'credentials' }, path: '/g/assets' })
+    vi.mocked(globalAssetApi.credentialDevices).mockResolvedValue([
+      {
+        deviceId: 7,
+        name: 'R750-Server-01',
+        plane: 'bmc',
+        address: '172.31.10.16',
+        channel: 'bmc',
+        lastStatus: null,
+        lastCollectedAt: null,
+      },
+    ])
+    vi.mocked(globalAssetApi.collectByCredential).mockResolvedValue({
+      total: 2,
+      ok: 1,
+      failed: 1,
+      items: [
+        { deviceId: 6, name: 'GPU-01', plane: 'mgmt', host: '172.31.20.101', status: 'OK', reason: null },
+        {
+          deviceId: 7,
+          name: 'R750-Server-01',
+          plane: 'bmc',
+          host: '172.31.10.16',
+          status: 'FAILED',
+          reason: 'auth_failed: 401 Unauthorized',
+        },
+      ],
+    })
+    const root = await mountView()
+
+    Array.from(root.querySelectorAll<HTMLButtonElement>('.row-actions button'))
+      .find((button) => button.textContent?.includes('关联设备'))!
+      .click()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    await nextTick()
+
+    const collectAllButton = Array.from(root.querySelectorAll<HTMLButtonElement>('.modal-actions button')).find(
+      (button) => button.textContent?.includes('全部采集'),
+    )
+    expect(collectAllButton).toBeTruthy()
+    collectAllButton!.click()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    await nextTick()
+
+    expect(globalAssetApi.collectByCredential).toHaveBeenCalledWith(201, true)
+    const summary = root.querySelector('[data-testid="batch-summary"]')
+    expect(summary).not.toBeNull()
+    // 摘要必须把「总数 / 成功 / 失败」三个数都摆出来，只报总数会让运维漏掉失败台
+    expect(summary!.textContent).toContain('2')
+    expect(summary!.textContent).toContain('1')
+    // 失败原因要跟着摘要一起给出，否则人还得逐台点开
+    expect(root.textContent).toContain('auth_failed: 401 Unauthorized')
+  })
+})
+
+describe('GlobalAssetsView 手工录入（FR-v4.12-13/14）', () => {
+  it('设备录入：名称与地址都空时本地拦截，不发请求', async () => {
+    const root = await mountView()
+
+    const openButton = Array.from(root.querySelectorAll<HTMLButtonElement>('.page-actions button')).find((button) =>
+      button.textContent?.includes('录入设备'),
+    )
+    openButton!.click()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    await nextTick()
+
+    const submit = Array.from(root.querySelectorAll<HTMLButtonElement>('.modal-actions button')).find((button) =>
+      button.textContent?.includes('提交'),
+    )
+    submit!.click()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    await nextTick()
+
+    expect(globalAssetApi.createDevice).not.toHaveBeenCalled()
+    expect(root.textContent).toContain('名称不能为空')
+  })
+
+  it('设备录入：只填带外地址也能提交（纯 BMC 设备是合法形态）', async () => {
+    vi.mocked(globalAssetApi.createDevice).mockResolvedValue({
+      id: 21,
+      name: '32DE-RoCE-800-01',
+      deviceType: 'switch',
+      managementIp: null,
+      managementIpAlt: null,
+      bmcAddress: '10.202.54.91',
+      bmcAddressAlt: null,
+      managementCredentialId: null,
+      bmcCredentialId: 203,
+      assetSource: 'manual',
+    })
+    const root = await mountView()
+
+    Array.from(root.querySelectorAll<HTMLButtonElement>('.page-actions button'))
+      .find((button) => button.textContent?.includes('录入设备'))!
+      .click()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    await nextTick()
+
+    const nameInput = root.querySelector<HTMLInputElement>('[data-testid="device-name"]')!
+    nameInput.value = '32DE-RoCE-800-01'
+    nameInput.dispatchEvent(new Event('input'))
+    const bmcInput = root.querySelector<HTMLInputElement>('[data-testid="device-bmc"]')!
+    bmcInput.value = '10.202.54.91'
+    bmcInput.dispatchEvent(new Event('input'))
+    await nextTick()
+
+    Array.from(root.querySelectorAll<HTMLButtonElement>('.modal-actions button'))
+      .find((button) => button.textContent?.includes('提交'))!
+      .click()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    await nextTick()
+
+    expect(globalAssetApi.createDevice).toHaveBeenCalledTimes(1)
+    const payload = vi.mocked(globalAssetApi.createDevice).mock.calls[0][0]
+    expect(payload.name).toBe('32DE-RoCE-800-01')
+    expect(payload.bmcAddress).toBe('10.202.54.91')
+    expect(root.textContent).toContain('已创建：32DE-RoCE-800-01')
+  })
+
+  it('凭据录入：口令必填，填了才发请求且提交后清空口令输入框', async () => {
+    vi.mocked(globalAssetApi.createCredential).mockResolvedValue({
+      id: 31,
+      name: 'lab-netadmin-ssh',
+      credType: 'network',
+      username: 'ehtadmin',
+      connectOptions: 'diffie-hellman-group14-sha1',
+      configured: true,
+    })
+    routerState.route = reactive({ query: { tab: 'credentials' }, path: '/g/assets' })
+    const root = await mountView()
+
+    Array.from(root.querySelectorAll<HTMLButtonElement>('.page-actions button'))
+      .find((button) => button.textContent?.includes('录入凭据'))!
+      .click()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    await nextTick()
+
+    const submit = () =>
+      Array.from(root.querySelectorAll<HTMLButtonElement>('.modal-actions button')).find((button) =>
+        button.textContent?.includes('提交'),
+      )!
+    const nameInput = root.querySelector<HTMLInputElement>('[data-testid="credential-name"]')!
+    nameInput.value = 'lab-netadmin-ssh'
+    nameInput.dispatchEvent(new Event('input'))
+    await nextTick()
+
+    submit().click()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    await nextTick()
+    expect(globalAssetApi.createCredential).not.toHaveBeenCalled()
+    expect(root.textContent).toContain('口令不能为空')
+
+    const secretInput = root.querySelector<HTMLInputElement>('[data-testid="credential-secret"]')!
+    secretInput.value = 'Eht_lab2026!'
+    secretInput.dispatchEvent(new Event('input'))
+    await nextTick()
+
+    submit().click()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    await nextTick()
+
+    expect(globalAssetApi.createCredential).toHaveBeenCalledTimes(1)
+    expect(vi.mocked(globalAssetApi.createCredential).mock.calls[0][0].secret).toBe('Eht_lab2026!')
+    // 提交后口令立刻从页面状态清掉：截屏/录屏不会带走明文
+    expect(root.querySelector<HTMLInputElement>('[data-testid="credential-secret"]')!.value).toBe('')
   })
 })

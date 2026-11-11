@@ -116,6 +116,18 @@ describe('顶栏三段排版（FR-v4.0-03 / FR-v4.5-04）', () => {
     expect(root.querySelector('.app-mode-switch')).toBeNull()
   })
 
+  // v4.12.0 / FR-v4.12-25：全局在左、项目在右（原来的顺序是反的）。
+  it('模式段顺序为「全局 → 项目」，初始激活项跟随当前模式', async () => {
+    const root = await mountHeader()
+    const buttons = [...root.querySelectorAll<HTMLButtonElement>('[data-seg="mode"] button')]
+    expect(buttons).toHaveLength(2)
+    expect(buttons[0].textContent?.trim()).toBe(i18n.global.t('mode.global'))
+    expect(buttons[1].textContent?.trim()).toBe(i18n.global.t('mode.project'))
+    // 默认是项目模式（localStorage 无值 → project），所以右侧按钮激活
+    expect(buttons[0].getAttribute('aria-pressed')).toBe('false')
+    expect(buttons[1].getAttribute('aria-pressed')).toBe('true')
+  })
+
   // v4.11.0 / FR-v4.11-09：主题 / 语言并入工具段，可聚焦控件 7→9（AI 关闭 8）。
   it('AI 开启时 9 枚控件，关闭时 8 枚（AI 整项不渲染）', async () => {
     const withAi = await mountHeader(true)

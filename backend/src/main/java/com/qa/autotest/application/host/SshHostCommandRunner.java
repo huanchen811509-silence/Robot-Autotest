@@ -44,6 +44,29 @@ public class SshHostCommandRunner implements HostCommandRunner {
     /** SSH 账号：允许 username 里的常见字符，同样不允许 `-` 开头。 */
     private static final Pattern USER = Pattern.compile("[A-Za-z0-9._][A-Za-z0-9._-]{0,63}");
 
+    /**
+     * 附加参数的单项形态（v4.12.0 / FR-v4.12-04）：`Key=Value`。
+     *
+     * <p>值里允许 `+,:@=/[]-`——`KexAlgorithms=+diffie-hellman-group14-sha1,+group1-sha1`
+     * 这种「加号前缀 + 逗号分隔算法列表」是 OpenSSH 的既定写法，不能当成分隔符切掉。
+     */
+    private static final Pattern EXTRA_OPTION =
+            Pattern.compile("[A-Za-z][A-Za-z0-9]{0,31}=[A-Za-z0-9+.,:@=_/\\[\\]-]{0,128}");
+
+    /**
+     * 附加参数按「分号」或「逗号 + 下一个 Key=」切分。
+     *
+     * <p>不能简单按逗号切：KEX 算法列表本身就是逗号分隔的，切完会把
+     * `+diffie-hellman-group1-sha1` 当成一个独立选项而报格式错。
+     */
+    private static final Pattern EXTRA_SPLIT =
+            Pattern.compile(";|,(?=[A-Za-z][A-Za-z0-9]{0,31}=)");
+
+    /** 这些键会改变连接目标或引入命令执行，禁止由数据行覆盖。 */
+    private static final java.util.Set<String> FORBIDDEN_KEYS = java.util.Set.of(
+            "proxycommand", "localcommand", "permitlocalcommand", "identityfile",
+            "knownhostscommand", "match", "include", "hostname", "port", "user", "proxyjump");
+
     private final String sshBinary;
     private final String sshpassBinary;
     private final Path knownHosts;
@@ -86,6 +109,12 @@ public class SshHostCommandRunner implements HostCommandRunner {
         }
 
         boolean keyMode = access.secret().stripLeading().startsWith("-----BEGIN");
+        List<String> extra;
+        try {
+            extra = parseExtraOptions(access.connectOptions());
+        } catch (IllegalArgumentException ex) {
+            return Outcome.fail("连接参数被拒绝：" + ex.getMessage());
+        }
         Path keyFile = null;
         Path out = null;
         Path err = null;
@@ -100,7 +129,12 @@ public class SshHostCommandRunner implements HostCommandRunner {
             argv.add("-F");
             argv.add("/dev/null");
             argv.add("-o");
-            argv.add("BatchMode=yes");
+            // 口令模式**不能**开 BatchMode：它关闭全部交互式提问，sshpass 没有
+            // `password:` 提示可喂就没有口令可送，ssh 只剩公钥一轮然后报
+            // `Permission denied (publickey,password)`。
+            // 现场 8 台 Linux + 4 台交换机全栽在这一个开关上（sshpass 手敲同参数直连却全 PASS）。
+            // 私钥模式相反：本就无需任何提问，BatchMode=yes 可挡住「未知主机是否继续」之类阻塞。
+            argv.add(keyMode ? "BatchMode=yes" : "BatchMode=no");
             argv.add("-o");
             argv.add("StrictHostKeyChecking=yes");
             argv.add("-o");
@@ -118,6 +152,16 @@ public class SshHostCommandRunner implements HostCommandRunner {
             } else {
                 argv.add("-o");
                 argv.add("PreferredAuthentications=password,keyboard-interactive");
+                // 只问一次：口令错就立刻失败，不要连问三遍把批量采集拖成分钟级。
+                // sshpass 喂一次、ssh 再要第二次时 sshpass 已退出，多问只会白等。
+                argv.add("-o");
+                argv.add("NumberOfPasswordPrompts=1");
+            }
+            // 按凭据配置追加（老交换机只支持 diffie-hellman-group14-sha1 / ssh-rsa）。
+            // 逐项转成独立的 `-o Key=Value`，绝不做 shell 字符串拼接。
+            for (String option : extra) {
+                argv.add("-o");
+                argv.add(option);
             }
             argv.add(user + "@" + host);
             argv.add(command);
@@ -158,8 +202,39 @@ public class SshHostCommandRunner implements HostCommandRunner {
         }
     }
 
-    private static int connectTimeout(Duration timeout) {
-        long seconds = timeout == null ? CONNECT_TIMEOUT_SECONDS : timeout.toSeconds();
+    /**
+     * 把凭据里的连接参数串拆成 {@code -o} 项（白名单校验，纯函数可离线单测）。
+     *
+     * <p>三种输入都合法：`KexAlgorithms=+a,+b`（只一条，值内有逗号）、
+     * `KexAlgorithms=+a;HostKeyAlgorithms=+ssh-rsa`（分号分隔）、
+     * `KexAlgorithms=+a,HostKeyAlgorithms=+ssh-rsa`（逗号 + 下一个 Key=）。
+     *
+     * <p>非法项**直接拒绝整串**而不是跳过：静默丢弃会让「明明配了参数却还连不上」
+     * 变成无法解释的谜案，而采集报告里只会留下一个语焉不详的握手失败。
+     */
+    static List<String> parseExtraOptions(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return List.of();
+        }
+        List<String> result = new ArrayList<>();
+        for (String piece : EXTRA_SPLIT.split(raw)) {
+            String item = piece == null ? "" : piece.trim();
+            if (item.isEmpty()) {
+                continue;
+            }
+            if (!EXTRA_OPTION.matcher(item).matches()) {
+                throw new IllegalArgumentException("格式非法（应为 Key=Value）：" + item);
+            }
+            String key = item.substring(0, item.indexOf('=')).toLowerCase(Locale.ROOT);
+            if (FORBIDDEN_KEYS.contains(key)) {
+                throw new IllegalArgumentException("不允许覆盖该键：" + key);
+            }
+            result.add(item);
+        }
+        return result;
+    }
+
+    private static int connectTimeout(Duration timeout) {        long seconds = timeout == null ? CONNECT_TIMEOUT_SECONDS : timeout.toSeconds();
         return (int) Math.max(1, Math.min(CONNECT_TIMEOUT_SECONDS, seconds));
     }
 

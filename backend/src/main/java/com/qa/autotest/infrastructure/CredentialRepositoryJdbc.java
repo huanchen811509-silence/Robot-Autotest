@@ -23,14 +23,15 @@ public class CredentialRepositoryJdbc implements CredentialRepository {
     private static final String SELECT = """
             SELECT c.id, c.project_id, c.name, c.cred_type, c.username,
                    CASE WHEN c.cipher_blob IS NULL OR c.cipher_blob = '' THEN 0 ELSE 1 END AS configured,
-                   c.key_version, c.last_rotated_at
+                   c.key_version, c.last_rotated_at, c.connect_options
               FROM credential c
             """;
 
     private static final RowMapper<Credential> MAPPER = (rs, rowNum) -> new Credential(
             rs.getLong("id"), rs.getLong("project_id"), rs.getString("name"),
             rs.getString("cred_type"), rs.getString("username"), rs.getInt("configured") == 1,
-            rs.getInt("key_version"), JdbcSupport.instant(rs.getTimestamp("last_rotated_at")));
+            rs.getInt("key_version"), JdbcSupport.instant(rs.getTimestamp("last_rotated_at")),
+            rs.getString("connect_options"));
 
     private final JdbcTemplate jdbc;
 

@@ -1,0 +1,12 @@
+{
+  "OS": "export LC_ALL=C; grep -m1 '^PRETTY_NAME=' /etc/os-release",
+  "KERNEL": "export LC_ALL=C; uname -r",
+  "CPU": "export LC_ALL=C; nproc; lscpu | grep -m1 'Model name'",
+  "MEMORY": "export LC_ALL=C; free -m | head -2",
+  "DISK": "export LC_ALL=C; df -P / | tail -1; echo ---; lsblk -d -o NAME,SIZE,ROTA 2>/dev/null",
+  "GPU": "export LC_ALL=C; nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader",
+  "NIC": "export LC_ALL=C; ip -br link; for i in /sys/class/net/*; do printf '%s %s\\n' \"$(basename $i)\" \"$(cat $i/speed 2>/dev/null)\"; done",
+  "IP": "export LC_ALL=C; ip -br addr",
+  "ROCE": "export LC_ALL=C; for p in /sys/class/infiniband/*/ports/*; do printf '%s|%s|%s\\n' \"$p\" \"$(cat $p/state 2>/dev/null)\" \"$(cat $p/rate 2>/dev/null)\"; done",
+  "ROUTE": "export LC_ALL=C; ip route show"
+}

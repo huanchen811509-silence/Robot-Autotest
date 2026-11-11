@@ -34,17 +34,23 @@ import org.springframework.stereotype.Service;
 public class HostInventoryService {
 
     private final HostInventoryCollector collector;
+    private final NetworkDeviceCollector networkCollector;
+    private final BmcRedfishCollector bmcCollector;
     private final HostInventoryRepository repository;
     private final ObjectMapper mapper;
     private final CredentialService credentials;
     private final AuditService audit;
 
     public HostInventoryService(HostInventoryCollector collector,
+                                NetworkDeviceCollector networkCollector,
+                                BmcRedfishCollector bmcCollector,
                                 HostInventoryRepository repository,
                                 ObjectMapper mapper,
                                 CredentialService credentials,
                                 AuditService audit) {
         this.collector = collector;
+        this.networkCollector = networkCollector;
+        this.bmcCollector = bmcCollector;
         this.repository = repository;
         this.mapper = mapper;
         this.credentials = credentials;
@@ -72,7 +78,8 @@ public class HostInventoryService {
         String detail = "host=" + maskHost(target) + "; remote=" + (credentialId != null);
         try {
             HostAccess access = accessOf(projectId, target, username, credentialId, confirmed);
-            HostInventory inventory = collector.collect(target, deviceId, access);
+            HostInventory inventory = collectByChannel(target, deviceId, access);
+            detail = detail + "; channel=" + (access == null ? "local" : access.channel());
             String json;
             try {
                 json = mapper.writeValueAsString(inventory);
@@ -94,6 +101,24 @@ public class HostInventoryService {
                     detail + "; " + ex.getMessage());
             throw ex;
         }
+    }
+
+    /**
+     * 按凭据类型选采集通道（v4.12.0 / FR-v4.12-05）。
+     *
+     * <p>`access == null` 是本机：只有 Linux 采集器认识本机，另外两条通道都需要网络对端。
+     * Linux 分支**仍然调用原来那个采集器**，一行不改 —— 8 台现场主机与 v2.7 双内核演示
+     * 都是照它的形状验证过的，为交换机改造它等于自伤已验证路径。
+     */
+    private HostInventory collectByChannel(String host, Long deviceId, HostAccess access) {
+        if (access == null) {
+            return collector.collect(host, deviceId, null);
+        }
+        return switch (access.channel()) {
+            case "network" -> networkCollector.collect(host, deviceId, access);
+            case "bmc" -> bmcCollector.collect(host, deviceId, access);
+            default -> collector.collect(host, deviceId, access);
+        };
     }
 
     /**
@@ -120,7 +145,8 @@ public class HostInventoryService {
             throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
                     "凭据未配置 SSH 账号，请在请求里传 username");
         }
-        return new HostAccess(projectId, user, credentialId, material.secret());
+        return new HostAccess(projectId, user, credentialId, material.secret(),
+                material.credType(), material.connectOptions());
     }
 
     /** 审计里的主机掩码：IPv4 保留首尾段，主机名只留前两位，避免日志里成片泄漏内网资产。 */

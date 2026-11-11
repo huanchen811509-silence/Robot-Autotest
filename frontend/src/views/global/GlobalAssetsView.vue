@@ -1,10 +1,14 @@
 <script setup lang="ts">
 /**
- * 公共资产库（v4.7.0 / FR-v4.7-01..09、v4.7.1 / FR-v4.7-11..13、v4.9.3 采集与状态）。
+ * 公共资产库（v4.7.0 / FR-v4.7-01..09、v4.7.1 / FR-v4.7-11..13、v4.9.3 采集与状态、v4.12.0 凭据绑定）。
  *
  * 资产来自「当前测试环境」分节导入：服务器/交换机/端口各自成节，按业务键 upsert，
  * 源文件已无的资产软失效（deprecated）；被项目引用的资产删除返回 409。
  * 导入按整份工作簿的 SHA-256 幂等；采集记录挂到设备上，可对单台设备显式补采。
+ *
+ * v4.12.0 补两条「入口」：凭据行可列举它绑定的设备并按凭据整批采集；设备和凭据都能手工录入。
+ * 三条通道（ssh / network / bmc）由后端按凭据类型分派，页面只根据后端给的 `channel` 显示文案，
+ * **不在这里重复一份类型映射** —— 两处映射迟早分叉，分了叉用户看到的就是「有按钮但采不到」。
  */
 import { computed, h, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -15,6 +19,10 @@ import {
   globalAssetApi,
   type AssetImportResult,
   type AssetPreview,
+  type BatchCollectResult,
+  type CreateCredentialPayload,
+  type CreateDevicePayload,
+  type CredentialDevice,
   type GlobalAssetRow,
 } from '@/api/globalAssets'
 import DataTable from '@/components/DataTable.vue'
@@ -124,16 +132,33 @@ const columns = computed<DataTableColumns<GlobalAssetRow>>(() => {
     cols.push({
       title: t('global.colActions'),
       key: 'actions',
-      width: 200,
+      width: 220,
       render: (row) =>
         h('span', { class: 'row-actions' }, [
           type.value === 'DEVICE'
-            ? h(
+            ? canCollect(row)
+              ? h(
+                  NButton,
+                  { text: true, type: 'primary', onClick: () => void openCollect(row) },
+                  () => t('global.assetCollect'),
+                )
+              : h(
+                  'span',
+                  {
+                    class: 'muted action-hint',
+                    title: t('global.assetCollectUnbound'),
+                  },
+                  t('global.assetCollectUnbound'),
+                )
+            : h(
                 NButton,
-                { text: true, type: 'primary', onClick: () => void openCollect(row) },
-                () => t('global.assetCollect'),
-              )
-            : null,
+                {
+                  text: true,
+                  type: 'primary',
+                  onClick: () => void openDevices(row),
+                },
+                () => t('global.assetCredentialDevices'),
+              ),
           h(
             NButton,
             { text: true, type: 'error', onClick: () => void removeAsset(row) },
@@ -144,6 +169,17 @@ const columns = computed<DataTableColumns<GlobalAssetRow>>(() => {
   }
   return cols
 })
+
+/**
+ * 能不能点「采集」（FR-v4.12-10）。
+ *
+ * 判据是**两个地址面至少绑了一条凭据**：没绑凭据的远程采集必然 400，
+ * 与其让用户点开弹窗才发现，不如把入口换成一句原因。
+ * 纯带外的交换机（只有 bmc 绑定）仍然可以采 —— 它走 BMC 通道，不是「不能采」。
+ */
+function canCollect(row: GlobalAssetRow): boolean {
+  return Boolean(row.managementCredentialId || row.bmcCredentialId)
+}
 
 // ---------------------------------------------------------------- 导入
 
@@ -240,6 +276,184 @@ async function runCollect() {
   }
 }
 
+// ------------------------------------ 凭据 → 设备面板（FR-v4.12-11/12/15）
+
+const bindOpen = ref(false)
+const bindTarget = ref<GlobalAssetRow | null>(null)
+const bindDevices = ref<CredentialDevice[]>([])
+const bindLoading = ref(false)
+const bindBusy = ref(false)
+const bindError = ref('')
+const batchResult = ref<BatchCollectResult | null>(null)
+
+async function openDevices(row: GlobalAssetRow) {
+  bindTarget.value = row
+  bindOpen.value = true
+  bindDevices.value = []
+  batchResult.value = null
+  bindError.value = ''
+  bindLoading.value = true
+  try {
+    bindDevices.value = await globalAssetApi.credentialDevices(row.id)
+  } catch (error) {
+    bindError.value = error instanceof Error ? error.message : t('global.loadFailed')
+  } finally {
+    bindLoading.value = false
+  }
+}
+
+async function collectAll() {
+  if (!bindTarget.value) return
+  bindBusy.value = true
+  bindError.value = ''
+  batchResult.value = null
+  try {
+    batchResult.value = await globalAssetApi.collectByCredential(bindTarget.value.id, true)
+    // 采完立刻刷两处：设备列表的「采集状态」列，和面板里的最近状态。只刷一处就会自相矛盾。
+    await load()
+    bindDevices.value = await globalAssetApi.credentialDevices(bindTarget.value.id)
+  } catch (error) {
+    bindError.value = error instanceof Error ? error.message : t('global.loadFailed')
+  } finally {
+    bindBusy.value = false
+  }
+}
+
+/** 三层文案表放在组件里而不是 i18n 嵌套里：拼错的通道名会显示原文而不是「undefined」。 */
+const CHANNEL_LABEL_KEY: Record<string, string> = {
+  ssh: 'global.assetChannelSsh',
+  network: 'global.assetChannelNetwork',
+  bmc: 'global.assetChannelBmc',
+}
+
+function planeLabel(plane: string): string {
+  return plane === 'bmc' ? t('global.assetPlaneBmc') : t('global.assetPlaneMgmt')
+}
+
+function channelLabel(channel: string): string {
+  const key = CHANNEL_LABEL_KEY[channel]
+  return key ? t(key) : channel
+}
+
+// ---------------------------------------------- 手工录入（FR-v4.12-13/14）
+
+const deviceFormOpen = ref(false)
+const deviceFormBusy = ref(false)
+const deviceFormError = ref('')
+const deviceFormDone = ref('')
+const deviceForm = ref<CreateDevicePayload>(emptyDeviceForm())
+const credentialPicker = ref<GlobalAssetRow[]>([])
+
+function emptyDeviceForm(): CreateDevicePayload {
+  return {
+    name: '',
+    deviceType: '',
+    managementIp: '',
+    managementIpAlt: '',
+    bmcAddress: '',
+    bmcAddressAlt: '',
+    managementCredentialId: null,
+    bmcCredentialId: null,
+    model: '',
+    vendor: '',
+    serialNo: '',
+    location: '',
+    domainTag: '',
+  }
+}
+
+function emptyCredentialForm(): CreateCredentialPayload {
+  return { name: '', credType: 'ssh', username: '', secret: '', connectOptions: '' }
+}
+
+async function openDeviceForm() {
+  deviceFormOpen.value = true
+  deviceForm.value = emptyDeviceForm()
+  deviceFormError.value = ''
+  deviceFormDone.value = ''
+  await loadCredentialPicker()
+}
+
+async function loadCredentialPicker() {
+  try {
+    credentialPicker.value = await globalAssetApi.list({ type: 'CREDENTIAL' })
+  } catch {
+    credentialPicker.value = []
+  }
+}
+
+/**
+ * 提交前本地先挡两道：与后端同口径（名称非空、至少一个地址）。
+ *
+ * <p>不是为了替代后端校验，而是为了**少一次往返**：这两个错最容易犯，本地提示更快。
+ * 真正的把关仍在后端（同名 409、地址全空 400），本地提示不通过就不发请求。
+ */
+async function submitDeviceForm() {
+  deviceFormError.value = ''
+  deviceFormDone.value = ''
+  const form = deviceForm.value
+  if (!form.name || !form.name.trim()) {
+    deviceFormError.value = t('global.assetNameRequired')
+    return
+  }
+  const hasAddress = [form.managementIp, form.managementIpAlt, form.bmcAddress, form.bmcAddressAlt]
+    .some((value) => Boolean(value && value.trim()))
+  if (!hasAddress) {
+    deviceFormError.value = t('global.assetAddressRequired')
+    return
+  }
+  deviceFormBusy.value = true
+  try {
+    const created = await globalAssetApi.createDevice(form)
+    deviceFormDone.value = t('global.assetCreateDone', { name: created.name })
+    deviceForm.value = emptyDeviceForm()
+    await load()
+  } catch (error) {
+    deviceFormError.value = error instanceof Error ? error.message : t('global.loadFailed')
+  } finally {
+    deviceFormBusy.value = false
+  }
+}
+
+const credentialFormOpen = ref(false)
+const credentialFormBusy = ref(false)
+const credentialFormError = ref('')
+const credentialFormDone = ref('')
+const credentialForm = ref<CreateCredentialPayload>(emptyCredentialForm())
+
+function openCredentialForm() {
+  credentialFormOpen.value = true
+  credentialForm.value = emptyCredentialForm()
+  credentialFormError.value = ''
+  credentialFormDone.value = ''
+}
+
+async function submitCredentialForm() {
+  credentialFormError.value = ''
+  credentialFormDone.value = ''
+  const form = credentialForm.value
+  if (!form.name || !form.name.trim()) {
+    credentialFormError.value = t('global.assetNameRequired')
+    return
+  }
+  if (!form.secret || !form.secret.trim()) {
+    credentialFormError.value = t('global.assetSecretRequired')
+    return
+  }
+  credentialFormBusy.value = true
+  try {
+    const created = await globalAssetApi.createCredential(form)
+    credentialFormDone.value = t('global.assetCreateDone', { name: created.name })
+    // 口令不留在页面状态里：提交后立刻清空，截屏 / 录屏都不会带走它
+    credentialForm.value = emptyCredentialForm()
+    await load()
+  } catch (error) {
+    credentialFormError.value = error instanceof Error ? error.message : t('global.loadFailed')
+  } finally {
+    credentialFormBusy.value = false
+  }
+}
+
 // ---------------------------------------------------------------- 其他
 
 async function exportAssets() {
@@ -291,6 +505,12 @@ onMounted(() => {
       </div>
       <div class="page-actions">
         <button v-if="canWrite" class="btn" @click="exportAssets">{{ t('global.export') }}</button>
+        <button v-if="canWrite && type === 'DEVICE'" class="btn" @click="openDeviceForm">
+          {{ t('global.assetDeviceCreate') }}
+        </button>
+        <button v-if="canWrite && type === 'CREDENTIAL'" class="btn" @click="openCredentialForm">
+          {{ t('global.assetCredentialCreate') }}
+        </button>
         <button v-if="canWrite" class="btn btn-primary" @click="openImport">
           {{ t('global.import') }}
         </button>
@@ -428,6 +648,204 @@ onMounted(() => {
         </div>
       </div>
     </div>
+
+    <!-- FR-v4.12-15：凭据 → 关联设备面板 + 全部采集 -->
+    <div v-if="bindOpen" class="modal-mask" @click.self="bindOpen = false">
+      <div class="modal">
+        <header class="modal-head">
+          <h2>{{ t('global.assetCredentialDevicesTitle') }}</h2>
+          <button class="link" @click="bindOpen = false">{{ t('global.close') }}</button>
+        </header>
+        <p class="muted">{{ t('global.assetCredentialDevicesHint') }}</p>
+        <p class="mono">{{ bindTarget?.name }} · {{ bindTarget?.detail }}</p>
+
+        <p v-if="bindLoading" class="muted">{{ t('global.loading') }}</p>
+        <p v-else-if="bindDevices.length === 0" class="warning">
+          {{ t('global.assetCredentialNoDevice') }}
+        </p>
+        <table v-else class="bind-table">
+          <thead>
+            <tr>
+              <th>{{ t('global.assetName') }}</th>
+              <th>{{ t('global.assetPlane') }}</th>
+              <th>{{ t('global.assetPlaneAddress') }}</th>
+              <th>{{ t('global.assetChannel') }}</th>
+              <th>{{ t('global.assetCollectStatus') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="device in bindDevices" :key="`${device.deviceId}-${device.plane}`">
+              <td>{{ device.name }}</td>
+              <td>{{ planeLabel(device.plane) }}</td>
+              <td class="mono">{{ device.address || '-' }}</td>
+              <td>{{ channelLabel(device.channel) }}</td>
+              <td>
+                {{ device.lastStatus || t('global.assetCollectNever') }}
+                <span v-if="device.lastCollectedAt" class="muted">
+                  · {{ device.lastCollectedAt }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <template v-if="batchResult">
+          <p class="success" data-testid="batch-summary">
+            {{
+              t('global.assetCollectAllDone', {
+                total: batchResult.total,
+                ok: batchResult.ok,
+                failed: batchResult.failed,
+              })
+            }}
+          </p>
+          <ul v-if="batchResult.failed > 0" class="samples">
+            <li v-for="item in batchResult.items.filter((i) => i.status !== 'OK' && i.status !== 'PARTIAL')"
+                :key="`${item.deviceId}-${item.plane}`">
+              {{ item.name }} · {{ planeLabel(item.plane) }} · {{ item.status }} ·
+              {{ item.reason || '-' }}
+            </li>
+          </ul>
+        </template>
+
+        <p v-if="bindError" class="error">{{ bindError }}</p>
+
+        <div class="modal-actions">
+          <button class="btn" @click="bindOpen = false">{{ t('global.close') }}</button>
+          <button
+            class="btn btn-primary"
+            :disabled="bindBusy || bindDevices.length === 0"
+            @click="collectAll"
+          >
+            {{ bindBusy ? t('global.loading') : t('global.assetCollectAll') }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- FR-v4.12-13：手工录入设备 -->
+    <div v-if="deviceFormOpen" class="modal-mask" @click.self="deviceFormOpen = false">
+      <div class="modal">
+        <header class="modal-head">
+          <h2>{{ t('global.assetDeviceCreateTitle') }}</h2>
+          <button class="link" @click="deviceFormOpen = false">{{ t('global.close') }}</button>
+        </header>
+        <p class="muted">{{ t('global.assetDeviceCreateHint') }}</p>
+        <div class="form-grid">
+          <label class="field">
+            <span>{{ t('global.assetFieldName') }} *</span>
+            <input v-model="deviceForm.name" class="input" data-testid="device-name" />
+          </label>
+          <label class="field">
+            <span>{{ t('global.assetFieldDeviceType') }}</span>
+            <select v-model="deviceForm.deviceType" class="select" data-testid="device-type">
+              <option value="">-</option>
+              <option value="gpu">gpu</option>
+              <option value="server">server</option>
+              <option value="storage">storage</option>
+              <option value="switch">switch</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>{{ t('global.assetFieldManagementIp') }}</span>
+            <input v-model="deviceForm.managementIp" class="input" data-testid="device-mgmt-ip" />
+          </label>
+          <label class="field">
+            <span>{{ t('global.assetFieldManagementIpAlt') }}</span>
+            <input v-model="deviceForm.managementIpAlt" class="input" />
+          </label>
+          <label class="field">
+            <span>{{ t('global.assetFieldBmcAddress') }}</span>
+            <input v-model="deviceForm.bmcAddress" class="input" data-testid="device-bmc" />
+          </label>
+          <label class="field">
+            <span>{{ t('global.assetFieldBmcAddressAlt') }}</span>
+            <input v-model="deviceForm.bmcAddressAlt" class="input" />
+          </label>
+          <label class="field">
+            <span>{{ t('global.assetFieldManagementCredential') }}</span>
+            <select v-model="deviceForm.managementCredentialId" class="select">
+              <option :value="null">-</option>
+              <option v-for="item in credentialPicker" :key="item.id" :value="item.id">
+                {{ item.name }}
+              </option>
+            </select>
+          </label>
+          <label class="field">
+            <span>{{ t('global.assetFieldBmcCredential') }}</span>
+            <select v-model="deviceForm.bmcCredentialId" class="select">
+              <option :value="null">-</option>
+              <option v-for="item in credentialPicker" :key="item.id" :value="item.id">
+                {{ item.name }}
+              </option>
+            </select>
+          </label>
+        </div>
+        <p v-if="deviceFormError" class="error">{{ deviceFormError }}</p>
+        <p v-if="deviceFormDone" class="success">{{ deviceFormDone }}</p>
+        <div class="modal-actions">
+          <button class="btn" @click="deviceFormOpen = false">{{ t('global.close') }}</button>
+          <button class="btn btn-primary" :disabled="deviceFormBusy" @click="submitDeviceForm">
+            {{ t('global.assetCreateSubmit') }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- FR-v4.12-14：手工录入凭据 -->
+    <div v-if="credentialFormOpen" class="modal-mask" @click.self="credentialFormOpen = false">
+      <div class="modal narrow">
+        <header class="modal-head">
+          <h2>{{ t('global.assetCredentialCreateTitle') }}</h2>
+          <button class="link" @click="credentialFormOpen = false">{{ t('global.close') }}</button>
+        </header>
+        <p class="muted">{{ t('global.assetCredentialCreateHint') }}</p>
+        <label class="field">
+          <span>{{ t('global.assetFieldName') }} *</span>
+          <input v-model="credentialForm.name" class="input" data-testid="credential-name" />
+        </label>
+        <label class="field">
+          <span>{{ t('global.assetFieldCredType') }}</span>
+          <select v-model="credentialForm.credType" class="select" data-testid="credential-type">
+            <option value="ssh">ssh</option>
+            <option value="network">network</option>
+            <option value="bmc">bmc</option>
+            <option value="snmp">snmp</option>
+            <option value="token">token</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>{{ t('global.assetFieldUsername') }}</span>
+          <input v-model="credentialForm.username" class="input" data-testid="credential-username" />
+        </label>
+        <label class="field">
+          <span>{{ t('global.assetFieldSecret') }} *</span>
+          <input
+            v-model="credentialForm.secret"
+            class="input"
+            type="password"
+            data-testid="credential-secret"
+          />
+        </label>
+        <label class="field">
+          <span>{{ t('global.assetFieldConnectOptions') }}</span>
+          <input
+            v-model="credentialForm.connectOptions"
+            class="input"
+            placeholder="diffie-hellman-group14-sha1"
+            data-testid="credential-options"
+          />
+        </label>
+        <p v-if="credentialFormError" class="error">{{ credentialFormError }}</p>
+        <p v-if="credentialFormDone" class="success">{{ credentialFormDone }}</p>
+        <div class="modal-actions">
+          <button class="btn" @click="credentialFormOpen = false">{{ t('global.close') }}</button>
+          <button class="btn btn-primary" :disabled="credentialFormBusy" @click="submitCredentialForm">
+            {{ t('global.assetCreateSubmit') }}
+          </button>
+        </div>
+      </div>
+    </div>
   </section>
 </template>
 
@@ -476,6 +894,42 @@ onMounted(() => {
   display: flex;
   gap: var(--space-2);
   margin-bottom: var(--space-3);
+}
+
+/* 未绑定凭据时的占位：不是按钮，但要让「为什么点不了」看得见（FR-v4.12-10）。 */
+:deep(.action-hint) {
+  font-size: 12px;
+}
+
+.bind-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: var(--space-3) 0;
+}
+
+.bind-table th,
+.bind-table td {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.bind-table th {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* 录入表单：两列铺满，字段多但没有层级关系，用 grid 比逐行堆更快扫。 */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 var(--space-3);
+}
+
+.form-grid .input,
+.form-grid .select {
+  min-width: 0;
 }
 
 .input,

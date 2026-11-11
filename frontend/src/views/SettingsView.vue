@@ -1,16 +1,24 @@
 <script setup lang="ts">
 /**
- * 系统设置（NAV-02 / FR-v2.0-10 / D10 = A 分级）。
+ * 系统设置（NAV-02 / FR-v2.0-10 / D10 = A 分级；v4.12.0 承接全局语义）。
  * 平台级与项目级分栏：端口只读、数值走服务端白名单校验、每次变更写审计。
+ *
+ * <p>v4.12.0 / FR-v4.12-18~19：`/g/settings` 复用本组件，按 `route.meta.global` 切「全局语义」——
+ * 只留平台段、标题换成平台设置、不再拉项目设置。为什么复用而不是另写一个全局设置页：
+ * 原来的 `GlobalSettingsView` 只是一棵导航索引（6 个链接），而侧栏已经把这 6 项摊开了，
+ * 点进来看到「和侧栏一样的菜单」等于二次导航；用户要的是**能改东西的页面**
+ * （00-RESEARCH.md B7）。复用还能保证平台四项只有一份实现，不会两边校验口径漂移。
  */
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRoute } from 'vue-router'
 import { NButton } from 'naive-ui'
 import { ApiError } from '@/api/http'
 import { settingsApi } from '@/api/settings'
 import { useAuthStore } from '@/stores/auth'
 
 const { t } = useI18n()
+const route = useRoute()
 const auth = useAuthStore()
 
 const platform = ref<Record<string, string>>({})
@@ -18,6 +26,14 @@ const project = ref<Record<string, string>>({})
 const message = ref('')
 const error = ref('')
 const loading = ref(false)
+
+/**
+ * 全局语义只看路由 `meta.global`，与 `router/index.ts` 的 `shouldPreserveGlobalMode` 同一判据。
+ *
+ * <p>不用 `uiMode.store`：「进入 /g/settings 之后用户又把模式切回项目」时，
+ * 页面内容不该跟着立刻翻脸（他还在同一页），路由才是这一页的真实语境。
+ */
+const isGlobal = computed(() => route.meta?.global === true)
 
 const projectId = computed(() => auth.projectId)
 const canEditPlatform = computed(() => auth.isAdmin)
@@ -40,7 +56,8 @@ async function load(): Promise<void> {
   error.value = ''
   try {
     platform.value = await settingsApi.platform()
-    if (projectId.value) {
+    // 全局语义下不碰项目设置：全局用户可能没有当前项目，拉一次就是一次 403 噪音
+    if (!isGlobal.value && projectId.value) {
       project.value = await settingsApi.project(projectId.value)
     }
   } catch {
@@ -95,8 +112,8 @@ watch(projectId, load)
 <template>
   <div class="page">
     <header class="page-head">
-      <h1>{{ t('settings.title') }}</h1>
-      <p class="muted">{{ t('settings.subtitle') }}</p>
+      <h1>{{ isGlobal ? t('global.settingsTitle') : t('settings.title') }}</h1>
+      <p class="muted">{{ isGlobal ? t('global.settingsHint') : t('settings.subtitle') }}</p>
       <RouterLink v-slot="{ navigate }" to="/nodes" custom>
         <NButton quaternary size="small" data-testid="entry-nodes" @click="navigate">
           {{ t('settings.nodesEntry') }}
@@ -108,7 +125,7 @@ watch(projectId, load)
     <p v-if="error" class="notice notice-error">{{ error }}</p>
     <p v-if="loading" class="muted">…</p>
 
-    <section class="panel">
+    <section class="panel" data-testid="platform-settings-panel">
       <div class="panel-head">
         <h2>{{ t('settings.platform') }}</h2>
         <span class="tag">{{ t('settings.auditHint') }}</span>
@@ -145,7 +162,7 @@ watch(projectId, load)
       </div>
     </section>
 
-    <section class="panel">
+    <section v-if="!isGlobal" class="panel" data-testid="project-settings-panel">
       <div class="panel-head">
         <h2>{{ t('settings.project') }}</h2>
         <span class="tag">{{ projectId ? `#${projectId}` : t('settings.noProject') }}</span>

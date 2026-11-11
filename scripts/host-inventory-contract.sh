@@ -257,7 +257,7 @@ PY
 echo "[host-inventory] 远程负向证据 -> $W42_OUT_DIR/remote-negative.json"
 
 # ---- ⑪ 机检脚本对证据的判定（第 29 步真正的判据） ----
-if python3 tools/check_host_inventory.py; then
+if python3 tools/check_host_inventory.py --evidence-dir "$OUT_DIR"; then
     pass "⑪ check_host_inventory.py 判定通过（10 类 + 只读命令 + 远程硬约束 + 证据自洽）"
 else
     fail "⑪ check_host_inventory.py 判定失败（详见上方输出）"

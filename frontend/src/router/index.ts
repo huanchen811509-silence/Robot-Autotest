@@ -2,7 +2,7 @@ import type { Component } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useUiModeStore } from '@/stores/uiMode'
-import { capabilitiesForRole, roleFromCodes } from '@/config/navigation'
+import { capabilitiesForRole, capabilitySatisfied, roleFromCodes } from '@/config/navigation'
 
 /* --------------------------------------------------------------------------
  * v4.9.2 / OPT-01（FR-49-10~12）：全局模式守卫的两条独立判据。
@@ -383,7 +383,9 @@ const router = createRouter({
       path: '/g/settings',
       name: 'global-settings',
       meta: { global: true },
-      component: () => import('@/views/global/GlobalSettingsView.vue'),
+      // v4.12.0 / FR-v4.12-18~20：复用项目侧同一份设置视图，由 meta.global 切全局语义。
+      // 原 GlobalSettingsView 只是把侧栏的 6 项再列一遍，属于「点进来还要再点一次」的中间页。
+      component: () => import('@/views/SettingsView.vue'),
     },
     // v4.9.2 / OPT-01（FR-49-01~04）：全局系统设置的 6 个目标路由，复用现有设置视图。
     // 全部带 meta.global = true —— 点击后 ui_mode 保持 global，不会回 /workbench。
@@ -467,10 +469,14 @@ router.beforeEach((to) => {
   }
   // NAV-01 / FR-v2.0-08：能力守卫只管「给不给入口」，真正的资源级越权仍由后端 403 兜底。
   // 未知角色按最小权限处理；未加载 user 时先放行，让后端判（避免刷新瞬间误踢到 403）。
+  //
+  // v4.12.0 / FR-v4.12-21：判据换成 capabilitySatisfied，public 特判从此只有一处。
+  // 旧写法直接拿「角色能力数组」判成员，而那张表里没有 public 字面量 —— 于是 meta.capability
+  // 为 'public' 的页面（如 /settings/users）对任何角色都跳 /403，菜单里却看得见。
   const capability = to.meta.capability as string | undefined
   if (capability && auth.user) {
-    const owned = capabilitiesForRole(roleFromCodes(auth.user.roles))
-    if (!owned.includes(capability)) return { path: '/403' }
+    const owned = new Set(capabilitiesForRole(roleFromCodes(auth.user.roles)))
+    if (!capabilitySatisfied(capability, (name) => owned.has(name))) return { path: '/403' }
   }
   // v4.9.2 / OPT-01：模式保持与角色准入是两条独立判据（见文件头部纯函数）。
   const uiMode = useUiModeStore()

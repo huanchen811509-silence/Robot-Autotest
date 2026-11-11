@@ -8,7 +8,39 @@
 > `<!-- current -->` 是给解析器用的语言无关标识（Markdown 渲染时不可见）。
 > 因此代码里不需要硬编码中文，界面显示文案一律走 i18n 语言包 `changelog.*`。
 
-## v4.11.0（2026-11-11） <!-- current -->
+## v4.12.0（2026-11-11） <!-- current -->
+
+### 新增 <!-- added -->
+- **凭据 ↔ 设备双向可用**：资产页凭据行新增「关联设备」，`GET /api/global/assets/credentials/{id}/devices` 用一条 `UNION ALL` 把「凭据 →（设备, 地址面）」展开（`management_ip` 与 `bmc_address` 两个地址面分别成行），再也不用按 Excel 猜哪条凭据管哪台机器
+- **整组批量采集**：`POST /api/global/assets/credentials/{id}/collect` 一次采完整组，返回 `{total, ok, failed, items}`，逐台独立提交、**刻意不加事务**——一台密码错不该把另外四台的清单一起回滚，返回摘要里逐台带 `status` 与失败原因
+- **三类采集通道补齐**：Linux（既有 10 类只读命令白名单）、网络设备（`NET_` 前缀 6 类：厂商/型号/版本/序列号/运行时长/端口）、BMC（`BMC_` 前缀 6 类：厂商/型号/序列号/电源/健康/BIOS），三套分类名互不混用，同一个页面上一眼能分清采的是哪一面
+- **失败四分类**：`algorithm_mismatch` / `auth_failed` / `command_unsupported` / `unreachable`，判定顺序「算法 → 认证 → 命令 → 不可达」，且原文一并保留。25G 交换机因只支持 `diffie-hellman-group14-sha1` 握手失败时报的是「算法不兼容」而不是「认证失败」——归错类会把排障引到反方向
+- **老设备连接参数**：凭据新增 `connect_options`，`KexAlgorithms=+diffie-hellman-group14-sha1,diffie-hellman-group1-sha1` 这类串按白名单逐项转成独立 `-o`，绝不拼 shell 字符串；值内逗号（算法列表）与分号分隔两种写法都认
+- **手工录入**：设备与凭据两个弹窗，口令框 `type=password` 且提交后立即清空；凭据类型 `ssh/network/bmc/snmp/token` 与设备类型 `gpu/server/storage/switch` 都有服务端归一，非法值 400 而不是静默落库
+- **「我的账户」**：`POST /api/me/password` 自改口令（**不要求** `USER_ROLE:UPDATE`——身份来自会话、URL 里没有 userId，「改自己」在结构上就变不成「改别人」）；用户管理页内嵌主题三态与强调色控件
+- **本版新增测试**：后端 8 个测试类共 +43 例（1428 例全绿），前端 8 个 spec 共 +24 例（761 例全绿），含 BMC/交换机/SSH/改密/设置页/资产页 6 个新 spec
+
+### 变更 <!-- changed -->
+- **全局「平台设置」不再是空壳**：`/g/settings` 的组件从 `GlobalSettingsView.vue`（只是把侧栏 6 项又列一遍的中间页）换成真正的 `SettingsView`，按 `route.meta.global` 隐藏项目级 3 项、标题走 `global.settingsTitle`；`GlobalSettingsView.vue` 与其 spec 一并删除
+- **顶栏顺序**：「全局」在左、「项目」在右（`[data-seg="mode"]` 首个子按钮 = 全局），符合「先全局后项目」的心智
+- **远端命令固定语言**：10 类采集命令一律以 `export LC_ALL=C;` 开头。ssh 用 `-F /dev/null` 绕开系统 ssh_config，`SendEnv LC_ALL` 本就不生效，远端默认 zh_CN 时 `free -m` 会把表头输出成「内存：」，内存整类就会判「输出无法解析」
+- **SSH 口令模式放开交互**：口令模式 `BatchMode=no` + `NumberOfPasswordPrompts=1`（`BatchMode=yes` 会关闭全部提问，`sshpass` 等不到 `password:` 提示就没有口令可喂），私钥模式仍保持 `BatchMode=yes`
+- **BMC 通道信任管理器**改 `X509ExtendedTrustManager`：普通 `X509TrustManager` 会被 JSSE 套上身份校验包装层，信任链放行完仍会拿证书 SAN 去对管理网 IP
+
+### 修复 <!-- fixed -->
+- **12 台现场设备脏字段治理**：`bmc_address` 里塞过账号口令、`device_type` 写过中文、多条记录带换行拼接，`dirty` 由 32 处降到 0；同时补 `management_credential_id` / `bmc_credential_id` 两个 FK
+- **`connect_options` 为 NULL 时整批采集 500**：`JdbcSupport.first` 用 `Optional.of(null)` 触发 NPE，13 台统一 `FAILED NullPointerException`，改 `Optional.ofNullable`
+- **冗余查询**：`CredentialService.resolveMaterial` 不再为拿 `connect_options` 又单查一次，直接读实体字段
+- **中文报错被误判**：`bash: 行 1: nvidia-smi: 未找到命令` 过去落到 `unreachable`（把「没装驱动」说成「网络不通」），补中文 needle 作第二道防线
+- **项目模式「用户管理」403**：`meta.capability = 'public'` 被 `capabilitiesForRole(role).includes('public')` 判掉，而导航过滤那边另有特判，于是「菜单看得见、点进去被踢到 /403」；判据收敛到 `capabilitySatisfied` 单点，`public` 与空能力一律放行
+- **采集按钮空转**：未绑定任何凭据的设备不再渲染「采集」按钮，改为直接写出「未绑定凭据」的原因
+
+### 破坏性变更 <!-- breaking -->
+- **无破坏性 API 变更**：新增 4 个端点（`GET /credentials/{id:\d+}/devices`、`POST /credentials/{id:\d+}/collect`、`POST /credentials`、`POST /devices`），既有端点签名不变
+- **迁移**：新增 `V11_45__asset_credential_binding.sql`（`device` 补 4 列 + `credential` 补 `connect_options`），配对回滚脚本已过两轮 down/up 演练；`collect_channel` **不是**列——通道由凭据类型推导，换凭据即换通道，不需要数据迁移
+- **行为变更**：SSH 采集不再对口语模式开 `BatchMode=yes`；采集证据里每条命令都会多出 `export LC_ALL=C; ` 前缀（这是刻意的，证据要与实际执行逐字一致）
+
+## v4.11.0（2026-11-11）
 
 ### 新增 <!-- added -->
 - **全局模式两级菜单**：全局侧栏从「平铺 6 项」改为 **5 组 14 叶**（项目 2 / 公共用例 2 / 公共资产 2 / 模板 2 / 系统设置 6），与项目模式共用同一套 `NavGroup` / `NavLeaf` 渲染、展开与选中逻辑，风格与逻辑真正对齐；`activeGroupKey(route, nodes)` 增加树入参，全局组头进入子页时自动展开并带 `has-active`（此前只认项目树，全局组永远展开不了）

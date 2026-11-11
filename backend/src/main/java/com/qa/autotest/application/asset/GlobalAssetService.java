@@ -1,5 +1,8 @@
 package com.qa.autotest.application.asset;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.qa.autotest.application.host.HostAccess;
 import com.qa.autotest.application.host.HostInventoryService;
 import com.qa.autotest.application.iam.AccessControlService;
 import com.qa.autotest.application.iam.AuditService;
@@ -7,6 +10,7 @@ import com.qa.autotest.application.iam.PlatformProjectService;
 import com.qa.autotest.application.repository.ProjectAssetRepository;
 import com.qa.autotest.common.BusinessException;
 import com.qa.autotest.common.ErrorCode;
+import com.qa.autotest.common.security.SecretCipher;
 import com.qa.autotest.common.tenant.TenantContext;
 import com.qa.autotest.domain.common.PageResult;
 import com.qa.autotest.domain.host.HostInventoryRecord;
@@ -50,10 +54,33 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class GlobalAssetService {
 
+    /**
+     * 批量采集里「单台抛异常」必须留堆栈。
+     *
+     * <p>实测教训（v4.12.0 W-D）：这里最初只把 `ex.getMessage()` 塞进 reason，于是现场看到的是
+     * 17 台全 `NullPointerException`，堆栈一个字都没有，只能回去翻 DEBUG 日志才定位到是
+     * `Optional.of(null)`。reason 给用户看，日志给排障看，两者不能合并成一样东西。
+     */
+    private static final org.slf4j.Logger LOG =
+            org.slf4j.LoggerFactory.getLogger(GlobalAssetService.class);
+
+    /**
+     * 资产列表行。
+     *
+     * <p>v4.12.0 加三个字段不是为了显示，而是为了让页面**在点击前**判断得出来：
+     * <ul>
+     *   <li>{@code managementCredentialId} / {@code bmcCredentialId}：两个地址面各自的绑定。
+     *       都没绑就意味着「点了必然 400」——按 FR-v4.12-10 这类设备的「采集」按钮不渲染；</li>
+     *   <li>{@code collectChannel}：这条资产会走哪条采集通道（ssh / network / bmc）。
+     *       凭据行填自己的类型推导结果，设备行留空（设备走哪条通道取决于采集时选哪条凭据）。</li>
+     * </ul>
+     */
     public record AssetRow(long id, String assetType, String name, String detail, String managementIp,
                            String status, String source, String externalId, String environment,
                            int referenceCount, int portCount, int collectCount,
-                           String lastCollectedAt, String collectStatus) {
+                           String lastCollectedAt, String collectStatus,
+                           Long managementCredentialId, Long bmcCredentialId,
+                           String collectChannel) {
     }
 
     public record AssetPreview(long batchId, String sha256, int devices, int ports, int credentials,
@@ -70,22 +97,86 @@ public class GlobalAssetService {
                                 int nicCount, int rocePorts, Integer roceMaxGbps) {
     }
 
+    /**
+     * 一条「凭据 → 设备」的绑定关系（v4.12.0 / FR-v4.12-11）。
+     *
+     * <p>{@code plane} 是**地址面**而不是通道：同一台机器可能既有业务管理地址（{@code mgmt}）
+     * 又有带外地址（{@code bmc}），两条地址各绑各的凭据。按 (设备, 地址面) 展开成行，
+     * 而不是按设备去重——否则「全部采集」时 BMC 面会被业务面的凭据带着去连，必然连错端口。
+     *
+     * <p>{@code channel} 由凭据类型推导（{@link HostAccess#channelOf}），供前端在**点击前**
+     * 决定按钮文案与是否渲染（FR-v4.12-10）。
+     */
+    public record CredentialDevice(long deviceId, String name, String plane, String address,
+                                   String channel, String lastStatus, String lastCollectedAt) {
+    }
+
+    /** 手工录入设备（FR-v4.12-13）；两个地址至少填一个，两个凭据 ID 必须指向平台凭据。 */
+    public record CreateDeviceRequest(String name, String deviceType, String managementIp,
+                                      String managementIpAlt, String bmcAddress,
+                                      String bmcAddressAlt, Long managementCredentialId,
+                                      Long bmcCredentialId, String model, String vendor,
+                                      String serialNo, String location, String domainTag) {
+    }
+
+    /** 手工录入凭据（FR-v4.12-14）；{@code secret} 只进不出，响应里不会有它。 */
+    public record CreateCredentialRequest(String name, String credType, String username,
+                                          String secret, String connectOptions) {
+    }
+
+    /** 凭据的对外视图：显式列出字段，而不是把实体原样返回，避免将来加列把密文带出去。 */
+    public record CredentialView(long id, String name, String credType, String username,
+                                 String connectOptions, boolean configured) {
+    }
+
+    /** 手工录入后的设备视图：只回显地址与绑定关系，不回显任何凭据内容。 */
+    public record DeviceView(long id, String name, String deviceType, String managementIp,
+                             String managementIpAlt, String bmcAddress, String bmcAddressAlt,
+                             Long managementCredentialId, Long bmcCredentialId, String assetSource) {
+    }
+
+    /** 批量采集单台结果；{@code status} 取 host_inventory 的 OK/PARTIAL/FAILED。 */
+    public record BatchCollectItem(long deviceId, String name, String plane, String host,
+                                   String status, String reason) {
+    }
+
+    /**
+     * 批量采集汇总。
+     *
+     * <p>恒有 {@code total == ok + failed}：没有地址的、抛异常的、状态是 FAILED 的全部计入
+     * {@code failed}，不存在「既不算成功也不算失败」的第三条暗河——前端摘要要能对上总数。
+     */
+    public record BatchCollectResult(int total, int ok, int failed, List<BatchCollectItem> items) {
+    }
+
+    /** 设备类型枚举值（FR-v4.12-16 的统一口径）；录入端点按它校验，导入老数据不追溯。 */
+    private static final Set<String> DEVICE_TYPES = Set.of("gpu", "server", "storage", "switch");
+
+    /** 凭据类型合法值（FR-v4.12-06）；{@code network} 为本版新增。 */
+    private static final Set<String> CREDENTIAL_TYPES =
+            Set.of("ssh", "network", "bmc", "snmp", "token");
+
     private final JdbcTemplate jdbc;
     private final AccessControlService access;
     private final AuditService audit;
     private final ProjectAssetRepository projectAssets;
     private final PlatformProjectService platform;
     private final HostInventoryService hostInventory;
+    private final SecretCipher cipher;
+    private final ObjectMapper mapper;
 
     public GlobalAssetService(JdbcTemplate jdbc, AccessControlService access, AuditService audit,
                               ProjectAssetRepository projectAssets, PlatformProjectService platform,
-                              HostInventoryService hostInventory) {
+                              HostInventoryService hostInventory, SecretCipher cipher,
+                              ObjectMapper mapper) {
         this.jdbc = jdbc;
         this.access = access;
         this.audit = audit;
         this.projectAssets = projectAssets;
         this.platform = platform;
         this.hostInventory = hostInventory;
+        this.cipher = cipher;
+        this.mapper = mapper;
     }
 
     private void requireWrite() {
@@ -114,7 +205,9 @@ public class GlobalAssetService {
                            (SELECT COUNT(*) FROM project_asset pa
                              WHERE pa.asset_type = 'CREDENTIAL' AND pa.asset_id = c.id) AS refs,
                            0 AS port_count, 0 AS collect_count,
-                           NULL AS last_collected_at, NULL AS collect_status
+                           NULL AS last_collected_at, NULL AS collect_status,
+                           NULL AS management_credential_id, NULL AS bmc_credential_id,
+                           c.cred_type AS cred_type
                       FROM credential c WHERE c.owner_scope = 'PLATFORM'
                     """);
         } else {
@@ -129,7 +222,9 @@ public class GlobalAssetService {
                            (SELECT DATE_FORMAT(MAX(h.collected_at), '%Y-%m-%d %H:%i:%s')
                               FROM device_host_spec h WHERE h.device_id = d.id) AS last_collected_at,
                            (SELECT h.status FROM device_host_spec h WHERE h.device_id = d.id
-                             ORDER BY h.collected_at DESC, h.id DESC LIMIT 1) AS collect_status
+                             ORDER BY h.collected_at DESC, h.id DESC LIMIT 1) AS collect_status,
+                           d.management_credential_id, d.bmc_credential_id,
+                           NULL AS cred_type
                       FROM device d WHERE d.owner_scope = 'PLATFORM'
                     """);
         }
@@ -148,7 +243,11 @@ public class GlobalAssetService {
                 rs.getString("status"), rs.getString("source"), rs.getString("external_id"),
                 rs.getString("environment"), rs.getInt("refs"), rs.getInt("port_count"),
                 rs.getInt("collect_count"), rs.getString("last_collected_at"),
-                rs.getString("collect_status")), args.toArray());
+                rs.getString("collect_status"),
+                rs.getObject("management_credential_id", Long.class),
+                rs.getObject("bmc_credential_id", Long.class),
+                rs.getString("cred_type") == null ? null
+                        : HostAccess.channelOf(rs.getString("cred_type"))), args.toArray());
     }
 
     public Map<String, Integer> references(String type, long id) {
@@ -462,6 +561,347 @@ public class GlobalAssetService {
             projectAssets.addReference(platformId, "CREDENTIAL", credentialId, null,
                     TenantContext.userId());
         }
+    }
+
+    // ------------------------------------------- 凭据 ↔ 设备（v4.12.0）
+
+    /**
+     * 「凭据 → 设备 × 地址面」展开（FR-v4.12-11）。
+     *
+     * <p>{@code COALESCE(NULLIF(x, ''), alt)} 的顺序是刻意的：现场给的是「映射假公网 IP」，
+     * 业务管理地址才是内网真地址；能直连时优先用真地址，真地址为空才退回映射地址。
+     *
+     * <p>最近一次采集状态挂在设备上（{@code device_host_spec} 没有 plane 列），因此同一设备的
+     * 两个地址面会显示同一条状态 —— 这是**已知简化**，不假装能分面，注释写在这里免得下一个人
+     * 看到「BMC 面显示的是 Linux 采集状态」以为是 bug。
+     */
+    private static final String SQL_DEVICES_OF_CREDENTIAL = """
+            SELECT x.device_id, x.name, x.plane, x.address,
+                   (SELECT h.status FROM device_host_spec h WHERE h.device_id = x.device_id
+                     ORDER BY h.collected_at DESC, h.id DESC LIMIT 1) AS last_status,
+                   (SELECT DATE_FORMAT(h.collected_at, '%Y-%m-%d %H:%i:%s')
+                      FROM device_host_spec h WHERE h.device_id = x.device_id
+                     ORDER BY h.collected_at DESC, h.id DESC LIMIT 1) AS last_at
+              FROM (
+                    SELECT d.id AS device_id, d.name AS name, 'mgmt' AS plane,
+                           COALESCE(NULLIF(d.management_ip, ''), d.management_ip_alt) AS address
+                      FROM device d
+                     WHERE d.owner_scope = 'PLATFORM' AND d.management_credential_id = ?
+                     UNION ALL
+                    SELECT d.id AS device_id, d.name AS name, 'bmc' AS plane,
+                           COALESCE(NULLIF(d.bmc_address, ''), d.bmc_address_alt) AS address
+                      FROM device d
+                     WHERE d.owner_scope = 'PLATFORM' AND d.bmc_credential_id = ?
+                   ) x
+             ORDER BY x.name, x.plane
+            """;
+
+    public List<CredentialDevice> devicesOfCredential(long credentialId) {
+        access.requireGlobalEnter();
+        Map<String, Object> credential = requirePlatformCredential(credentialId);
+        Object type = credential.get("cred_type");
+        String channel = HostAccess.channelOf(type == null ? null : String.valueOf(type));
+        return jdbc.query(SQL_DEVICES_OF_CREDENTIAL,
+                (rs, index) -> new CredentialDevice(rs.getLong("device_id"), rs.getString("name"),
+                        rs.getString("plane"), rs.getString("address"), channel,
+                        rs.getString("last_status"), rs.getString("last_at")),
+                credentialId, credentialId);
+    }
+
+    /**
+     * 手工录入设备（FR-v4.12-13）。
+     *
+     * <p>为什么两个地址面各自绑凭据、而不是设备只绑一个：现场 GPU 服务器是「业务口 ssh + 带外
+     * Redfish」两套账号，一台机器两条采集路径。只留一个 FK 的话，另一面就只能靠猜。
+     */
+    @Transactional
+    public DeviceView createDevice(CreateDeviceRequest request) {
+        requireWrite();
+        String name = requireText(request.name(), "设备名称");
+        guardLength(name, "设备名称", 128);
+        String deviceType = normalizeDeviceType(request.deviceType());
+        String managementIp = blankToNull(request.managementIp());
+        String managementIpAlt = blankToNull(request.managementIpAlt());
+        String bmcAddress = blankToNull(request.bmcAddress());
+        String bmcAddressAlt = blankToNull(request.bmcAddressAlt());
+        if (managementIp == null && managementIpAlt == null
+                && bmcAddress == null && bmcAddressAlt == null) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                    "至少要填一个地址（业务管理地址或带外地址），否则这台设备无法被采集");
+        }
+        Long managementCredentialId =
+                requirePlatformCredentialId(request.managementCredentialId(), "业务管理凭据");
+        Long bmcCredentialId = requirePlatformCredentialId(request.bmcCredentialId(), "带外凭据");
+        Long duplicated = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM device WHERE owner_scope = 'PLATFORM' AND name = ?",
+                Long.class, name);
+        if (duplicated != null && duplicated > 0) {
+            throw new BusinessException(ErrorCode.CONFLICT, "设备名称已存在：" + name);
+        }
+        Long operator = TenantContext.userId();
+        KeyHolder keys = new GeneratedKeyHolder();
+        try {
+            jdbc.update(con -> {
+                var ps = con.prepareStatement("""
+                        INSERT INTO device (project_id, owner_scope, name, device_type,
+                            management_ip, management_ip_alt, bmc_address, bmc_address_alt,
+                            management_credential_id, bmc_credential_id, model, vendor, serial_no,
+                            location, domain_tag, status, asset_status, asset_source,
+                            created_by, updated_by)
+                        VALUES (NULL, 'PLATFORM', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1,
+                                'active', 'manual', ?, ?)
+                        """, new String[]{"id"});
+                ps.setString(1, name);
+                ps.setString(2, deviceType);
+                ps.setString(3, managementIp);
+                ps.setString(4, managementIpAlt);
+                ps.setString(5, bmcAddress);
+                ps.setString(6, bmcAddressAlt);
+                ps.setObject(7, managementCredentialId, java.sql.Types.BIGINT);
+                ps.setObject(8, bmcCredentialId, java.sql.Types.BIGINT);
+                ps.setString(9, blankToNull(request.model()));
+                ps.setString(10, blankToNull(request.vendor()));
+                ps.setString(11, blankToNull(request.serialNo()));
+                ps.setString(12, blankToNull(request.location()));
+                ps.setString(13, blankToNull(request.domainTag()));
+                ps.setObject(14, operator, java.sql.Types.BIGINT);
+                ps.setObject(15, operator, java.sql.Types.BIGINT);
+                return ps;
+            }, keys);
+        } catch (org.springframework.dao.DuplicateKeyException ex) {
+            // 平台序列号唯一约束：同一个序列号不能挂两台设备（录入时多半是复制粘贴旧行）
+            throw new BusinessException(ErrorCode.CONFLICT,
+                    "设备写入冲突（序列号可能已被占用）：" + blankToNull(request.serialNo()));
+        }
+        long id = keys.getKey() == null ? 0 : keys.getKey().longValue();
+        audit.record("global.asset.device.create", "device", String.valueOf(id),
+                "name=" + name + "; type=" + (deviceType == null ? "-" : deviceType)
+                        + "; mgmt=" + (managementIp == null ? "-" : managementIp)
+                        + "; bmc=" + (bmcAddress == null ? "-" : bmcAddress)
+                        + "; mgmtCred=" + (managementCredentialId == null ? "-" : managementCredentialId)
+                        + "; bmcCred=" + (bmcCredentialId == null ? "-" : bmcCredentialId));
+        return new DeviceView(id, name, deviceType, managementIp, managementIpAlt, bmcAddress,
+                bmcAddressAlt, managementCredentialId, bmcCredentialId, "manual");
+    }
+
+    /**
+     * 手工录入凭据（FR-v4.12-14）。
+     *
+     * <p>明文只在这一层的入参里出现一次，随即加密入库；返回值是显式的 {@link CredentialView}，
+     * 而不是实体原样序列化 —— 这样将来给 {@code credential} 表加列也不会顺手把密文带出去。
+     */
+    @Transactional
+    public CredentialView createCredential(CreateCredentialRequest request) {
+        requireWrite();
+        String name = requireText(request.name(), "凭据名称");
+        guardLength(name, "凭据名称", 128);
+        String credType = normalizeCredType(request.credType());
+        String username = blankToNull(request.username());
+        String secret = requireText(request.secret(), "凭据内容");
+        String connectOptions = blankToNull(request.connectOptions());
+        guardLength(connectOptions, "连接参数", 256);
+        Long duplicated = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM credential WHERE owner_scope = 'PLATFORM' AND name = ?",
+                Long.class, name);
+        if (duplicated != null && duplicated > 0) {
+            throw new BusinessException(ErrorCode.CONFLICT, "凭据名称已存在：" + name);
+        }
+        Long operator = TenantContext.userId();
+        KeyHolder keys = new GeneratedKeyHolder();
+        jdbc.update(con -> {
+            var ps = con.prepareStatement("""
+                    INSERT INTO credential (project_id, owner_scope, name, cred_type, username,
+                        secret_ref, cipher_blob, key_version, connect_options,
+                        asset_status, asset_source, created_by, updated_by)
+                    VALUES (NULL, 'PLATFORM', ?, ?, ?, 'encrypted', ?, 1, ?, 'active', 'manual', ?, ?)
+                    """, new String[]{"id"});
+            ps.setString(1, name);
+            ps.setString(2, credType);
+            ps.setString(3, username);
+            ps.setString(4, cipher.encrypt(secret));
+            ps.setString(5, connectOptions);
+            ps.setObject(6, operator, java.sql.Types.BIGINT);
+            ps.setObject(7, operator, java.sql.Types.BIGINT);
+            return ps;
+        }, keys);
+        long id = keys.getKey() == null ? 0 : keys.getKey().longValue();
+        // 审计只记「配了什么」，不记口令、不记密文、不记密文长度
+        audit.record("global.asset.credential.create", "credential", String.valueOf(id),
+                "name=" + name + "; type=" + credType
+                        + "; target=" + (username == null ? "未指定" : username)
+                        + "; configured=true; connectOptions=" + (connectOptions == null ? "-" : connectOptions));
+        return new CredentialView(id, name, credType, username, connectOptions, true);
+    }
+
+    /**
+     * 按凭据批量采集（FR-v4.12-12）。
+     *
+     * <p><b>刻意不加 {@code @Transactional}</b>：一台上抛异常不该把其余台已经落库的采集记录
+     * 一起回滚。现场 12 台里必然有几台口令过期，若整批原子，运维改完一台的口令再跑一次，
+     * 前面成功的记录全丢，时间线上就永远是「失败」。
+     *
+     * <p>因此这里逐台独立：每台的成功/失败各自成立，最后汇总成 {@code {total, ok, failed, items}}。
+     * 二次确认在方法入口一次判掉 —— 让 5 台各失败一次「缺 confirm=true」是噪音，不是信息。
+     */
+    public BatchCollectResult collectByCredential(long credentialId, boolean confirmed) {
+        requireWrite();
+        requirePlatformCredential(credentialId);
+        if (!confirmed) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                    "批量采集需要二次确认：请求需带 confirm=true");
+        }
+        long platformId = platform.id();
+        // 平台凭据要经 project_asset 引用才对执行域可见，否则取密码会被可见性校验拦掉
+        ensurePlatformCredentialReference(platformId, credentialId);
+        List<CredentialDevice> devices = devicesOfCredential(credentialId);
+        List<BatchCollectItem> items = new ArrayList<>();
+        int ok = 0;
+        for (CredentialDevice device : devices) {
+            if (device.address() == null || device.address().isBlank()) {
+                items.add(new BatchCollectItem(device.deviceId(), device.name(), device.plane(), null,
+                        "FAILED", "no_address"));
+                continue;
+            }
+            try {
+                HostInventoryRecord record = hostInventory.collect(platformId, device.address(),
+                        device.deviceId(), TenantContext.userId(), null, credentialId, true);
+                jdbc.update("UPDATE device SET last_checked_at = NOW(3), updated_by = ? WHERE id = ?",
+                        TenantContext.userId(), device.deviceId());
+                String status = record.status() == null ? "FAILED" : record.status();
+                if ("OK".equals(status) || "PARTIAL".equals(status)) {
+                    ok++;
+                    items.add(new BatchCollectItem(device.deviceId(), device.name(), device.plane(),
+                            device.address(), status, null));
+                } else {
+                    items.add(new BatchCollectItem(device.deviceId(), device.name(), device.plane(),
+                            device.address(), status, lastReasonOf(record)));
+                }
+            } catch (RuntimeException ex) {
+                LOG.warn("按凭据批量采集：单台失败 credentialId={} deviceId={} plane={} host={}",
+                        credentialId, device.deviceId(), device.plane(), device.address(), ex);
+                items.add(new BatchCollectItem(device.deviceId(), device.name(), device.plane(),
+                        device.address(), "FAILED", reasonOf(ex)));
+            }
+        }
+        int total = items.size();
+        audit.record("global.asset.collect.batch", "credential", String.valueOf(credentialId),
+                "total=" + total + "; ok=" + ok + "; failed=" + (total - ok));
+        return new BatchCollectResult(total, ok, total - ok, items);
+    }
+
+    /**
+     * 从已落库的采集记录里取失败原因。
+     *
+     * <p>采集器把「为什么失败」写在 {@code spec_json} 的 items 里（{@code reason} 字段），
+     * 汇总接口把它提出来给运维看 —— 否则前端只能显示一个 FAILED，人还得逐台点开详情。
+     *
+     * <p>解析失败返回 null 而不是抛：原因只是附加信息，状态已经落库，不能因为一段脏 JSON
+     * 把整批采集结果弄成 500。
+     */
+    private String lastReasonOf(HostInventoryRecord record) {
+        return firstReason(mapper, record.specJson());
+    }
+
+    /** 取出第一条非空 {@code items[].reason}；测试直接打这个入口。 */
+    static String firstReason(ObjectMapper mapper, String specJson) {
+        if (specJson == null || specJson.isBlank()) {
+            return null;
+        }
+        try {
+            for (JsonNode item : mapper.readTree(specJson).path("items")) {
+                String reason = item.path("reason").asText("");
+                if (!reason.isBlank()) {
+                    return clip(reason.replaceAll("\\s+", " ").trim(), 200);
+                }
+            }
+            return null;
+        } catch (com.fasterxml.jackson.core.JacksonException ex) {
+            return null;
+        }
+    }
+
+    private static String clip(String value, int max) {
+        return value.length() > max ? value.substring(0, max) : value;
+    }
+
+    private Map<String, Object> requirePlatformCredential(long credentialId) {
+        List<Map<String, Object>> rows = jdbc.queryForList("""
+                SELECT id, name, cred_type, username, connect_options
+                  FROM credential WHERE id = ? AND owner_scope = 'PLATFORM'
+                """, credentialId);
+        if (rows.isEmpty()) {
+            throw new BusinessException(ErrorCode.NOT_FOUND, "平台凭据不存在：" + credentialId);
+        }
+        return rows.get(0);
+    }
+
+    /** 绑定的凭据必须是平台凭据：拿项目私有凭据 ID 来绑，等于把自己的口令挂到公共资产上。 */
+    private Long requirePlatformCredentialId(Long credentialId, String label) {
+        if (credentialId == null) {
+            return null;
+        }
+        Long count = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM credential WHERE id = ? AND owner_scope = 'PLATFORM'",
+                Long.class, credentialId);
+        if (count == null || count == 0) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                    label + "不存在或不是平台凭据：" + credentialId);
+        }
+        return credentialId;
+    }
+
+    static String normalizeDeviceType(String raw) {
+        String value = blankToNull(raw);
+        if (value == null) {
+            return null;
+        }
+        String normalized = value.toLowerCase(Locale.ROOT);
+        if (!DEVICE_TYPES.contains(normalized)) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                    "设备类型只能是 gpu | server | storage | switch，收到：" + raw);
+        }
+        return normalized;
+    }
+
+    static String normalizeCredType(String raw) {
+        String value = blankToNull(raw);
+        if (value == null) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "凭据类型不能为空");
+        }
+        String normalized = value.toLowerCase(Locale.ROOT);
+        if (!CREDENTIAL_TYPES.contains(normalized)) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                    "凭据类型只能是 ssh | network | bmc | snmp | token，收到：" + raw);
+        }
+        return normalized;
+    }
+
+    private static String requireText(String value, String field) {
+        if (value == null || value.isBlank()) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT, field + "不能为空");
+        }
+        return value.trim();
+    }
+
+    private static void guardLength(String value, String field, int max) {
+        if (value != null && value.length() > max) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                    field + "长度不能超过 " + max + " 个字符");
+        }
+    }
+
+    private static String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    /** 异常消息压成单行并截断：批量结果会直接进前端表格与审计，多行会把版面撑破。 */
+    private static String reasonOf(RuntimeException ex) {
+        String message = ex.getMessage();
+        if (message == null || message.isBlank()) {
+            message = ex.getClass().getSimpleName();
+        }
+        String single = message.replaceAll("\\s+", " ").trim();
+        return single.length() > 200 ? single.substring(0, 200) : single;
     }
 
     // ------------------------------------------------------------ 引用治理

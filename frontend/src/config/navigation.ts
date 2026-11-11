@@ -579,7 +579,7 @@ export function roleFromCodes(codes: string[] | undefined | null): NavRole {
  * v4.9.2 / OPT-08（FR-49-31）：删除了硬编码能力表。
  *
  * 导航可见性的**唯一真源**是服务端能力集（`stores/menuCapabilities` 的 `has()`），
- * `App.vue` 与 `GlobalSettingsView.vue` 都据此过滤。这里保留的只是「服务端能力集
+ * `App.vue` 的侧栏渲染与路由守卫都据此过滤。这里保留的只是「服务端能力集
  * 尚未就绪 / 单测 / 命令面板等非导航消费者」用的按角色兜底口径——纯函数，
  * 不再有导出的常量表，源码中也不再出现该表的字面量。
  */
@@ -599,6 +599,27 @@ export function capabilitiesForRole(role: NavRole): string[] {
 }
 
 /**
+ * 能力判据单一真源（v4.12.0 / FR-v4.12-21）。
+ *
+ * 修复的是一处**回归缺陷**：`/settings/users` 的路由 meta 标了 `capability: 'public'`，
+ * 但路由守卫用的是 `capabilitiesForRole(role).includes(capability)` —— 那张表里从来没有
+ * 字面量 `'public'`，于是任何角色进这一页都被踢到 `/403`；而导航过滤这边另有 public 特判，
+ * 两套口径各写各的，症状就是「菜单里有、点进去 403」。
+ *
+ * 现在 public 特判只允许存在这一处：路由守卫与导航过滤都调它。
+ * 第二个参数是「怎么判一个普通能力」，由调用方给（服务端能力集 / 按角色兜底），
+ * 本函数只负责「无能力 = 放行」与「public = 放行」这两条与来源无关的规则。
+ */
+export function capabilitySatisfied(
+  capability: string | undefined | null,
+  has: (capability: string) => boolean,
+): boolean {
+  if (!capability) return true
+  if (capability === 'public') return true
+  return has(capability)
+}
+
+/**
  * 按能力谓词过滤节点（v4.9.2 / OPT-08 权威口径）。
  *
  * `has` 通常由 `stores/menuCapabilities.has` 提供；`capability === 'public'`
@@ -609,8 +630,7 @@ export function filterNavByCapabilityPredicate(
   has: (capability: string) => boolean,
 ): NavNode[] {
   const keep = (node: NavNode): boolean => {
-    if (node.capability === 'public') return true
-    if (node.capability && !has(node.capability)) return false
+    if (!capabilitySatisfied(node.capability, has)) return false
     if (node.adminOnly && !has('audit:read')) return false
     return true
   }
