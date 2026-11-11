@@ -29,7 +29,7 @@
 | L4 数据 | SQL 对拍 / 迁移 / 审计 | `db_audit` **PASS**（7 项）；`SchemaIT` **7 例全过**（`robot_it` 从零迁移）；补录填充率见 §4 |
 | L5 端到端 | Playwright / CDP | **全部 NOT-RUN**——Chrome CDP `:9222` 仍处取消状态 |
 | L6 专项 | 负向 / 权限 / 密钥 | 未登录 401、空模板 400、重复提交 409、非法父子分类被拒均实测通过 |
-| L7 回归门禁 | 机检脚本 | **32 步整轮已跑**（`gates-20261111-1618.log`）：**30 PASS / 2 FAIL**——① 第 13 步浏览器回归（CDP `:9222` 为大师取消状态，`fetch failed`）；② 第 06 步 `lint.sh` 的 `check_tables`（存量债 L-49-06）。其余 30 步含前端测试/类型/构建、后端全量测试、db_audit、契约、包体、性能预算、版本一致性、i18n、交付包、更新机制全 PASS |
+| L7 回归门禁 | 机检脚本 | **32 步整轮已跑**（`gates-20261111-1642.log`）：**30 PASS / 2 FAIL**——① 第 13 步浏览器回归（CDP `:9222` 为大师取消状态，`fetch failed`）；② 第 06 步 `lint.sh` 的 `check_tables`（存量债 L-49-06）。其余 30 步含前端测试/类型/构建、后端全量测试、db_audit、契约、包体、性能预算、版本一致性、i18n、交付包、更新机制全 PASS |
 
 ## 2. 逐条用例结果
 
@@ -55,14 +55,14 @@
 | TC-v4.10-18 | FR-v4.10-14 / 16 | L3 | PASS | `collect-evidence.json` | `GET /api/asset-host-inventory/detail?deviceId=15` 返回 `hardware`/`softwareAndOutOfBand`/`status`/`evidence`/`derived`/`credential` 六段，无敏感键 |
 | TC-v4.10-19 | FR-v4.10-14 / 15 | L3 | PASS | `HOST_INVENTORY PASS` | `tools/check_host_inventory.py` 通过（零新增采集实现，复用既有只读链路） |
 | TC-v4.10-20 | FR-v4.10-14 / 15 / 16 | L6 | NOT-RUN | — | 需真实设备断连 / 凭据失效注入，本批不改硬件 |
-| TC-v4.10-21 | FR-v4.10-38 | L7 | PARTIAL | `gates-20261111-1618.log` | 32 步整轮已跑：30 PASS / 2 FAIL（13 浏览器回归=CDP 取消；06 lint=`check_tables` 存量债）。整轮非全绿，故不计 PASS |
+| TC-v4.10-21 | FR-v4.10-38 | L7 | PARTIAL | `gates-20261111-1642.log` | 32 步整轮已跑：30 PASS / 2 FAIL（13 浏览器回归=CDP 取消；06 lint=`check_tables` 存量债）。整轮非全绿，故不计 PASS |
 | TC-v4.10-22 | FR-v4.10-17 | L2 | PASS | `TemplateCard.spec.ts` 6 例 + `template-detail-content.json` | 四类计数逐卡取 `GET /templates/{id}` 明细：实测内置模板 2/3/4 分别为 20/0/1/3、20/0/1/2、18/0/1/2，模板 1「空白项目」0/0/0/0（设计如此） |
 | TC-v4.10-23 | FR-v4.10-18 | L3 | PASS | `template-detail-content.json` | 四个模板详情均返回 `cases`/`caseSets`/`scenarios`/`assets` 四类数组；模板 2/3/4 已含真实用例（20/20/18 条，取自项目 88 台账） |
 | TC-v4.10-24 | FR-v4.10-19 / 20 | L2 | PARTIAL | `TemplateCard.spec.ts` + 接口实测 | 卡片与四类计数已测；`TemplateWorkbenchView` 增删改的 DOM 交互当前无 spec，未测 |
 | TC-v4.10-25 | FR-v4.10-20 / 21 | L6 | PASS | `template-empty-create.json` | 空内容建模板返回 **400**，未落库 |
 | TC-v4.10-26 | FR-v4.10-21 | L6 | NOT-RUN | — | 「编辑模板不回写公共用例本体」未做注入式验证（K10） |
 | TC-v4.10-27 | FR-v4.10-21 | L6 | PASS | `template-builtin-readonly.json` | 内置模板内容改写 `PUT /templates/2/content` → **409**「内置模板内容不可改写，items 保持不变」；删除 → **409**；改元数据 200 但 `name` 仍为「接口回归」（服务端只允许启停）。V11_44 已为模板 2/3/4 补真实内容，样本不再为空 |
-| TC-v4.10-28 | FR-v4.10-38 | L7 | PARTIAL | `gates-20261111-1618.log` | 同 TC-v4.10-21：整轮已跑、30/32 绿，2 项红为已知原因 |
+| TC-v4.10-28 | FR-v4.10-38 | L7 | PARTIAL | `gates-20261111-1642.log` | 同 TC-v4.10-21：整轮已跑、30/32 绿，2 项红为已知原因 |
 | TC-v4.10-29 | FR-v4.10-22 | L1 | PASS | `ProjectTemplateServiceTest` `defaultModeIsCopy` | `mode` 缺省 / 空白一律 `copy`，`reference` 显式保留 |
 | TC-v4.10-30 | FR-v4.10-23 | L3 | PASS | `from-template-with-content.json` | 实测建项目成功（`projectId=89/90/92/93`）；`projectId=93` 产物 **20 用例 / 1 用例集 / 1 场景 / 2 资产**，用例集内 20 条；单事务内完成编排并写审计 |
 | TC-v4.10-31 | FR-v4.10-24 | L6 | PASS | `ProjectTemplateServiceTest` `failureRollsBackEverything` | 写 `project_asset` 后注入 `RuntimeException`，项目与关联表零残留 |
@@ -75,17 +75,17 @@
 | TC-v4.10-38 | FR-v4.10-28 | L3 | PASS | `CategoryFilterJoinTest` 2 例 + CSV 实测 | 批量加入条数 = 筛选条数且 `item_source` 正确；三种筛选口径条件正确 |
 | TC-v4.10-39 | FR-v4.10-29 | L2 | PASS | `ScenariosView.spec.ts` 7 例 | 创建 / 编组 / 删除；页面显式标注「仍限一层」 |
 | TC-v4.10-40 | FR-v4.10-30 | L4 | PASS | `category-export-meta.json` | CSV **731 行 = 730 用例 + 表头**，表头含 `external_id`，四列均导出 |
-| TC-v4.10-41 | FR-v4.10-38 | L7 | PARTIAL | `gates-20261111-1618.log` | 同 TC-v4.10-21 |
+| TC-v4.10-41 | FR-v4.10-38 | L7 | PARTIAL | `gates-20261111-1642.log` | 同 TC-v4.10-21 |
 | TC-v4.10-42 | FR-v4.10-31 | L1 | PASS | `PermissionMatrixTest` 35 例 + 接口实测 | 四角色 × 6 能力矩阵逐格断言；ADMIN 实测含 `settings:read`/`ai:config`/`user:write`/`audit:read` |
 | TC-v4.10-43 | FR-v4.10-32 | L2 | PASS | `grep ROLE_CAPABILITIES` = **0 命中** | 前端硬编码能力表已移除 |
 | TC-v4.10-44 | FR-v4.10-33 | L3 | PARTIAL | 401 实测 | 未登录访问 `/api/me/menu-capabilities` 返回 **401**；四角色逐格 URL 拦截矩阵未实测 |
 | TC-v4.10-45 | FR-v4.10-33 / 34 | L5 | NOT-RUN | — | 需浏览器截图；CDP 取消 |
 | TC-v4.10-46 | FR-v4.10-31 / 32 / 33 / 34 | L6 | NOT-RUN | — | 「能力注入 → 服务端 403」负向验证未执行 |
-| TC-v4.10-47 | FR-v4.10-38 | L7 | PARTIAL | `gates-20261111-1618.log` | 同 TC-v4.10-21 |
+| TC-v4.10-47 | FR-v4.10-38 | L7 | PARTIAL | `gates-20261111-1642.log` | 同 TC-v4.10-21 |
 | TC-v4.10-48 | FR-v4.10-35 | L7 | PASS | `check_release_docs.py v4.10.0` | 六件套齐全、`FR=38` 全覆盖、`TC=52` 全有结果 |
 | TC-v4.10-49 | FR-v4.10-36 | L6 | NOT-RUN | — | 性能 P95 基线未采集（需压测环境） |
 | TC-v4.10-50 | FR-v4.10-37 | L4 | PARTIAL | `ProjectTemplateServiceTest` 审计断言 | `template.create_project` 审计含 operator/templateId/projectId/mode 已由单测断言；未抽样 `audit_log` 实表 |
-| TC-v4.10-51 | FR-v4.10-38 | L7 | PARTIAL | `gates-20261111-1618.log` + `05-TEST-REPORT` §5 | 32 步整轮已跑（4m16s）：30 PASS / 2 FAIL；未整轮全绿但已不是「未执行」 |
+| TC-v4.10-51 | FR-v4.10-38 | L7 | PARTIAL | `gates-20261111-1642.log` + `05-TEST-REPORT` §5 | 32 步整轮已跑（4m16s）：30 PASS / 2 FAIL；未整轮全绿但已不是「未执行」 |
 | TC-v4.10-52 | FR-v4.10-38 | L7 | PASS | 本报告 + `check_release_docs.py v4.10.0` | 发布六件套自洽 |
 
 ## 3. 接口级实测明细（L3）
@@ -141,7 +141,7 @@
 | 浏览器级（L5 / 截图） | 3 | Chrome CDP `:9222` 由大师取消，门禁第 13 步 `fetch failed` | CDP 恢复后补跑 TC-v4.10-04 / 16 / 45 |
 | 负向 / 性能 / 回归注入 | 6 | 需真实设备故障、能力注入、压测环境或既有回归集（TC-v4.10-20 / 26 / 34 / 35 / 46 / 49） | 按 TEST-PLAN §6 故障注入清单逐条执行 |
 
-**门禁口径说明（2026-11-11 大师拍板 D3「只补跑不依赖 CDP 的步骤」）**：`scripts/gates.sh` 32 步已整轮执行并留全量日志 `docs/evidence/opt-20261111/integration/gates-20261111-1618.log`（4m16s）。**30 步 PASS / 2 步 FAIL**：
+**门禁口径说明（2026-11-11 大师拍板 D3「只补跑不依赖 CDP 的步骤」）**：`scripts/gates.sh` 32 步已整轮执行并留全量日志 `docs/evidence/opt-20261111/integration/gates-20261111-1642.log`（4m16s）。**30 步 PASS / 2 步 FAIL**：
 
 | 步 | 结果 | 原因 | 归属 |
 |---|---|---|---|
@@ -181,4 +181,4 @@
 |---|---|---|---|
 | v1.0 | 2026-11-11 | 首版：52 条 TC 逐条落结果，PASS 22 / PARTIAL 10 / NOT-RUN 20 / FAIL 0 | 本批实测 |
 | v1.1 | 2026-11-11 | 收口复跑修正：L2 前端全量 `vitest` 复跑 92 文件 / 664 例全过；L7 `lint.sh` 读数由「19 项守门」改为准确实测（24 项检查 / 23 绿 / 1 红，第 24 项 `check_brand` 因 `set -e` 中断后单独补跑 PASS）；新增 L-49-06（`check_tables` 存量债，含 HEAD 对拍） | 终检 `lint_final3.sh` + `check_brand.py` 原始输出 |
-| v1.2 | 2026-11-11 | 按大师 5 项拍板执行后回写：① D1 补内置模板内容（`V11_44`）并修复由此暴露的 `copyCase` 500（L-49-08），TC-27 转 PASS、TC-22/23/30 补证据；② D3 整轮 32 步门禁已跑，5 条 L7 用例由 NOT-RUN 转 PARTIAL；③ 重新计数 PASS 29 / PARTIAL 14 / NOT-RUN 9；④ 新增 L-49-07、L-49-08；⑤ D2/D5 拍板结论记入遗留缺陷处置列 | `template-detail-content.json` / `from-template-with-content.json` / `template-builtin-readonly.json` / `gates-20261111-1618.log` / `ProjectTemplateCopyIT` |
+| v1.2 | 2026-11-11 | 按大师 5 项拍板执行后回写：① D1 补内置模板内容（`V11_44`）并修复由此暴露的 `copyCase` 500（L-49-08），TC-27 转 PASS、TC-22/23/30 补证据；② D3 整轮 32 步门禁已跑，5 条 L7 用例由 NOT-RUN 转 PARTIAL；③ 重新计数 PASS 29 / PARTIAL 14 / NOT-RUN 9；④ 新增 L-49-07、L-49-08；⑤ D2/D5 拍板结论记入遗留缺陷处置列 | `template-detail-content.json` / `from-template-with-content.json` / `template-builtin-readonly.json` / `gates-20261111-1642.log` / `ProjectTemplateCopyIT` |

@@ -562,7 +562,7 @@ bash scripts/gates.sh
 | `V11_43` 首次执行 | 一次成功 | 首次因 `COMMENT` 与 `FIRST` 顺序语法失败（`success=0`） | MySQL 要求 `ADD COLUMN ... COMMENT '...' FIRST` 的 COMMENT 在 FIRST 之前 | 手工按前半段对称回滚 → 删失败记录 → 修正语法重跑成功；`SchemaIT` 在 `robot_it` 从零迁移复验 7 例全过 |
 | `project_code_sequence` 主键改造 | 仅加代理主键 | 改造后首次数值分配返回自增 id（实测 6 而非 1） | `LAST_INSERT_ID` 在 INSERT 分支被自增列覆盖 | `nextCodeSequence` 改用 `ROW_COUNT()` 区分分支；单连接实测返回 1/2/3 |
 | 前端构建 | `npm ci && npm run build` | `npm run build`（未重装依赖） | WSL 无 `npm ci` 所需网络条件，且 `node_modules` 未变 | 产物正常；`vue-tsc` 0 错误、`vitest` 92 文件全过 |
-| 门禁 | 32 步整轮 | **已整轮执行：30 PASS / 2 FAIL**（13 浏览器回归=CDP 取消；06 lint=`check_tables` 存量债） | 首轮收口只跑分项机检；后按大师 D3 拍板补跑整轮 | 日志 `docs/evidence/opt-20261111/integration/gates-20261111-1618.log`；5 条 L7 用例由 NOT-RUN 转 PARTIAL，仍未宣称「门禁全绿」 |
+| 门禁 | 32 步整轮 | **已整轮执行：30 PASS / 2 FAIL**（13 浏览器回归=CDP 取消；06 lint=`check_tables` 存量债） | 首轮收口只跑分项机检；后按大师 D3 拍板补跑整轮 | 日志 `docs/evidence/opt-20261111/integration/gates-20261111-1642.log`；5 条 L7 用例由 NOT-RUN 转 PARTIAL，仍未宣称「门禁全绿」 |
 | 内置模板内容 | 计划未列（原判「属产品运营数据」） | 新增 `V11_44` 为模板 2/3/4 补真实内容（20/20/18 条） | 大师 D1 拍板「用现存数据造内置模板内容」，否则「从模板建项目」无实质产物可验收 | 模板 1「空白项目」按设计保持空；`FR-v4.10-18/19/20/21` 转达成 |
 | 从模板建项目复制链路 | 计划假定已可用（v4.9.2 交付） | **实测 500，修复后可用** | `copyCase` 的 INSERT 引用已重命名的 `category` 列；模板内容此前全空，该分支从未被执行 | 改 `INSERT ... SELECT` 整列搬迁，并补五列 + 两级分类；新增 `ProjectTemplateCopyIT`（真实 `robot_it`）锁死 |
 | 文档单源 | `docs/plan`（基线）与 `docs/release`（归档）并存 | `docs/plan` 4 份已删除，release 为唯一源 | 大师 D4 拍板「合并为 release 单源」 | 删除前核对 13 个二级标题 100% 覆盖、593 行 ≥ 原 582 行；`tar` 留档 `docs/evidence/opt-20261111/plan-baseline-20261111.tar.gz` |
