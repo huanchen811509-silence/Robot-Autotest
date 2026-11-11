@@ -4,8 +4,8 @@
 |---|---|
 | 编号 | `RA-TR-v4.12-001` |
 | 版本 | `4.12.0`（`VERSION=4.12.0`；`build-info` 由 `scripts/gen_build_info.py` 生成） |
-| 执行时间 | 2026-11-11 21:00 ~ 23:45（GMT+8；含 3 轮现场采集复跑与 2 处真注入） |
-| 执行环境 | WSL `Ubuntu-24.04` ext4 副本 `/home/evergreen/robot-autotest`；后端 `:8081`（systemd user，jar 52863550 B @ 23:18）；入口 `:8001`；MySQL 库 `robot_dev`（71 表）、集成库 `robot_it` |
+| 执行时间 | 2026-11-11 21:00 ~ 23:51（GMT+8；含 3 轮现场采集复跑与 2 处真注入） |
+| 执行环境 | WSL `Ubuntu-24.04` ext4 副本 `/home/evergreen/robot-autotest`；后端 `:8081`（systemd user，jar 52 863 518 B @ 23:48，内含 `git.commit=f11c704`）；入口 `:8001`；MySQL 库 `robot_dev`（71 表）、集成库 `robot_it` |
 | 现场 | 8 台 Linux（`10.202.54.101~108`）+ 4 台交换机（`.91/.92/.93/.100`）+ 5 台 BMC（`.11~.15`），全部经真实 HTTP 接口与真实网络 |
 | 上游 | `TEST-PLAN.md` v0.2（40 条 TC）、`PRD.md` v0.2（25 条 FR）、`DEV-PLAN.md` v0.2（8 组 WBS） |
 | 证据根目录 | `docs/evidence/v4.12.0/raw/` |
@@ -29,7 +29,7 @@
 | L3 接口 | 真实 HTTP（登录后携 token） | `raw/tc-run.log` **28 项 PASS**、`raw/tc-run2.log` **6 项 PASS**，`RESULT FAILS=0` |
 | L4 数据 | 真库 `robot_dev` | 17 条采集记录（`device_host_spec`）；治理前后快照逐行比对；`cipher_blob` 7/7 为密文 |
 | L5 真机 | 现场 17 台设备 | 采集矩阵见 `raw/collect-matrix.txt`；失败原因全部消失 |
-| L6 机检 | `scripts/gates.sh` | 读数见 §5 |
+| L6 机检 | `scripts/gates.sh` | 32 步 / **PASS 31 / FAIL 1**（唯一失败＝第 13 步 CDP 关闭）；逐条读数见 §5 |
 
 ## 2. 用例结果（A 建模 / B 采集通道）
 
@@ -88,9 +88,55 @@
 
 ## 5. 门禁读数
 
-> 由 §7「回写」时补填（首轮门禁在报告落盘后跑，读数见 `raw/gates-v4120.log`）。
+> 终轮读数：`docs/evidence/v4.12.0/raw/gates-v4120-final.log`（2026-11-11 23:47 ~ 23:51 GMT+8）。
+> **32 步 / PASS 31 / FAIL 1**，唯一失败是第 13 步浏览器回归 —— CDP `:9222` 按令关闭，属决策性未跑（§6 `L-412-02`），不是本版回归。
 
-（占位：待填）
+| 步骤 | 结果 | 关键读数 |
+|---|---|---|
+| 01 subset_font | PASS | 字体子集在预算内 |
+| 02 frontend_test | PASS | **102 文件 / 761 例全过**（23s） |
+| 03 type_check | PASS | `vue-tsc --noEmit` 0 错 |
+| 04 frontend_build | PASS | dist 重建 8.9s（新 `GlobalAssetsView` 已入包） |
+| 05 backend_test | PASS | **1428 例 / 0 失败 / 0 错误**，BUILD SUCCESS（86s） |
+| 06 lint | PASS | `eslint` 0 问题；表格规范 **56 处数据网格全部走壳**，原生 `<table>` 仅白名单 3 文件 |
+| 07 release_docs | PASS | `v4.12.0`：`FR=25 TC=40`，FAIL 0 / WARN 0 |
+| 08 wbs_consistency | PASS | 130 包 / 已完成 124 / 待现场 6 / 进行中 0 |
+| 09 md_tables | PASS | 全部文档表格列数自洽 |
+| 10 diff_check | PASS | 无空白错 |
+| 11 editor_test | PASS | 编辑器包独立 vitest 全过 |
+| 12 db_audit | PASS | `robot_dev` 71 表结构体检通过 |
+| **13 browser_regression** | **FAIL** | `fetch failed` —— CDP `:9222` 按令关闭（`L-412-02`），本轮不做人工复核 |
+| 14 report_sensitive | PASS | 报告与证据无敏感信息 |
+| 15 css_vars | PASS | 无硬编码颜色/间距令牌违规 |
+| 16 report_consistency | PASS | 报告前后口径一致 |
+| 17 perf_baseline | PASS | 性能基线未退化 |
+| 18 structure_selfcheck | PASS | 门禁结构 32 步齐全 |
+| 19 evidence_integrity | PASS | 三处 `failures=0 / errors=0` 且 tests 不低于基线；5 组破坏性自校验全部按预期判红 |
+| 20 api_contract | PASS | **293 paths / 358 endpoints**（含本版 4 个新端点） |
+| 21 bundle_budget | PASS | 图标 / 组件库 / 字体 / 主入口 / 单路由块均达标，无 styleguide 标记泄漏 |
+| 22 perf_budget | PASS | 性能预算内 |
+| 23 version_consistency | PASS | 五处同源 `4.12.0`，运行期 `build-info=4.12.0` |
+| 24 ai_eval | PASS | 黄金集事实一致性达标、严重幻觉 0 |
+| 25 security_scan | PASS | 高危 0 |
+| 26 capacity_backup | PASS | 容量与备份判据通过 |
+| 27 i18n_contrast | PASS | 14 组（主题 × 强调色）共 **280 项对比度**全部达标 |
+| 28 case_command | PASS | 用例命令契约一致 |
+| 29 host_inventory | PASS | 10 类命令与源码字面量逐字一致 + 只读白名单（含新增 `export`） |
+| 30 delivery_bundle | PASS | `artifact=robot-autotest-4.12.0-f11c704-linux-x64.tar.gz`（sha256 校验 + MANIFEST + 解包清单） |
+| 31 update_mechanism | PASS | 更新机制安全默认态（dry-run / 二次确认 / 回滚护栏） |
+| 32 workspace_bundle | PASS | 工作区包契约通过 |
+
+**首轮 → 终轮的收敛过程**（首轮 `raw/gates-v4120.log` 为 `FAILS=5`）
+
+| 首轮 FAIL | 根因（实测，不是猜测） | 处置 | 复验读数 |
+|---|---|---|---|
+| 06 lint | `GlobalAssetsView.vue` 弹窗内手写原生 `<table>`，被 `tools/check_tables.py` 判为「数据网格绕过规范」 | 改 `bindColumns` + `DataTable` 壳，加载/空态交给壳（提交 `f11c704`） | 表格规范 PASS：56 处全走壳 |
+| 23 version_consistency | 运行期 `build-info` 仍 `4.11.0` —— 改了源码但后端没重启（`BUILD SUCCESS` 只代表编译过） | `gen_build_info.py` → 重建 jar → `systemctl --user restart` | 运行期 `build-info=4.12.0` |
+| 29 host_inventory | 命令表加 `export LC_ALL=C;` 前缀后，证据与只读白名单未同步 | 按 v4.12.0 重新取证（`EW412-01`）+ `READONLY_BINARIES` 补 `export` | `HOST_INVENTORY PASS` |
+| 30 delivery_bundle | MANIFEST 仍 `4.11.0` —— v4.12.0 的包还没打 | `scripts/package-release.sh` 产 `4.12.0-f11c704` | `DELIVERY_BUNDLE PASS fails=0` |
+| 13 browser_regression | 保留 | CDP 按令关闭，决策性未开 | 仍 FAIL（预期） |
+
+**证据链**：门禁日志 `raw/gates-v4120-final.log`；分步日志 `docs/evidence/gates/logs/*.log`；交付包 `releases/robot-autotest-4.12.0-f11c704-linux-x64.tar.gz` + `.sha256` + `.manifest.json`（357 文件 / 48 584 314 B / `sha256 9fc0480…221d`）。
 
 ## 6. 遗留、缺口与排期
 
@@ -121,3 +167,4 @@
 | 版本 | 日期 | 修改人 | 说明 |
 |---|---|---|---|
 | v0.1 | 2026-11-11 | 学徒 | 首版：40 条 TC 逐条落结果，含 6 条 PARTIAL 与 2 条 NOT-RUN 的缺口说明 |
+| v0.2 | 2026-11-11 | 学徒 | ⑦ 回写：补 §5 门禁终轮读数（32 步 / 31 PASS / 1 FAIL(CDP)）与首轮 5 项 FAIL 的收敛过程；执行环境的 jar 与 commit 更新到最终产物（`f11c704`） |
