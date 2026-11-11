@@ -279,7 +279,7 @@ class FailureClusterServiceTest {
 
     private static RunRecord run(long id, String runId, int attemptNo) {
         return new RunRecord(id, runId, PROJECT, null, RunState.FAILED, 0, 1, attemptNo,
-                3, 1, 2, "assert", "reason", "message", null, null, null, null, null);
+                3, 1, 2, "assert", "reason", "message", null, null, null, null, null, null);
     }
 
     /** CaseRunService 桩：只回一个预置运行记录，不真的起执行。 */

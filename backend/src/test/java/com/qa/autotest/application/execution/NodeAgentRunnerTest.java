@@ -149,7 +149,7 @@ class NodeAgentRunnerTest {
         // 预置 run（agent 只执行已存在的 run）
         try {
             repo.insert(new RunRecord(0L, "RUN-AG1", 7L, null, RunState.QUEUED, 0, 1, 0,
-                    0, 0, 0, null, null, null, null, java.time.Instant.now(), null, null, null),
+                    0, 0, 0, null, null, null, null, java.time.Instant.now(), null, null, null, null),
                     "RUN-AG1", "req-ag1", 1L);
         } catch (Exception ignored) {
             // 内存仓储重复插入容忍

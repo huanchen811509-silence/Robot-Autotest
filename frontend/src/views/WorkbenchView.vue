@@ -22,6 +22,14 @@ import { useFocusTrap } from '@/composables/useFocusTrap'
 
 type SortKey = 'recent' | 'name'
 
+/**
+ * v4.11.0 / FR-v4.11-29：全局模式「我参与的」复用本页卡片，用 `scope` 区分。
+ *
+ * 不用 `myRole != null` 判——全局 admin 无成员关系时后端也返回 `admin`（A14），
+ * 该判据对 admin 恒真。只认 `own || joined` 两个布尔。
+ */
+const props = withDefaults(defineProps<{ scope?: 'all' | 'mine' }>(), { scope: 'all' })
+
 const { t } = useI18n()
 const auth = useAuthStore()
 
@@ -49,12 +57,17 @@ function lastRunValue(value: string | null): number {
 
 const filtered = computed<ProjectCardData[]>(() => {
   const kw = keyword.value.trim().toLowerCase()
+  // `?scope=mine`：只要「我创建或我加入」，与 admin 的全局可见性无关。
+  const scoped =
+    props.scope === 'mine'
+      ? cards.value.filter((card) => card.own === true || card.joined === true)
+      : [...cards.value]
   const rows = kw
-    ? cards.value.filter(
+    ? scoped.filter(
         (card) =>
           card.name.toLowerCase().includes(kw) || card.code.toLowerCase().includes(kw),
       )
-    : [...cards.value]
+    : scoped
   return rows.sort((a, b) => {
     if (sortBy.value === 'name') return a.name.localeCompare(b.name)
     return lastRunValue(b.lastRunAt) - lastRunValue(a.lastRunAt)
@@ -174,8 +187,12 @@ async function confirmDelete(): Promise<void> {
 
 <template>
   <div class="workbench">
-    <h1 class="page-title">{{ t('workbench.title') }}</h1>
-    <p class="page-hint">{{ t('workbench.subtitle') }}</p>
+    <h1 class="page-title">
+      {{ props.scope === 'mine' ? t('workbench.mineTitle') : t('workbench.title') }}
+    </h1>
+    <p class="page-hint">
+      {{ props.scope === 'mine' ? t('workbench.mineSubtitle') : t('workbench.subtitle') }}
+    </p>
 
     <div class="toolbar">
       <input

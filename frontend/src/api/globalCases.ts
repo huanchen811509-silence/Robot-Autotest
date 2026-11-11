@@ -117,10 +117,20 @@ export const globalCaseApi = {
   removeCategory(id: number) {
     return request<{ deleted: boolean }>(`/global/cases/categories/${id}`, { method: 'DELETE' })
   },
-  previewImport(file: File) {
+  /**
+   * 预览导入（两段式第一步）。
+   *
+   * @param force v4.11.0 / FR-v4.11-18：同一份文件第二次预览默认走「回放」（`replayed=true`，
+   *   幂等语义不变）；`force=true` 时才按当前库重算增量 diff，且**不落库、不改批次状态**。
+   */
+  previewImport(file: File, force = false) {
     const form = new FormData()
     form.append('file', file)
-    return requestMultipart<GlobalImportPreview>('/global/cases/import/preview', form, 120_000)
+    return requestMultipart<GlobalImportPreview>(
+      `/global/cases/import/preview${toQuery({ force: force ? 1 : undefined })}`,
+      form,
+      120_000,
+    )
   },
   commitImport(batchId: number) {
     return request<GlobalImportCommit>(`/global/cases/import/${batchId}/commit`, { method: 'POST' })

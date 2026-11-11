@@ -52,7 +52,7 @@ final class ExecutionTestSupport {
 
     static RunRecord run(String runId, RunState state, Instant startedAt) {
         return new RunRecord(1L, runId, PROJECT, null, state, 0, 1, 0,
-                0, 0, 0, null, null, null, null, CLOCK.instant(), startedAt, null, null);
+                0, 0, 0, null, null, null, null, CLOCK.instant(), startedAt, null, null, null);
     }
 
     private static UserRepository adminUsers() {

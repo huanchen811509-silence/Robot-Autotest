@@ -40,6 +40,10 @@ import org.springframework.stereotype.Service;
  *   <li>{@code deviceCount} / {@code memberCount} = 直接计数；</li>
  *   <li>{@code myRole} = 当前用户在该项目的 {@code member_role}；
  *       全局 admin 且无成员关系时给 {@code admin}；否则 {@code null}。</li>
+ *   <li>{@code own} / {@code joined} = 真实归属（v4.11.0 / FR-v4.11-29）。
+ *       为什么要单独给：上面那条 {@code myRole} 的 admin 兜底让「我参与的」无法用
+ *       {@code myRole != null} 判断——对全局 admin 它恒为真（他几乎总能看到所有项目）。
+ *       前端「我参与的」只认 {@code own || joined}。</li>
  * </ul>
  *
  * <p><b>{@code isCurrent}</b>：当前项目是前端 {@code localStorage} 状态，服务端无从得知，
@@ -89,13 +93,19 @@ public class ProjectCardService {
         List<ProjectCard> result = new ArrayList<>(visible.size());
         for (Project project : visible) {
             ProjectCardAggregate aggregate = aggregates.getOrDefault(project.id(), ProjectCardAggregate.EMPTY);
+            String memberRole = aggregate.memberRole();
             result.add(new ProjectCard(
                     project.id(), project.code(), project.name(), project.description(),
                     project.enabled(), project.visibility(), project.ownerId(),
                     currentProjectId != null && currentProjectId.equals(project.id()),
                     aggregate.caseCount(), aggregate.runCount(), passRateBp(aggregate),
                     aggregate.lastRunAt(), aggregate.deviceCount(), aggregate.memberCount(),
-                    myRole(aggregate.memberRole(), admin), project.testKernel()));
+                    myRole(memberRole, admin),
+                    // 显式 longValue()：ownerId 是 Long、userId 是 long，靠自动拆箱虽然也对，
+                    // 但一旦哪天有人把它改写成两个 Long 相比，就会退化成引用比较且静默通过编译。
+                    project.ownerId() != null && project.ownerId().longValue() == userId,
+                    memberRole != null && !memberRole.isBlank(),
+                    project.testKernel()));
         }
         return result;
     }

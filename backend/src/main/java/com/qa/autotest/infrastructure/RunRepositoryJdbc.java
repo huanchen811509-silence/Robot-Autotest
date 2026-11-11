@@ -30,9 +30,10 @@ import java.util.Optional;
 public class RunRepositoryJdbc implements RunRepository {
 
     private static final String SELECT = """
-            SELECT id, run_id, project_id, test_set_id, run_status, priority, concurrency,
-                   device_scope, attempt_no, total_tests, passed_tests, failed_tests, failure_class,
-                   failure_reason, failure_message, artifacts_dir, enqueued_at, started_at, finished_at
+            SELECT id, run_id, run_request_id, project_id, test_set_id, run_status, priority,
+                   concurrency, device_scope, attempt_no, total_tests, passed_tests, failed_tests,
+                   failure_class, failure_reason, failure_message, artifacts_dir, enqueued_at,
+                   started_at, finished_at
               FROM run
             """;
 
@@ -60,7 +61,8 @@ public class RunRepositoryJdbc implements RunRepository {
             rs.getString("artifacts_dir"),
             instant(rs.getTimestamp("enqueued_at")),
             instant(rs.getTimestamp("started_at")),
-            instant(rs.getTimestamp("finished_at")), rs.getString("device_scope"));
+            instant(rs.getTimestamp("finished_at")), rs.getString("device_scope"),
+            rs.getString("run_request_id"));
 
     private static final RowMapper<RunRetryOrigin> RETRY_ORIGIN_MAPPER = (rs, rowNum) ->
             new RunRetryOrigin(
@@ -136,7 +138,8 @@ public class RunRepositoryJdbc implements RunRepository {
         long id = runKey.getKey() == null ? 0 : runKey.getKey().longValue();
         return new RunRecord(id, draft.runId(), draft.projectId(), draft.testSetId(),
                 RunState.QUEUED, draft.priority(), draft.concurrency(), 0,
-                0, 0, 0, null, null, null, null, draft.enqueuedAt(), null, null, draft.deviceScope());
+                0, 0, 0, null, null, null, null, draft.enqueuedAt(), null, null,
+                draft.deviceScope(), runRequestId);
     }
 
     /** 回读 run 归属节点（NODX-03 回传校验用）：空 = run 不存在或未指定节点。 */

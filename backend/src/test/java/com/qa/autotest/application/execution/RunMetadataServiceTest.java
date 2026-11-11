@@ -218,7 +218,7 @@ class RunMetadataServiceTest {
     private static RunRecord run() {
         Instant now = Instant.parse("2026-11-06T00:00:00Z");
         return new RunRecord(1L, RUN, PROJECT, null, RunState.FINISHED, 5, 1, 1, 3, 3, 0,
-                null, null, null, "/tmp/run-1", now, now, now, null);
+                null, null, null, "/tmp/run-1", now, now, now, null, null);
     }
 
     /** 内存补录仓储。 */

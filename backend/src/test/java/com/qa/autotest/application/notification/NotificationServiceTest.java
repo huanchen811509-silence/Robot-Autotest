@@ -172,7 +172,7 @@ class NotificationServiceTest {
 
     private static RunRecord run(RunState state, int passed, int failed) {
         return new RunRecord(1L, "RUN-1", PROJECT, null, state, 0, 1, 1,
-                passed + failed, passed, failed, null, null, null, null, null, null, null, null);
+                passed + failed, passed, failed, null, null, null, null, null, null, null, null, null);
     }
 
     /**

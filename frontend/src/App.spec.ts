@@ -20,3 +20,29 @@ describe('App 骨架', () => {
     expect(appSource).toContain('<ShortcutPanel')
   })
 })
+
+/**
+ * v4.11.0 / FR-v4.11-03：全局侧栏也必须接能力过滤。
+ *
+ * <p>v4.10.0 之前全局 5 项都没写 `capability`，所以「不过滤」看不出问题；本版全局侧栏
+ * 扩到 5 组 14 叶（含「用户管理 / 审计日志」），再不过滤就是**向所有角色暴露管理入口**。
+ * 判据只有一条：`nav` 计算属性对两种模式走同一个过滤函数，不存在「全局直接返回原树」的分支。
+ */
+describe('App 侧栏能力过滤（FR-v4.11-03）', () => {
+  it('两种模式共用 filterNavByCapabilityPredicate，不存在不过滤的旁路', () => {
+    const navBlock = /const nav = computed<NavNode\[\]>\(\(\) => \{([\s\S]*?)\n\}\)/.exec(appSource)
+    expect(navBlock, '找不到 nav 计算属性').not.toBeNull()
+    const body = navBlock![1]
+
+    expect(body).toContain('filterNavByCapabilityPredicate')
+    expect(body).toContain('GLOBAL_NAVIGATION')
+    expect(body).toContain('NAVIGATION')
+    // 树的选择必须出现在过滤器调用**之后**（即作为它的实参），而不是被提前 return 出去
+    expect(body.indexOf('GLOBAL_NAVIGATION')).toBeGreaterThan(
+      body.indexOf('filterNavByCapabilityPredicate('),
+    )
+    // 不存在「直接返回未过滤的树」这种旁路
+    expect(body).not.toMatch(/return\s+GLOBAL_NAVIGATION/)
+    expect(body).not.toMatch(/return\s+NAVIGATION/)
+  })
+})

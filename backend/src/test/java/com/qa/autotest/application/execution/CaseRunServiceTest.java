@@ -318,7 +318,7 @@ class CaseRunServiceTest {
         public RunRecord trigger(QuickRunService.QuickRunCommand cmd) {
             this.last = cmd;
             return new RunRecord(1L, "RUN-1", PROJECT, null, RunState.QUEUED,
-                    0, 1, 0, 0, 0, 0, null, null, null, null, Instant.EPOCH, null, null, null);
+                    0, 1, 0, 0, 0, 0, null, null, null, null, Instant.EPOCH, null, null, null, null);
         }
     }
 }

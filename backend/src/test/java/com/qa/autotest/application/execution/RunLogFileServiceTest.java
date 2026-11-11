@@ -58,6 +58,6 @@ class RunLogFileServiceTest {
 
     private static RunRecord record(String runId, String artifactsDir) {
         return new RunRecord(1L, runId, 7L, null, RunState.FINISHED, 0, 1, 0, 0, 0, 0,
-                null, null, null, artifactsDir, Instant.EPOCH, Instant.EPOCH, Instant.EPOCH, null);
+                null, null, null, artifactsDir, Instant.EPOCH, Instant.EPOCH, Instant.EPOCH, null, null);
     }
 }

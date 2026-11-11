@@ -363,6 +363,6 @@ class RunControllerTest {
 
     private static RunRecord run(String runId) {
         return new RunRecord(1L, runId, 7L, null, RunState.QUEUED, 0, 1, 0, 0, 0, 0,
-                null, null, null, null, Instant.EPOCH, null, null, null);
+                null, null, null, null, Instant.EPOCH, null, null, null, null);
     }
 }

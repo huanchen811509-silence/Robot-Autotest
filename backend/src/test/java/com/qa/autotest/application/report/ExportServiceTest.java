@@ -245,7 +245,7 @@ class ExportServiceTest {
     private RunRepository runRepository() {
         RunRecord run = new RunRecord(11L, RUN_ID, PROJECT, null, RunState.FINISHED, 0, 1,
                 0, 2, 1, 1, null, null, null, artifactDir.toAbsolutePath().toString(),
-                CLOCK.instant(), CLOCK.instant(), CLOCK.instant(), null);
+                CLOCK.instant(), CLOCK.instant(), CLOCK.instant(), null, null);
         return proxy(RunRepository.class, (proxy, method, args) ->
                 "findByRunId".equals(method.getName())
                         ? Optional.of(run) : defaultValue(method.getReturnType()));

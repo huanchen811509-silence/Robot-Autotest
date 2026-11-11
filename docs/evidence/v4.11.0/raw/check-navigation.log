@@ -1,0 +1,4 @@
+[PASS] 层级 ≤ 2
+[PASS] 全局一级 5 组 / 14 叶（每组 ≥2）
+[PASS] 项目一级 7 组 / 29 叶
+[PASS] 同 path 的叶子 query 两两不同；每个叶子都有 path（派生组：global-settings, settings）

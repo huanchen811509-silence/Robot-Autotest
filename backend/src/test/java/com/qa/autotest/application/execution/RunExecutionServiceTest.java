@@ -356,7 +356,7 @@ class RunExecutionServiceTest {
             RunRecord stored = new RunRecord(id, draft.runId(), draft.projectId(),
                     draft.testSetId(), draft.state(), draft.priority(), draft.concurrency(),
                     draft.attemptNo(), 0, 0, 0, null, null, null, null,
-                    draft.enqueuedAt(), null, null, draft.deviceScope());
+                    draft.enqueuedAt(), null, null, draft.deviceScope(), null);
             byRunId.put(stored.runId(), stored);
             return stored;
         }
@@ -395,7 +395,7 @@ class RunExecutionServiceTest {
                     current.failedTests(), failureClass, failureReason, failureMessage,
                     current.artifactsDir(), current.enqueuedAt(),
                     startedAt == null ? current.startedAt() : startedAt,
-                    finishedAt == null ? current.finishedAt() : finishedAt, current.deviceScope()));
+                    finishedAt == null ? current.finishedAt() : finishedAt, current.deviceScope(), null));
             return 1;
         }
 
@@ -409,7 +409,7 @@ class RunExecutionServiceTest {
                     current.testSetId(), current.state(), current.priority(), current.concurrency(),
                     current.attemptNo(), total, passed, failed, current.failureClass(),
                     current.failureReason(), current.failureMessage(), artifactsDir,
-                    current.enqueuedAt(), current.startedAt(), current.finishedAt(), current.deviceScope()));
+                    current.enqueuedAt(), current.startedAt(), current.finishedAt(), current.deviceScope(), null));
             return 1;
         }
 

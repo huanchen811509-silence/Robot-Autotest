@@ -8,7 +8,40 @@
 > `<!-- current -->` 是给解析器用的语言无关标识（Markdown 渲染时不可见）。
 > 因此代码里不需要硬编码中文，界面显示文案一律走 i18n 语言包 `changelog.*`。
 
-## v4.10.0（2026-11-11） <!-- current -->
+## v4.11.0（2026-11-11） <!-- current -->
+
+### 新增 <!-- added -->
+- **全局模式两级菜单**：全局侧栏从「平铺 6 项」改为 **5 组 14 叶**（项目 2 / 公共用例 2 / 公共资产 2 / 模板 2 / 系统设置 6），与项目模式共用同一套 `NavGroup` / `NavLeaf` 渲染、展开与选中逻辑，风格与逻辑真正对齐；`activeGroupKey(route, nodes)` 增加树入参，全局组头进入子页时自动展开并带 `has-active`（此前只认项目树，全局组永远展开不了）
+- **执行计划（即时发起台）**：`执行与报告` 组首位新增 `/execution-plans`——勾选用例集批量带出用例、搜索补选、实时计数 → 配并发 / 参数等 5 项（不填即不发字段） → 安全预检 → 立即发起 → 跳 `/runs/:id`。与 `/plans`（cron 定时编排）是两套模型，页面副标题明示「即时发起，不设定时」；「发起记录」按 `runRequestId` 前缀 `EP-` 过滤最近 20 条，不新增表、不新增列
+- **用户管理（仅当前用户和关联项目）**：项目侧新增 `/settings/users` 只读页，回答「我是谁、我加入了哪些项目」；关联项目按 `own || joined` 过滤，页面上没有任何写操作控件，也没有新增后端端点
+- **菜单不变量机检**：`tools/check_navigation.py` 锁死「层级 ≤ 2 / 全局与项目每组 ≥ 2 叶 / 同 path 的 query 互异 / 每组有唯一默认值」四条规则，并接入 `scripts/lint.sh`；带 `--self-test` 破坏性自检，把任一组删到 1 叶必须判非 0 退出
+- **导航 query 化**：公共用例 `?view=imports`（导入批次从页内折叠块提级为独立视图）、公共资产 `?tab=devices|credentials`、模板 `?kind=builtin|custom`、项目 `?scope=mine`，侧栏二级项可直接寻址与分享
+- **本版新增测试**：前端 9 个 spec 文件（`SettingsUsersView` / `GlobalProjectsView` / `GlobalCasesView` / `GlobalAssetsView` / `GlobalTemplatesView` / `ExecutionPlansView` / `TemplateWorkbenchView` / `CategoryTree` / 顶栏窄屏 3 例），后端真库集成测试 `GlobalCasePreviewForceIT`
+
+### 变更 <!-- changed -->
+- **“系统设置”按模式分工**：全局侧栏承载 `SETTINGS_NAV` 全部 6 项（平台设置 / AI 助手 / 用户管理 / 审计日志 / 关于 / 版本迭代）；项目侧收敛为 2 项（用户管理（仅当前用户和关联项目）、关于），两模式不再 `diff = 0`，断言改为「2 项均能找到同源视图」
+- **顶栏重排**：主题与语言按钮从 `header-quick` 容器移入工具段，顺序固定为 **模式 → 上下文 → 工具（检索 / 通知 / AI / 主题 / 语言） → 账户**，账户菜单落在最右；`header-quick` 容器及其响应式规则一并删除，分隔线仍为 2 条
+- **项目卡牌补真实归属**：`GET /api/projects/cards` 的每张卡牌新增 `own`（我是创建者）与 `joined`（我是成员）。两者与 `myRole` 分开，是因为 `myRole` 对全局 admin 有兜底语义（无成员关系时也给 `admin`），拿它判「我参与的」对最需要这个筛子的人恒真
+- **运行记录暴露 `runRequestId`**：`RunRecord` 与 `GET /api/execution/runs` 增加该字段（该列自 `V4_1` 起就在 `run` 表里，本版只是把它读出来），执行计划据此区分「本页发起」与「用例页发起」
+- **6 处原生表格改走 `DataTable` 壳**：`ProjectSyncView` 2 处、`GlobalAssetsView` 1 处、`GlobalCasesView` 3 处；暗色表头、吸顶与横向滚动行为从此与其余 49 张表一致。注意 `render()` 里 `h()` 出来的节点拿不到组件 scope id，相关样式必须用 `:deep()` 锚定，否则换壳后静默失效
+- **表格机检基线随之上调**：`check_tables.py` 的 `MIN_TABLES` 19 → 55、`MIN_VUE_FILES` 20 → 100，自检基线改为跟随下限，避免「扫描范围可疑」的假红
+- **导入预览支持强制重算**：`preview` 增加 `force` 参数。`force=false` 时同一份文件命中已提交批次仍直接回放（幂等语义不变）；`force=1` 按当前库重算，但**不写 `import_item`、不改批次状态**，历史记录保持原样
+
+### 修复 <!-- fixed -->
+- **全局设置组头永不展开**：`activeGroupKey` 原先只认项目树，全局树的组头无论进哪一页都不会亮；改为按当前模式的树求值，`AppNav` 直接传 `props.nodes`
+- **同 path 多 query 双双不亮**：`isLeafActive` 对带 `query` 的叶子严格比较，裸路径访问 `/g/assets`、`/g/templates` 时两个叶子都不亮，看起来像选中态坏了；现在每组的第一个叶子是该组默认值，进入页面时无 query 或非法值一律 `router.replace` 补齐
+- **“我参与的”对 admin 恒真**：全局 admin 几乎能看到所有项目，`myRole` 恒非空，用它筛「我参与的」等于没筛；前端只认 `own || joined`
+- **从模板建项目后场景详情永远是空的**：`test_scenario.case_set_ids` 原先写死空串，且 `SCENARIO` 可能排在 `CASE_SET` 之前；改为两轮——先建完所有用例集拿到完整 id 串，再写场景
+- **模板导入与资产视图换壳后样式失效**：`DataTable` 的列由 `h()` 渲染于 `NDataTable` 内部，不带组件 scope id，`.table` / `.tag` 这类选择器会静默失效；统一改 `:deep()`，并删掉残留的 `.asset-table` 死样式
+- **760px 窄屏顶栏横向溢出**：`header-actions` 增加 `flex-wrap`，760px 断点下收紧工具段间距；单测按「源码定长窗口 + 真实读取 `main.css`」双判据断言，不靠 jsdom 里恒为 0 的 `scrollWidth`
+
+### 破坏性变更 <!-- breaking -->
+- 侧栏菜单结构变化：全局为 5 组 14 叶、项目「系统设置」由 6 项收敛为 2 项。任何依赖旧菜单结构（一级平铺、两模式 `diff = 0`）的外部脚本或断言需同步更新
+- `GET /api/projects/cards` 的每张卡牌新增 `own` / `joined`，`GET /api/execution/runs` 的每条记录新增 `runRequestId`；均为**只增字段不改语义**，但严格反序列化（拒绝未知字段）的调用方需放行
+- 前端不再提供 `header-quick` 容器；依赖该选择器的自定义样式或 E2E 选择器需改指 `[data-seg="tools"]`
+- **本版 0 组迁移、0 处 DDL**：所有新增能力都落在既有表与既有列上
+
+## v4.10.0（2026-11-11）
 
 ### 新增 <!-- added -->
 - **统一用例详情（OPT-02）**：公共用例、项目用例、由公共用例分配给项目的副本三类详情共用同一字段契约，按「标识 / 分类 / 内容 / 执行 / 溯源 / 版本」六组展示，覆盖参考工作簿 14 列基线；源表无此列时显式写「源表无此列」而非留空；副本额外显示 `external_id`、同步批次号、`local_override` 徽章

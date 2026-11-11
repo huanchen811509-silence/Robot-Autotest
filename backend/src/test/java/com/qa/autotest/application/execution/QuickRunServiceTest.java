@@ -148,7 +148,7 @@ class QuickRunServiceTest {
     void 终态不派发() {
         RunRecord done = new RunRecord(1L, "RUN-DONE", PROJECT, null, RunState.FINISHED,
                 0, 1, 0, 0, 0, 0, null, null, null, null,
-                java.time.Instant.EPOCH, java.time.Instant.EPOCH, null, null);
+                java.time.Instant.EPOCH, java.time.Instant.EPOCH, null, null, null);
 
         service.dispatch(done, new RunService.CreateRunCommand(
                 PROJECT, null, List.of("suites/a.robot"), 1, null, List.of(),

@@ -81,11 +81,14 @@ function syncHeaderHeight(): void {
 // v4.9.2 / OPT-08：能力集来自服务端（stores/menuCapabilities）；load() 完成
 // （含失败降级为最小能力集）之前不渲染导航，避免「先全显再收起」的闪烁。
 // v4.5.0：全局模式使用独立导航（项目 / 公共用例 / 公共资产 / 模板 / 系统设置）。
+// v4.11.0 / FR-v4.11-03：全局分支改为与项目分支**同一过滤函数**——原来全局不过滤，
+// 「系统设置」组里的「用户管理 / 审计日志」对谁都能看见，两模式权限口径不一致。
 const nav = computed<NavNode[]>(() => {
   if (!menuCaps.ready) return []
-  return uiMode.isGlobal
-    ? GLOBAL_NAVIGATION
-    : filterNavByCapabilityPredicate(NAVIGATION, (capability) => menuCaps.has(capability))
+  return filterNavByCapabilityPredicate(
+    uiMode.isGlobal ? GLOBAL_NAVIGATION : NAVIGATION,
+    (capability) => menuCaps.has(capability),
+  )
 })
 
 // NAV-04：命令面板全局快捷键。打印页/登录页不响应，避免无头打印被快捷键干扰。

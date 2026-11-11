@@ -225,7 +225,7 @@ public class RunService {
         String scope = deviceScope(cmd);
         RunRecord draft = new RunRecord(0L, runId, cmd.projectId(), cmd.testSetId(),
                 RunState.QUEUED, cmd.priority(), cmd.concurrency(), 0,
-                0, 0, 0, null, null, null, null, now, null, null, scope);
+                0, 0, 0, null, null, null, null, now, null, null, scope, requestId);
         try {
             RunRecord inserted = runs.insert(draft, runId, requestId, TenantContext.userId(), origin);
             if (nodeId != null) {
@@ -388,7 +388,7 @@ public class RunService {
                 current.attemptNo(), current.totalTests(), current.passedTests(),
                 current.failedTests(), ctx.failureClass(), ctx.failureReason(),
                 ctx.failureMessage(), current.artifactsDir(), current.enqueuedAt(),
-                startedAt, finishedAt, current.deviceScope());
+                startedAt, finishedAt, current.deviceScope(), current.runRequestId());
         if (to.terminal()) {
             notifyCompletion(completed);
         }
@@ -438,7 +438,7 @@ public class RunService {
                 current.state(), current.priority(), current.concurrency(), current.attemptNo(),
                 total, passed, failed, current.failureClass(), current.failureReason(),
                 current.failureMessage(), artifactsDir, current.enqueuedAt(),
-                current.startedAt(), current.finishedAt(), current.deviceScope());
+                current.startedAt(), current.finishedAt(), current.deviceScope(), current.runRequestId());
     }
 
     private void validate(CreateRunCommand cmd) {

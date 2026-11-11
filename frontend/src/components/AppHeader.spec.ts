@@ -11,6 +11,8 @@
  * 由 `scripts/browser-regression.mjs` 在真实 Chromium 里量；这里只锁结构契约。
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { createApp, h, nextTick, type App } from 'vue'
 import { createPinia, setActivePinia, type Pinia } from 'pinia'
 import { i18n } from '@/locales'
@@ -114,31 +116,47 @@ describe('顶栏三段排版（FR-v4.0-03 / FR-v4.5-04）', () => {
     expect(root.querySelector('.app-mode-switch')).toBeNull()
   })
 
-  it('AI 开启时 7 枚控件，关闭时 6 枚（AI 整项不渲染）', async () => {
+  // v4.11.0 / FR-v4.11-09：主题 / 语言并入工具段，可聚焦控件 7→9（AI 关闭 8）。
+  it('AI 开启时 9 枚控件，关闭时 8 枚（AI 整项不渲染）', async () => {
     const withAi = await mountHeader(true)
-    expect(interactive(withAi)).toHaveLength(7)
+    expect(interactive(withAi)).toHaveLength(9)
     app?.unmount()
     host?.remove()
 
     const withoutAi = await mountHeader(false)
-    expect(interactive(withoutAi)).toHaveLength(6)
+    expect(interactive(withoutAi)).toHaveLength(8)
     expect(withoutAi.querySelector('[aria-label="' + i18n.global.t('aiPanel.toggle') + '"]')).toBeNull()
   })
 
-  it('外观 / 主题 / 语言 / 关于 / 登出不再占用顶栏', async () => {
+  it('主题 / 语言在工具段内（不再挂在账户之后），关于与登出仍不占顶栏', async () => {
     const root = await mountHeader()
     const labels = [...root.querySelectorAll('[aria-label]')]
       .map((el) => el.getAttribute('aria-label'))
     expect(labels).not.toContain(i18n.global.t('about.open'))
     expect(labels).not.toContain(i18n.global.t('layout.toggleSide'))
-    expect(root.querySelector('.app-theme-btn')).toBeNull()
     expect(root.querySelector('.app-logout')).toBeNull()
+    // v4.11.0：主题 / 语言必须在 `[data-seg="tools"]` 里，否则账户就不在最右
+    const tools = root.querySelector('[data-seg="tools"]')!
+    expect(tools.querySelectorAll('button').length).toBeGreaterThanOrEqual(4)
   })
 
-  it('Tab 顺序与视觉顺序一致（模式 → 项目 → 检索 → 通知 → AI → 账户）', async () => {
+  it('Tab 顺序与视觉顺序一致（模式 → 项目 → 检索 → 通知 → AI → 主题 → 语言 → 账户）', async () => {
     const root = await mountHeader()
     const order = interactive(root).map((el) => el.tagName.toLowerCase())
-    expect(order).toEqual(['button', 'button', 'select', 'button', 'button', 'button', 'button'])
+    expect(order).toEqual([
+      'button', 'button', 'select',
+      'button', 'button', 'button', 'button', 'button',
+      'button',
+    ])
+  })
+
+  it('账户段是 header-actions 内最后一个 data-seg，且 header-quick 容器已移除（FR-v4.11-10）', async () => {
+    const root = await mountHeader()
+    const segs = [...root.querySelectorAll('[data-testid="header-actions"] > [data-seg]')]
+    expect(segs.at(-1)?.getAttribute('data-seg')).toBe('account')
+    // 分隔线仍是 2 条：三段两线，不因重排多画一条
+    expect(root.querySelectorAll('.app-sep')).toHaveLength(2)
+    expect(root.querySelector('[data-testid="header-quick"]')).toBeNull()
   })
 
   it('账户入口是菜单触发器：aria-haspopup=menu 且默认收起', async () => {
@@ -149,8 +167,7 @@ describe('顶栏三段排版（FR-v4.0-03 / FR-v4.5-04）', () => {
   })
 })
 
-describe('项目选择器（FR-UI-19）', () => {
-  it('有独立造型：带 app-project 类但不与 app-lang 共用选择器', async () => {
+describe('项目选择器（FR-UI-19）', () => {  it('有独立造型：带 app-project 类但不与 app-lang 共用选择器', async () => {
     const root = await mountHeader()
     const project = root.querySelector('.app-project')
     expect(project).not.toBeNull()
@@ -172,5 +189,53 @@ describe('项目选择器（FR-UI-19）', () => {
     const root = await mountHeader()
     expect(root.querySelector('.app-project')!.classList.contains('is-empty')).toBe(true)
     expect(root.querySelector<HTMLSelectElement>('.app-project-select')!.value).toBe('')
+  })
+})
+
+/**
+ * v4.11.0 / FR-v4.11-11：760px 下顶栏不横向溢出。
+ *
+ * <p>**为什么不直接断 `scrollWidth <= clientWidth`**：jsdom 不做布局，两个值恒为 0，
+ * 那样的断言永远为真，等于没有断言（本项目已经吃过「写了探针但探针恒绿」的亏）。
+ * 像素读数由 `scripts/browser-regression.mjs` 在真实 Chromium 里量；这里锁的是
+ * **让它不会溢出的两条契约**：
+ * ① 顶栏与右侧容器 `flex-wrap: wrap`（空间不足换行，而不是把内容挤出视口）；
+ * ② 主题/语言并入工具段后，窄屏断点仍存在且收紧段内间距（否则 9 枚控件在 760px 硬挤）。
+ *
+ * <p>注意样式必须用 `fs` 直读：vitest 的 CSS 插件会把 `*.css` 模块短路成空串，
+ * `?raw` 也不例外（见 `styles/select-theme.spec.ts` 的踩坑记录）。
+ */
+describe('760px 窄屏不横向溢出（FR-v4.11-11）', () => {
+  // vitest 里 `import.meta.url` 是 http:// 而非 file://，不能拿来喂 readFileSync；
+  // 与 `styles/select-theme.spec.ts` 一致：以 vitest 的 cwd（frontend/）为基准直读源文件。
+  const read = (rel: string) => readFileSync(resolve(process.cwd(), rel), 'utf8')
+  const mainCss = read('src/styles/main.css').replace(/\/\*[\s\S]*?\*\//g, '')
+
+  it('顶栏与右侧容器在空间不足时换行，而不是横向溢出', () => {
+    // 同一对选择器在断点里还出现过一次（只改 gap），所以要找「含 flex-wrap 的那条」，
+    // 而不是第一处命中——第一处是 @media 里的间距微调，断它等于断错了规则。
+    const blocks = [
+      ...mainCss.matchAll(/\.app-header,\s*\.app-header-right\s*\{([^}]*)\}/g),
+    ].map((match) => match[1])
+    expect(blocks.length, '缺少 .app-header / .app-header-right 规则').toBeGreaterThan(0)
+    expect(
+      blocks.some((body) => body.includes('flex-wrap: wrap')),
+      `没有任何一条 .app-header 规则声明 flex-wrap: wrap（实际：${JSON.stringify(blocks)}）`,
+    ).toBe(true)
+  })
+
+  it('760px 断点存在，且工具段在窄屏收紧间距', () => {
+    const source = read('src/components/AppHeader.vue')
+    // 断点块内部还有嵌套规则，`[^}]*` 会停在第一个内层 `}`，改用定长窗口取整段
+    const narrow = /@media \(max-width: 760px\)\s*\{([\s\S]{0,240})/.exec(source)
+    expect(narrow, 'AppHeader 缺少 760px 断点').not.toBeNull()
+    expect(narrow![1]).toContain('.app-tools')
+    expect(narrow![1]).toMatch(/gap:\s*\d+px/)
+  })
+
+  it('探针：挂载后 scrollWidth 不超过 clientWidth（真布局下才有读数，jsdom 恒 0，不作唯一判据）', async () => {
+    const root = await mountHeader()
+    const header = root.querySelector<HTMLElement>('.app-header')!
+    expect(header.scrollWidth).toBeLessThanOrEqual(header.clientWidth)
   })
 })

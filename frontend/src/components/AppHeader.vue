@@ -124,8 +124,10 @@ async function changeProject(event: Event): Promise<void> {
 
       <span class="app-sep" role="presentation" aria-hidden="true" />
 
-      <!-- 段 2 工具：检索 / 通知 / AI。AI 受 ai.enabled 门控，关闭时整项不渲染。 -->
-      <div class="app-seg" data-seg="tools">
+      <!-- 段 2 工具：检索 / 通知 / AI / 主题 / 语言（v4.11.0 重排：账户必须在最右）。
+           主题与语言原在 `header-quick` 容器里、位于账户之后，导致「最右是主题而不是账户」；
+           现在统一进本段，顺序即「上下文 → 工具 → 身份」的直觉顺序。 -->
+      <div class="app-seg app-tools" data-seg="tools">
         <button
           class="btn btn-ghost app-icon-btn"
           type="button"
@@ -146,24 +148,19 @@ async function changeProject(event: Event): Promise<void> {
         >
           <AppIcon name="sparkles" :size="16" />
         </button>
+        <ThemeCycleButton />
+        <LocaleCycleButton />
       </div>
 
       <span class="app-sep" role="presentation" aria-hidden="true" />
 
-      <!-- 段 3 账户：状态 / 外观 / 管理 / 会话四分区收在一个菜单里 -->
+      <!-- 段 3 账户：状态 / 外观 / 管理 / 会话四分区收在一个菜单里。必须在最右。 -->
       <div class="app-seg" data-seg="account">
         <AccountMenu
           @logout="emit('logout')"
           @open-shortcuts="emit('open-shortcuts')"
         />
       </div>
-    </div>
-
-    <!-- v4.9.2 / OPT-03：主题 / 语言循环快捷按钮。独立于 header-actions 段，
-         与账户菜单共用同一 store / composable，状态天然双向同步。 -->
-    <div class="app-header-quick" data-testid="header-quick">
-      <ThemeCycleButton />
-      <LocaleCycleButton />
     </div>
   </header>
 </template>
@@ -205,21 +202,17 @@ async function changeProject(event: Event): Promise<void> {
   outline-offset: 1px;
 }
 
-/* v4.9.2 / OPT-03：快捷按钮不参与伸缩（flex-shrink:0），窄屏靠 gap 收敛；
+/* v4.11.0 / FR-v4.11-09：主题 / 语言并入工具段后，段内间距在这里统一控制。
    顶栏本身已在 main.css 开启 flex-wrap:wrap，空间不足时整组换行而非横向溢出。 */
-.app-header-quick {
-  display: inline-flex;
-  align-items: center;
+.app-tools {
   gap: 8px;
-  flex: 0 0 auto;
-  margin-left: 12px;
 }
 
 @media (max-width: 1080px) {
-  .app-header-quick { gap: 4px; margin-left: 8px; }
+  .app-tools { gap: 4px; }
 }
 
 @media (max-width: 760px) {
-  .app-header-quick { gap: 4px; margin-left: 6px; }
+  .app-tools { gap: 4px; }
 }
 </style>

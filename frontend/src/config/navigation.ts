@@ -15,7 +15,7 @@
  */
 import zhCN from '@/locales/zh-CN'
 import type { IconName } from '@/components/iconMap'
-import { SETTINGS_NAV, projectSettingsPath } from './settingsNav'
+import { PROJECT_SETTINGS_NAV, SETTINGS_NAV, projectSettingsPath } from './settingsNav'
 
 /** 叶子节点：一个可点击的页面入口。 */
 export interface NavLeaf {
@@ -61,74 +61,173 @@ export interface NavGroup {
 
 export type NavNode = NavGroup | NavLeaf
 
-/**
- * 全局模式导航（v4.5.0 / FR-v4.5-03）：项目 · 公共用例 · 公共资产 · 模板 · 系统设置。
+/* --------------------------------------------------------------------------
+ * 设置项派生（v4.9.2 / OPT-01 → v4.11.0 / FR-v4.11-08）
  *
- * 与项目导航分开维护，避免把「项目内页面」误挂到全局；权限仍由路由 meta 与后端 403 兜底。
- */
-export const GLOBAL_NAVIGATION: NavNode[] = [
-  {
-    key: 'global-projects',
-    labelKey: 'menu.globalProjects',
-    icon: 'dashboard',
-    path: '/g/projects',
-  },
-  {
-    key: 'global-cases',
-    labelKey: 'menu.globalCases',
-    icon: 'cases',
-    path: '/g/cases',
-  },
-  {
-    key: 'global-assets',
-    labelKey: 'menu.globalAssets',
-    icon: 'database',
-    path: '/g/assets',
-  },
-  {
-    key: 'global-templates',
-    labelKey: 'menu.globalTemplates',
-    icon: 'boxes',
-    path: '/g/templates',
-  },
-  {
-    key: 'global-settings',
-    labelKey: 'menu.globalSettings',
-    icon: 'admin',
-    path: '/g/settings',
-  },
-]
+ * 图标与 adminOnly 属渲染 / 旧口径信息，不进单一数据源，这里做一次平行映射；
+ * key / labelKey / path / capability 一律取自 settingsNav.ts。
+ * -------------------------------------------------------------------------- */
 
-export function isGroup(node: NavNode): node is NavGroup {
-  return Array.isArray((node as NavGroup).children)
-}
-
-/**
- * v4.9.2 / OPT-01：项目侧栏「系统设置」6 项由 config/settingsNav.ts 派生（唯一真源）。
- * 图标与 adminOnly 属于渲染 / 旧口径信息，不进单一数据源，这里做一次平行映射；
- * key / labelKey / path / capability 一律取自 SETTINGS_NAV，与全局模式 diff = 0。
- */
 const SETTINGS_ICONS: Record<string, IconName> = {
   'settings-platform': 'admin',
   'settings-ai': 'sparkles',
   'settings-users': 'users',
+  'settings-me': 'users',
   'settings-audit': 'audit',
   'settings-about': 'help',
   'settings-changelog': 'reports',
 }
 
-const settingsChildren: NavLeaf[] = SETTINGS_NAV.map((item) => {
+/** 全局「系统设置」6 项（v4.11.0）：路径用 `/g/*` 原名，能力沿用 `SETTINGS_NAV`。 */
+const globalSettingsChildren: NavLeaf[] = SETTINGS_NAV.map((item) => {
   const leaf: NavLeaf = {
     key: item.key,
     labelKey: item.labelKey,
     icon: SETTINGS_ICONS[item.key] ?? 'admin',
-    path: projectSettingsPath(item.path),
+    path: item.path,
     capability: item.capability,
   }
   // 审计沿用旧口径 adminOnly（在能力过滤里等价于要求 audit:read）。
   if (item.key === 'settings-audit') leaf.adminOnly = true
   return leaf
 })
+
+/**
+ * 项目「系统设置」2 项（v4.11.0 / FR-v4.11-08）：用户管理（仅当前用户和关联项目）+ 关于。
+ *
+ * 本版把平台级配置全量迁到全局侧栏；项目侧只留「与当前人有关」的两项，
+ * 因此 `SETTINGS_NAV` 不再与项目侧 diff = 0（R-50-06）。
+ */
+const projectSettingsChildren: NavLeaf[] = PROJECT_SETTINGS_NAV.map((item) => ({
+  key: item.key,
+  labelKey: item.labelKey,
+  icon: SETTINGS_ICONS[item.key] ?? 'admin',
+  path: projectSettingsPath(item.path),
+  capability: item.capability,
+}))
+
+/**
+ * 全局模式导航（v4.5.0 / FR-v4.5-03；v4.11.0 / FR-v4.11-01 改两级）。
+ *
+ * v4.11.0 之前这里 5 项全是叶子，与项目模式的「7 组 / 32 叶」形态不对称；
+ * 本版改为 **5 组 14 叶，每组至少 2 项**（PRD §4.2）：
+ *
+ * | 组 | 叶 | 数据面 |
+ * |---|---|---|
+ * | 项目 | 全部项目 / 我参与的（`?scope=mine`） | `/api/projects/cards` 的 `own`/`joined` |
+ * | 公共用例 | 用例清单 / 导入记录（`?view=imports`） | 既有列表与批次端点 |
+ * | 公共资产 | 设备 / 凭据（`?tab=devices\|credentials`） | 既有 `type` 筛选 |
+ * | 模板 | 内置 / 自定义（`?kind=builtin\|custom`） | `TemplateRow.builtin` |
+ * | 系统设置 | `SETTINGS_NAV` 6 项 | 与全局命名空间一致 |
+ *
+ * **同 path 多 query 的默认值约定**：每组第一个叶子是该组默认值。`/g/projects` 与
+ * `/g/cases` 的第一项不带 query（裸路径即默认态）；`/g/assets` 与 `/g/templates` 两项
+ * 都带 query，所以页面必须在无 query / 非法值时 `router.replace` 到默认值，
+ * 否则 `isLeafActive` 的严格比较会让两个叶子都不亮（见 PRD §4.2 与 R-50-08）。
+ *
+ * 详情页（`/g/cases/:id`、`/g/assets/:id`、`/g/templates/:id`）走 `alsoMatch` 点亮父项，
+ * 不计入叶数。
+ */
+export const GLOBAL_NAVIGATION: NavNode[] = [
+  {
+    key: 'global-projects',
+    labelKey: 'menu.globalProjects',
+    icon: 'dashboard',
+    children: [
+      {
+        key: 'global-projects-all',
+        labelKey: 'menu.globalProjectsAll',
+        icon: 'dashboard',
+        path: '/g/projects',
+      },
+      {
+        // v4.11.0 / FR-v4.11-29：不能靠 `myRole` 判——全局 admin 无成员关系时该值也是
+        // `admin`（A14），对最需要这个筛子的人恒真。卡片接口本版补了 `own`/`joined`。
+        key: 'global-projects-mine',
+        labelKey: 'menu.globalProjectsMine',
+        icon: 'users',
+        path: '/g/projects',
+        query: { scope: 'mine' },
+      },
+    ],
+  },
+  {
+    key: 'global-cases',
+    labelKey: 'menu.globalCases',
+    icon: 'cases',
+    children: [
+      {
+        key: 'global-cases-all',
+        labelKey: 'menu.globalCasesList',
+        icon: 'cases',
+        path: '/g/cases',
+        alsoMatch: ['/g/cases/'],
+      },
+      {
+        // v4.11.0 / FR-v4.11-26：把页内 `<details class="batches">` 提级为独立分支。
+        key: 'global-cases-imports',
+        labelKey: 'menu.globalCasesImports',
+        icon: 'download',
+        path: '/g/cases',
+        query: { view: 'imports' },
+      },
+    ],
+  },
+  {
+    key: 'global-assets',
+    labelKey: 'menu.globalAssets',
+    icon: 'database',
+    children: [
+      {
+        key: 'global-assets-devices',
+        labelKey: 'assets.tabs.devices',
+        icon: 'device',
+        path: '/g/assets',
+        query: { tab: 'devices' },
+        alsoMatch: ['/g/assets/'],
+      },
+      {
+        key: 'global-assets-credentials',
+        labelKey: 'assets.tabs.credentials',
+        icon: 'credential',
+        path: '/g/assets',
+        query: { tab: 'credentials' },
+      },
+    ],
+  },
+  {
+    key: 'global-templates',
+    labelKey: 'menu.globalTemplates',
+    icon: 'boxes',
+    children: [
+      {
+        key: 'global-templates-builtin',
+        labelKey: 'menu.globalTemplatesBuiltin',
+        icon: 'boxes',
+        path: '/g/templates',
+        query: { kind: 'builtin' },
+        alsoMatch: ['/g/templates/'],
+      },
+      {
+        key: 'global-templates-custom',
+        labelKey: 'menu.globalTemplatesCustom',
+        icon: 'copy',
+        path: '/g/templates',
+        query: { kind: 'custom' },
+      },
+    ],
+  },
+  {
+    key: 'global-settings',
+    labelKey: 'menu.globalSettings',
+    icon: 'admin',
+    children: globalSettingsChildren,
+  },
+]
+
+export function isGroup(node: NavNode): node is NavGroup {
+  return Array.isArray((node as NavGroup).children)
+}
 
 export const NAVIGATION: NavNode[] = [
   {
@@ -182,6 +281,17 @@ export const NAVIGATION: NavNode[] = [
     // 若给合并组加回该能力，viewer 会静默失去报告入口（合并前的 6 项可见性就会倒退）。
     // 能力只设到子项：3 个运行态项要 execution:read，3 个报告态项不要。
     children: [
+      {
+        // v4.11.0 / FR-v4.11-12：即时发起台。与下面「测试计划」（cron 定时编排）是两件事：
+        // 这里「现在就跑这一批」，那里「按计划周期自动跑」。侧栏把发起放首位，
+        // 页面副标题写明「即时发起，不设定时」，避免新老用户混淆（R-50-04）。
+        key: 'execution-launch',
+        labelKey: 'menu.executionPlans',
+        icon: 'plus',
+        path: '/execution-plans',
+        capability: 'execution:read',
+        section: 'run',
+      },
       {
         key: 'execution-runs',
         labelKey: 'menu.runsList',
@@ -339,8 +449,8 @@ export const NAVIGATION: NavNode[] = [
     key: 'settings',
     labelKey: 'menu.settings',
     icon: 'admin',
-    // v4.9.2 / OPT-01：6 项与全局模式共用 config/settingsNav.ts 单一数据源。
-    children: settingsChildren,
+    // v4.11.0 / FR-v4.11-08：项目侧收敛为 2 项（用户管理 + 关于），平台级 6 项在全局侧栏。
+    children: projectSettingsChildren,
   },
 ]
 
@@ -406,9 +516,20 @@ export function isNodeActive(node: NavNode, route: NavRouteLike): boolean {
   return isGroup(node) ? isGroupActive(node, route) : isLeafActive(node, route)
 }
 
-/** 当前路由所属分组的 key；不在任何分组里返回 null（用于自动展开）。 */
-export function activeGroupKey(route: NavRouteLike): string | null {
-  for (const node of NAVIGATION) {
+/**
+ * 当前路由所属分组的 key；不在任何分组里返回 null（用于自动展开）。
+ *
+ * v4.11.0 / FR-v4.11-02：原来硬编码只遍历项目 `NAVIGATION`，全局模式就算改成分组
+ * 也不会自动展开（组头永远不亮）。现在由调用方把**当前模式的树**传进来：
+ * `AppNav` 传 `props.nodes`，单测可传任意树。
+ *
+ * 默认值仍是 `NAVIGATION`，保证既有调用方（命令面板、旧单测）行为不变。
+ */
+export function activeGroupKey(
+  route: NavRouteLike,
+  nodes: readonly NavNode[] = NAVIGATION,
+): string | null {
+  for (const node of nodes) {
     if (isGroup(node) && isGroupActive(node, route)) return node.key
   }
   return null

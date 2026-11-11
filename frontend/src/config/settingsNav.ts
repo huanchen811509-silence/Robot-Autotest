@@ -29,6 +29,32 @@ export const SETTINGS_NAV: readonly SettingsNavItem[] = [
   { key: 'settings-changelog', labelKey: 'menu.changelog', path: '/g/changelog', capability: 'public' },
 ]
 
+/**
+ * 项目模式「系统设置」组（v4.11.0 / FR-v4.11-08）。
+ *
+ * 本版把平台级配置收敛到全局：全局侧栏承载 `SETTINGS_NAV` 全部 6 项，项目侧只留
+ * 两件「与当前人有关」的事——「用户管理（仅当前用户和关联项目）」与「关于」。
+ * 因此两模式不再 diff = 0，`SETTINGS_NAV` 的职责收窄为「全局 6 项真源」；
+ * 项目侧的真源是下面这个数组，断言改为「2 项均能找到同源视图」。
+ *
+ * 为什么不复用 `/admin`：那是系统级账号 CRUD（能力 `user:write`），与「我是谁、我加入
+ * 了哪些项目」既不同语义也不同越权面（见 `00-RESEARCH.md` B6）。
+ */
+export const PROJECT_SETTINGS_NAV: readonly SettingsNavItem[] = [
+  {
+    key: 'settings-me',
+    labelKey: 'menu.settingsUsersMe',
+    path: '/settings/users',
+    capability: 'public',
+  },
+  {
+    key: 'settings-about',
+    labelKey: 'menu.about',
+    path: '/about',
+    capability: 'public',
+  },
+]
+
 /** 全局路径 → 项目路径（/g/settings/ai → /settings/ai）。非 /g 路径原样返回。 */
 export function projectSettingsPath(globalPath: string): string {
   return globalPath.startsWith(`${GLOBAL_SETTINGS_PREFIX}/`)

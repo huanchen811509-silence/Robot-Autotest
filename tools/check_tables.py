@@ -42,9 +42,11 @@ ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "frontend" / "src"
 SHELL = SRC / "components" / "DataTable.vue"
 
-# 现状快照（2026-11-05 UX-05 第一批）：4+4+1+1+3+1+2+2+1 = 19
-MIN_TABLES = 19
-MIN_VUE_FILES = 20  # 低于这个数说明扫描没跑起来
+# 现状快照（v4.11.0 / 2026-11-11，W-E-03/04 把最后 2 处原生表改壳后重算）：
+# 55 处 DataTable 壳 / 35 个文件。下限只防「壳不好用就把整张表删了/换回裸 NDataTable」，
+# 不追求贴合每次新增——加表不会红，减表才会红。
+MIN_TABLES = 55
+MIN_VUE_FILES = 100  # 低于这个数说明扫描范围没覆盖到（现状 112）
 
 NATIVE_TABLE_ALLOW = {
     "ReportPrintView.vue": "打印页零库依赖（§2.2 步骤 5）",
@@ -173,7 +175,10 @@ def self_test() -> int:
             (view_dir / name).write_text(body, encoding="utf-8")
         return shell, src
 
-    many = {f"V{i}.vue": "<template><DataTable /></template>\n" for i in range(MIN_TABLES)}
+    # 基线必须同时满足两条下限（壳实例数、.vue 文件数），否则自检会因为「扫描范围可疑」
+    # 而不是因为注入的问题判红——那样自检本身就失去意义。
+    baseline = max(MIN_TABLES, MIN_VUE_FILES)
+    many = {f"V{i}.vue": "<template><DataTable /></template>\n" for i in range(baseline)}
     many["ReportPrintView.vue"] = "<template><table><tr><td>x</td></tr></table></template>\n"
 
     # 1) 干净基线必须 PASS

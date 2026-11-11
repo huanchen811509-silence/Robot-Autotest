@@ -501,8 +501,12 @@ public class ProjectTemplateService {
                 }
             }
         }
+        // 本轮实际产出的用例集（含「模板导入用例集」与各 CASE_SET 项），
+        // 场景的 case_set_ids 必须指向它们，否则场景详情永远是空的（L-49-07）。
+        List<Long> createdSetIds = new ArrayList<>();
         if (!newCaseIds.isEmpty()) {
             long setId = createTestSet(projectId, "模板导入用例集", operator);
+            createdSetIds.add(setId);
             int seq = 1;
             for (Long caseId : newCaseIds) {
                 jdbc.update("""
@@ -514,12 +518,19 @@ public class ProjectTemplateService {
         }
         for (TemplateItemRow item : items) {
             if ("CASE_SET".equals(item.itemType())) {
-                createTestSet(projectId, displayNameOf(item), operator);
-            } else if ("SCENARIO".equals(item.itemType())) {
+                createdSetIds.add(createTestSet(projectId, displayNameOf(item), operator));
+            }
+        }
+        // 分两轮：先把所有用例集建完，场景才能拿到完整 id 串（模板里 SCENARIO 可能排在 CASE_SET 前面）。
+        String caseSetIds = createdSetIds.stream()
+                .map(String::valueOf)
+                .collect(java.util.stream.Collectors.joining(","));
+        for (TemplateItemRow item : items) {
+            if ("SCENARIO".equals(item.itemType())) {
                 jdbc.update("""
                         INSERT INTO test_scenario (project_id, name, case_set_ids, parent_scenario_id)
-                        VALUES (?, ?, '', NULL)
-                        """, projectId, displayNameOf(item));
+                        VALUES (?, ?, ?, NULL)
+                        """, projectId, displayNameOf(item), caseSetIds);
             }
         }
     }

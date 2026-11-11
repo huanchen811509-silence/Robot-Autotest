@@ -22,6 +22,18 @@ export interface ExecutionRun {
   enqueuedAt: string | null
   startedAt: string | null
   finishedAt: string | null
+  /**
+   * 发起方带来的请求号（v4.11.0 / FR-v4.11-16）。
+   *
+   * 落的是既有的 `run.run_request_id` 列（`VARCHAR(64)`，`V4_1` 起就有，唯一键
+   * `uk_run_project_request`），**本版没有新增表或列**。执行计划页发起的运行统一用
+   * `EP-` 前缀，该页的「发起记录」只按前缀筛选；用例页发起时留空或给别的值，
+   * 因此不会串到执行计划的记录里。
+   *
+   * 声明为可选：该字段只在运行列表/详情响应里回填，历史夹具与部分轻量端点不带它，
+   * 判空一律写 `(run.runRequestId ?? '')`。
+   */
+  runRequestId?: string | null
 }
 
 export interface RunLogLine {

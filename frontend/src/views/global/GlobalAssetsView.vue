@@ -6,8 +6,10 @@
  * 源文件已无的资产软失效（deprecated）；被项目引用的资产删除返回 409。
  * 导入按整份工作簿的 SHA-256 幂等；采集记录挂到设备上，可对单台设备显式补采。
  */
-import { computed, onMounted, ref } from 'vue'
+import { computed, h, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRoute, useRouter } from 'vue-router'
+import { NButton, type DataTableColumns } from 'naive-ui'
 import { useAuthStore } from '@/stores/auth'
 import {
   globalAssetApi,
@@ -15,20 +17,39 @@ import {
   type AssetPreview,
   type GlobalAssetRow,
 } from '@/api/globalAssets'
+import DataTable from '@/components/DataTable.vue'
 
 const { t } = useI18n()
+const route = useRoute()
+const router = useRouter()
 const auth = useAuthStore()
 
-const type = ref<'DEVICE' | 'CREDENTIAL'>('DEVICE')
+type AssetTab = 'DEVICE' | 'CREDENTIAL'
+
+/** URL 用复数小写词表（与项目模式 `/assets?tab=devices` 一致），接口用枚举名。 */
+const TAB_TO_TYPE: Record<string, AssetTab> = { devices: 'DEVICE', credentials: 'CREDENTIAL' }
+const TYPE_TO_TAB: Record<AssetTab, string> = { DEVICE: 'devices', CREDENTIAL: 'credentials' }
+
+/**
+ * v4.11.0 / FR-v4.11-27：页签接入 URL。
+ *
+ * 侧栏「设备 / 凭据」两项是**同一 path 的两个 query**，`isLeafActive` 严格比较 query，
+ * 所以裸路径 `/g/assets`（无 query）会让两个叶子都不亮。这里把无 query / 非法值一律
+ * `router.replace` 规范化到 `?tab=devices`，让 URL 恒定带 query。
+ */
+function tabFromQuery(): AssetTab {
+  const raw = route.query.tab
+  const value = Array.isArray(raw) ? raw[0] : raw
+  return TAB_TO_TYPE[value ?? ''] ?? 'DEVICE'
+}
+
+const type = ref<AssetTab>(tabFromQuery())
 const keyword = ref('')
 const availability = ref('')
 const rows = ref<GlobalAssetRow[]>([])
 const loading = ref(false)
 const failed = ref('')
 const canWrite = computed(() => auth.isAdmin)
-const columnCount = computed(
-  () => 4 + (type.value === 'DEVICE' ? 2 : 0) + 1 + (canWrite.value ? 1 : 0),
-)
 
 async function load() {
   loading.value = true
@@ -46,10 +67,83 @@ async function load() {
   }
 }
 
-function switchType(next: 'DEVICE' | 'CREDENTIAL') {
+function switchType(next: AssetTab) {
   type.value = next
+  // 页签点击与侧栏选中态必须同步：先改 URL，再由 watch 生效（避免两套状态源）。
+  const target = TYPE_TO_TAB[next]
+  if (route.query.tab !== target) {
+    void router.replace({ query: { ...route.query, tab: target } })
+  }
   void load()
 }
+
+/** 浏览器前进/后退或侧栏点击：URL 是唯一真源。 */
+watch(
+  () => route.query.tab,
+  () => {
+    const next = tabFromQuery()
+    if (next !== type.value) {
+      type.value = next
+      void load()
+    }
+  },
+)
+
+/* ------------------------------------------------------------ 表格列定义 */
+
+const columns = computed<DataTableColumns<GlobalAssetRow>>(() => {
+  const cols: DataTableColumns<GlobalAssetRow> = [
+    { title: t('global.assetName'), key: 'name', minWidth: 180 },
+    { title: t('global.assetDetail'), key: 'detail', minWidth: 200 },
+    { title: t('global.assetIp'), key: 'managementIp', width: 160 },
+    {
+      title: t('global.colStatus'),
+      key: 'status',
+      width: 120,
+      render: (row) =>
+        h(
+          'span',
+          { class: ['badge', row.status] },
+          row.status === 'active'
+            ? t('global.assetStatusActive')
+            : t('global.assetStatusDeprecated'),
+        ),
+    },
+  ]
+  if (type.value === 'DEVICE') {
+    cols.push({ title: t('global.assetPorts'), key: 'portCount', width: 100 })
+    cols.push({
+      title: t('global.assetCollectStatus'),
+      key: 'collectStatus',
+      width: 200,
+      render: (row) => collectLabel(row),
+    })
+  }
+  cols.push({ title: t('global.assetRefs'), key: 'referenceCount', width: 100 })
+  if (canWrite.value) {
+    cols.push({
+      title: t('global.colActions'),
+      key: 'actions',
+      width: 200,
+      render: (row) =>
+        h('span', { class: 'row-actions' }, [
+          type.value === 'DEVICE'
+            ? h(
+                NButton,
+                { text: true, type: 'primary', onClick: () => void openCollect(row) },
+                () => t('global.assetCollect'),
+              )
+            : null,
+          h(
+            NButton,
+            { text: true, type: 'error', onClick: () => void removeAsset(row) },
+            () => t('global.assetDelete'),
+          ),
+        ]),
+    })
+  }
+  return cols
+})
 
 // ---------------------------------------------------------------- 导入
 
@@ -178,7 +272,14 @@ function shortSha(sha: string): string {
   return sha.length > 16 ? `${sha.slice(0, 12)}…${sha.slice(-4)}` : sha
 }
 
-onMounted(load)
+onMounted(() => {
+  // 进入即规范化：裸 `/g/assets` 与 `?tab=links` 都改写成 `?tab=devices`，
+  // 否则侧栏两个叶子都不亮（FR-v4.11-27 判据）。
+  if (route.query.tab !== TYPE_TO_TAB[type.value]) {
+    void router.replace({ query: { ...route.query, tab: TYPE_TO_TAB[type.value] } })
+  }
+  void load()
+})
 </script>
 
 <template>
@@ -224,52 +325,18 @@ onMounted(load)
     </div>
 
     <p v-if="failed" class="error">{{ failed }}</p>
-    <div v-if="loading" class="muted">{{ t('global.loading') }}</div>
 
-    <table v-else class="asset-table">
-      <thead>
-        <tr>
-          <th>{{ t('global.assetName') }}</th>
-          <th>{{ t('global.assetDetail') }}</th>
-          <th>{{ t('global.assetIp') }}</th>
-          <th>{{ t('global.colStatus') }}</th>
-          <th v-if="type === 'DEVICE'">{{ t('global.assetPorts') }}</th>
-          <th v-if="type === 'DEVICE'">{{ t('global.assetCollectStatus') }}</th>
-          <th>{{ t('global.assetRefs') }}</th>
-          <th v-if="canWrite">{{ t('global.colActions') }}</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="row in rows" :key="row.id">
-          <td>{{ row.name }}</td>
-          <td class="muted">{{ row.detail }}</td>
-          <td class="mono">{{ row.managementIp }}</td>
-          <td>
-            <span class="badge" :class="row.status">
-              {{
-                row.status === 'active'
-                  ? t('global.assetStatusActive')
-                  : t('global.assetStatusDeprecated')
-              }}
-            </span>
-          </td>
-          <td v-if="type === 'DEVICE'">{{ row.portCount }}</td>
-          <td v-if="type === 'DEVICE'" class="muted">{{ collectLabel(row) }}</td>
-          <td>{{ row.referenceCount }}</td>
-          <td v-if="canWrite">
-            <button v-if="type === 'DEVICE'" class="link" @click="openCollect(row)">
-              {{ t('global.assetCollect') }}
-            </button>
-            <button class="link danger" @click="removeAsset(row)">
-              {{ t('global.assetDelete') }}
-            </button>
-          </td>
-        </tr>
-        <tr v-if="rows.length === 0">
-          <td :colspan="columnCount" class="muted empty">{{ t('global.empty') }}</td>
-        </tr>
-      </tbody>
-    </table>
+    <div data-testid="assets-grid">
+      <DataTable
+        :columns="columns"
+        :data="rows"
+        :loading="loading"
+        :row-key="(row: GlobalAssetRow) => row.id"
+        :error="Boolean(failed)"
+        :empty-title="t('global.empty')"
+        :max-height="560"
+      />
+    </div>
 
     <div v-if="importOpen" class="modal-mask" @click.self="importOpen = false">
       <div class="modal">
@@ -398,6 +465,13 @@ onMounted(load)
   border-bottom-color: var(--accent);
 }
 
+/* DataTable 的 render 返回值：两个文字按钮并排，间距与旧版 .link 一致。 */
+:deep(.row-actions) {
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+}
+
 .filters {
   display: flex;
   gap: var(--space-2);
@@ -414,29 +488,12 @@ onMounted(load)
   color: var(--text);
 }
 
-.asset-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-
-.asset-table th,
-.asset-table td {
-  padding: 6px 8px;
-  border-bottom: 1px solid var(--border);
-  text-align: left;
-}
-
-.asset-table th {
-  color: var(--text-muted);
-  font-weight: 600;
-}
-
+/* 表头下第二个文字按钮（采集 / 删除）由 render() 产生，不带 scope id，必须 :deep 锚定。 */
 .mono {
   font-family: var(--font-mono, monospace);
 }
 
-.badge {
+:deep(.badge) {
   display: inline-block;
   padding: 1px 6px;
   border-radius: 999px;
@@ -444,17 +501,12 @@ onMounted(load)
   border: 1px solid var(--border);
 }
 
-.badge.active {
+:deep(.badge.active) {
   color: var(--ok);
 }
 
-.badge.deprecated {
+:deep(.badge.deprecated) {
   color: var(--fail);
-}
-
-.empty {
-  text-align: center;
-  padding: var(--space-4);
 }
 
 .modal-mask {

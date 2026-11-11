@@ -158,7 +158,7 @@ class ReportParseApiTest {
     private static RunRecord finishedRun() {
         return new RunRecord(1L, RUN_ID, PROJECT, null, RunState.FINISHED,
                 0, 1, 1, 0, 0, 0, null, null, null, null,
-                Instant.parse("2026-10-31T05:00:00Z"), null, null, null);
+                Instant.parse("2026-10-31T05:00:00Z"), null, null, null, null);
     }
 
     private static Path fixture(String name) throws Exception {

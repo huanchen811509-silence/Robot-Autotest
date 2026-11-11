@@ -46,7 +46,7 @@ final class InMemoryRunRepository implements RunRepository {
         long id = ++seq;
         RunRecord stored = new RunRecord(id, draft.runId(), draft.projectId(), draft.testSetId(),
                 draft.state(), draft.priority(), draft.concurrency(), draft.attemptNo(),
-                0, 0, 0, null, null, null, null, draft.enqueuedAt(), null, null, draft.deviceScope());
+                0, 0, 0, null, null, null, null, draft.enqueuedAt(), null, null, draft.deviceScope(), null);
         byRunId.put(stored.runId(), stored);
         byRequest.put(runRequestId, stored);
         return stored;
@@ -80,7 +80,7 @@ final class InMemoryRunRepository implements RunRepository {
                 current.failedTests(), failureClass, failureReason, failureMessage,
                 current.artifactsDir(), current.enqueuedAt(),
                 startedAt == null ? current.startedAt() : startedAt,
-                finishedAt == null ? current.finishedAt() : finishedAt, current.deviceScope()));
+                finishedAt == null ? current.finishedAt() : finishedAt, current.deviceScope(), null));
         return 1;
     }
 
@@ -94,7 +94,7 @@ final class InMemoryRunRepository implements RunRepository {
                 current.testSetId(), current.state(), current.priority(), current.concurrency(),
                 current.attemptNo(), total, passed, failed, current.failureClass(),
                 current.failureReason(), current.failureMessage(), artifactsDir,
-                current.enqueuedAt(), current.startedAt(), current.finishedAt(), current.deviceScope()));
+                current.enqueuedAt(), current.startedAt(), current.finishedAt(), current.deviceScope(), null));
         return 1;
     }
 
@@ -122,7 +122,7 @@ final class InMemoryRunRepository implements RunRepository {
                 attemptNo, current.totalTests(), current.passedTests(), current.failedTests(),
                 current.failureClass(), current.failureReason(), current.failureMessage(),
                 current.artifactsDir(), current.enqueuedAt(), current.startedAt(),
-                current.finishedAt(), current.deviceScope()));
+                current.finishedAt(), current.deviceScope(), null));
         retryOf.put(runId, retryOfRunId);
         return 1;
     }

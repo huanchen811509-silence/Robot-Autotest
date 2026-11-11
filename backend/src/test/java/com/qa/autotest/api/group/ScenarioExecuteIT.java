@@ -96,6 +96,6 @@ class ScenarioExecuteIT {
     private static RunRecord run(long id, String runId) {
         Instant now = Instant.parse("2026-11-08T00:00:00Z");
         return new RunRecord(id, runId, 7L, null, RunState.QUEUED, 0, 1, 1,
-                0, 0, 0, null, null, null, null, now, null, null, null);
+                0, 0, 0, null, null, null, null, now, null, null, null, null);
     }
 }

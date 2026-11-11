@@ -195,7 +195,7 @@ class ShardServiceTest {
 
     private static RunRecord run(RunState state) {
         return new RunRecord(1L, RUN, PROJECT, null, state, 5, 1, 1, 0, 0, 0,
-                null, null, null, "/runs/" + RUN, NOW, null, null, null);
+                null, null, null, "/runs/" + RUN, NOW, null, null, null, null);
     }
 
     private static ExecutionNode node(long id) {

@@ -174,6 +174,37 @@ class ProjectTemplateCopyIT {
         assertThat(setItems).as("复制出的用例应进入「模板导入用例集」").isEqualTo(1L);
     }
 
+    @Test
+    @DisplayName("模板含 SCENARIO 项：场景的 case_set_ids 指向本轮真实产出的用例集（L-49-07）")
+    void scenarioReferencesCreatedCaseSets() {
+        // 模板里加一个场景项（排在 CASE 之后），建项目后它的 case_set_ids 不应为空。
+        jdbc.update("""
+                INSERT INTO project_template_item
+                    (template_id, item_type, ref_id, mode, sort_no, snapshot_json, created_by, updated_by)
+                VALUES (?, 'SCENARIO', NULL, 'copy', 2, 'IT 场景', ?, ?)
+                """, templateId, OPERATOR, OPERATOR);
+
+        String code = "IT-SCN-" + System.nanoTime();
+        service.createProjectFromTemplate(new CreateProjectFromTemplateRequest(
+                templateId, "IT 场景项目-" + System.nanoTime(), code, "copy"));
+
+        List<String> setIds = jdbc.queryForList(
+                "SELECT case_set_ids FROM test_scenario WHERE project_id = ?",
+                String.class, createdProjectId);
+        assertThat(setIds).as("场景壳必须建出来").hasSize(1);
+        assertThat(setIds.get(0))
+                .as("case_set_ids 不能是空串——否则场景详情永远没有用例集（L-49-07）")
+                .isNotBlank();
+
+        // 写入的 id 必须是本项目真实存在的用例集，而不是别的项目 / 不存在的号
+        List<Long> realSetIds = jdbc.queryForList(
+                "SELECT id FROM test_set WHERE project_id = ?", Long.class, createdProjectId);
+        assertThat(realSetIds).isNotEmpty();
+        for (String part : setIds.get(0).split(",")) {
+            assertThat(realSetIds).contains(Long.valueOf(part.trim()));
+        }
+    }
+
     private static DriverManagerDataSource dataSource() {
         DriverManagerDataSource ds = new DriverManagerDataSource();
         String host = System.getenv().getOrDefault("DB_HOST", "127.0.0.1");

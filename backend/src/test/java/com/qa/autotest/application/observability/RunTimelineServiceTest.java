@@ -43,7 +43,7 @@ class RunTimelineServiceTest {
     private static RunRecord run(Instant enqueued, Instant started, Instant finished) {
         return new RunRecord(1L, RUN, PROJECT, null, RunState.FINISHED, 5, 2, 1,
                 9, 8, 1, null, null, null, "/runs/RUN-W4",
-                enqueued, started, finished, "all");
+                enqueued, started, finished, "all", null);
     }
 
     private static ExecutionShard shard(int index, String state, Instant started, Instant finished,

@@ -9,11 +9,13 @@ import { describe, expect, it } from 'vitest'
 import router from '@/router'
 import {
   NAVIGATION,
+  GLOBAL_NAVIGATION,
   BUSINESS_DOMAIN_LABELS,
   hasBusinessDomainAsTopLevel,
   secondLevelEntries,
   activeGroupKey,
   filterNav,
+  filterNavByCapabilities,
   isGroup,
   isGroupActive,
   isSectionBreak,
@@ -61,31 +63,29 @@ describe('navigation 结构', () => {
 })
 
 describe('权限过滤', () => {
-  it('非管理员看不到审计子项，但「系统设置」分组仍在（设置是高频入口）', () => {
-    const settings = visibleNav(false).find((node) => node.key === 'settings') as NavGroup
-    expect(settings).toBeTruthy()
-    expect(settings.children.map((child) => child.key)).toEqual([
-      'settings-platform', 'settings-ai', 'settings-users', 'settings-about', 'settings-changelog',
-    ])
+  // v4.11.0 / FR-v4.11-08：项目侧「系统设置」收敛为 2 项（用户管理 + 关于），
+  // 平台级 6 项迁到全局侧栏；两模式不再 diff = 0（R-50-06）。
+  it('项目侧「系统设置」恰 2 项，且都是 public（不随角色增减）', () => {
+    const asEngineer = visibleNav(false).find((node) => node.key === 'settings') as NavGroup
+    const asAdmin = visibleNav(true).find((node) => node.key === 'settings') as NavGroup
+    expect(asEngineer.children.map((child) => child.key)).toEqual(['settings-me', 'settings-about'])
+    expect(asAdmin.children.map((child) => child.key)).toEqual(['settings-me', 'settings-about'])
+    expect(asEngineer.children.every((child) => child.capability === 'public')).toBe(true)
   })
 
-  it('管理员能看到系统设置分组下的全部子项（含审计）', () => {
-    const settings = visibleNav(true).find((node) => node.key === 'settings') as NavGroup
-    expect(settings.children.map((child) => child.key)).toEqual([
-      'settings-platform', 'settings-ai', 'settings-users', 'settings-audit', 'settings-about',
-      'settings-changelog',
-    ])
-  })
-
-  it('AI 助手配置是管理员专属能力（ai:config），PM 与工程师都看不到', () => {
-    const keysOf = (role: Parameters<typeof capabilitiesForRole>[0]) =>
-      visibleNavByCapabilities(capabilitiesForRole(role)).flatMap((node) =>
+  it('AI 助手配置是管理员专属能力（ai:config），只存在于全局「系统设置」组', () => {
+    const globalKeysFor = (role: Parameters<typeof capabilitiesForRole>[0]) =>
+      filterNavByCapabilities(GLOBAL_NAVIGATION, capabilitiesForRole(role)).flatMap((node) =>
         isGroup(node) ? node.children.map((child) => child.key) : [node.key],
       )
-    expect(keysOf('admin')).toContain('settings-ai')
-    expect(keysOf('pm')).not.toContain('settings-ai')
-    expect(keysOf('engineer')).not.toContain('settings-ai')
-    expect(keysOf('viewer')).not.toContain('settings-ai')
+    expect(globalKeysFor('admin')).toContain('settings-ai')
+    expect(globalKeysFor('pm')).not.toContain('settings-ai')
+    expect(globalKeysFor('engineer')).not.toContain('settings-ai')
+    // 项目树里不再有该入口（v4.11.0 迁移）
+    const projectKeys = NAVIGATION.flatMap((node) =>
+      isGroup(node) ? node.children.map((child) => child.key) : [node.key],
+    )
+    expect(projectKeys).not.toContain('settings-ai')
   })
 
   it('过滤后子项归零的分组整组去掉，不留空折叠组', () => {
@@ -121,10 +121,12 @@ describe('v2.0 六域 IA 与能力驱动过滤（NAV-01 / FR-v2.0-07、08）', (
     }
   })
 
-  it('W0.8：系统设置独立成一级菜单，平台设置页在它下面', () => {
+  it('v4.11.0：项目「系统设置」只留用户管理 + 关于，平台设置迁到全局', () => {
     const settings = NAVIGATION.find((node) => node.key === 'settings') as NavGroup
     expect(isGroup(settings)).toBe(true)
-    expect(settings.children.some((child) => child.path === '/settings')).toBe(true)
+    expect(settings.children.map((child) => child.path)).toEqual(['/settings/users', '/about'])
+    // 平台设置页仍在（路由不删，只不在项目侧栏），但不能出现在项目菜单里
+    expect(settings.children.some((child) => child.path === '/settings')).toBe(false)
     expect(NAVIGATION.some((node) => node.key === 'admin')).toBe(false)
   })
 
@@ -136,12 +138,17 @@ describe('v2.0 六域 IA 与能力驱动过滤（NAV-01 / FR-v2.0-07、08）', (
 
     expect(viewer).not.toContain('execution-runs')  // execution:read
     expect(viewer).not.toContain('settings-audit')    // audit:read
-    expect(viewer).not.toContain('settings-platform') // settings:read
     expect(engineer).toContain('execution-runs')
-    expect(engineer).not.toContain('settings-platform')
-    expect(pm).toContain('settings-platform')
-    expect(pm).not.toContain('settings-audit')
-    expect(admin).toContain('settings-audit')
+    // v4.11.0：项目侧只留 public 的两项，工程/观察者也能进
+    expect(viewer).toContain('settings-me')
+    expect(engineer).toContain('settings-me')
+    expect(pm).toContain('settings-me')
+    // 平台设置 / 审计 / AI 已不在项目树，任何角色都不该出现
+    for (const role of [viewer, pm, engineer, admin]) {
+      expect(role).not.toContain('settings-platform')
+      expect(role).not.toContain('settings-audit')
+    }
+    expect(admin).toContain('settings-me')
     expect(admin.length).toBeGreaterThanOrEqual(pm.length)
     expect(roleFromCodes(['something-new'])).toBe('viewer')
     expect(roleFromCodes(null)).toBe('viewer')
@@ -274,38 +281,40 @@ describe('v2.3 菜单 IA 与执行/报告合并', () => {
     expect(workbench.labelKey).not.toBe(board.labelKey)
   })
 
-  it('执行与报告合并：组内 6 项顺序固定，且一级不再有 reports', () => {
+  it('执行与报告合并：组内 7 项顺序固定，且一级不再有 reports', () => {
     const execution = byKey('execution') as NavGroup
+    // v4.11.0 / FR-v4.11-12：首位插入「执行计划」（即时发起台），cron 计划顺延到第 3。
     expect(execution.children.map((child) => child.path)).toEqual([
-      '/runs', '/plans', '/nodes', '/reports', '/reports/templates', '/test-reports',
+      '/execution-plans', '/runs', '/plans', '/nodes', '/reports', '/reports/templates', '/test-reports',
     ])
     expect(NAVIGATION.some((node) => node.key === 'reports')).toBe(false)
   })
 
-  it('合并组不带组级 capability，能力只设在 3 个运行态子项上（否则 viewer 会丢报告入口）', () => {
+  it('合并组不带组级 capability，能力只设在 4 个运行态子项上（否则 viewer 会丢报告入口）', () => {
     const execution = byKey('execution') as NavGroup
     expect(execution.capability).toBeUndefined()
     const guarded = execution.children.filter((child) => child.capability === 'execution:read')
     expect(guarded.map((child) => child.key)).toEqual([
-      'execution-runs', 'execution-plans', 'execution-nodes',
+      'execution-launch', 'execution-runs', 'execution-plans', 'execution-nodes',
     ])
     const reportItems = execution.children.filter((child) => child.section === 'report')
     expect(reportItems.every((child) => child.capability === undefined)).toBe(true)
   })
 
-  it('角色矩阵：viewer 仍见 3 个报告项、不见 3 个运行项；engineer 6 项全见（V-UI-11）', () => {
+  it('角色矩阵：viewer 仍见 3 个报告项、不见 4 个运行项；engineer 7 项全见（V-UI-11）', () => {
     const keysOf = (role: Parameters<typeof navKeysForRole>[0]): string[] => navKeysForRole(role)
     const viewer = keysOf('viewer')
     expect(viewer).toEqual(expect.arrayContaining([
       'execution-reports', 'execution-report-templates', 'execution-external-reports',
     ]))
+    expect(viewer).not.toContain('execution-launch')
     expect(viewer).not.toContain('execution-runs')
     expect(viewer).not.toContain('execution-plans')
     expect(viewer).not.toContain('execution-nodes')
 
     const engineer = keysOf('engineer')
     expect(engineer).toEqual(expect.arrayContaining([
-      'execution-runs', 'execution-plans', 'execution-nodes',
+      'execution-launch', 'execution-runs', 'execution-plans', 'execution-nodes',
       'execution-reports', 'execution-report-templates', 'execution-external-reports',
     ]))
   })
@@ -336,22 +345,24 @@ describe('v2.3 菜单 IA 与执行/报告合并', () => {
     }
   })
 
-  it('合并组内恰好 1 条分区线：前三项 run、后三项 report（FR-UI-29）', () => {
+  it('合并组内恰好 1 条分区线：前四项 run、后三项 report（FR-UI-29）', () => {
     const execution = byKey('execution') as NavGroup
     expect(execution.children.map((child) => child.section)).toEqual([
-      'run', 'run', 'run', 'report', 'report', 'report',
+      'run', 'run', 'run', 'run', 'report', 'report', 'report',
     ])
     const breaks = execution.children
       .map((_, index) => isSectionBreak(execution.children, index))
       .filter(Boolean)
     expect(breaks).toHaveLength(1)
-    expect(isSectionBreak(execution.children, 3)).toBe(true)
+    expect(isSectionBreak(execution.children, 4)).toBe(true)
     expect(isSectionBreak(execution.children, 0)).toBe(false)
   })
 
   it('四处改名落地：用户管理 / 维护原则 / 环境概览 / 独立测试计划词条', () => {
     const settings = byKey('settings') as NavGroup
-    expect(settings.children.find((c) => c.key === 'settings-users')?.labelKey).toBe('menu.adminUsers')
+    // v4.11.0：项目侧「用户管理」是新的只读页（仅当前用户和关联项目），词条也换了
+    expect(settings.children.find((c) => c.key === 'settings-me')?.labelKey)
+      .toBe('menu.settingsUsersMe')
     const maintenance = byKey('maintenance') as NavGroup
     expect(maintenance.children.find((c) => c.key === 'maintenance-principles')?.labelKey)
       .toBe('menu.mntPrinciples')
@@ -361,6 +372,10 @@ describe('v2.3 菜单 IA 与执行/报告合并', () => {
     const execution = byKey('execution') as NavGroup
     const plans = execution.children.find((c) => c.key === 'execution-plans') as NavLeaf
     expect(plans.labelKey).toBe('menu.runsPlans')
+    // 新增的「执行计划」用独立词条，不借用 cron 计划的名
+    const launch = execution.children.find((c) => c.key === 'execution-launch') as NavLeaf
+    expect(launch.labelKey).toBe('menu.executionPlans')
+    expect(launch.path).toBe('/execution-plans')
   })
 })
 
@@ -403,5 +418,96 @@ describe('v2.2 / MENU-01 八组菜单与业务域隔离', () => {
     expect(hasBusinessDomainAsTopLevel(fake)).toBe(true)
     // 同一谓词对真实配置判通过，证明它确实在区分两种配置，而非恒真 / 恒假
     expect(hasBusinessDomainAsTopLevel(NAVIGATION)).toBe(false)
+  })
+})
+
+/* --------------------------------------------------------------------------
+ * v4.11.0 / FR-v4.11-01、02、05、25：全局两级菜单
+ * -------------------------------------------------------------------------- */
+describe('v4.11.0 全局菜单两级化', () => {
+  const globalGroups = () => GLOBAL_NAVIGATION.filter(isGroup) as NavGroup[]
+  const globalLeaves = (): NavLeaf[] =>
+    GLOBAL_NAVIGATION.flatMap((node) => (isGroup(node) ? node.children : [node]))
+
+  it('5 个一级组、14 个叶子，每组至少 2 项（PRD §4.2）', () => {
+    expect(GLOBAL_NAVIGATION).toHaveLength(5)
+    expect(globalGroups().map((group) => group.key)).toEqual([
+      'global-projects', 'global-cases', 'global-assets', 'global-templates', 'global-settings',
+    ])
+    // 2 + 2 + 2 + 2 + 6
+    expect(globalGroups().map((group) => group.children.length)).toEqual([2, 2, 2, 2, 6])
+    expect(globalLeaves()).toHaveLength(14)
+    for (const group of globalGroups()) {
+      expect(group.children.length, `全局组 ${group.key} 退化成单叶`).toBeGreaterThanOrEqual(2)
+    }
+  })
+
+  it('全局一级项不混入业务能力域名（与项目树同一约束）', () => {
+    expect(hasBusinessDomainAsTopLevel(GLOBAL_NAVIGATION)).toBe(false)
+  })
+
+  it('同 path 的叶子其 query 两两不同，且每组只有一个「无 query 的默认项」或一个默认值', () => {
+    const byPath = new Map<string, NavLeaf[]>()
+    for (const leaf of globalLeaves()) {
+      const bucket = byPath.get(leaf.path) ?? []
+      bucket.push(leaf)
+      byPath.set(leaf.path, bucket)
+    }
+    for (const [path, bucket] of byPath) {
+      if (bucket.length < 2) continue
+      const shape = bucket.map((leaf) => JSON.stringify(leaf.query ?? {}))
+      expect(new Set(shape).size, `${path} 下两个叶子 query 相同`).toBe(shape.length)
+      // 每组必须有且只有一个「默认态」：无 query 的第一项，或带 query 但只有一个候选
+      const withoutQuery = bucket.filter((leaf) => !leaf.query)
+      expect(withoutQuery.length, `${path} 无法确定默认叶子`).toBeLessThanOrEqual(1)
+    }
+  })
+
+  it('全局「系统设置」组 6 项顺序与 SETTINGS_NAV 逐项一致', () => {
+    const settings = globalGroups().find((group) => group.key === 'global-settings') as NavGroup
+    expect(settings.children.map((child) => child.key)).toEqual([
+      'settings-platform', 'settings-ai', 'settings-users', 'settings-audit',
+      'settings-about', 'settings-changelog',
+    ])
+    expect(settings.children.map((child) => child.path)).toEqual([
+      '/g/settings', '/g/settings/ai', '/g/admin', '/g/admin/audit', '/g/about', '/g/changelog',
+    ])
+  })
+
+  it('activeGroupKey 按传入的树判定：全局树认 global-settings，项目树认 execution', () => {
+    expect(activeGroupKey({ path: '/g/settings/ai' }, GLOBAL_NAVIGATION)).toBe('global-settings')
+    // 同一路由在项目树里不属于任何组 —— 证明入参真的生效，而不是仍读 NAVIGATION
+    expect(activeGroupKey({ path: '/g/settings/ai' }, NAVIGATION)).toBeNull()
+    expect(activeGroupKey({ path: '/plans/graph' }, NAVIGATION)).toBe('execution')
+    // 默认参数保持旧行为
+    expect(activeGroupKey({ path: '/plans/graph' })).toBe('execution')
+  })
+
+  it('全局「我参与的」与「全部项目」是同一 path 的两个 query，互不点亮', () => {
+    const projects = globalGroups().find((group) => group.key === 'global-projects') as NavGroup
+    const all = projects.children[0] as NavLeaf
+    const mine = projects.children[1] as NavLeaf
+    expect(isLeafActive(all, { path: '/g/projects' })).toBe(true)
+    expect(isLeafActive(mine, { path: '/g/projects' })).toBe(false)
+    expect(isLeafActive(mine, { path: '/g/projects', query: { scope: 'mine' } })).toBe(true)
+    expect(isLeafActive(all, { path: '/g/projects', query: { scope: 'mine' } })).toBe(true)
+  })
+
+  it('低权限账号过滤后：全局「系统设置」只剩 public 两项，组仍保留', () => {
+    const onlyPublic = filterNavByCapabilities(GLOBAL_NAVIGATION, ['public'])
+    const settings = onlyPublic.find((node) => node.key === 'global-settings') as NavGroup
+    expect(settings).toBeTruthy()
+    expect(settings.children.map((child) => child.key)).toEqual(['settings-about', 'settings-changelog'])
+    // 4 个内容组不含 capability，public 账号仍可见
+    expect(onlyPublic.map((node) => node.key)).toEqual([
+      'global-projects', 'global-cases', 'global-assets', 'global-templates', 'global-settings',
+    ])
+  })
+
+  it('能力过滤后为空的组整组隐藏（不留空折叠组）', () => {
+    const noCaps = filterNavByCapabilities(GLOBAL_NAVIGATION, [])
+    const settings = noCaps.find((node) => node.key === 'global-settings') as NavGroup
+    // about / changelog 是 public，永远保留；其余 4 项被过滤
+    expect(settings.children).toHaveLength(2)
   })
 })

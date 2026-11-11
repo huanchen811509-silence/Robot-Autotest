@@ -49,7 +49,7 @@ final class PlanTestSupport {
         return new RunRecord(id, runId, PROJECT, null, state, 5, 1, 0,
                 1, state == RunState.FINISHED ? 1 : 0, state == RunState.FAILED ? 1 : 0,
                 null, null, null, "/tmp/" + runId,
-                Instant.parse("2026-11-03T02:00:00Z"), null, null, null);
+                Instant.parse("2026-11-03T02:00:00Z"), null, null, null, null);
     }
 
     /** 内存计划仓储，模拟 JDBC 的关键语义（到期过滤、last/next 推进、依赖表）。 */

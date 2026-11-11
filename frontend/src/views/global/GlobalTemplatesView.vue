@@ -5,8 +5,9 @@
  * 全局二级菜单入口：列表/筛选/启停/复制/删除；内置模板只读（可停用不可删）；
  * 共享范围 private / team / public，只有管理员可提升为 public。
  */
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { templateApi, type TemplateRequest, type TemplateRow } from '@/api/globalTemplates'
 import { templateProjectsApi, type TemplateItemRow } from '@/api/templateProjects'
@@ -14,6 +15,8 @@ import TemplateCard from '@/components/TemplateCard.vue'
 
 const { t } = useI18n()
 const auth = useAuthStore()
+const route = useRoute()
+const router = useRouter()
 
 const rows = ref<TemplateRow[]>([])
 const keyword = ref('')
@@ -21,6 +24,21 @@ const visibility = ref('')
 const loading = ref(false)
 const failed = ref('')
 const canPromote = computed(() => auth.isAdmin)
+
+/**
+ * v4.11.0 / FR-v4.11-28：`?kind=builtin|custom` 维度。
+ *
+ * 侧栏两项是同一 path 的两个 query，裸 `/g/templates` 会让两个叶子都不亮，
+ * 因此进入即 `router.replace` 到 `?kind=builtin`（与 `/g/assets` 同一规则）。
+ * 列表接口没有 kind 入参、也**没有分页**（一次返回全部），所以这里是纯前端筛选：
+ * 两个 kind 的条数之和必然等于不带 kind 的总数。
+ */
+type TemplateKind = 'builtin' | 'custom'
+const kind = computed<TemplateKind>(() => (route.query.kind === 'custom' ? 'custom' : 'builtin'))
+
+const visibleRows = computed(() =>
+  rows.value.filter((row) => (kind.value === 'builtin' ? row.builtin : !row.builtin)),
+)
 
 async function load() {
   loading.value = true
@@ -33,6 +51,27 @@ async function load() {
     loading.value = false
   }
 }
+
+/** 无 query / 非法值 → 规范化到默认 kind，URL 恒定带 query。 */
+function normalizeKind(): void {
+  if (route.query.kind !== kind.value) {
+    void router.replace({ query: { ...route.query, kind: kind.value } })
+  }
+}
+
+/** 页内页签与侧栏选中态共用 URL 这一真源。 */
+function switchKind(next: TemplateKind): void {
+  if (kind.value === next) return
+  void router.replace({ query: { ...route.query, kind: next } })
+}
+
+watch(
+  () => route.query.kind,
+  () => {
+    // 侧栏切换只改 URL；数据已在内存，不需要重新请求。
+    normalizeKind()
+  },
+)
 
 const dialogOpen = ref(false)
 const editing = ref<TemplateRow | null>(null)
@@ -157,7 +196,10 @@ async function removeTemplate(row: TemplateRow) {
   }
 }
 
-onMounted(load)
+onMounted(() => {
+  normalizeKind()
+  void load()
+})
 </script>
 
 <template>
@@ -169,6 +211,19 @@ onMounted(load)
       </div>
       <button class="btn btn-primary" @click="openCreate">{{ t('global.templateCreate') }}</button>
     </header>
+
+    <div class="tabs">
+      <button
+        class="tab"
+        :class="{ active: kind === 'builtin' }"
+        @click="switchKind('builtin')"
+      >
+        {{ t('menu.globalTemplatesBuiltin') }}
+      </button>
+      <button class="tab" :class="{ active: kind === 'custom' }" @click="switchKind('custom')">
+        {{ t('menu.globalTemplatesCustom') }}
+      </button>
+    </div>
 
     <div class="filters">
       <input
@@ -190,7 +245,7 @@ onMounted(load)
 
     <div v-else class="template-grid">
       <!-- FR-49-17：用新 TemplateCard 替换旧展示，保留列表逻辑与既有管理动作 -->
-      <div v-for="row in rows" :key="row.id" class="template-entry">
+      <div v-for="row in visibleRows" :key="row.id" class="template-entry">
         <TemplateCard :template="row" />
         <footer class="template-entry__actions">
           <button v-if="!row.builtin" class="link" @click="openEdit(row)">
@@ -205,7 +260,7 @@ onMounted(load)
           </button>
         </footer>
       </div>
-      <p v-if="rows.length === 0" class="muted empty">{{ t('global.empty') }}</p>
+      <p v-if="visibleRows.length === 0" class="muted empty">{{ t('global.empty') }}</p>
     </div>
 
     <div v-if="dialogOpen" class="modal-mask" @click.self="dialogOpen = false">
@@ -320,6 +375,27 @@ onMounted(load)
 
 .input {
   min-width: 200px;
+}
+
+.tabs {
+  display: flex;
+  gap: var(--space-2);
+  margin: var(--space-3) 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.tab {
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  padding: 6px 10px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+
+.tab.active {
+  color: var(--text);
+  border-bottom-color: var(--accent);
 }
 
 .template-grid {

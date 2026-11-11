@@ -1,12 +1,21 @@
 <script setup lang="ts">
 /**
- * 公共用例库（v4.6.0 / FR-v4.6-01..13、v4.6.1 / FR-v4.6-20..24）。
+ * 公共用例库（v4.6.0 / FR-v4.6-01..13、v4.6.1 / FR-v4.6-20..24；v4.11.0 / FR-v4.11-26）。
  *
  * 列表 + 一级/二级分类筛选 + 两段式幂等导入（上传 → 预览差异 → 提交）+ 反向导出。
  * 写操作按钮在管理员下才显示；后端仍会二次校验，前端只做显隐。
+ *
+ * v4.11.0 两处变化：
+ * 1. `?view=imports` 把原先页内的 `<details class="batches">` 提级为独立视图分支——侧栏
+ *    「导入记录」二级项需要能直达，而折叠块无法被 URL 寻址。两个分支互斥渲染，
+ *    切换不重复请求用例列表（`onMounted` 只加载当前分支）。
+ * 2. 三处原生 `<table>` 改用 `DataTable` 壳（L-49-06 / FR-v4.11-19），
+ *    暗色主题下的表头与吸顶行为才与其余 19 张表一致。
  */
-import { computed, onMounted, ref } from 'vue'
+import { computed, h, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRoute } from 'vue-router'
+import { NButton, type DataTableColumns } from 'naive-ui'
 import { useAuthStore } from '@/stores/auth'
 import {
   globalCaseApi,
@@ -16,9 +25,21 @@ import {
   type ImportBatchRow,
 } from '@/api/globalCases'
 import type { PageResult } from '@/api/iam'
+import DataTable from '@/components/DataTable.vue'
 
 const { t } = useI18n()
+const route = useRoute()
 const auth = useAuthStore()
+
+/**
+ * 当前视图：`cases`（默认）/ `imports`。
+ *
+ * 裸路径 `/g/cases` 就是「用例清单」——该组第一个叶子不带 query，所以不需要
+ * `router.replace` 规范化（与 `/g/assets`、`/g/templates` 不同，那两组两个叶子都带 query）。
+ */
+const view = computed<'cases' | 'imports'>(() =>
+  route.query.view === 'imports' ? 'imports' : 'cases',
+)
 
 const rows = ref<GlobalCaseRow[]>([])
 const total = ref(0)
@@ -92,7 +113,91 @@ function goPage(next: number) {
   void load()
 }
 
-// ------------------------------------------------------------------ 导入
+/* ------------------------------------------------------------ 表格列定义 */
+
+const columns = computed<DataTableColumns<GlobalCaseRow>>(() => {
+  const cols: DataTableColumns<GlobalCaseRow> = [
+    {
+      title: t('global.colCode'),
+      key: 'caseCode',
+      width: 180,
+      render: (row) => row.externalId || row.caseCode,
+    },
+    { title: t('global.colTitle'), key: 'title', minWidth: 220 },
+    {
+      title: t('global.colCategory'),
+      key: 'categoryL1',
+      width: 240,
+      render: (row) => {
+        if (!row.categoryL1) return '—'
+        return row.categoryL2 ? `${row.categoryL1} / ${row.categoryL2}` : row.categoryL1
+      },
+    },
+    { title: t('global.colPriority'), key: 'priority', width: 90 },
+    {
+      title: t('global.colStatus'),
+      key: 'lifecycleStatus',
+      width: 110,
+      render: (row) =>
+        h(
+          'span',
+          { class: ['badge', row.lifecycleStatus] },
+          row.lifecycleStatus === 'active'
+            ? t('global.lifecycleActive')
+            : t('global.lifecycleDeprecated'),
+        ),
+    },
+    {
+      title: t('global.colVersion'),
+      key: 'versionNo',
+      width: 90,
+      render: (row) => `v${row.versionNo}`,
+    },
+  ]
+  if (canWrite.value) {
+    cols.push({
+      title: t('global.colActions'),
+      key: 'actions',
+      width: 120,
+      render: (row) =>
+        h(
+          NButton,
+          { text: true, type: 'primary', onClick: () => void toggleLifecycle(row) },
+          () => (row.lifecycleStatus === 'active' ? t('global.deprecate') : t('global.restore')),
+        ),
+    })
+  }
+  return cols
+})
+
+const batchColumns = computed<DataTableColumns<ImportBatchRow>>(() => [
+  { title: '#', key: 'id', width: 80 },
+  { title: t('global.batchFile'), key: 'source_name', minWidth: 220 },
+  { title: t('global.colStatus'), key: 'status', width: 120 },
+  { title: t('global.batchRows'), key: 'total_rows', width: 110 },
+  {
+    title: t('global.batchDiff'),
+    key: 'diff',
+    width: 180,
+    render: (batch) =>
+      `+${batch.new_count} ~${batch.updated_count} =${batch.unchanged_count} -${batch.deprecated_count}`,
+  },
+])
+
+const previewColumns = computed<DataTableColumns<GlobalImportPreview['rows'][number]>>(() => [
+  { title: '#', key: 'rowNo', width: 70 },
+  { title: t('global.colCode'), key: 'caseCode', width: 170 },
+  { title: t('global.colTitle'), key: 'title', minWidth: 200 },
+  {
+    title: t('global.importAction'),
+    key: 'action',
+    width: 120,
+    render: (row) => h('span', { class: ['badge', row.action.toLowerCase()] }, row.action),
+  },
+  { title: t('global.importMessage'), key: 'message', minWidth: 180 },
+])
+
+/* ---------------------------------------------------------------- 导入 */
 
 const importOpen = ref(false)
 const preview = ref<GlobalImportPreview | null>(null)
@@ -108,6 +213,14 @@ function openImport() {
   commitResult.value = ''
 }
 
+/**
+ * 预览导入。
+ *
+ * `force` 透传给后端（v4.11.0 / FR-v4.11-18）：同一份文件第二次预览默认走「回放」，
+ * 想看「相对当前库到底变了什么」必须显式要求重算。默认不勾，保持幂等语义不变。
+ */
+const forceRecalc = ref(false)
+
 async function onFilePicked(event: Event) {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
@@ -116,7 +229,7 @@ async function onFilePicked(event: Event) {
   importMessage.value = ''
   commitResult.value = ''
   try {
-    preview.value = await globalCaseApi.previewImport(file)
+    preview.value = await globalCaseApi.previewImport(file, forceRecalc.value)
     await loadBatches()
   } catch (error) {
     importMessage.value = error instanceof Error ? error.message : t('global.loadFailed')
@@ -169,7 +282,7 @@ function triggerDownload(blob: Blob, fallbackName: string) {
   URL.revokeObjectURL(url)
 }
 
-// --------------------------------------------------------------- 生命周期
+/* --------------------------------------------------------------- 生命周期 */
 
 async function toggleLifecycle(row: GlobalCaseRow) {
   if (row.lifecycleStatus === 'active') {
@@ -180,7 +293,7 @@ async function toggleLifecycle(row: GlobalCaseRow) {
   await load()
 }
 
-// ------------------------------------------------------------------ 批次
+/* ------------------------------------------------------------------ 批次 */
 
 const batches = ref<ImportBatchRow[]>([])
 const batchTotal = ref(0)
@@ -188,7 +301,7 @@ const batchPage = ref(1)
 
 async function loadBatches() {
   try {
-    const result = await globalCaseApi.batches({ page: batchPage.value, size: 5 })
+    const result = await globalCaseApi.batches({ page: batchPage.value, size: 20 })
     batches.value = result.items
     batchTotal.value = result.total
   } catch {
@@ -196,8 +309,22 @@ async function loadBatches() {
   }
 }
 
+/** 只在首次进入该分支时拉数据：两个视图来回切不重复请求（FR-v4.11-26 判据）。 */
+watch(view, (next) => {
+  if (next === 'imports') {
+    if (batches.value.length === 0) void loadBatches()
+  } else if (rows.value.length === 0) {
+    void load()
+  }
+})
+
 onMounted(async () => {
-  await Promise.all([load(), loadCategories(), loadBatches()])
+  await loadCategories()
+  if (view.value === 'imports') {
+    await loadBatches()
+  } else {
+    await load()
+  }
 })
 </script>
 
@@ -205,8 +332,10 @@ onMounted(async () => {
   <section class="page">
     <header class="page-head">
       <div>
-        <h1>{{ t('global.casesTitle') }}</h1>
-        <p class="muted">{{ t('global.casesHint') }}</p>
+        <h1>{{ view === 'imports' ? t('global.importsTitle') : t('global.casesTitle') }}</h1>
+        <p class="muted">
+          {{ view === 'imports' ? t('global.importsHint') : t('global.casesHint') }}
+        </p>
       </div>
       <div class="page-actions">
         <button v-if="canWrite" class="btn" @click="exportCases">{{ t('global.export') }}</button>
@@ -216,7 +345,8 @@ onMounted(async () => {
       </div>
     </header>
 
-    <div class="cases-layout">
+    <!-- 用例清单分支 -->
+    <div v-if="view === 'cases'" class="cases-layout">
       <aside class="cases-sidebar">
         <h2 class="sidebar-title">{{ t('global.categories') }}</h2>
         <button
@@ -261,54 +391,18 @@ onMounted(async () => {
         </div>
 
         <p v-if="failed" class="error">{{ failed }}</p>
-        <div v-if="loading" class="muted">{{ t('global.loading') }}</div>
 
-        <table v-else class="case-table">
-          <thead>
-            <tr>
-              <th>{{ t('global.colCode') }}</th>
-              <th>{{ t('global.colTitle') }}</th>
-              <th>{{ t('global.colCategory') }}</th>
-              <th>{{ t('global.colPriority') }}</th>
-              <th>{{ t('global.colStatus') }}</th>
-              <th>{{ t('global.colVersion') }}</th>
-              <th v-if="canWrite">{{ t('global.colActions') }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="row in rows" :key="row.id">
-              <td class="mono">{{ row.externalId || row.caseCode }}</td>
-              <td>{{ row.title }}</td>
-              <td>
-                <span v-if="row.categoryL1">{{ row.categoryL1 }}</span>
-                <span v-if="row.categoryL2" class="muted"> / {{ row.categoryL2 }}</span>
-              </td>
-              <td>{{ row.priority }}</td>
-              <td>
-                <span class="badge" :class="row.lifecycleStatus">
-                  {{
-                    row.lifecycleStatus === 'active'
-                      ? t('global.lifecycleActive')
-                      : t('global.lifecycleDeprecated')
-                  }}
-                </span>
-              </td>
-              <td>v{{ row.versionNo }}</td>
-              <td v-if="canWrite">
-                <button class="link" @click="toggleLifecycle(row)">
-                  {{
-                    row.lifecycleStatus === 'active'
-                      ? t('global.deprecate')
-                      : t('global.restore')
-                  }}
-                </button>
-              </td>
-            </tr>
-            <tr v-if="rows.length === 0">
-              <td :colspan="canWrite ? 7 : 6" class="muted empty">{{ t('global.empty') }}</td>
-            </tr>
-          </tbody>
-        </table>
+        <div data-testid="cases-grid">
+          <DataTable
+            :columns="columns"
+            :data="rows"
+            :loading="loading"
+            :row-key="(row: GlobalCaseRow) => row.id"
+            :error="Boolean(failed)"
+            :empty-title="t('global.empty')"
+            :max-height="520"
+          />
+        </div>
 
         <div class="pager">
           <button class="btn" :disabled="page <= 1" @click="goPage(page - 1)">
@@ -323,37 +417,22 @@ onMounted(async () => {
             {{ t('global.next') }}
           </button>
         </div>
-
-        <details class="batches">
-          <summary>{{ t('global.batchHistory') }}（{{ batchTotal }}）</summary>
-          <table class="case-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>{{ t('global.batchFile') }}</th>
-                <th>{{ t('global.colStatus') }}</th>
-                <th>{{ t('global.batchRows') }}</th>
-                <th>{{ t('global.batchDiff') }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="batch in batches" :key="batch.id">
-                <td>{{ batch.id }}</td>
-                <td>{{ batch.source_name }}</td>
-                <td>{{ batch.status }}</td>
-                <td>{{ batch.total_rows }}</td>
-                <td class="mono">
-                  +{{ batch.new_count }} ~{{ batch.updated_count }} ={{ batch.unchanged_count }}
-                  -{{ batch.deprecated_count }}
-                </td>
-              </tr>
-              <tr v-if="batches.length === 0">
-                <td colspan="5" class="muted">{{ t('global.empty') }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </details>
       </div>
+    </div>
+
+    <!-- 导入记录分支（v4.11.0 从折叠块提级） -->
+    <div v-else class="imports-pane" data-testid="imports-grid">
+      <div class="filters">
+        <span class="muted">{{ t('global.batchTotal', { total: batchTotal }) }}</span>
+        <button class="btn" @click="loadBatches">{{ t('global.refresh') }}</button>
+      </div>
+      <DataTable
+        :columns="batchColumns"
+        :data="batches"
+        :row-key="(row: ImportBatchRow) => row.id"
+        :empty-title="t('global.empty')"
+        :max-height="560"
+      />
     </div>
 
     <div v-if="importOpen" class="modal-mask" @click.self="importOpen = false">
@@ -365,6 +444,10 @@ onMounted(async () => {
 
         <div class="modal-body">
           <p class="muted">{{ t('global.importHint') }}</p>
+          <label class="force-line">
+            <input v-model="forceRecalc" type="checkbox" data-testid="force-recalc" />
+            <span>{{ t('global.importForceRecalc') }}</span>
+          </label>
           <input ref="fileInput" type="file" accept=".xlsx,.xls" @change="onFilePicked" />
           <p v-if="importing" class="muted">{{ t('global.loading') }}</p>
           <p v-if="importMessage" class="error">{{ importMessage }}</p>
@@ -400,30 +483,12 @@ onMounted(async () => {
               </button>
             </p>
 
-            <div class="preview-scroll">
-              <table class="case-table">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>{{ t('global.colCode') }}</th>
-                    <th>{{ t('global.colTitle') }}</th>
-                    <th>{{ t('global.importAction') }}</th>
-                    <th>{{ t('global.importMessage') }}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="row in preview.rows" :key="row.rowNo">
-                    <td>{{ row.rowNo }}</td>
-                    <td class="mono">{{ row.caseCode }}</td>
-                    <td>{{ row.title }}</td>
-                    <td>
-                      <span class="badge" :class="row.action.toLowerCase()">{{ row.action }}</span>
-                    </td>
-                    <td class="muted">{{ row.message }}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+              :columns="previewColumns"
+              :data="preview.rows"
+              :row-key="(row: GlobalImportPreview['rows'][number]) => row.rowNo"
+              :max-height="320"
+            />
 
             <p v-if="commitResult" class="success">{{ commitResult }}</p>
             <div class="modal-actions">
@@ -500,7 +565,12 @@ onMounted(async () => {
   display: flex;
   gap: var(--space-2);
   flex-wrap: wrap;
+  align-items: center;
   margin-bottom: var(--space-3);
+}
+
+.imports-pane {
+  margin-top: var(--space-3);
 }
 
 .input,
@@ -511,25 +581,6 @@ onMounted(async () => {
   border-radius: var(--radius-sm);
   background: var(--panel);
   color: var(--text);
-}
-
-.case-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-
-.case-table th,
-.case-table td {
-  padding: 6px 8px;
-  border-bottom: 1px solid var(--border);
-  text-align: left;
-  vertical-align: top;
-}
-
-.case-table th {
-  color: var(--text-muted);
-  font-weight: 600;
 }
 
 .mono {
@@ -569,19 +620,13 @@ onMounted(async () => {
   margin-top: var(--space-3);
 }
 
-.empty {
-  text-align: center;
-  padding: var(--space-4);
-}
-
-.batches {
-  margin-top: var(--space-4);
-}
-
-.batches summary {
-  cursor: pointer;
-  color: var(--text-muted);
+.force-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   margin-bottom: var(--space-2);
+  color: var(--text-muted);
+  font-size: 13px;
 }
 
 .modal-mask {
@@ -595,7 +640,7 @@ onMounted(async () => {
 }
 
 .modal {
-  width: min(900px, 92vw);
+  width: min(980px, 92vw);
   max-height: 86vh;
   overflow: auto;
   background: var(--panel);
@@ -646,11 +691,6 @@ onMounted(async () => {
 
 .diff-card.unchanged {
   color: var(--text-muted);
-}
-
-.preview-scroll {
-  max-height: 320px;
-  overflow: auto;
 }
 
 .error {

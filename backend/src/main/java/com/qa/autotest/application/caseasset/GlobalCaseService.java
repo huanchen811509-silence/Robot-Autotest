@@ -459,7 +459,19 @@ public class GlobalCaseService {
     // ------------------------------------------------------------ 导入预览
 
     @Transactional
+    /** 兼容旧调用方：等价于 {@code force=false}。 */
     public PreviewResult preview(InputStream input, String sourceName) {
+        return preview(input, sourceName, false);
+    }
+
+    /**
+     * 两段式导入第一步：解析工作簿并算出增量差异。
+     *
+     * @param force v4.11.0 / FR-v4.11-18：{@code false} 时，同一份文件命中已提交批次直接回放
+     *              （{@code replayed=true}，幂等语义不变）；{@code true} 时按当前库重算，
+     *              且<b>不写 import_item、不改批次状态</b>——历史记录必须保持原样。
+     */
+    public PreviewResult preview(InputStream input, String sourceName, boolean force) {
         requireGlobalWrite();
         long projectId = platform.id();
         CaseImportService.ParsedWorkbook workbook = CaseImportService.parse(input);
@@ -548,6 +560,15 @@ public class GlobalCaseService {
         int deprecate = count(planned, "DEPRECATE");
         String fileSha = workbook.sha256();
 
+        // 明细行只在这里构造一次：force 重算分支也要返回它，但**不落库**。
+        List<PreviewRow> previewRows = new ArrayList<>();
+        for (int i = 0; i < planned.size(); i++) {
+            PlannedRow item = planned.get(i);
+            previewRows.add(new PreviewRow(i + 1, item.externalId(), item.row().title(),
+                    item.row().category(), item.row().categoryL2(), item.row().priority(),
+                    item.action(), item.message(), item.contentSha(), item.sheet(), item.sourceRow()));
+        }
+
         Optional<Map<String, Object>> existingBatch = jdbc.queryForList(
                 "SELECT * FROM import_batch WHERE project_id = ? AND kind = 'global' AND checksum = ?",
                 projectId, fileSha).stream().findFirst();
@@ -557,7 +578,16 @@ public class GlobalCaseService {
         if (existingBatch.isPresent() && "COMMITTED".equals(existingBatch.get().get("status"))) {
             batchId = ((Number) existingBatch.get().get("id")).longValue();
             replayed = true;
-            return replayPreview(batchId, fileSha, skippedSheets);
+            if (!force) {
+                return replayPreview(batchId, fileSha, skippedSheets);
+            }
+            // force：重算但不落库。已提交批次的 import_item 与状态一律不动，
+            // 否则「导入记录」里的历史会变成 PREFLIGHT + 新计数，等于篡改历史。
+            audit.record("global.case.import.preview.force", "import_batch", String.valueOf(batchId),
+                    "sha=" + fileSha + " new=" + newCount + " update=" + updateCount
+                            + " unchanged=" + unchanged + " deprecate=" + deprecate);
+            return new PreviewResult(batchId, fileSha, planned.size(), newCount, updateCount,
+                    unchanged, deprecate, errors.size(), false, previewRows, errors, skippedSheets);
         }
         if (existingBatch.isPresent()) {
             batchId = ((Number) existingBatch.get().get("id")).longValue();
@@ -605,13 +635,6 @@ public class GlobalCaseService {
                     """, batchId, rowNo, item.externalId(), item.action(), item.message(), payload);
         }
 
-        List<PreviewRow> previewRows = new ArrayList<>();
-        for (int i = 0; i < planned.size(); i++) {
-            PlannedRow item = planned.get(i);
-            previewRows.add(new PreviewRow(i + 1, item.externalId(), item.row().title(),
-                    item.row().category(), item.row().categoryL2(), item.row().priority(),
-                    item.action(), item.message(), item.contentSha(), item.sheet(), item.sourceRow()));
-        }
         audit.record("global.case.import.preview", "import_batch", String.valueOf(batchId),
                 "sha=" + fileSha + " new=" + newCount + " update=" + updateCount
                         + " unchanged=" + unchanged + " deprecate=" + deprecate);

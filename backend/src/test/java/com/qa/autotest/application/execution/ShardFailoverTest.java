@@ -197,7 +197,7 @@ class ShardFailoverTest {
 
     private static RunRecord run() {
         return new RunRecord(1L, RUN, PROJECT, null, RunState.RUNNING, 5, 1, 1, 0, 0, 0,
-                null, null, null, "/runs/" + RUN, NOW, null, null, null);
+                null, null, null, "/runs/" + RUN, NOW, null, null, null, null);
     }
 
     private static ExecutionNode node(long id) {

@@ -16,6 +16,8 @@ import java.time.Instant;
  * @param passRateBp  窗口内已完成运行的用例级通过率，万分位；<b>没有分母时为 {@code null}</b>
  * @param lastRunAt   最近一次运行时间，<b>不限窗口</b>；从未运行为 {@code null}
  * @param myRole      当前用户在该项目的成员角色；全局 admin 无成员关系时为 {@code admin}
+ * @param own         当前用户是否是该项目的所有者（{@code project.owner_id} 等于自己）
+ * @param joined      当前用户是否是该项目的成员（存在 {@code project_member} 行）
  */
 public record ProjectCard(
         Long id,
@@ -33,5 +35,7 @@ public record ProjectCard(
         long deviceCount,
         long memberCount,
         String myRole,
+        boolean own,
+        boolean joined,
         String testKernel) {
 }

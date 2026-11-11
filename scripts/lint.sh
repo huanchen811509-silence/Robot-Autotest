@@ -90,4 +90,10 @@ python3 tools/check_tables.py
 echo "[lint]   - tools/check_brand.py（favicon 可辨 / 品牌区挂载 / 版本号归位）"
 python3 tools/check_brand.py
 
+# 菜单信息架构（v4.11.0 / W-A-04）：层级 ≤2、全局每组 ≥2、同 path 的 query 互异。
+# 菜单是纯配置：某组退化成单叶、两个页签写成同一个 query，页面照样能跑、选中态却不再亮。
+# 单测在 TS 运行时断言了同一批不变量；这条不依赖运行时，门禁里能先于编译拦住结构错误。
+echo "[lint]   - tools/check_navigation.py（菜单层级 / 分组最小项数 / query 互异）"
+python3 tools/check_navigation.py
+
 echo "[lint] PASS"

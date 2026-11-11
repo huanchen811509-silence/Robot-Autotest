@@ -45,7 +45,8 @@ function loadExpanded(): Record<string, boolean> {
 function isExpanded(group: NavGroup): boolean {
   const saved = expanded.value[group.key]
   if (saved !== undefined) return saved
-  const active = activeGroupKey(route)
+  // v4.11.0 / FR-v4.11-02：按**当前模式的树**判定激活组，全局模式的分组才会自动展开。
+  const active = activeGroupKey(route, props.nodes)
   if (active) return group.key === active
   return group.key === props.nodes[0]?.key
 }
@@ -68,7 +69,7 @@ function isActive(node: NavNode): boolean {
 }
 
 /** 当前激活组：用于给分组头加 `has-active`（不改变展开态）。 */
-const activeKey = computed(() => activeGroupKey(route))
+const activeKey = computed(() => activeGroupKey(route, props.nodes))
 </script>
 
 <template>

@@ -26,6 +26,16 @@ export interface ProjectCard {
   deviceCount: number
   memberCount: number
   myRole: string | null
+  /**
+   * 当前用户是否是该项目的所有者（v4.11.0 / FR-v4.11-29）。
+   *
+   * `myRole` 不能用来判「我参与的」：全局 admin 在没有成员关系时后端也给 `admin`
+   * （便于工作台统一显示），所以对最需要这个筛子的角色它恒为真。`own` / `joined`
+   * 才是真实归属。可选是因为旧夹具没有这两个字段，缺省按 false 处理。
+   */
+  own?: boolean
+  /** 当前用户是否是该项目的成员（有 `project_member` 行），不含「仅因是 admin 可见」。 */
+  joined?: boolean
   /** 测试内核：robot（Robot Framework，默认）| pytest。缺省按 robot 显示。 */
   testKernel?: string | null
 }

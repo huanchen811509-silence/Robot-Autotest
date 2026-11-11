@@ -4,9 +4,15 @@
  *
  * 三步闭环：预览（零写入）→ 逐条处理冲突 → 执行；执行后可整单回滚。
  * 预览只展示差异，不自动覆盖；`local_override` 与公共库已删的用例一律 SKIP。
+ *
+ * v4.11.0 / FR-v4.11-19：两处原生 `<table>` 改走 `DataTable` 壳。
+ * 注意列里的 `class="tag" / "select" / "small"` 是 `render()` 里 `h()` 出来的节点，
+ * **拿不到本组件的 scope id**（渲染发生在 NDataTable 内部），所以下面样式一律用
+ * `:deep()` 锚定，否则壳换掉原生表格后这些样式会静默失效。
  */
-import { computed, onMounted, ref } from 'vue'
+import { computed, h, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import type { DataTableColumns } from 'naive-ui'
 import { useAuthStore } from '@/stores/auth'
 import {
   projectSyncApi,
@@ -14,6 +20,7 @@ import {
   type SyncJobRow,
   type SyncPreview,
 } from '@/api/projectSync'
+import DataTable from '@/components/DataTable.vue'
 
 const { t } = useI18n()
 const auth = useAuthStore()
@@ -36,6 +43,13 @@ function actionLabel(action: string): string {
   return t(`sync.action.${action}`)
 }
 
+/** 冲突处置三选一：值 → i18n 键后缀（与旧 `<select>` 的 option 一一对应）。 */
+const RESOLUTION_LABEL: Record<string, string> = {
+  KEEP_LOCAL: 'keepLocal',
+  TAKE_REMOTE: 'takeRemote',
+  DUPLICATE: 'duplicate',
+}
+
 function resetResolutions(items: SyncItemRow[]): void {
   const next: Record<string, string> = {}
   for (const item of items) {
@@ -43,6 +57,101 @@ function resetResolutions(items: SyncItemRow[]): void {
   }
   resolutions.value = next
 }
+
+/* ------------------------------------------------------------ 表格列定义 */
+
+const previewColumns = computed<DataTableColumns<SyncItemRow>>(() => [
+  {
+    title: t('sync.column.externalId'),
+    key: 'externalId',
+    width: 170,
+    render: (row) => h('span', { class: 'mono' }, row.externalId),
+  },
+  { title: t('sync.column.title'), key: 'title', minWidth: 200 },
+  { title: t('sync.column.category'), key: 'categoryL1', width: 140 },
+  {
+    title: t('sync.column.action'),
+    key: 'action',
+    width: 120,
+    render: (row) =>
+      h('span', { class: ['tag', row.action.toLowerCase()] }, actionLabel(row.action)),
+  },
+  {
+    title: t('sync.column.resolution'),
+    key: 'resolution',
+    width: 170,
+    render: (row) => {
+      if (row.action !== 'CONFLICT') return h('span', { class: 'muted' }, '—')
+      const id = String(row.id)
+      return h(
+        'select',
+        {
+          class: 'select',
+          value: resolutions.value[id] ?? 'KEEP_LOCAL',
+          'data-testid': `sync-resolution-${id}`,
+          onChange: (event: Event) => {
+            const value = (event.target as HTMLSelectElement).value
+            resolutions.value = { ...resolutions.value, [id]: value }
+          },
+        },
+        Object.entries(RESOLUTION_LABEL).map(([value, label]) =>
+          h('option', { value }, t(`sync.resolve.${label}`)),
+        ),
+      )
+    },
+  },
+  {
+    title: t('sync.column.message'),
+    key: 'message',
+    minWidth: 200,
+    render: (row) => h('span', { class: 'muted small' }, row.message),
+  },
+])
+
+const jobColumns = computed<DataTableColumns<SyncJobRow>>(() => [
+  { title: '#', key: 'id', width: 90, render: (row) => h('span', { class: 'mono' }, row.id) },
+  {
+    title: t('sync.column.status'),
+    key: 'status',
+    width: 120,
+    render: (row) => h('span', { class: 'tag' }, statusLabel(row.status)),
+  },
+  { title: t('sync.column.total'), key: 'total', width: 80 },
+  { title: t('sync.action.NEW'), key: 'newCount', width: 80 },
+  { title: t('sync.action.UPDATE'), key: 'updatedCount', width: 90 },
+  { title: t('sync.action.CONFLICT'), key: 'conflictCount', width: 100 },
+  {
+    title: t('sync.column.createdAt'),
+    key: 'createdAt',
+    width: 170,
+    render: (row) => h('span', { class: 'muted small' }, row.createdAt),
+  },
+  {
+    title: t('sync.column.executedAt'),
+    key: 'executedAt',
+    width: 170,
+    render: (row) => h('span', { class: 'muted small' }, row.executedAt || '—'),
+  },
+  {
+    title: '',
+    key: 'rollback',
+    width: 100,
+    // 只有 DONE 才可回滚：其余状态回滚是后端 409，按钮不该出现在不可用的行上。
+    render: (row) =>
+      row.status === 'DONE'
+        ? h(
+            'button',
+            {
+              class: 'link danger',
+              disabled: busy.value,
+              'data-testid': `sync-rollback-${row.id}`,
+              onClick: () => void rollback(row),
+            },
+            t('sync.rollback'),
+          )
+        : null,
+  },
+])
 
 async function loadJobs(): Promise<void> {
   if (!projectId.value) return
@@ -169,44 +278,14 @@ onMounted(load)
       </div>
       <p v-if="conflictItems.length" class="muted small">{{ t('sync.conflictHint') }}</p>
 
-      <div class="table-wrap">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>{{ t('sync.column.externalId') }}</th>
-              <th>{{ t('sync.column.title') }}</th>
-              <th>{{ t('sync.column.category') }}</th>
-              <th>{{ t('sync.column.action') }}</th>
-              <th>{{ t('sync.column.resolution') }}</th>
-              <th>{{ t('sync.column.message') }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="item in preview?.items" :key="item.id">
-              <td class="mono">{{ item.externalId }}</td>
-              <td>{{ item.title }}</td>
-              <td>{{ item.categoryL1 }}</td>
-              <td>
-                <span class="tag" :class="item.action.toLowerCase()">
-                  {{ actionLabel(item.action) }}
-                </span>
-              </td>
-              <td>
-                <select
-                  v-if="item.action === 'CONFLICT'"
-                  v-model="resolutions[String(item.id)]"
-                  class="select"
-                >
-                  <option value="KEEP_LOCAL">{{ t('sync.resolve.keepLocal') }}</option>
-                  <option value="TAKE_REMOTE">{{ t('sync.resolve.takeRemote') }}</option>
-                  <option value="DUPLICATE">{{ t('sync.resolve.duplicate') }}</option>
-                </select>
-                <span v-else class="muted">—</span>
-              </td>
-              <td class="muted small">{{ item.message }}</td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="table-wrap" data-testid="sync-preview-grid">
+        <DataTable
+          :columns="previewColumns"
+          :data="preview?.items ?? []"
+          :row-key="(row: SyncItemRow) => row.id"
+          :max-height="480"
+          :empty-title="t('sync.total', { count: preview?.total ?? 0 })"
+        />
       </div>
     </section>
 
@@ -216,46 +295,13 @@ onMounted(load)
         <button class="link" @click="loadJobs">{{ t('sync.refresh') }}</button>
       </header>
       <p v-if="jobs.length === 0" class="muted empty">{{ t('sync.noHistory') }}</p>
-      <div v-else class="table-wrap">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>{{ t('sync.column.status') }}</th>
-              <th>{{ t('sync.column.total') }}</th>
-              <th>{{ t('sync.action.NEW') }}</th>
-              <th>{{ t('sync.action.UPDATE') }}</th>
-              <th>{{ t('sync.action.CONFLICT') }}</th>
-              <th>{{ t('sync.column.createdAt') }}</th>
-              <th>{{ t('sync.column.executedAt') }}</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="job in jobs" :key="job.id">
-              <td class="mono">{{ job.id }}</td>
-              <td>
-                <span class="tag">{{ statusLabel(job.status) }}</span>
-              </td>
-              <td>{{ job.total }}</td>
-              <td>{{ job.newCount }}</td>
-              <td>{{ job.updatedCount }}</td>
-              <td>{{ job.conflictCount }}</td>
-              <td class="muted small">{{ job.createdAt }}</td>
-              <td class="muted small">{{ job.executedAt || '—' }}</td>
-              <td>
-                <button
-                  v-if="job.status === 'DONE'"
-                  class="link danger"
-                  :disabled="busy"
-                  @click="rollback(job)"
-                >
-                  {{ t('sync.rollback') }}
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <div v-else class="table-wrap" data-testid="sync-jobs-grid">
+        <DataTable
+          :columns="jobColumns"
+          :data="jobs"
+          :row-key="(row: SyncJobRow) => row.id"
+          :max-height="480"
+        />
       </div>
     </section>
   </section>
@@ -286,46 +332,38 @@ onMounted(load)
   margin: var(--space-2) 0;
 }
 
-.tag {
+/*
+ * 单元格样式一律 `:deep()`：这些节点由 `render()` 里的 `h()` 产生，渲染发生在
+ * NDataTable 内部，不带本组件的 scope id，普通的 `.tag { }` 选择器匹配不到。
+ */
+:deep(.tag) {
   font-size: 12px;
   padding: 1px 8px;
   border-radius: 999px;
   border: 1px solid var(--border);
 }
 
-.tag.new {
+:deep(.tag.new) {
   border-color: var(--ok);
   color: var(--ok);
 }
 
-.tag.update {
+:deep(.tag.update) {
   border-color: var(--accent);
   color: var(--accent);
 }
 
-.tag.conflict {
+:deep(.tag.conflict) {
   border-color: var(--fail);
   color: var(--fail);
 }
 
+/* 横向滚动交给 DataTable 自己（它按列宽算 scroll-x）；外层再套一层 overflow 会出现两条横条。 */
 .table-wrap {
-  overflow-x: auto;
+  min-width: 0;
 }
 
-.table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.table th,
-.table td {
-  text-align: left;
-  padding: 6px 8px;
-  border-bottom: 1px solid var(--border);
-  vertical-align: top;
-}
-
-.select {
+:deep(.select) {
   padding: 4px 6px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -337,7 +375,7 @@ onMounted(load)
   color: var(--ok);
 }
 
-.small {
+:deep(.small) {
   font-size: 12px;
 }
 

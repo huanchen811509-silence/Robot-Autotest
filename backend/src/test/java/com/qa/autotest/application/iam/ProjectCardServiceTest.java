@@ -153,6 +153,33 @@ class ProjectCardServiceTest {
     }
 
     @Test
+    @DisplayName("own / joined：真实归属，不受 myRole 的 admin 兜底影响（FR-v4.11-29）")
+    void ownAndJoinedIgnoreAdminFallback() {
+        // 夹具：alpha 的 owner_id=2（不是当前工程师 15），gamma 的 owner_id=17（就是 ADMIN）
+        cardRepo.data.put(ALPHA, new ProjectCardRepository.ProjectCardAggregate(
+                226, 2, 5, 4, NOW.minus(Duration.ofDays(3)), 1, 3, "engineer"));
+
+        List<ProjectCard> asEngineer = service(List.of("engineer")).cards("7d", null);
+        assertFalse(asEngineer.get(0).own(), "alpha 的 owner 是别人");
+        assertTrue(asEngineer.get(0).joined(), "有 member_role → 是成员");
+        assertFalse(asEngineer.get(1).own(), "beta 无 owner、无成员关系");
+        assertFalse(asEngineer.get(1).joined());
+        assertFalse(asEngineer.get(2).own(), "gamma 的 owner 是 ADMIN");
+
+        // 关键：换成 ADMIN 本人（userId=17）再看一遍。只把「全局角色」换成 admin 是不够的——
+        // own 比的是 owner_id 与当前登录用户 id，不是角色。少了这行，gamma 的 owner(17) 与
+        // 当前用户(15) 不等，own 恒 false，这条用例就退化成「怎么改都不会红」的假断言。
+        TenantContext.set(ADMIN, "qa-e2e-admin", null);
+        List<ProjectCard> asAdmin = service(List.of("admin")).cards("7d", null);
+        assertTrue(asAdmin.get(2).own(), "gamma 的 owner_id = 当前 ADMIN");
+        assertFalse(asAdmin.get(2).joined(), "owner 本身不算 project_member 行");
+        // 关键证据：同一条卡牌 myRole 兜底成 admin，但 joined 仍为 false ——
+        // 所以「我参与的」不能写成 myRole != null。
+        assertEquals("admin", asAdmin.get(2).myRole());
+        assertFalse(asAdmin.get(0).own(), "alpha 的 owner 是 2，不是当前 ADMIN");
+    }
+
+    @Test
     @DisplayName("基座字段直接来自 visible() 的 Project，不另查项目")
     void baseFieldsComeFromVisibleProjects() {
         List<ProjectCard> cards = service(List.of("engineer")).cards("7d", null);

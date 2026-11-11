@@ -113,6 +113,15 @@ const router = createRouter({
       component: () => import('@/views/CaseSetsView.vue'),
     },
     {
+      // v4.11.0 / FR-v4.11-12：执行计划（即时发起台）。
+      // 与下面的 `/plans`（cron 定时编排）是两件事：这里「现在就跑这一批」。
+      // 未授权直达由 meta.capability 送去 403，菜单项同样按该能力过滤。
+      path: '/execution-plans',
+      name: 'execution-plans',
+      component: () => import('@/views/ExecutionPlansView.vue'),
+      meta: { capability: 'execution:read' },
+    },
+    {
       path: '/runs',
       name: 'runs',
       component: () => import('@/views/RunsView.vue'),
@@ -220,6 +229,15 @@ const router = createRouter({
       name: 'settings',
       component: () => import('@/views/SettingsView.vue'),
       meta: { capability: 'settings:read' },
+    },
+    {
+      // v4.11.0 / FR-v4.11-30：项目域「用户管理（仅当前用户和关联项目）」只读页。
+      // 与 `/admin`（系统级账号 CRUD，`user:write`）不是一回事，故单独一条路由。
+      // 放在 `/settings` 之后：`/settings` 是精确匹配，不会被这条抢走。
+      path: '/settings/users',
+      name: 'settings-users',
+      component: () => import('@/views/SettingsUsersView.vue'),
+      meta: { capability: 'public' },
     },
     {
       // v2.5 / FR-AI-10..13：AI 助手逐个配置端点 / 密钥 / 模型。仅管理员（后端 403 兜底）。

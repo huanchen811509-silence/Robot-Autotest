@@ -1,0 +1,7 @@
+  /settings -> http=200 app_mount=1
+  /settings/users -> http=200 app_mount=1
+  /settings/ai -> http=200 app_mount=1
+  /admin -> http=200 app_mount=1
+  /admin/audit -> http=200 app_mount=1
+  /changelog -> http=200 app_mount=1
+  /execution-plans -> http=200 app_mount=1
