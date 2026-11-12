@@ -73,7 +73,15 @@ public record FailureRuleSet(List<Rule> rules) {
                         "Temporary failure in name resolution",
                         // 覆盖 "Permission denied (publickey,password)" 及其它公钥/口令变体
                         "Permission denied (publickey",
-                        "SSH 认证失败"),
+                        "SSH 认证失败",
+                        // v5.3 补：这几条是最常见的连接类错误，早期漏收会把环境问题判成断言失败，
+                        // 后果是「该重试的不重试」且雷达低估环境故障占比（两侧同时失真）。
+                        "network is unreachable",
+                        "Network is unreachable",
+                        "host key verification failed",
+                        "Connection closed",
+                        "Connection timed out",
+                        "broken pipe"),
                 List.of()));
         defaults.add(new Rule(FailureClass.INFRA,
                 List.of("no tests executed",

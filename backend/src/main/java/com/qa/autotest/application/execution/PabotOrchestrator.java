@@ -29,22 +29,35 @@ public class PabotOrchestrator {
     private final RunLogService logs;
     private final Clock clock;
     private final RunProgressRegistry progress;
+    private final com.qa.autotest.application.execution.monitor.MonitorRegistry monitors;
 
     public PabotOrchestrator(ProcessLauncher launcher, ArtifactVerifier verifier,
                              ProcessRegistry registry, RunLogService logs, Clock clock) {
         this(launcher, verifier, registry, logs, clock, null);
     }
 
-    @org.springframework.beans.factory.annotation.Autowired
     public PabotOrchestrator(ProcessLauncher launcher, ArtifactVerifier verifier,
                              ProcessRegistry registry, RunLogService logs, Clock clock,
                              RunProgressRegistry progress) {
+        this(launcher, verifier, registry, logs, clock, progress, null);
+    }
+
+    /**
+     * @param monitors 执行监视器注册表（W53-01）。可为 null —— 监视是观测手段，
+     *                 不参与执行与判定；为 null 时一切照旧，只是没有监视数据。
+     */
+    @org.springframework.beans.factory.annotation.Autowired
+    public PabotOrchestrator(ProcessLauncher launcher, ArtifactVerifier verifier,
+                             ProcessRegistry registry, RunLogService logs, Clock clock,
+                             RunProgressRegistry progress,
+                             com.qa.autotest.application.execution.monitor.MonitorRegistry monitors) {
         this.launcher = launcher;
         this.verifier = verifier;
         this.registry = registry;
         this.logs = logs;
         this.clock = clock;
         this.progress = progress;
+        this.monitors = monitors;
     }
 
     public ShardResult runShard(String runId,
@@ -186,6 +199,10 @@ public class PabotOrchestrator {
     private void emit(String runId, Path runLog, Consumer<String> logSink, String line) {
         if (progress != null) {
             progress.onLine(runId, line);
+        }
+        // W53-01：同一行也喂监视器（内部吞掉一切异常，绝不影响执行）
+        if (monitors != null) {
+            monitors.feed(runId, "robot", line);
         }
         if (logs != null) {
             logs.publish(runId, "pabot", line);

@@ -371,6 +371,20 @@ run 38 pytest_artifact   "python3 tools/check_pytest_artifact.py"
 run 39 kernel_decoupling "python3 tools/check_kernel_decoupling.py"
 run 40 pytest_binding    "python3 tools/check_pytest_binding.py"
 
+# 41 命令集合（v5.3.0 / FR-v5.3-02 / W53-02）：字段契约 14 项、敏感项全掩码、截断有标记。
+#    没有样本时只校验代码侧契约并明确打印 NOTE——不假装全验过；有样本则逐行深校验。
+#    自证方式是真注入（写一份带明文口令的 commands.jsonl，必须判红），不是跳过。
+run 41 command_set     "python3 tools/check_command_set.py"
+
+# 42 时长基线（v5.3.1 / FR-v5.3-03 / W53-03）：迁移字段齐备 + 成对 down + 分母只取 PASS/FAIL
+#    + 分位单调有守门且被重算调用 + P99 真参与计算，并用 --db 在真库验一遍单调性与样本非空。
+#    空表时 SUM 返回 NULL 不是 0，脚本里已按 0 处理（这里踩过一次）。
+run 42 duration_baseline "python3 tools/check_baseline.py --db"
+
+# 43 报告 8 章（v5.4.0 / FR-v5.4-02 / W54-02）：八章齐 + 无条件添加（缺数据章标「无数据」
+#    而非省略）+ 三条口径声明 + 判定建议不吃 AI。自证方式是真删一章，必须判红。
+run 43 report_chapters "python3 tools/check_report_chapters.py"
+
 printf '\nGATES_RESULT FAILS=%s\n' "$FAILS"
 
 exit "$FAILS"

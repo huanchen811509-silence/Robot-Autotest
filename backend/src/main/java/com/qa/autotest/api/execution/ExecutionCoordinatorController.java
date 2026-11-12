@@ -7,12 +7,14 @@ import com.qa.autotest.application.execution.RunSplitter;
 import com.qa.autotest.application.execution.RunVerdictPolicy;
 import com.qa.autotest.common.ApiResponse;
 import com.qa.autotest.domain.execution.RunRecord;
+import java.util.ArrayList;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -40,6 +42,32 @@ public class ExecutionCoordinatorController {
     public ApiResponse<ProjectRunCoordinator.Admission> admission(@PathVariable long projectId) {
         access.requireProjectAccess(projectId);
         return ApiResponse.ok(coordinator.admit(projectId));
+    }
+
+    /**
+     * 长跑判定（W53-08）：按用例列表估算总耗时，判断是否属长跑。
+     *
+     * <p>给「发起前先看一眼」用：用户可以据此决定现在跑还是排到夜间窗口。
+     * {@code caseCodes} 为空时按空列表算（返回 0 秒、非长跑），不是一个错误——
+     * 页面刚打开、还没选用例时就是这种状态。
+     *
+     * @param kernel 内核；同一批用例在 RF 与 pytest 下耗时不同，不传按 robot 估
+     */
+    @GetMapping("/long-run")
+    public ApiResponse<ProjectRunCoordinator.LongRunCheck> longRun(
+            @PathVariable long projectId,
+            @RequestParam(required = false) String caseCodes,
+            @RequestParam(defaultValue = "robot") String kernel) {
+        access.requireProjectAccess(projectId);
+        List<RunSplitter.PlannedCase> cases = new ArrayList<>();
+        if (caseCodes != null && !caseCodes.isBlank()) {
+            for (String code : caseCodes.split(",")) {
+                if (!code.isBlank()) {
+                    cases.add(new RunSplitter.PlannedCase(code.trim(), kernel, null, 0));
+                }
+            }
+        }
+        return ApiResponse.ok(coordinator.longRunOf(projectId, cases));
     }
 
     /** 窗口配置（给配置页展示与校验用）。 */

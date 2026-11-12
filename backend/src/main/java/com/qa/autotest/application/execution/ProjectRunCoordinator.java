@@ -42,6 +42,10 @@ public class ProjectRunCoordinator {
     public static final String WINDOW_EXCLUSIVE = PREFIX + "window_exclusive";
     public static final String STOP_THRESHOLD = PREFIX + "stop_threshold";
     public static final String MIN_PASS_RATE = PREFIX + "min_pass_rate";
+    /** 长跑阈值（秒）：预计耗时超过它就算长跑，只允许在窗口内发起。 */
+    public static final String LONG_RUN_THRESHOLD = PREFIX + "long_run_threshold_s";
+    /** 默认 30 分钟。低于 30 分钟的批量不值得为它排夜间窗口。 */
+    public static final long DEFAULT_LONG_RUN_THRESHOLD_SECONDS = 1800;
 
     /** 时区固定 Asia/Shanghai：窗口是给本地运维看的，跟随服务器时区会漂。 */
     private static final ZoneId ZONE = ZoneId.of("Asia/Shanghai");
@@ -50,18 +54,79 @@ public class ProjectRunCoordinator {
     private final RunRepository runRepository;
     private final ProjectSettingRepository settings;
     private final AccessControlService access;
+    private final DurationBaselineService baselines;
 
     public ProjectRunCoordinator(RunService runs, RunRepository runRepository,
                                  ProjectSettingRepository settings, AccessControlService access) {
+        this(runs, runRepository, settings, access, null);
+    }
+
+    /**
+     * @param baselines 时长基线服务，用于长跑识别（W53-08）。可为 null——
+     *                  没有基线时退化为「全是短跑」，即长跑保护不生效，
+     *                  而不是「所有 run 都被当成短跑放行」的假象：{@code longRun} 会如实标 false。
+     */
+    @org.springframework.beans.factory.annotation.Autowired
+    public ProjectRunCoordinator(RunService runs, RunRepository runRepository,
+                                 ProjectSettingRepository settings, AccessControlService access,
+                                 DurationBaselineService baselines) {
         this.runs = runs;
         this.runRepository = runRepository;
         this.settings = settings;
         this.access = access;
+        this.baselines = baselines;
     }
 
-    /** 准入结论。{@code hint} 在拒绝时给出「下一次什么时候能跑」。 */
+    /**
+     * 准入结论。
+     *
+     * <p>{@code hint} 在 {@code allowed=false} 时是「下一次什么时候能跑」；
+     * 在 {@code allowed=true} 时可能是**放行提示**（例如长跑但项目没配窗口）——
+     * 两者靠 {@code allowed} 区分，不靠 {@code hint} 是否为空。
+     */
     public record Admission(boolean allowed, String windowDescription, boolean exclusive,
-                            String reason, String hint) {
+                            String reason, String hint, long estimatedSeconds, boolean longRun) {
+    }
+
+    /**
+     * 长跑判定（W53-08）：预计耗时超过 {@value #DEFAULT_LONG_RUN_THRESHOLD_SECONDS} 秒算长跑。
+     *
+     * <p>长跑与短跑的区别不在「多久」，而在「出错代价」：一个 40 分钟的批量跑到一半
+     * 撞上白天的高峰，会长时间占住设备与租约，别人一整天都排不进来。因此长跑
+     * <b>只在窗口内允许发起</b>；窗口外想跑就等到窗口开，而不是「先跑起来再说」。
+     *
+     * <p>估算用基线 P90 求和（见 {@code DurationBaselineService.estimateSeconds}），
+     * 基线覆盖率低时估算基本靠兜底，此时仍然按估算判——宁可把短跑误判成长跑
+     * （用户等到晚上），也不要把长跑误判成短跑（占满一整天）。
+     */
+    public record LongRunCheck(boolean longRun, long estimatedSeconds, long thresholdSeconds,
+                               int covered, int fallback, double coveragePercent) {
+    }
+
+    /** 按用例列表判定是否长跑。没有基线服务时返回「不是长跑 + 0 秒」。 */
+    public LongRunCheck longRunOf(long projectId, List<RunSplitter.PlannedCase> cases) {
+        long threshold = thresholdOf(projectId);
+        if (baselines == null) {
+            return new LongRunCheck(false, 0, threshold, 0, 0, 0.0);
+        }
+        DurationBaselineService.Estimate estimate = baselines.estimateSeconds(projectId, cases);
+        return new LongRunCheck(estimate.seconds() >= threshold, estimate.seconds(), threshold,
+                estimate.covered(), estimate.fallback(), estimate.coveragePercent());
+    }
+
+    /** 长跑阈值（秒），未配置或配错用默认 30 分钟。 */
+    public long thresholdOf(long projectId) {
+        Map<String, String> all = settings.findAll(projectId, PREFIX);
+        String raw = all.get("long_run_threshold_s");
+        if (raw == null || raw.isBlank()) {
+            return DEFAULT_LONG_RUN_THRESHOLD_SECONDS;
+        }
+        try {
+            long value = Long.parseLong(raw.trim());
+            return value > 0 ? value : DEFAULT_LONG_RUN_THRESHOLD_SECONDS;
+        } catch (NumberFormatException e) {
+            return DEFAULT_LONG_RUN_THRESHOLD_SECONDS;
+        }
     }
 
     /** 拆单预览：不落库，页面可以先展示「这次会跑成 2 个 run」。 */
@@ -94,14 +159,15 @@ public class ProjectRunCoordinator {
     }
 
     /** 提交结果：每个内核一单。{@code runs} 的顺序即建议的执行顺序。 */
-    public record SubmitResult(List<RunRecord> runs, SplitPlan plan) {
+    public record SubmitResult(List<RunRecord> runs, SplitPlan plan, LongRunCheck longRun,
+                               String notice) {
     }
 
     // ------------------------------------------------------------------ 准入
 
     /** 当前是否允许在该项目发起执行。 */
     public Admission admit(long projectId) {
-        return admit(projectId, LocalTime.now(ZONE));
+        return admit(projectId, LocalTime.now(ZONE), null);
     }
 
     /**
@@ -111,11 +177,41 @@ public class ProjectRunCoordinator {
      * 先报窗口能直接告诉用户「等到 23:00」。
      */
     public Admission admit(long projectId, LocalTime at) {
+        return admit(projectId, at, null);
+    }
+
+    /**
+     * 带长跑信息的准入（W53-08）。
+     *
+     * <p>三条判定顺序是刻意的：
+     * <ol>
+     *   <li><b>窗口</b>：关着就直接拒，理由里说清「是长跑所以更要等」；</li>
+     *   <li><b>长跑 + 无窗口</b>：<b>放行但提示</b>。没配窗口说明用户本来就不想要窗口，
+     *       此时拒绝长跑等于用一条他没开过的规则挡住他；提示让他知道风险即可；</li>
+     *   <li><b>独占</b>：有 run 在跑就不放。</li>
+     * </ol>
+     *
+     * @param longRun 长跑判定结果；null 表示不判定（等价于短跑）
+     */
+    public Admission admit(long projectId, LocalTime at, LongRunCheck longRun) {
         ExecutionWindow window = windowOf(projectId);
+        boolean isLong = longRun != null && longRun.longRun();
+        long estimated = longRun == null ? 0 : longRun.estimatedSeconds();
+        String hhmm = at.withSecond(0).withNano(0).toString();
+
         if (!window.openAt(at)) {
-            return new Admission(false, window.describe(), window.exclusive(),
-                    "当前 " + at.withSecond(0).withNano(0) + " 不在执行窗口内（"
-                            + window.describe() + "）", window.nextOpening());
+            String reason = isLong
+                    ? "当前 " + hhmm + " 不在执行窗口内（" + window.describe()
+                            + "）；本次预计耗时 " + duration(estimated) + "，属长跑，只能在窗口内发起"
+                    : "当前 " + hhmm + " 不在执行窗口内（" + window.describe() + "）";
+            return new Admission(false, window.describe(), window.exclusive(), reason,
+                    window.nextOpening(), estimated, isLong);
+        }
+        if (isLong && !window.timeBounded()) {
+            return new Admission(true, window.describe(), window.exclusive(), null,
+                    "本次预计耗时 " + duration(estimated)
+                            + "，属长跑；项目未配置执行窗口，长跑会占用白天设备，建议配置窗口",
+                    estimated, true);
         }
         if (window.exclusive()) {
             RunRepository.RunLedgerStats stats = runRepository.ledger(projectId,
@@ -124,10 +220,24 @@ public class ProjectRunCoordinator {
             if (active > 0) {
                 return new Admission(false, window.describe(), true,
                         "项目配置了窗口内独占，但当前已有 " + active + " 个 run 在执行",
-                        "等当前 run 结束后再发起，或改为非独占");
+                        "等当前 run 结束后再发起，或改为非独占", estimated, isLong);
             }
         }
-        return new Admission(true, window.describe(), window.exclusive(), null, null);
+        return new Admission(true, window.describe(), window.exclusive(), null, null,
+                estimated, isLong);
+    }
+
+    /** 人类可读的时长：{@code 3720} → {@code 1h 2m}。 */
+    static String duration(long seconds) {
+        if (seconds <= 0) {
+            return "未知";
+        }
+        long hours = seconds / 3600;
+        long minutes = (seconds % 3600) / 60;
+        if (hours > 0) {
+            return minutes > 0 ? hours + "h " + minutes + "m" : hours + "h";
+        }
+        return minutes > 0 ? minutes + "m" : seconds + "s";
     }
 
     /** 读取窗口配置（配置非法时抛 INVALID_ARGUMENT，不静默回落全天可跑）。 */
@@ -199,7 +309,8 @@ public class ProjectRunCoordinator {
         if (cases.isEmpty()) {
             throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "没有可执行的用例");
         }
-        Admission admission = admit(projectId);
+        LongRunCheck longRun = longRunOf(projectId, cases);
+        Admission admission = admit(projectId, LocalTime.now(ZONE), longRun);
         if (!admission.allowed()) {
             throw new BusinessException(ErrorCode.CONFLICT,
                     admission.reason() + "；" + admission.hint());
@@ -216,7 +327,7 @@ public class ProjectRunCoordinator {
                     request.nodeId());
             created.add(runs.create(command));
         }
-        return new SubmitResult(List.copyOf(created), plan);
+        return new SubmitResult(List.copyOf(created), plan, longRun, admission.hint());
     }
 
     /**

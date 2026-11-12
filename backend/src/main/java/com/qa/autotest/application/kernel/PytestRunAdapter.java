@@ -37,14 +37,27 @@ public class PytestRunAdapter {
     private final ProcessLauncher launcher;
     private final ProcessRegistry registry;
     private final Clock clock;
+    private final com.qa.autotest.application.execution.monitor.MonitorRegistry monitors;
 
     public PytestRunAdapter(PytestKernel kernel, ExecutionProperties props,
                             ProcessLauncher launcher, ProcessRegistry registry, Clock clock) {
+        this(kernel, props, launcher, registry, clock, null);
+    }
+
+    /**
+     * @param monitors 执行监视器注册表（W53-01）。可为 null：监视不参与执行与判定，
+     *                 为 null 时只少一份可观测数据。
+     */
+    @org.springframework.beans.factory.annotation.Autowired
+    public PytestRunAdapter(PytestKernel kernel, ExecutionProperties props,
+                            ProcessLauncher launcher, ProcessRegistry registry, Clock clock,
+                            com.qa.autotest.application.execution.monitor.MonitorRegistry monitors) {
         this.kernel = kernel;
         this.props = props;
         this.launcher = launcher;
         this.registry = registry;
         this.clock = clock;
+        this.monitors = monitors;
     }
 
     /**
@@ -102,8 +115,10 @@ public class PytestRunAdapter {
         emit(runLog, "[system] 开始执行 pytest: " + String.join(" ", command.argv()));
         registry.register(runId, handle.process());
         Instant started = clock.instant();
-        Thread outThread = pump(handle.stdout(), stdoutFile);
-        Thread errThread = pump(handle.stderr(), stderrFile);
+        java.util.function.Consumer<String> sink = monitors == null ? null
+                : line -> monitors.feed(runId, "pytest", line);
+        Thread outThread = pump(handle.stdout(), stdoutFile, sink);
+        Thread errThread = pump(handle.stderr(), stderrFile, sink);
         int exitCode = handle.waitFor(timeout);
         registry.unregister(runId);
         if (exitCode == Integer.MIN_VALUE && handle.process() != null) {
@@ -144,14 +159,32 @@ public class PytestRunAdapter {
     }
 
     private static Thread pump(InputStream in, Path target) {
+        return pump(in, target, null);
+    }
+
+    /**
+     * 把进程输出落盘，并逐行交给 {@code lineSink}（W53-01 取材）。
+     *
+     * <p>改成逐行读而不是 8KB 字节块直拷，是为了能按行喂监视器；代价是换行符统一成
+     * LF。pytest 的 stdout 是文本行，这个差异只影响 CRLF，不影响内容与顺序。
+     * {@code lineSink} 为 null 时行为与原字节拷贝等价（只是多了行缓冲）。
+     */
+    private static Thread pump(InputStream in, Path target,
+                               java.util.function.Consumer<String> lineSink) {
         Thread thread = new Thread(() -> {
-            try (in; var out = Files.newOutputStream(target, StandardOpenOption.CREATE,
-                    StandardOpenOption.APPEND)) {
-                byte[] buffer = new byte[8192];
-                int read;
-                while ((read = in.read(buffer)) != -1) {
-                    out.write(buffer, 0, read);
+            try (in;
+                 var reader = new java.io.BufferedReader(
+                         new java.io.InputStreamReader(in, StandardCharsets.UTF_8));
+                 var out = Files.newOutputStream(target, StandardOpenOption.CREATE,
+                         StandardOpenOption.APPEND)) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    out.write((line + "\n").getBytes(StandardCharsets.UTF_8));
+                    if (lineSink != null) {
+                        lineSink.accept(line);
+                    }
                 }
+                out.flush();
             } catch (Exception ignored) {
                 // stdout/stderr 落盘失败不影响执行
             }
