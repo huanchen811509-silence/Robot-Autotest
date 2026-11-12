@@ -31,7 +31,19 @@ public record Device(
         String osFamily,
         String osVersion,
         String architecture,
-        Integer sshPort) {
+        Integer sshPort,
+        Long modelDictId) {
+
+    /** v5.1.0 的 19 参形态（无型号字典关联）。 */
+    public Device(Long id, Long projectId, String name, String deviceType, String model,
+                  String vendor, String serialNo, String managementIp, String location,
+                  String rackNo, String domainTag, boolean enabled, Long ownerId,
+                  Instant lastCheckedAt, String hostKey, String osFamily, String osVersion,
+                  String architecture, Integer sshPort) {
+        this(id, projectId, name, deviceType, model, vendor, serialNo, managementIp, location,
+                rackNo, domainTag, enabled, ownerId, lastCheckedAt, hostKey, osFamily, osVersion,
+                architecture, sshPort, null);
+    }
 
     /** v5.0.0 及以前的全参形态（保持源码兼容，避免历史测试批量改）。 */
     public Device(Long id, Long projectId, String name, String deviceType, String model,
@@ -39,7 +51,8 @@ public record Device(
                   String rackNo, String domainTag, boolean enabled, Long ownerId,
                   Instant lastCheckedAt) {
         this(id, projectId, name, deviceType, model, vendor, serialNo, managementIp, location,
-                rackNo, domainTag, enabled, ownerId, lastCheckedAt, null, null, null, null, null);
+                rackNo, domainTag, enabled, ownerId, lastCheckedAt, null, null, null, null, null,
+                null);
     }
 
     /** inventory 渲染用的 hosts 键：优先显式 hostKey，否则按规则派生。 */

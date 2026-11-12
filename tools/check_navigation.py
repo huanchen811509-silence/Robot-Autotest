@@ -50,6 +50,21 @@ SETTINGS = ROOT / "frontend" / "src" / "config" / "settingsNav.ts"
 GLOBAL_EXPECTED = 5
 PROJECT_EXPECTED = 7
 GLOBAL_MIN_CHILDREN = 2
+# v5.2.0 / W52-08：pytest 用例库工程视图。四组：工作台 / 用例库 / 执行 / 设置。
+PYTEST_EXPECTED = 4
+# 这棵树里**刻意不出现**的路径前缀（差异化必须是真的差异化，不能只是改个顺序）。
+# 理由见 navigation.ts 的注释：pytest 工程用不到台架资产、环境拓扑、维护恢复、
+# 执行节点与定时计划；留半套入口会让新用户以为「必须先配资产」。
+PYTEST_FORBIDDEN_PREFIXES = (
+    "/assets",
+    "/environment/",
+    "/maintenance/",
+    "/nodes",
+    "/plans",
+    "/sync",
+    "/imports",
+    "/groups",
+)
 
 KEY_RE = re.compile(r"key: '([^']+)',")
 # 注意：**不要求尾逗号**——单行对象写作 `..., path: '/x' },`，`'` 与 `,` 之间还有 ` }`。
@@ -197,8 +212,38 @@ def run(path: Path) -> int:
     if len(project_groups) != PROJECT_EXPECTED:
         problems.append(f"项目一级项应为 {PROJECT_EXPECTED}，实际 {len(project_groups)}")
 
+    pytest_groups = parse(
+        extract_array(text, "export const PYTEST_SUITE_NAVIGATION: NavNode[] = ["), dynamic
+    )
+
     problems += check(global_groups, "全局", GLOBAL_MIN_CHILDREN)
     problems += check(project_groups, "项目", 2)
+    problems += check(pytest_groups, "pytest 工程", 2)
+
+    if len(pytest_groups) != PYTEST_EXPECTED:
+        problems.append(f"pytest 工程一级项应为 {PYTEST_EXPECTED}，实际 {len(pytest_groups)}")
+
+    # 差异化判据：不该出现的路径一个都不许出现
+    pytest_paths = [leaf.path for group in pytest_groups for leaf in group.children if leaf.path]
+    for path in pytest_paths:
+        for prefix in PYTEST_FORBIDDEN_PREFIXES:
+            if path == prefix or path.startswith(prefix.rstrip("/") + "/"):
+                problems.append(f"pytest 工程视图出现了不该有的入口：{path}（前缀 {prefix}）")
+
+    # 防「抄一份改个名」：两棵树的叶子集合不能完全相同
+    project_path_set = {leaf.path for group in project_groups
+                        for leaf in group.children if leaf.path}
+    if set(pytest_paths) == project_path_set:
+        problems.append("pytest 工程视图与标准工程视图的叶子完全相同——等于没有差异化")
+
+    # 叶子 path 必须存在于路由表（菜单不许指向不存在的页面）
+    router = ROOT / "frontend" / "src" / "router" / "index.ts"
+    if router.is_file():
+        router_text = router.read_text(encoding="utf-8")
+        declared = set(re.findall(r"path: '(/[^']*)'", router_text))
+        for path in pytest_paths:
+            if path not in declared:
+                problems.append(f"pytest 工程视图的叶子指向不存在的路由：{path}")
 
     deep = re.findall(r"^\s{12,}key: '", text, re.M)
     if deep:
@@ -222,12 +267,15 @@ def run(path: Path) -> int:
     print("[PASS] 层级 ≤ 2")
     print(f"[PASS] 全局一级 {len(global_groups)} 组 / {global_leaves} 叶（每组 ≥{GLOBAL_MIN_CHILDREN}）")
     print(f"[PASS] 项目一级 {len(project_groups)} 组 / {project_leaves} 叶")
+    pytest_leaves = sum(len(group.children) for group in pytest_groups)
+    print(f"[PASS] pytest 工程一级 {len(pytest_groups)} 组 / {pytest_leaves} 叶"
+          f"（无资产/环境/维护/节点/计划入口）")
     print(f"[PASS] 同 path 的叶子 query 两两不同；每个叶子都有 path（派生组：{dynamic_names}）")
     return 0
 
 
 def self_test() -> int:
-    """删掉全局「模板」组的第二个叶子，机检必须判失败。"""
+    """两条破坏性自证：删叶子（结构）与塞禁项（差异化）。"""
     with tempfile.TemporaryDirectory() as tmp:
         fake = Path(tmp) / "navigation.ts"
         shutil.copy(NAV, fake)
@@ -240,13 +288,36 @@ def self_test() -> int:
             flags=re.S,
         )
         fake.write_text(text, encoding="utf-8")
-        print("--- self-test：删掉「自定义模板」叶后应判失败 ---")
-        rc = run(fake)
-        if rc == 0:
+        print("--- self-test 1：删掉「自定义模板」叶后应判失败 ---")
+        if run(fake) == 0:
             print("[FAIL] 自检未拦住单叶组——机检形同虚设")
             return 1
-        print("[PASS] 自检按预期判红")
-        return 0
+        print("[PASS] 自检 1 按预期判红")
+
+    # 自证 2（v5.2.0 / W52-08）：往 pytest 工程视图塞一个资产页，
+    # 必须被「差异化」判据拦住。这一条才是新判据真正起作用的证据——
+    # 只证「原有判据还活着」不能说明新判据有效。
+    with tempfile.TemporaryDirectory() as tmp:
+        fake = Path(tmp) / "navigation.ts"
+        shutil.copy(NAV, fake)
+        text = fake.read_text(encoding="utf-8")
+        anchor = """      {
+        key: 'pytest-execution-reports',"""
+        injected = """      {
+        key: 'pytest-forbidden-assets',
+        labelKey: 'menu.assets',
+        icon: 'assets',
+        path: '/assets',
+      },
+""" + anchor
+        assert text.count(anchor) == 1
+        fake.write_text(text.replace(anchor, injected), encoding="utf-8")
+        print("--- self-test 2：往 pytest 视图塞 /assets 后应判失败 ---")
+        if run(fake) == 0:
+            print("[FAIL] 差异化判据没拦住资产入口——pytest 视图等于没做差异化")
+            return 1
+        print("[PASS] 自检 2 按预期判红")
+    return 0
 
 
 def main() -> int:

@@ -26,7 +26,7 @@ public class DeviceRepositoryJdbc implements DeviceRepository {
             SELECT d.id, d.project_id, d.name, d.device_type, d.model, d.vendor, d.serial_no,
                    d.management_ip, d.location, d.rack_no, d.domain_tag, d.status, d.owner_id,
                    d.last_checked_at, d.host_key, d.os_family, d.os_version, d.architecture,
-                   d.ssh_port
+                   d.ssh_port, d.model_dict_id
               FROM device d
             """;
 
@@ -57,7 +57,8 @@ public class DeviceRepositoryJdbc implements DeviceRepository {
             JdbcSupport.instant(rs.getTimestamp("last_checked_at")),
             rs.getString("host_key"), rs.getString("os_family"), rs.getString("os_version"),
             rs.getString("architecture"),
-            rs.getObject("ssh_port") == null ? null : rs.getInt("ssh_port"));
+            rs.getObject("ssh_port") == null ? null : rs.getInt("ssh_port"),
+            rs.getObject("model_dict_id") == null ? null : rs.getLong("model_dict_id"));
 
     private static final RowMapper<DevicePort> PORT_MAPPER = (rs, rowNum) -> new DevicePort(
             rs.getLong("id"), rs.getLong("device_id"), rs.getString("port_name"),
@@ -131,8 +132,9 @@ public class DeviceRepositoryJdbc implements DeviceRepository {
                     INSERT INTO device
                       (project_id, name, device_type, model, vendor, serial_no, management_ip,
                        location, rack_no, domain_tag, status, owner_id, created_by, updated_by,
-                       host_key, os_family, os_version, architecture, ssh_port)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                       host_key, os_family, os_version, architecture, ssh_port,
+                       model_dict_id)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """, Statement.RETURN_GENERATED_KEYS);
             ps.setLong(1, device.projectId());
             ps.setString(2, device.name());
@@ -153,6 +155,7 @@ public class DeviceRepositoryJdbc implements DeviceRepository {
             ps.setString(17, device.osVersion());
             ps.setString(18, device.architecture());
             ps.setObject(19, device.sshPort(), java.sql.Types.INTEGER);
+            ps.setObject(20, device.modelDictId(), java.sql.Types.BIGINT);
             return ps;
         }, keyHolder);
         return keyHolder.getKey() == null ? 0 : keyHolder.getKey().longValue();
@@ -164,7 +167,7 @@ public class DeviceRepositoryJdbc implements DeviceRepository {
                 UPDATE device SET name = ?, device_type = ?, model = ?, vendor = ?, serial_no = ?,
                        management_ip = ?, location = ?, rack_no = ?, domain_tag = ?, status = ?,
                        owner_id = ?, updated_by = ?, host_key = ?, os_family = ?, os_version = ?,
-                       architecture = ?, ssh_port = ?
+                       architecture = ?, ssh_port = ?, model_dict_id = ?
                  WHERE project_id = ? AND id = ?
                 """;
         TenantGuard.requireProjectScope(sql, "device");
@@ -172,7 +175,7 @@ public class DeviceRepositoryJdbc implements DeviceRepository {
                 device.serialNo(), device.managementIp(), device.location(), device.rackNo(),
                 device.domainTag(), device.enabled() ? 1 : 0, device.ownerId(), operatorId,
                 device.hostKey(), device.osFamily(), device.osVersion(), device.architecture(),
-                device.sshPort(), device.projectId(), device.id());
+                device.sshPort(), device.modelDictId(), device.projectId(), device.id());
     }
 
     @Override

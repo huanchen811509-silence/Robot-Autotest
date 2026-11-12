@@ -16,6 +16,11 @@ import {
   type PytestHealth,
   type SyncReport,
 } from '@/api/pytestProject'
+import {
+  executionCoordinationApi,
+  type Admission,
+  type ExecutionLedger,
+} from '@/api/executionCoordination'
 import { useAuthStore } from '@/stores/auth'
 
 const { t } = useI18n()
@@ -26,6 +31,13 @@ const health = ref<PytestHealth | null>(null)
 const bindings = ref<BindingStats | null>(null)
 const settings = reactive<Record<string, string>>({})
 const loading = ref(false)
+/** 保存被拒时的逐字段原因（后端整体拒绝，不存一半）。 */
+const saveErrors = ref<{ field: string; message: string }[]>([])
+/** 保存/加载后仍未填的必填项（空数组 = 齐了）。 */
+const missingFields = ref<string[]>([])
+const ledger = ref<ExecutionLedger | null>(null)
+const admission = ref<Admission | null>(null)
+const ledgerFailed = ref(false)
 const syncing = ref(false)
 const saving = ref(false)
 const failed = ref(false)
@@ -117,6 +129,22 @@ const calibers = computed(() => {
   ]
 })
 
+/**
+ * 秒 → 「1 小时 12 分」/「3 分 5 秒」。
+ *
+ * 不用 `Intl.RelativeTimeFormat`：那是「3 分钟前」这类相对表述，
+ * 而这里要的是**时长**，两者混用会让「平均 0 秒」看起来像「刚刚」。
+ */
+function formatDuration(seconds: number): string {
+  if (!seconds || seconds <= 0) return '—'
+  const hours = Math.floor(seconds / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  const rest = seconds % 60
+  if (hours > 0) return `${hours}h ${minutes}m`
+  if (minutes > 0) return `${minutes}m ${rest}s`
+  return `${rest}s`
+}
+
 async function load(): Promise<void> {
   loading.value = true
   failed.value = false
@@ -126,10 +154,30 @@ async function load(): Promise<void> {
     const raw = await pytestProjectApi.settings(projectId.value)
     for (const key of Object.keys(settings)) delete settings[key]
     Object.assign(settings, raw)
+    await loadLedger()
   } catch {
     failed.value = true
   } finally {
     loading.value = false
+  }
+}
+
+/**
+ * 台账与准入单独加载：它们属于「执行协调」，与 pytest 工程配置无关。
+ * 任一失败只把这一块标灰，不能让整页显示「加载失败」——
+ * 后端没升级时页面其余部分仍然可用。
+ */
+async function loadLedger(): Promise<void> {
+  ledgerFailed.value = false
+  try {
+    const [record, gate] = await Promise.all([
+      executionCoordinationApi.ledger(projectId.value),
+      executionCoordinationApi.admission(projectId.value),
+    ])
+    ledger.value = record
+    admission.value = gate
+  } catch {
+    ledgerFailed.value = true
   }
 }
 
@@ -164,16 +212,31 @@ async function sync(): Promise<void> {
   }
 }
 
+/** 保存配置：后端整体校验，任一字段非法则什么都不落库。 */
 async function save(): Promise<void> {
   saving.value = true
+  saveErrors.value = []
+  message.value = ''
   try {
-    const saved = await pytestProjectApi.saveSettings(projectId.value, { ...settings })
+    const result = await pytestProjectApi.saveSettings(projectId.value, { ...settings })
     for (const key of Object.keys(settings)) delete settings[key]
-    Object.assign(settings, saved)
-    message.value = t('pytestWorkbench.saved')
-    await load()
-  } catch {
-    failed.value = true
+    Object.assign(settings, result.settings)
+    // 保存后立刻拿到新的健康快照与必填缺口，不需要再请求两次
+    health.value = result.health
+    missingFields.value = result.missingForExecute
+    message.value = result.missingForExecute.length === 0
+      ? t('pytestWorkbench.saved')
+      : t('pytestWorkbench.savedWithMissing', {
+        fields: result.missingForExecute.join(', '),
+      })
+  } catch (error) {
+    // 校验失败是「可预期失败」，原因要原样展示；不要静默成「加载失败」
+    message.value = String(error)
+    try {
+      saveErrors.value = await pytestProjectApi.validateSettings(projectId.value, { ...settings })
+    } catch {
+      saveErrors.value = []
+    }
   } finally {
     saving.value = false
   }
@@ -280,6 +343,62 @@ onMounted(load)
           bound: health.boundExcludingPending,
         }) }}
       </p>
+    </section>
+
+    <section class="card" data-test="coordination">
+      <div class="card-head">
+        <h2>{{ t('pytestWorkbench.coordination') }}</h2>
+        <button class="ghost" :disabled="loading" @click="loadLedger">
+          {{ t('pytestWorkbench.refreshLedger') }}
+        </button>
+      </div>
+      <p v-if="ledgerFailed" class="notice notice-fail" data-test="ledger-failed">
+        {{ t('pytestWorkbench.ledgerFailed') }}
+      </p>
+      <template v-else-if="ledger">
+        <p
+          class="notice"
+          :class="ledger.windowOpen ? 'notice-ok' : 'notice-fail'"
+          data-test="window-state"
+        >
+          {{ ledger.windowOpen
+            ? t('pytestWorkbench.windowOpen', { window: ledger.windowDescription })
+            : t('pytestWorkbench.windowClosed', { window: ledger.windowDescription }) }}
+          <span v-if="ledger.exclusive"> · {{ t('pytestWorkbench.exclusive') }}</span>
+        </p>
+        <dl class="facts">
+          <div>
+            <dt>{{ t('pytestWorkbench.ledgerRuns') }}</dt>
+            <dd data-test="ledger-runs">{{ ledger.runsToday }}</dd>
+          </div>
+          <div>
+            <dt>{{ t('pytestWorkbench.ledgerSuccess') }}</dt>
+            <dd data-test="ledger-success">{{ ledger.successRatePercent }}%</dd>
+          </div>
+          <div>
+            <dt>{{ t('pytestWorkbench.ledgerCases') }}</dt>
+            <dd>{{ ledger.passedTests }} / {{ ledger.totalTests }}</dd>
+          </div>
+          <div>
+            <dt>{{ t('pytestWorkbench.ledgerAvg') }}</dt>
+            <dd>{{ formatDuration(ledger.avgDurationSeconds) }}</dd>
+          </div>
+          <div>
+            <dt>{{ t('pytestWorkbench.ledgerActive') }}</dt>
+            <dd>
+              {{ t('pytestWorkbench.ledgerActiveValue', {
+                running: ledger.running, queued: ledger.queued,
+              }) }}
+            </dd>
+          </div>
+        </dl>
+        <p v-if="admission && !admission.allowed" class="notice notice-fail" data-test="admission">
+          {{ admission.reason }} · {{ admission.hint }}
+        </p>
+        <p v-else-if="admission && admission.allowed" class="muted small">
+          {{ t('pytestWorkbench.admissionOk') }}
+        </p>
+      </template>
     </section>
 
     <section v-if="lastSync" class="card" data-test="four-classes">

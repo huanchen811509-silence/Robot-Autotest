@@ -19,6 +19,9 @@ const state = vi.hoisted(() => ({
   bindings: null as Record<string, unknown> | null,
   settings: {} as Record<string, string>,
   syncReport: null as Record<string, unknown> | null,
+  missing: [] as string[],
+  ledger: null as Record<string, unknown> | null,
+  admission: null as Record<string, unknown> | null,
 }))
 
 vi.mock('@/stores/auth', () => ({
@@ -30,8 +33,26 @@ vi.mock('@/api/pytestProject', () => ({
     health: async () => state.health,
     bindings: async () => state.bindings,
     settings: async () => state.settings,
-    saveSettings: async () => state.settings,
+    // v5.2.0 / W52-02：保存返回体变成 { settings, missingForExecute, errors, health }
+    saveSettings: async () => ({
+      settings: state.settings,
+      missingForExecute: state.missing,
+      errors: [],
+      health: state.health,
+    }),
+    validateSettings: async () => [],
     sync: async () => state.syncReport,
+  },
+}))
+
+/**
+ * 执行协调接口必须 mock 掉：不 mock 的话每个用例都会真发 HTTP 到 127.0.0.1:3000，
+ * 测试虽然「通过」，日志里全是 ECONNREFUSED —— 那种噪音会掩盖真正的失败。
+ */
+vi.mock('@/api/executionCoordination', () => ({
+  executionCoordinationApi: {
+    ledger: async () => state.ledger,
+    admission: async () => state.admission,
   },
 }))
 
@@ -189,5 +210,60 @@ describe('PytestWorkbenchView 覆盖率双口径', () => {
     await flush()
     expect(root.querySelector('[data-test="balanced"]')?.textContent)
       .toBe(i18n.global.t('pytestWorkbench.unbalanced'))
+  })
+
+  it('执行协调区块显示窗口状态与今日台账（v5.2.0 / W52-04）', async () => {
+    state.ledger = {
+      runsToday: 3,
+      finishedRuns: 2,
+      failedRuns: 1,
+      running: 1,
+      queued: 2,
+      totalTests: 120,
+      passedTests: 108,
+      failedTests: 12,
+      successRatePercent: 90.0,
+      avgDurationSeconds: 3725,
+      windowDescription: '23:00–06:00（跨零点）',
+      windowOpen: true,
+      exclusive: false,
+    }
+    state.admission = {
+      allowed: true,
+      windowDescription: '23:00–06:00（跨零点）',
+      exclusive: false,
+      reason: null,
+      hint: null,
+    }
+    const root = await mountView()
+    const pick = (key: string) =>
+      root.querySelector(`[data-test="${key}"]`)?.textContent?.trim() ?? ''
+    expect(pick('ledger-runs')).toBe('3')
+    expect(pick('ledger-success')).toBe('90%')
+    // 3725 秒要显示成 1h 2m，不是「3725」也不是相对时间
+    expect(root.textContent).toContain('1h 2m')
+    expect(pick('window-state')).toContain('23:00–06:00')
+    expect(root.querySelector('[data-test="admission"]')).toBeNull()
+  })
+
+  it('窗口关闭时提示会被拒绝，并给出下一次开启时点', async () => {
+    state.ledger = {
+      runsToday: 0, finishedRuns: 0, failedRuns: 0, running: 0, queued: 0,
+      totalTests: 0, passedTests: 0, failedTests: 0, successRatePercent: 0,
+      avgDurationSeconds: 0, windowDescription: '23:00–06:00', windowOpen: false,
+      exclusive: true,
+    }
+    state.admission = {
+      allowed: false,
+      windowDescription: '23:00–06:00',
+      exclusive: true,
+      reason: '当前 14:20 不在执行窗口内（23:00–06:00）',
+      hint: '下一次窗口开启：23:00',
+    }
+    const root = await mountView()
+    const pick = (key: string) =>
+      root.querySelector(`[data-test="${key}"]`)?.textContent?.trim() ?? ''
+    expect(pick('window-state')).toContain('不在执行窗口内')
+    expect(pick('admission')).toContain('下一次窗口开启')
   })
 })

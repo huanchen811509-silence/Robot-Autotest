@@ -35,14 +35,15 @@ describe('App 侧栏能力过滤（FR-v4.11-03）', () => {
     const body = navBlock![1]
 
     expect(body).toContain('filterNavByCapabilityPredicate')
-    expect(body).toContain('GLOBAL_NAVIGATION')
-    expect(body).toContain('NAVIGATION')
-    // 树的选择必须出现在过滤器调用**之后**（即作为它的实参），而不是被提前 return 出去
-    expect(body.indexOf('GLOBAL_NAVIGATION')).toBeGreaterThan(
+    // v5.2.0 / W52-08：树的选择收进 navTreeFor（按界面模式 + 工程类型），
+    // 但**必须仍然作为过滤器的实参**——否则又变成「选完树直接返回」的旁路。
+    expect(body).toContain('navTreeFor(')
+    expect(body.indexOf('navTreeFor(')).toBeGreaterThan(
       body.indexOf('filterNavByCapabilityPredicate('),
     )
     // 不存在「直接返回未过滤的树」这种旁路
     expect(body).not.toMatch(/return\s+GLOBAL_NAVIGATION/)
     expect(body).not.toMatch(/return\s+NAVIGATION/)
+    expect(body).not.toMatch(/return\s+PYTEST_SUITE_NAVIGATION/)
   })
 })

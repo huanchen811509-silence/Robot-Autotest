@@ -53,6 +53,20 @@ export interface BindingStats {
   items: CaseScriptBinding[]
 }
 
+/** 单项校验失败。`field` 是短名（页面字段名），不带 `pytest.` 前缀。 */
+export interface SettingsFieldError {
+  field: string
+  message: string
+}
+
+/** 保存结果：配置快照 + 必填缺口 + 保存后的健康快照。 */
+export interface SettingsSaveResult {
+  settings: Record<string, string>
+  missingForExecute: string[]
+  errors: SettingsFieldError[]
+  health: PytestHealth
+}
+
 export interface SyncReport {
   totalCases: number
   bound: number
@@ -125,9 +139,22 @@ export const pytestProjectApi = {
   settings(projectId: number): Promise<Record<string, string>> {
     return request<Record<string, string>>(`${base(projectId)}/settings`)
   },
-  saveSettings(projectId: number, body: Record<string, string>): Promise<Record<string, string>> {
-    return request<Record<string, string>>(`${base(projectId)}/settings`, {
+  /**
+   * 保存配置（v5.2.0 / W52-02）。返回体从「纯 map」变成「map + 缺口 + 健康快照」：
+   * 保存后能立刻看到「还缺什么必填项」「现在能不能跑」，不必再请求两次。
+   * 任一项非法时后端整体拒绝（400），不会出现「存了一半」。
+   */
+  saveSettings(projectId: number, body: Record<string, string>): Promise<SettingsSaveResult> {
+    return request<SettingsSaveResult>(`${base(projectId)}/settings`, {
       method: 'PUT',
+      body: JSON.stringify(body),
+    })
+  },
+
+  /** 只校验不落库：页面「保存前试算」，也用于排查「为什么保存被拒」。 */
+  validateSettings(projectId: number, body: Record<string, string>): Promise<SettingsFieldError[]> {
+    return request<SettingsFieldError[]>(`${base(projectId)}/settings/validate`, {
+      method: 'POST',
       body: JSON.stringify(body),
     })
   },

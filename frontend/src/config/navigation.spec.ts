@@ -27,6 +27,8 @@ import {
   visibleNav,
   visibleNavByCapabilities,
   capabilitiesForRole,
+  navTreeFor,
+  PYTEST_SUITE_NAVIGATION,
   type NavGroup,
   type NavLeaf,
   type NavNode,
@@ -281,21 +283,24 @@ describe('v2.3 菜单 IA 与执行/报告合并', () => {
     expect(workbench.labelKey).not.toBe(board.labelKey)
   })
 
-  it('执行与报告合并：组内 7 项顺序固定，且一级不再有 reports', () => {
+  it('执行与报告合并：组内 8 项顺序固定，且一级不再有 reports', () => {
     const execution = byKey('execution') as NavGroup
     // v4.11.0 / FR-v4.11-12：首位插入「执行计划」（即时发起台），cron 计划顺延到第 3。
+    // v5.2.0 / W52-08：`/kernels` 补入口，落在「执行节点」之后、报告之前（运行态末尾）。
     expect(execution.children.map((child) => child.path)).toEqual([
-      '/execution-plans', '/runs', '/plans', '/nodes', '/reports', '/reports/templates', '/test-reports',
+      '/execution-plans', '/runs', '/plans', '/nodes', '/kernels',
+      '/reports', '/reports/templates', '/test-reports',
     ])
     expect(NAVIGATION.some((node) => node.key === 'reports')).toBe(false)
   })
 
-  it('合并组不带组级 capability，能力只设在 4 个运行态子项上（否则 viewer 会丢报告入口）', () => {
+  it('合并组不带组级 capability，能力只设在 5 个运行态子项上（否则 viewer 会丢报告入口）', () => {
     const execution = byKey('execution') as NavGroup
     expect(execution.capability).toBeUndefined()
     const guarded = execution.children.filter((child) => child.capability === 'execution:read')
     expect(guarded.map((child) => child.key)).toEqual([
       'execution-launch', 'execution-runs', 'execution-plans', 'execution-nodes',
+      'execution-kernels',
     ])
     const reportItems = execution.children.filter((child) => child.section === 'report')
     expect(reportItems.every((child) => child.capability === undefined)).toBe(true)
@@ -345,16 +350,16 @@ describe('v2.3 菜单 IA 与执行/报告合并', () => {
     }
   })
 
-  it('合并组内恰好 1 条分区线：前四项 run、后三项 report（FR-UI-29）', () => {
+  it('合并组内恰好 1 条分区线：前五项 run、后三项 report（FR-UI-29）', () => {
     const execution = byKey('execution') as NavGroup
     expect(execution.children.map((child) => child.section)).toEqual([
-      'run', 'run', 'run', 'run', 'report', 'report', 'report',
+      'run', 'run', 'run', 'run', 'run', 'report', 'report', 'report',
     ])
     const breaks = execution.children
       .map((_, index) => isSectionBreak(execution.children, index))
       .filter(Boolean)
     expect(breaks).toHaveLength(1)
-    expect(isSectionBreak(execution.children, 4)).toBe(true)
+    expect(isSectionBreak(execution.children, 5)).toBe(true)
     expect(isSectionBreak(execution.children, 0)).toBe(false)
   })
 
@@ -509,5 +514,71 @@ describe('v4.11.0 全局菜单两级化', () => {
     const settings = noCaps.find((node) => node.key === 'global-settings') as NavGroup
     // about / changelog 是 public，永远保留；其余 4 项被过滤
     expect(settings.children).toHaveLength(2)
+  })
+})
+
+describe('navTreeFor：按工程类型选树（v5.2.0 / W52-08）', () => {
+  function pytestLeaves(): NavLeaf[] {
+    return PYTEST_SUITE_NAVIGATION.flatMap((node) => (isGroup(node) ? node.children : [node]))
+  }
+
+  it('全局模式一律用全局树，与工程类型无关', () => {
+    expect(navTreeFor('global', 'pytest-suite')).toBe(GLOBAL_NAVIGATION)
+    expect(navTreeFor('global', 'standard')).toBe(GLOBAL_NAVIGATION)
+    expect(navTreeFor('global', undefined)).toBe(GLOBAL_NAVIGATION)
+  })
+
+  it('项目模式下 pytest-suite 用专用树，其余用标准树', () => {
+    expect(navTreeFor('project', 'pytest-suite')).toBe(PYTEST_SUITE_NAVIGATION)
+    expect(navTreeFor('project', 'standard')).toBe(NAVIGATION)
+    // 未知/缺省按标准工程：宁可多显示入口，不要少显示
+    expect(navTreeFor('project', null)).toBe(NAVIGATION)
+    expect(navTreeFor('project', 'whatever')).toBe(NAVIGATION)
+  })
+
+  it('pytest 树不出现资产/环境/维护/节点/计划入口', () => {
+    const paths = pytestLeaves().map((leaf) => leaf.path)
+    const forbidden = ['/assets', '/environment', '/maintenance', '/nodes', '/plans', '/sync']
+    for (const prefix of forbidden) {
+      const hit = paths.some((path) => path === prefix || path.startsWith(prefix + '/'))
+      expect(hit, '不该出现 ' + prefix).toBe(false)
+    }
+  })
+
+  it('pytest 树的每个叶子都能被路由表解析到真实页面', () => {
+    for (const leaf of pytestLeaves()) {
+      const resolved = router.resolve(leafTarget(leaf))
+      const name = resolved.matched.at(-1)?.name
+      expect(name, 'pytest 叶子 ' + leaf.key + ' 的 ' + leaf.path + ' 没有命中路由').toBeTruthy()
+      expect(name).not.toBe('not-found')
+    }
+  })
+
+  it('pytest 树每个分组至少两个子项', () => {
+    for (const node of PYTEST_SUITE_NAVIGATION) {
+      if (isGroup(node)) {
+        expect(node.children.length, '分组 ' + node.key + ' 子项过少').toBeGreaterThanOrEqual(2)
+      }
+    }
+  })
+
+  it('两棵树的叶子集合不相同——差异化不是改个顺序', () => {
+    const projectPaths = new Set(leaves().map((leaf) => leaf.path))
+    const pytestPaths = new Set(pytestLeaves().map((leaf) => leaf.path))
+    expect(pytestPaths.size).toBeGreaterThan(0)
+    expect([...pytestPaths].sort()).not.toEqual([...projectPaths].sort())
+    // 除 pytest 专用页外，其余路径必须来自标准树（不另造页面）
+    const pytestOnly = new Set(['/pytest-workbench'])
+    for (const path of pytestPaths) {
+      if (pytestOnly.has(path)) continue
+      expect(projectPaths.has(path), path + ' 不在标准树里，也未登记为 pytest 专用页').toBe(true)
+    }
+  })
+
+  it('pytest 树里工作台落地页就是工程健康页', () => {
+    const workbench = PYTEST_SUITE_NAVIGATION.find((node) => node.key === 'pytest-workbench')
+    expect(workbench && isGroup(workbench)).toBe(true)
+    const first = (workbench as NavGroup).children[0]
+    expect(first.path).toBe('/pytest-workbench')
   })
 })

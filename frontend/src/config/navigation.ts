@@ -321,6 +321,17 @@ export const NAVIGATION: NavNode[] = [
         section: 'run',
       },
       {
+        // v5.2.0 / W52-08：内核页此前「有路由、无入口」，只能手输 URL。
+        // 它回答的是「这台机器上 RF/pytest 到底能不能跑」，属于执行前的必看页，
+        // 因此标准工程与 pytest 工程都挂入口。
+        key: 'execution-kernels',
+        labelKey: 'menu.kernels',
+        icon: 'system',
+        path: '/kernels',
+        capability: 'execution:read',
+        section: 'run',
+      },
+      {
         // `exclude` 是必须的：`/reports` 按前缀会命中 `/reports/templates`，
         // 不排除就会出现「点模板，报告列表也亮」。
         key: 'execution-reports',
@@ -453,6 +464,136 @@ export const NAVIGATION: NavNode[] = [
     children: projectSettingsChildren,
   },
 ]
+
+/**
+ * pytest 用例库工程的导航树（v5.2.0 / FR-v5.2-07 / W52-08）。
+ *
+ * **为什么要有第二棵树**：`pytest-suite` 工程里没有台架资产、没有环境拓扑、
+ * 没有维护恢复——这些页面对它是纯噪音，还会让新用户以为「要先配资产才能跑 pytest」。
+ * 它日常只做四件事：看用例库覆盖、绑脚本、发起执行、看报告。
+ *
+ * 与 `NAVIGATION` 的关系是**真子集 + 重排**，不是另写一套：
+ * key / labelKey / path / capability 全部沿用原树的定义，只有分组方式和顺序不同。
+ * 这样两棵树的选中态判定、能力过滤、路径匹配走的都是同一套函数，不会出现
+ * 「切了工程类型后某项点不亮」这种双份实现的经典缺陷。
+ *
+ * 刻意**不出现**的项（差异化必须是真的差异化）：资产台账、凭证、链路、
+ * 环境与拓扑、维护与恢复、执行节点、测试计划。要在 pytest 工程里配资产，
+ * 走「系统设置 → 项目设置」或切回标准工程——不在这棵树里留半套入口。
+ */
+export const PYTEST_SUITE_NAVIGATION: NavNode[] = [
+  {
+    key: 'pytest-workbench',
+    labelKey: 'menu.pytestWorkbench',
+    icon: 'dashboard',
+    children: [
+      {
+        // 工程健康 + 覆盖率 + 绑定 + 证据，是这个工程类型的落地面。
+        key: 'pytest-workbench-health',
+        labelKey: 'menu.pytestHealth',
+        icon: 'dashboard',
+        path: '/pytest-workbench',
+        capability: 'execution:read',
+      },
+      {
+        key: 'pytest-workbench-board',
+        labelKey: 'menu.overview',
+        icon: 'reports',
+        path: '/overview',
+      },
+    ],
+  },
+  {
+    key: 'pytest-library',
+    labelKey: 'menu.pytestLibrary',
+    icon: 'cases',
+    children: [
+      {
+        key: 'pytest-library-cases',
+        labelKey: 'menu.cases',
+        icon: 'cases',
+        path: '/cases',
+        capability: 'case:read',
+      },
+      {
+        key: 'pytest-library-sets',
+        labelKey: 'menu.caseSets',
+        icon: 'cases',
+        path: '/cases/sets',
+        capability: 'case:read',
+      },
+      {
+        key: 'pytest-library-board',
+        labelKey: 'menu.casesBoard',
+        icon: 'boxes',
+        path: '/cases/board',
+        capability: 'case:read',
+      },
+    ],
+  },
+  {
+    key: 'pytest-execution',
+    labelKey: 'menu.execution',
+    icon: 'runs',
+    children: [
+      {
+        key: 'pytest-execution-launch',
+        labelKey: 'menu.executionPlans',
+        icon: 'plus',
+        path: '/execution-plans',
+        capability: 'execution:read',
+      },
+      {
+        key: 'pytest-execution-runs',
+        labelKey: 'menu.runsList',
+        icon: 'runs',
+        path: '/runs',
+        alsoMatch: ['/runs/failure-clusters'],
+        capability: 'execution:read',
+      },
+      {
+        // 内核页在 pytest 工程里是常用页（探契约、看解释器版本），保留为一等入口。
+        key: 'pytest-execution-kernels',
+        labelKey: 'menu.kernels',
+        icon: 'system',
+        path: '/kernels',
+        capability: 'execution:read',
+      },
+      {
+        key: 'pytest-execution-reports',
+        labelKey: 'menu.reports',
+        icon: 'reports',
+        path: '/reports',
+        exclude: ['/reports/templates'],
+      },
+    ],
+  },
+  {
+    key: 'pytest-settings',
+    labelKey: 'menu.settings',
+    icon: 'admin',
+    children: projectSettingsChildren,
+  },
+]
+
+/** 工程类型取值（与后端 `ProjectKind` 对齐）。 */
+export type ProjectKind = 'standard' | 'platform' | 'pytest-suite'
+
+/**
+ * 按「界面模式 + 工程类型」选树。
+ *
+ * 这是唯一入口：`App.vue` 不再自己三元判断。把选择逻辑收成函数，才能在单测里
+ * 穷举三种工程类型 × 两种模式，而不是靠人工点界面确认。
+ *
+ * @param mode  `global`（跨项目）/ `project`（项目内）
+ * @param kind  工程类型；空或未知一律按标准工程处理（宁可多显示，不要少显示入口）
+ */
+export function navTreeFor(mode: 'global' | 'project', kind?: string | null): NavNode[] {
+  if (mode === 'global') {
+    return GLOBAL_NAVIGATION
+  }
+  return kind === 'pytest-suite' ? PYTEST_SUITE_NAVIGATION : NAVIGATION
+}
 
 /** 路由上参与判定所需的字段（避免依赖完整 RouteLocation，便于单测构造）。 */
 export interface NavRouteLike {

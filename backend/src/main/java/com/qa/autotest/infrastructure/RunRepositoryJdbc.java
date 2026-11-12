@@ -374,6 +374,37 @@ public class RunRepositoryJdbc implements RunRepository {
         return counts;
     }
 
+    @Override
+    public RunLedgerStats ledger(long projectId, java.time.Instant since) {
+        String sql = """
+                SELECT COUNT(*)                                                        AS runs,
+                       COALESCE(SUM(run_status = ?), 0)                                AS finished,
+                       COALESCE(SUM(run_status = ?), 0)                                AS failed,
+                       COALESCE(SUM(run_status IN (?, ?)), 0)                          AS running,
+                       COALESCE(SUM(run_status = ?), 0)                                AS queued,
+                       COALESCE(SUM(total_tests), 0)                                   AS total_tests,
+                       COALESCE(SUM(passed_tests), 0)                                  AS passed_tests,
+                       COALESCE(SUM(failed_tests), 0)                                  AS failed_tests,
+                       COALESCE(AVG(TIMESTAMPDIFF(SECOND, started_at, finished_at)), 0) AS avg_seconds
+                  FROM run
+                 WHERE project_id = ? AND created_at >= ?
+                """;
+        TenantGuard.requireProjectScope(sql, "run");
+        return jdbc.queryForObject(sql, (rs, rowNum) -> new RunLedgerStats(
+                rs.getInt("runs"),
+                rs.getInt("finished"),
+                rs.getInt("failed"),
+                rs.getInt("running"),
+                rs.getInt("queued"),
+                rs.getInt("total_tests"),
+                rs.getInt("passed_tests"),
+                rs.getInt("failed_tests"),
+                rs.getLong("avg_seconds")), RunState.FINISHED.dbValue(),
+                RunState.FAILED.dbValue(), RunState.PREPARING.dbValue(),
+                RunState.RUNNING.dbValue(), RunState.QUEUED.dbValue(), projectId,
+                java.sql.Timestamp.from(since));
+    }
+
     private static Integer valueOrZero(Object value) {
         return value == null ? 0 : ((Number) value).intValue();
     }

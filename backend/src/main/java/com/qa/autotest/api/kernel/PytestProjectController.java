@@ -5,6 +5,7 @@ import com.qa.autotest.application.kernel.pytest.PytestBindingSyncService;
 import com.qa.autotest.application.kernel.pytest.PytestEvidenceService;
 import com.qa.autotest.application.kernel.pytest.PytestHealthService;
 import com.qa.autotest.application.kernel.pytest.PytestProjectSettings;
+import com.qa.autotest.application.kernel.pytest.PytestSettingsService;
 import com.qa.autotest.application.repository.ProjectSettingRepository;
 import com.qa.autotest.common.ApiResponse;
 import com.qa.autotest.domain.caseasset.PytestCaseStep;
@@ -35,15 +36,18 @@ public class PytestProjectController {
     private final PytestHealthService health;
     private final PytestBindingSyncService sync;
     private final PytestEvidenceService evidence;
+    private final PytestSettingsService settingsService;
     private final ProjectSettingRepository settings;
     private final AccessControlService access;
 
     public PytestProjectController(PytestHealthService health, PytestBindingSyncService sync,
                                    PytestEvidenceService evidence,
+                                   PytestSettingsService settingsService,
                                    ProjectSettingRepository settings, AccessControlService access) {
         this.health = health;
         this.sync = sync;
         this.evidence = evidence;
+        this.settingsService = settingsService;
         this.settings = settings;
         this.access = access;
     }
@@ -78,27 +82,25 @@ public class PytestProjectController {
         return ApiResponse.ok(settings.findAll(projectId, PytestProjectSettings.PREFIX));
     }
 
-    /** 覆盖写配置项：只写请求里给出的键，未给出的保持原值。 */
+    /**
+     * 覆盖写配置项：只写请求里给出的键，未给出的保持原值；空值表示恢复未配置。
+     *
+     * <p>返回体带 {@code health}：保存后立刻探一次，页面不必再请求第二次，
+     * 也不会出现「保存成功但健康状态还是旧的」。任一项非法时整体拒绝。
+     */
     @PutMapping("/settings")
-    public ApiResponse<Map<String, String>> putSettings(@PathVariable long projectId,
-                                                        @RequestBody Map<String, String> body) {
+    public ApiResponse<PytestSettingsService.SaveResult> putSettings(
+            @PathVariable long projectId, @RequestBody Map<String, String> body) {
         access.requireProjectAccess(projectId);
-        if (body != null) {
-            for (Map.Entry<String, String> entry : body.entrySet()) {
-                String key = entry.getKey();
-                if (key == null || key.isBlank()) {
-                    continue;
-                }
-                String full = key.startsWith(PytestProjectSettings.PREFIX)
-                        ? key : PytestProjectSettings.PREFIX + key;
-                if (entry.getValue() == null || entry.getValue().isBlank()) {
-                    settings.remove(projectId, full);
-                } else {
-                    settings.put(projectId, full, entry.getValue().trim(), null);
-                }
-            }
-        }
-        return ApiResponse.ok(settings.findAll(projectId, PytestProjectSettings.PREFIX));
+        return ApiResponse.ok(settingsService.save(projectId, body));
+    }
+
+    /** 只校验不落库：页面「保存前试算」，也用于排查「为什么保存被拒」。 */
+    @PostMapping("/settings/validate")
+    public ApiResponse<List<PytestSettingsService.FieldError>> validateSettings(
+            @PathVariable long projectId, @RequestBody Map<String, String> body) {
+        access.requireProjectAccess(projectId);
+        return ApiResponse.ok(settingsService.check(body));
     }
 
     /**

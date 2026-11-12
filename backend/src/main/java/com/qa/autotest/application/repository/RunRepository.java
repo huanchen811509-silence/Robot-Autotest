@@ -125,4 +125,35 @@ public interface RunRepository {
     default java.util.Map<String, Integer> countByStatus(long projectId) {
         return java.util.Map.of();
     }
+
+    /**
+     * 项目台账聚合（W52-06 / FR-v5.2-03）：自 {@code since} 起的 run 与用例计数。
+     *
+     * <p>成功率按**用例级**算（{@code passed / (passed + failed)}），不按 run 级：
+     * 一个 run 里 300 条用例失败 1 条，run 级记 0% 会把整体成功率拉到毫无意义。
+     *
+     * <p>默认返回空台账，保证内存仓储与既有测试无需改动。
+     */
+    default RunLedgerStats ledger(long projectId, java.time.Instant since) {
+        return RunLedgerStats.empty();
+    }
+
+    /** 台账读数。{@code avgDurationSeconds} 只统计已结束的 run。 */
+    record RunLedgerStats(int runs, int finished, int failed, int running, int queued,
+                          int totalTests, int passedTests, int failedTests,
+                          long avgDurationSeconds) {
+
+        public static RunLedgerStats empty() {
+            return new RunLedgerStats(0, 0, 0, 0, 0, 0, 0, 0, 0);
+        }
+
+        /** 用例级成功率（百分比，一位小数）；没有结论时返回 0 而不是 100。 */
+        public double successRatePercent() {
+            int concluded = passedTests + failedTests;
+            if (concluded == 0) {
+                return 0.0;
+            }
+            return Math.round(passedTests * 1000.0 / concluded) / 10.0;
+        }
+    }
 }

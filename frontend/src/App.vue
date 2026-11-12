@@ -35,9 +35,8 @@ import { isEditableTarget } from '@/utils/keyboard'
 import { useAiDrawer } from '@/composables/useAiDrawer'
 import { performLogout } from '@/composables/useLogout'
 import {
-  GLOBAL_NAVIGATION,
-  NAVIGATION,
   filterNavByCapabilityPredicate,
+  navTreeFor,
   type NavNode,
 } from '@/config/navigation'
 import { useMenuCapabilitiesStore } from '@/stores/menuCapabilities'
@@ -85,8 +84,11 @@ function syncHeaderHeight(): void {
 // 「系统设置」组里的「用户管理 / 审计日志」对谁都能看见，两模式权限口径不一致。
 const nav = computed<NavNode[]>(() => {
   if (!menuCaps.ready) return []
+  // v5.2.0 / W52-08：按「界面模式 + 工程类型」选树，选择逻辑收在 navTreeFor 里。
+  // 以前这里是三元，pytest-suite 工程只能看到标准工程的 7 组菜单（资产/环境/维护全在），
+  // 用户第一反应是「还得先配资产才能跑 pytest」——实际不是。
   return filterNavByCapabilityPredicate(
-    uiMode.isGlobal ? GLOBAL_NAVIGATION : NAVIGATION,
+    navTreeFor(uiMode.isGlobal ? 'global' : 'project', auth.currentProject?.kind),
     (capability) => menuCaps.has(capability),
   )
 })
