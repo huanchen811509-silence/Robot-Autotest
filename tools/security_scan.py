@@ -47,6 +47,11 @@ PASSWORD_ASSIGN = re.compile(
     re.I)
 PLACEHOLDER = re.compile(
     r"(?:changeme|example|placeholder|dummy|fake|redact|xxxx|your-|<|\\$\\{|\\$env)", re.I)
+# 环境变量**名**不是口令：`ENV_SSH_PASSWORD` 赋成另一个环境变量名（如 PYTEST_SSH_PASSWORD）时，
+# 值本身没有任何密钥信息，是渲染器输出 `${ENV:...}` 引用时用的键名。只豁免
+# 「以凭据后缀结尾的全大写标识符」，不放宽到「任何全大写串」——否则把口令写成
+# 全大写短串（QA_PASS 的常见测试写法）就会漏掉。
+ENV_NAME = re.compile(r"^[A-Z][A-Z0-9_]*_(?:PASSWORD|PASSWD|SECRET|TOKEN|KEY)$")
 ALLOW_MARK = "security-scan: allow"
 
 JAVA_RULES = (
@@ -114,7 +119,7 @@ def scan_secrets(path: Path) -> list[dict]:
                                  "file": str(path.relative_to(ROOT)).replace("\\", "/"),
                                  "line": lineno})
         match = PASSWORD_ASSIGN.search(line)
-        if match and not PLACEHOLDER.search(match.group(1)):
+        if match and not PLACEHOLDER.search(match.group(1)) and not ENV_NAME.match(match.group(1)):
             findings.append({"severity": "HIGH", "rule": "hardcoded-credential",
                              "file": str(path.relative_to(ROOT)).replace("\\", "/"),
                              "line": lineno})

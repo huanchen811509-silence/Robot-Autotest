@@ -1951,6 +1951,19 @@ export default {
   },
 
   pytestWorkbench: {
+    settingLabels: {
+      repo_path: 'Repository path (local to executor)',
+      python_bin: 'pytest interpreter',
+      env_config: 'run_env template',
+      inventory_path: 'inventory template',
+      repo_url: 'Repository URL',
+      branch: 'Branch / tag',
+      mode_default: 'Default mode (fake / real)',
+      inventory_key_rule: 'host_key rule (hostname / hostname@ip)',
+      fake_plan_file: 'Fake plan file',
+      extra_args: 'Extra arguments',
+      timeout_s: 'Run-level timeout (seconds)',
+    },
     title: 'pytest project',
     subtitle: 'The case repo is the git source of truth; the platform only renders assets, binds scripts and archives results',
     health: 'Environment health',

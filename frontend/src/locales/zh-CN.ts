@@ -1955,6 +1955,19 @@ export default {
   },
 
   pytestWorkbench: {
+    settingLabels: {
+      repo_path: '仓库路径（执行机本地）',
+      python_bin: 'pytest 解释器',
+      env_config: 'run_env 模板',
+      inventory_path: 'inventory 模板',
+      repo_url: '仓库地址',
+      branch: '分支 / tag',
+      mode_default: '默认模式（fake / real）',
+      inventory_key_rule: 'host_key 规则（hostname / hostname@ip）',
+      fake_plan_file: 'Fake 计划文件',
+      extra_args: '追加参数',
+      timeout_s: 'run 级超时（秒）',
+    },
     title: 'pytest 工程',
     subtitle: '用例库是 git 真源，平台只做资产渲染、脚本绑定与结果归档',
     health: '环境健康',

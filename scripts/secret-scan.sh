@@ -14,6 +14,10 @@ echo "[secret-scan] 扫描明文口令赋值…"
 # `CHANGE_FAIL_TO_PASS = "FAIL_TO_PASS"`、`<stat pass="0" fail="0">`、`pass=" + n` 全判成明文，
 # 误报会训练人忽略告警。这里只加本项目夹具的具名规则：QA_PASS / *_PASSWORD / FIXTURE_PASSWORD。
 REGEX="(password|QA_PASS|FIXTURE_PASSWORD|QA_E2E_PASSWORD)[[:space:]]*=[[:space:]]*['\"][^'\"\$][^'\"]*['\"]"
+# 环境变量**名**不是口令：`ENV_SSH_PASSWORD = "PYTEST_SSH_PASSWORD"` 里右侧只是
+# 「渲染器要输出的 ${ENV:...} 键名」，没有任何密钥信息。只豁免「以凭据后缀结尾的
+# 全大写标识符」，不放宽到「任何全大写串」——否则 `QA_PASS = "HUNTER2BIGVALUE"` 会漏。
+EXEMPT="['\"][A-Z][A-Z0-9_]*_(PASSWORD|PASSWD|SECRET|TOKEN|KEY)['\"]"
 if ! printf '%s
 ' 'password="hunter2-selftest"' | grep -Eqi "$REGEX"; then
     echo "[secret-scan] 自检 FAIL：正则已无法识别真明文" >&2
@@ -39,6 +43,17 @@ if printf '%s
     echo "[secret-scan] 自检 FAIL：XML 的 pass 属性被误判为口令" >&2
     exit 1
 fi
+# 双向锁住豁免规则：值确实是环境变量名时不算命中；全大写但不像环境变量名的仍是明文。
+if printf '%s
+' 'ENV_SSH_PASSWORD = "PYTEST_SSH_PASSWORD"' | grep -vEqi "$EXEMPT"; then
+    echo "[secret-scan] 自检 FAIL：环境变量名被误判为明文（豁免规则失效）" >&2
+    exit 1
+fi
+if ! printf '%s
+' 'QA_PASS = "HUNTER2BIGVALUE"' | grep -vEqi "$EXEMPT"; then
+    echo "[secret-scan] 自检 FAIL：全大写真明文被豁免掉了（放宽过头）" >&2
+    exit 1
+fi
 
 # 排除本脚本自身：上面两行自检样例含 password="..." 字面量，否则会扫到自己（假红）。
 # 正则本身由自检双向锁住，本脚本不含任何真实凭据。
@@ -54,7 +69,7 @@ for f in "${SCAN_FILES[@]}"; do
         *.md|*.log|frontend/package-lock.json|artifacts/*|scripts/secret-scan.sh) continue ;;
     esac
     [[ -f "$f" ]] || continue
-    if grep -nEi "$REGEX" -- "$f" 2>/dev/null | sed "s|^|$f:|"; then
+    if grep -nEi "$REGEX" -- "$f" 2>/dev/null | grep -vEi "$EXEMPT" | sed "s|^|$f:|"; then
         HITS=1
     fi
 done

@@ -385,6 +385,26 @@ run 42 duration_baseline "python3 tools/check_baseline.py --db"
 #    而非省略）+ 三条口径声明 + 判定建议不吃 AI。自证方式是真删一章，必须判红。
 run 43 report_chapters "python3 tools/check_report_chapters.py"
 
+# 44 导航一二级菜单（v5.2.0 / FR-v5.2-01 / W52-01 / C-1）：孤儿叶子 = 0（每个入口都有路由）
+#    + 叶子数 = 基线 39（增减必须显式改基线，不许悄悄少入口）+ 路径格式合法。
+#    自证方式是把一个叶子改成不存在的路由，必须判红。
+run 44 nav_kind        "python3 tools/check_nav_kind.py"
+
+# 45 进度通道（v5.2.2 / FR-v5.2-06 / W52-07 / W53-01）：事件 7 种齐 + 五输入入口齐
+#    + R4（feed 包 try/catch，监视失败不拖垮执行）+ R5（五道上限 + 四类丢弃计数）
+#    + 事件名不带显示装饰。自证方式是删掉 DEGRADED，必须判红。
+run 45 progress_channel "python3 tools/check_progress_channel.py"
+
+# 46 手工 / 自动分离（v5.4.1 / FR-v5.4-04/05 / W54-04/05）：通过率拆 auto/manual/total
+#    + 分母只取 PASS/FAIL + 未确认全部步骤不得提交 + 真库验 exec_mode 合法且非空。
+#    自证方式是真注入「去掉未确认校验」，必须判红。
+run 46 manual_split    "python3 tools/check_manual_split.py --db"
+
+# 47 双内核统一视图（v5.4.2 / FR-v5.4-06 / W54-06）：run 与用例分开聚合（两条 SQL 都 GROUP BY）
+#    + 排除 manual + 按内核分列无合并通过率 + 只有一个内核时如实降级。
+#    自证方式是删掉 GROUP BY，必须判红。
+run 47 dual_kernel_view "python3 tools/check_dual_kernel_view.py"
+
 printf '\nGATES_RESULT FAILS=%s\n' "$FAILS"
 
 exit "$FAILS"

@@ -86,18 +86,18 @@ const SETTING_FIELDS = [
   'timeout_s',
 ]
 
-const settingLabels: Record<string, string> = {
-  repo_path: '仓库路径（执行机本地）',
-  python_bin: 'pytest 解释器',
-  env_config: 'run_env 模板',
-  inventory_path: 'inventory 模板',
-  repo_url: '仓库地址',
-  branch: '分支 / tag',
-  mode_default: '默认模式（fake / real）',
-  inventory_key_rule: 'host_key 规则（hostname / hostname@ip）',
-  fake_plan_file: 'Fake 计划文件',
-  extra_args: '追加参数',
-  timeout_s: 'run 级超时（秒）',
+const settingLabelKeys: Record<string, string> = {
+  repo_path: 'pytestWorkbench.settingLabels.repo_path',
+  python_bin: 'pytestWorkbench.settingLabels.python_bin',
+  env_config: 'pytestWorkbench.settingLabels.env_config',
+  inventory_path: 'pytestWorkbench.settingLabels.inventory_path',
+  repo_url: 'pytestWorkbench.settingLabels.repo_url',
+  branch: 'pytestWorkbench.settingLabels.branch',
+  mode_default: 'pytestWorkbench.settingLabels.mode_default',
+  inventory_key_rule: 'pytestWorkbench.settingLabels.inventory_key_rule',
+  fake_plan_file: 'pytestWorkbench.settingLabels.fake_plan_file',
+  extra_args: 'pytestWorkbench.settingLabels.extra_args',
+  timeout_s: 'pytestWorkbench.settingLabels.timeout_s',
 }
 
 /**
@@ -521,7 +521,7 @@ onMounted(load)
       <p class="muted small">{{ t('pytestWorkbench.requiredHint') }}</p>
       <div class="form">
         <label v-for="field in SETTING_FIELDS" :key="field" class="field">
-          <span class="field-label">{{ settingLabels[field] ?? field }}</span>
+          <span class="field-label">{{ t(settingLabelKeys[field] ?? field) }}</span>
           <input v-model="settings[field]" class="input" :placeholder="field" />
         </label>
       </div>
@@ -538,8 +538,8 @@ onMounted(load)
 .card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .card-head h2 { margin: 0; font-size: 16px; }
 .actions { display: flex; gap: 8px; }
-.btn { border: 1px solid var(--border); background: var(--surface); color: var(--text); border-radius: 6px; padding: 6px 12px; font-size: 13px; cursor: pointer; }
-.btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn { border: 1px solid var(--border); background: var(--surface-2); color: var(--text); border-radius: 6px; padding: 6px 12px; font-size: 13px; cursor: pointer; }
+.btn.primary { background: var(--accent); color: var(--gray-0); border-color: var(--accent); }
 .btn:disabled { opacity: .55; cursor: not-allowed; }
 .badges { display: flex; flex-wrap: wrap; gap: 8px; }
 .badge { border: 1px solid var(--border); border-radius: 999px; padding: 4px 10px; font-size: 12px; }
@@ -554,10 +554,10 @@ onMounted(load)
 .table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .table th, .table td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); }
 .mono { font-family: var(--font-mono, monospace); }
-.form { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.form { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
 .field { display: grid; gap: 4px; }
 .field-label { font-size: 12px; color: var(--text-muted); }
-.input { border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; font-size: 13px; background: var(--surface); color: var(--text); }
+.input { border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; font-size: 13px; background: var(--surface-2); color: var(--text); }
 .notice { padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; margin: 0; }
 .notice-fail { border-color: var(--fail); color: var(--fail); }
 .notice-ok { border-color: var(--ok); color: var(--ok); }

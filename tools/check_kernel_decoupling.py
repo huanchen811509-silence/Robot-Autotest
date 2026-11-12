@@ -95,6 +95,11 @@ def check_removable() -> list[str]:
         "RunExecutionService.java",      # 预检分派
         "ReportIngestService.java",      # 编号回填
         "PytestProjectController.java",  # 接口层
+        # 型号字典接口：NIC 型号归一是「设备标识」的事，字典服务本身在适配包内，
+        # 但接口层必须能直接查它（页面的型号下拉框否则要走一层无意义的转发）。
+        # 登记在这里的前提是：它只读型号字典，不碰命令构造与结果归一——
+        # RF 分支零 pytest 字样由本脚本前两条断言独立守住。
+        "NicModelDictController.java",
     }
     pattern = re.compile(r"application\.kernel\.pytest\.")
     problems = []

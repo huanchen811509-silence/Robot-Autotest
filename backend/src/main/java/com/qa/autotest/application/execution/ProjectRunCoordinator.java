@@ -55,10 +55,11 @@ public class ProjectRunCoordinator {
     private final ProjectSettingRepository settings;
     private final AccessControlService access;
     private final DurationBaselineService baselines;
+    private final ScaleGuard scaleGuard;
 
     public ProjectRunCoordinator(RunService runs, RunRepository runRepository,
                                  ProjectSettingRepository settings, AccessControlService access) {
-        this(runs, runRepository, settings, access, null);
+        this(runs, runRepository, settings, access, null, null);
     }
 
     /**
@@ -66,15 +67,27 @@ public class ProjectRunCoordinator {
      *                  没有基线时退化为「全是短跑」，即长跑保护不生效，
      *                  而不是「所有 run 都被当成短跑放行」的假象：{@code longRun} 会如实标 false。
      */
-    @org.springframework.beans.factory.annotation.Autowired
     public ProjectRunCoordinator(RunService runs, RunRepository runRepository,
                                  ProjectSettingRepository settings, AccessControlService access,
                                  DurationBaselineService baselines) {
+        this(runs, runRepository, settings, access, baselines, null);
+    }
+
+    /**
+     * @param scaleGuard 规模化保护（W54-07）。可为 null——单测与脚本直连时不装配，
+     *                   此时 {@link #requireNodes} 退化为「按默认上限判」，
+     *                   而不是「没装配就等于无上限」：后者会让人以为保护在工作。
+     */
+    @org.springframework.beans.factory.annotation.Autowired
+    public ProjectRunCoordinator(RunService runs, RunRepository runRepository,
+                                 ProjectSettingRepository settings, AccessControlService access,
+                                 DurationBaselineService baselines, ScaleGuard scaleGuard) {
         this.runs = runs;
         this.runRepository = runRepository;
         this.settings = settings;
         this.access = access;
         this.baselines = baselines;
+        this.scaleGuard = scaleGuard;
     }
 
     /**
@@ -253,6 +266,32 @@ public class ProjectRunCoordinator {
 
     // ------------------------------------------------------------------ 拆单
 
+    /**
+     * 单 run 并发（node）上限校验（W54-07）。
+     *
+     * <p>放在准入之后、拆单之前：准入管「现在能不能跑」，这里管「一次能带多少台」，
+     * 两个拒绝理由要分开报——「窗口没开」和「并发超了」的处理动作完全不同。
+     *
+     * <p>{@code concurrency <= 0} 视为「用默认并发」，不做上限判定：默认并发由执行器自己定，
+     * 在这里按 0 去比大小只会把所有默认提交都拒掉。
+     */
+    private void requireNodes(long projectId, int concurrency) {
+        if (concurrency <= 0) {
+            return;
+        }
+        if (scaleGuard != null) {
+            scaleGuard.requireNodes(projectId, concurrency);
+            return;
+        }
+        // 没装配保护也要判：否则「单测里没人管上限」会变成「线上也没人管」的错觉
+        if (concurrency > ScaleGuard.DEFAULT_MAX_NODES) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                    "并发（node）数 " + concurrency + " 超过默认上限 "
+                            + ScaleGuard.DEFAULT_MAX_NODES + "；请分批复跑，或由管理员调整 "
+                            + ScaleGuard.KEY_MAX_NODES);
+        }
+    }
+
     /** 拆单预览：不校验权限、不落库，只算。 */
     public SplitPlan plan(long projectId, List<RunSplitter.PlannedCase> cases) {
         List<RunSplitter.SplitRun> split;
@@ -315,6 +354,7 @@ public class ProjectRunCoordinator {
             throw new BusinessException(ErrorCode.CONFLICT,
                     admission.reason() + "；" + admission.hint());
         }
+        requireNodes(projectId, request.concurrency());
         SplitPlan plan = plan(projectId, cases);
         List<RunRecord> created = new ArrayList<>();
         for (RunSplitter.SplitRun one : plan.runs()) {

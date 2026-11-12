@@ -1,6 +1,7 @@
 package com.qa.autotest.application.kernel.pytest;
 
 import com.qa.autotest.application.execution.PabotCommandBuilder;
+import com.qa.autotest.application.execution.PlanActualGap;
 import com.qa.autotest.application.execution.ProcessLauncher;
 import com.qa.autotest.application.execution.ProcessRegistry;
 import com.qa.autotest.application.repository.ProjectSettingRepository;
@@ -82,7 +83,8 @@ public class PytestNicRunService {
                                 int batches,
                                 int exitCode,
                                 Duration elapsed,
-                                List<Path> junitFiles) {
+                                List<Path> junitFiles,
+                                PlanActualGap.Gap gap) {
     }
 
     /**
@@ -115,7 +117,7 @@ public class PytestNicRunService {
         if (!contract.healthy()) {
             return new ExecuteResult(false, "pytest_contract_unhealthy: " + contract.failureReason(),
                     null, render, null, 0, -1,
-                    Duration.between(started, clock.instant()), List.of());
+                    Duration.between(started, clock.instant()), List.of(), null);
         }
 
         List<PytestNicKernelCommand.Command> plans;
@@ -124,7 +126,7 @@ public class PytestNicRunService {
                     request.mode(), request.runDir(), contract.contract(), render.runEnvFile());
         } catch (RuntimeException ex) {
             return new ExecuteResult(false, "command_build_failed: " + ex.getMessage(), null, render,
-                    null, 0, -1, Duration.between(started, clock.instant()), List.of());
+                    null, 0, -1, Duration.between(started, clock.instant()), List.of(), null);
         }
 
         List<Path> junitFiles = new ArrayList<>();
@@ -143,13 +145,32 @@ public class PytestNicRunService {
         } catch (RuntimeException ex) {
             return new ExecuteResult(false, "pytest_artifact_invalid: " + ex.getMessage(), null,
                     render, null, plans.size(), lastExit,
-                    Duration.between(started, clock.instant()), List.copyOf(junitFiles));
+                    Duration.between(started, clock.instant()), List.copyOf(junitFiles), null);
+        }
+
+        // 计划 vs 实际（W54-07）：参数化用例缺参数时不会报错、只会少几条结果，
+        // 这一句提示是唯一能让人发现「少跑了」的地方，必须落在日志里而不只在返回值里
+        PlanActualGap.Gap gap = PlanActualGap.of(request.nodeIds(), actualKeys(normalized), "pytest");
+        if (gap.hasGap()) {
+            emit(request.runDir().resolve("run.log"), "[plan-gap] " + gap.notice());
         }
 
         String reason = lastExit == 0 ? "ok" : "pytest_exit_" + lastExit;
         return new ExecuteResult(lastExit == 0, reason, normalized.run(), render, normalized,
                 plans.size(), lastExit, Duration.between(started, clock.instant()),
-                List.copyOf(junitFiles));
+                List.copyOf(junitFiles), gap);
+    }
+
+    /** 归一后实际产出结果的用例键（含未绑定脚本的结果：没绑定也是「跑了」）。 */
+    private static List<String> actualKeys(PytestResultNormalizer.NormalizeResult normalized) {
+        List<String> keys = new ArrayList<>();
+        if (normalized == null || normalized.mappings() == null) {
+            return keys;
+        }
+        for (PytestResultNormalizer.CaseMapping mapping : normalized.mappings()) {
+            keys.add(mapping.nodeId());
+        }
+        return keys;
     }
 
     /** 跑一批；返回退出码。失败也把已完成批次的 junit 收集起来。 */
@@ -204,7 +225,7 @@ public class PytestNicRunService {
 
     private static ExecuteResult failure(String reason, String message, Instant started) {
         return new ExecuteResult(false, reason + ": " + message, null, null, null, 0, -1,
-                Duration.between(started, Instant.now()), List.of());
+                Duration.between(started, Instant.now()), List.of(), null);
     }
 
     private static void writeJson(Path dir, String name, Map<String, Object> payload) {
