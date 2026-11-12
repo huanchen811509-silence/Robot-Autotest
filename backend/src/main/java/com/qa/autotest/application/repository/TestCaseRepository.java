@@ -81,5 +81,36 @@ public interface TestCaseRepository {
 
     long countByProject(long projectId);
 
+    /**
+     * 项目内全部用例编号（v5.1 · FR-v5.1-04 绑定同步用）。
+     *
+     * <p>默认空实现保证既有假仓储不必跟着改；真实实现见 JDBC 仓储。
+     * 绑定同步只关心编号集合，不拉整行——469 条用例整行拉取会给同步带来无意义开销。
+     */
+    default List<String> listCaseCodes(long projectId) {
+        return List.of();
+    }
+
+    /**
+     * 项目内 id → 编号（v5.1 · FR-v5.1-08 结果归一回填库编号用）。
+     *
+     * <p>一次查询拿全表映射，避免「每条结果查一次用例」的 N+1。
+     * 默认空实现保证既有假仓储无需改动。
+     */
+    default java.util.Map<Long, String> idToCode(long projectId) {
+        return java.util.Map.of();
+    }
+
+    /**
+     * 项目内 编号 → 优先级（v5.1.2 · FR-v5.1-05 覆盖率双口径用）。
+     *
+     * <p>「待评审」是**优先级**取值（不是评审状态），178 条的口径来自优先级统计；
+     * 覆盖率双口径（13.0% / 10.3%）就靠这张表区分分母。
+     * 默认空实现保证既有假仓储无需改动。
+     */
+    default java.util.Map<String, String> casePriorities(long projectId) {
+        return java.util.Map.of();
+    }
+
     List<CapabilityStat> capabilities(long projectId);
 }

@@ -282,6 +282,13 @@ const router = createRouter({
       name: 'kernels',
       component: () => import('@/views/KernelsView.vue'),
     },
+    {
+      // v5.1.0 / FR-v5.1-12：pytest 工程工作台（健康 / 覆盖率 / 绑定 / 配置）。
+      // 菜单入口在 5.2.0 随「工程视图」一起挂（W52-08），本期先由路由直达。
+      path: '/pytest-workbench',
+      name: 'pytest-workbench',
+      component: () => import('@/views/PytestWorkbenchView.vue'),
+    },
     // ===== v2.2 / M2 只读页与看板（MENU-02 / MENU-03 / MENU-04 / MENU-05）=====
     {
       // MENU-03：测试总表看板，挂在「用例」组下。

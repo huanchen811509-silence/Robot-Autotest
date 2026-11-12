@@ -1,0 +1,3338 @@
+{
+ "schema": "pytest-case-index/1",
+ "source_book": "基本功能导入测试v0.2.9.9.xlsx",
+ "source_sheet": "详细测试流程",
+ "totals": {
+  "cases": 469,
+  "scripts": 62,
+  "scripts_with_declared_code": 61
+ },
+ "priority_counts": {
+  "T0": 231,
+  "T2": 33,
+  "T1": 27,
+  "待评审": 178
+ },
+ "cases": [
+  {
+   "code": "IM-FUN-001",
+   "category": "基础管理测试",
+   "priority": "T0",
+   "title": "BMC/BIOS识别"
+  },
+  {
+   "code": "IM-FUN-002",
+   "category": "基础管理测试",
+   "priority": "T0",
+   "title": "BMC/BIOS识别"
+  },
+  {
+   "code": "IM-FUN-003",
+   "category": "基础管理测试",
+   "priority": "T2",
+   "title": "BMC/BIOS识别"
+  },
+  {
+   "code": "IM-FUN-004",
+   "category": "基础管理测试",
+   "priority": "T1",
+   "title": "BMC/BIOS识别"
+  },
+  {
+   "code": "IM-FUN-005",
+   "category": "基础管理测试",
+   "priority": "T2",
+   "title": "BMC/BIOS识别"
+  },
+  {
+   "code": "IM-FUN-006",
+   "category": "基础管理测试",
+   "priority": "T0",
+   "title": "BMC/BIOS识别"
+  },
+  {
+   "code": "IM-FUN-007",
+   "category": "基础管理测试",
+   "priority": "T2",
+   "title": "BMC/BIOS识别"
+  },
+  {
+   "code": "IM-FUN-008",
+   "category": "基础管理测试",
+   "priority": "T2",
+   "title": "BMC/BIOS识别"
+  },
+  {
+   "code": "IM-FUN-009",
+   "category": "基础管理测试",
+   "priority": "T2",
+   "title": "BMC/BIOS识别"
+  },
+  {
+   "code": "IM-FUN-010",
+   "category": "基础管理测试",
+   "priority": "T2",
+   "title": "BMC/BIOS识别"
+  },
+  {
+   "code": "IM-FUN-011",
+   "category": "基础管理测试",
+   "priority": "T0",
+   "title": "系统与网卡管理"
+  },
+  {
+   "code": "IM-FUN-012",
+   "category": "基础管理测试",
+   "priority": "T0",
+   "title": "系统与网卡管理"
+  },
+  {
+   "code": "IM-FUN-013",
+   "category": "基础管理测试",
+   "priority": "T0",
+   "title": "系统与网卡管理"
+  },
+  {
+   "code": "IM-FUN-014",
+   "category": "基础管理测试",
+   "priority": "T0",
+   "title": "系统与网卡管理"
+  },
+  {
+   "code": "IM-FUN-015",
+   "category": "基础管理测试",
+   "priority": "T0",
+   "title": "系统与网卡管理"
+  },
+  {
+   "code": "IM-FUN-016",
+   "category": "基础管理测试",
+   "priority": "T2",
+   "title": "系统与网卡管理"
+  },
+  {
+   "code": "IM-FUN-017",
+   "category": "基础管理测试",
+   "priority": "T0",
+   "title": "系统与网卡管理"
+  },
+  {
+   "code": "IM-FUN-018",
+   "category": "基础管理测试",
+   "priority": "T0",
+   "title": "IOMMU配置"
+  },
+  {
+   "code": "IM-FUN-019",
+   "category": "基础管理测试",
+   "priority": "T2",
+   "title": "Redfish网卡识别"
+  },
+  {
+   "code": "IM-FUN-020",
+   "category": "基础管理测试",
+   "priority": "T0",
+   "title": "PCIe设备信息"
+  },
+  {
+   "code": "IM-FUN-021",
+   "category": "基础管理测试",
+   "priority": "T0",
+   "title": "网卡监控指标"
+  },
+  {
+   "code": "IM-FUN-022",
+   "category": "基础管理测试",
+   "priority": "T0",
+   "title": "IPMI带外采集"
+  },
+  {
+   "code": "IM-FUN-023",
+   "category": "基础管理测试",
+   "priority": "T0",
+   "title": "SNMP带外采集"
+  },
+  {
+   "code": "IM-FUN-024",
+   "category": "基础管理测试",
+   "priority": "T0",
+   "title": "驱动自检"
+  },
+  {
+   "code": "IM-FUN-025",
+   "category": "基础管理测试",
+   "priority": "T1",
+   "title": "网络唤醒"
+  },
+  {
+   "code": "IM-FUN-026",
+   "category": "基础管理测试",
+   "priority": "T0",
+   "title": "固件管理"
+  },
+  {
+   "code": "IM-FUN-027",
+   "category": "基础管理测试",
+   "priority": "T0",
+   "title": "驱动管理"
+  },
+  {
+   "code": "IM-FUN-028",
+   "category": "基础管理测试",
+   "priority": "T1",
+   "title": "UEFI HII配置"
+  },
+  {
+   "code": "IM-FUN-029",
+   "category": "基础管理测试",
+   "priority": "T2",
+   "title": "Legacy Option ROM配置"
+  },
+  {
+   "code": "IM-FUN-030",
+   "category": "基础管理测试",
+   "priority": "T0",
+   "title": "PXE启动"
+  },
+  {
+   "code": "IM-FUN-031",
+   "category": "基础管理测试",
+   "priority": "T1",
+   "title": "iPXE启动"
+  },
+  {
+   "code": "IM-FUN-032",
+   "category": "基础管理测试",
+   "priority": "T0",
+   "title": "网卡定位灯"
+  },
+  {
+   "code": "IM-FUN-033",
+   "category": "基础管理测试",
+   "priority": "T0",
+   "title": "网卡状态指示灯"
+  },
+  {
+   "code": "IM-FUN-034",
+   "category": "基础管理测试",
+   "priority": "T1",
+   "title": "DKMS驱动重建"
+  },
+  {
+   "code": "IM-FUN-035",
+   "category": "基础管理测试",
+   "priority": "T2",
+   "title": "系统网卡信息"
+  },
+  {
+   "code": "IM-FUN-036",
+   "category": "基础管理测试",
+   "priority": "T2",
+   "title": "网卡日志导出"
+  },
+  {
+   "code": "IM-FUN-037",
+   "category": "基础管理测试",
+   "priority": "待评审",
+   "title": "硬件与标识"
+  },
+  {
+   "code": "IM-FUN-038",
+   "category": "基础管理测试",
+   "priority": "待评审",
+   "title": "PCIe 接口"
+  },
+  {
+   "code": "IM-FUN-039",
+   "category": "基础管理测试",
+   "priority": "待评审",
+   "title": "PCIe 接口"
+  },
+  {
+   "code": "IM-FUN-040",
+   "category": "基础管理测试",
+   "priority": "待评审",
+   "title": "PCIe 接口"
+  },
+  {
+   "code": "IM-FUN-041",
+   "category": "基础管理测试",
+   "priority": "待评审",
+   "title": "PCIe 接口"
+  },
+  {
+   "code": "IM-FUN-042",
+   "category": "基础管理测试",
+   "priority": "待评审",
+   "title": "PCIe 接口"
+  },
+  {
+   "code": "IM-FUN-043",
+   "category": "基础管理测试",
+   "priority": "待评审",
+   "title": "PCIe 接口"
+  },
+  {
+   "code": "IM-FUN-044",
+   "category": "基础管理测试",
+   "priority": "待评审",
+   "title": "PCIe 接口"
+  },
+  {
+   "code": "IM-FUN-045",
+   "category": "基础管理测试",
+   "priority": "待评审",
+   "title": "PCIe 接口"
+  },
+  {
+   "code": "IM-FUN-046",
+   "category": "基础管理测试",
+   "priority": "待评审",
+   "title": "PCIe 接口"
+  },
+  {
+   "code": "IM-FUN-047",
+   "category": "基础管理测试",
+   "priority": "待评审",
+   "title": "驱动与固件"
+  },
+  {
+   "code": "IM-FUN-048",
+   "category": "基础管理测试",
+   "priority": "待评审",
+   "title": "安全"
+  },
+  {
+   "code": "IM-FUN-049",
+   "category": "基础管理测试",
+   "priority": "待评审",
+   "title": "安全"
+  },
+  {
+   "code": "IM-FUN-050",
+   "category": "基础管理测试",
+   "priority": "待评审",
+   "title": "安全"
+  },
+  {
+   "code": "IM-FUN-051",
+   "category": "基础管理测试",
+   "priority": "待评审",
+   "title": "可管理性"
+  },
+  {
+   "code": "IM-FUN-052",
+   "category": "基础管理测试",
+   "priority": "待评审",
+   "title": "可管理性"
+  },
+  {
+   "code": "IM-FUN-053",
+   "category": "基础管理测试",
+   "priority": "待评审",
+   "title": "厂商健康"
+  },
+  {
+   "code": "IM-FUN-054",
+   "category": "基础管理测试",
+   "priority": "待评审",
+   "title": "厂商健康"
+  },
+  {
+   "code": "IM-FUN-055",
+   "category": "基础管理测试",
+   "priority": "待评审",
+   "title": "固件组件"
+  },
+  {
+   "code": "IM-FUN-056",
+   "category": "基础管理测试",
+   "priority": "待评审",
+   "title": "工作模式"
+  },
+  {
+   "code": "IM-FUN-057",
+   "category": "基础管理测试",
+   "priority": "待评审",
+   "title": "计数器语义"
+  },
+  {
+   "code": "IM-FUN-058",
+   "category": "基础管理测试",
+   "priority": "待评审",
+   "title": "硬件与标识"
+  },
+  {
+   "code": "IM-FUN-059",
+   "category": "基础管理测试",
+   "priority": "待评审",
+   "title": "硬件与标识"
+  },
+  {
+   "code": "IM-FUN-060",
+   "category": "基础管理测试",
+   "priority": "待评审",
+   "title": "硬件与标识"
+  },
+  {
+   "code": "IM-FUN-061",
+   "category": "基础管理测试",
+   "priority": "待评审",
+   "title": "硬件与标识"
+  },
+  {
+   "code": "IM-FUN-062",
+   "category": "基础管理测试",
+   "priority": "待评审",
+   "title": "硬件与标识"
+  },
+  {
+   "code": "IM-FUN-063",
+   "category": "基础管理测试",
+   "priority": "待评审",
+   "title": "PCIe 接口"
+  },
+  {
+   "code": "IM-FUN-064",
+   "category": "基础管理测试",
+   "priority": "待评审",
+   "title": "驱动与固件"
+  },
+  {
+   "code": "IM-FUN-065",
+   "category": "基础管理测试",
+   "priority": "待评审",
+   "title": "驱动与固件"
+  },
+  {
+   "code": "IM-FUN-066",
+   "category": "基础管理测试",
+   "priority": "待评审",
+   "title": "驱动与固件"
+  },
+  {
+   "code": "IM-FUN-067",
+   "category": "基础管理测试",
+   "priority": "待评审",
+   "title": "驱动与固件"
+  },
+  {
+   "code": "IM-FUN-068",
+   "category": "基础管理测试",
+   "priority": "待评审",
+   "title": "驱动与固件"
+  },
+  {
+   "code": "IM-FUN-069",
+   "category": "基础管理测试",
+   "priority": "待评审",
+   "title": "驱动与固件"
+  },
+  {
+   "code": "IM-FUN-070",
+   "category": "基础管理测试",
+   "priority": "待评审",
+   "title": "安全"
+  },
+  {
+   "code": "IM-FUN-071",
+   "category": "基础管理测试",
+   "priority": "待评审",
+   "title": "可管理性"
+  },
+  {
+   "code": "IM-FUN-072",
+   "category": "基础管理测试",
+   "priority": "待评审",
+   "title": "可管理性"
+  },
+  {
+   "code": "IM-FUN-073",
+   "category": "基础管理测试",
+   "priority": "待评审",
+   "title": "可管理性"
+  },
+  {
+   "code": "IM-FUN-074",
+   "category": "基础管理测试",
+   "priority": "待评审",
+   "title": "可管理性"
+  },
+  {
+   "code": "IM-FUN-075",
+   "category": "基础管理测试",
+   "priority": "待评审",
+   "title": "可管理性"
+  },
+  {
+   "code": "IM-FUN-076",
+   "category": "基础管理测试",
+   "priority": "待评审",
+   "title": "可管理性"
+  },
+  {
+   "code": "IM-FUN-077",
+   "category": "基础管理测试",
+   "priority": "待评审",
+   "title": "可管理性"
+  },
+  {
+   "code": "IM-FUN-078",
+   "category": "基础管理测试",
+   "priority": "待评审",
+   "title": "可靠性"
+  },
+  {
+   "code": "IM-NET-001",
+   "category": "以太网功能测试",
+   "priority": "T1",
+   "title": "LLDP协议"
+  },
+  {
+   "code": "IM-NET-002",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "光模块DDM监控"
+  },
+  {
+   "code": "IM-NET-003",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "光模块兼容性"
+  },
+  {
+   "code": "IM-NET-004",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "光模块兼容性"
+  },
+  {
+   "code": "IM-NET-005",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "光模块兼容性"
+  },
+  {
+   "code": "IM-NET-006",
+   "category": "以太网功能测试",
+   "priority": "T1",
+   "title": "异型号网卡兼容性"
+  },
+  {
+   "code": "IM-NET-007",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "速率与双工自协商"
+  },
+  {
+   "code": "IM-NET-008",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "IPv6功能"
+  },
+  {
+   "code": "IM-NET-009",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "Bond绑定"
+  },
+  {
+   "code": "IM-NET-010",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "Bond绑定"
+  },
+  {
+   "code": "IM-NET-011",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "Bond绑定"
+  },
+  {
+   "code": "IM-NET-012",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "Bond绑定"
+  },
+  {
+   "code": "IM-NET-013",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "混杂模式"
+  },
+  {
+   "code": "IM-NET-014",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "速率与链路协商"
+  },
+  {
+   "code": "IM-NET-015",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "速率与链路协商"
+  },
+  {
+   "code": "IM-NET-016",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "速率与链路协商"
+  },
+  {
+   "code": "IM-NET-017",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "速率与链路协商"
+  },
+  {
+   "code": "IM-NET-018",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "速率与链路协商"
+  },
+  {
+   "code": "IM-NET-019",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "速率与链路协商"
+  },
+  {
+   "code": "IM-NET-020",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "速率与链路协商"
+  },
+  {
+   "code": "IM-NET-021",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "速率与链路协商"
+  },
+  {
+   "code": "IM-NET-022",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "GRO卸载"
+  },
+  {
+   "code": "IM-NET-023",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "GRO卸载"
+  },
+  {
+   "code": "IM-NET-024",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "GRO卸载"
+  },
+  {
+   "code": "IM-NET-025",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "GRO卸载"
+  },
+  {
+   "code": "IM-NET-026",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "GRO卸载"
+  },
+  {
+   "code": "IM-NET-027",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "GRO卸载"
+  },
+  {
+   "code": "IM-NET-028",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "LRO卸载"
+  },
+  {
+   "code": "IM-NET-029",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "LRO卸载"
+  },
+  {
+   "code": "IM-NET-030",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "LRO卸载"
+  },
+  {
+   "code": "IM-NET-031",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "LRO卸载"
+  },
+  {
+   "code": "IM-NET-032",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "LRO卸载"
+  },
+  {
+   "code": "IM-NET-033",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "LRO卸载"
+  },
+  {
+   "code": "IM-NET-034",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "TSO卸载"
+  },
+  {
+   "code": "IM-NET-035",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "TSO卸载"
+  },
+  {
+   "code": "IM-NET-036",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "TSO卸载"
+  },
+  {
+   "code": "IM-NET-037",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "TSO卸载"
+  },
+  {
+   "code": "IM-NET-038",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "TSO卸载"
+  },
+  {
+   "code": "IM-NET-039",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "TSO卸载"
+  },
+  {
+   "code": "IM-NET-040",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "GSO卸载"
+  },
+  {
+   "code": "IM-NET-041",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "GSO卸载"
+  },
+  {
+   "code": "IM-NET-042",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "GSO卸载"
+  },
+  {
+   "code": "IM-NET-043",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "GSO卸载"
+  },
+  {
+   "code": "IM-NET-044",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "GSO卸载"
+  },
+  {
+   "code": "IM-NET-045",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "GSO卸载"
+  },
+  {
+   "code": "IM-NET-046",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "UFO卸载"
+  },
+  {
+   "code": "IM-NET-047",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "UFO卸载"
+  },
+  {
+   "code": "IM-NET-048",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "UFO卸载"
+  },
+  {
+   "code": "IM-NET-049",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "UFO卸载"
+  },
+  {
+   "code": "IM-NET-050",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "UFO卸载"
+  },
+  {
+   "code": "IM-NET-051",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "UFO卸载"
+  },
+  {
+   "code": "IM-NET-052",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "Checksum卸载"
+  },
+  {
+   "code": "IM-NET-053",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "Checksum卸载"
+  },
+  {
+   "code": "IM-NET-054",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "Checksum卸载"
+  },
+  {
+   "code": "IM-NET-055",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "Checksum卸载"
+  },
+  {
+   "code": "IM-NET-056",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "Checksum卸载"
+  },
+  {
+   "code": "IM-NET-057",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "TSS发送侧队列"
+  },
+  {
+   "code": "IM-NET-058",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "TSS发送侧队列"
+  },
+  {
+   "code": "IM-NET-059",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "TSS发送侧队列"
+  },
+  {
+   "code": "IM-NET-060",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "RSS接收侧队列"
+  },
+  {
+   "code": "IM-NET-061",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "RSS接收侧队列"
+  },
+  {
+   "code": "IM-NET-062",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "RSS接收侧队列"
+  },
+  {
+   "code": "IM-NET-063",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "中断聚合"
+  },
+  {
+   "code": "IM-NET-064",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "中断聚合"
+  },
+  {
+   "code": "IM-NET-065",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "中断聚合"
+  },
+  {
+   "code": "IM-NET-066",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "中断聚合"
+  },
+  {
+   "code": "IM-NET-067",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "多队列"
+  },
+  {
+   "code": "IM-NET-068",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "多队列"
+  },
+  {
+   "code": "IM-NET-069",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "多队列"
+  },
+  {
+   "code": "IM-NET-070",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "多队列"
+  },
+  {
+   "code": "IM-NET-071",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "多队列"
+  },
+  {
+   "code": "IM-NET-072",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "多队列"
+  },
+  {
+   "code": "IM-NET-073",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "多队列"
+  },
+  {
+   "code": "IM-NET-074",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "收发Ring配置"
+  },
+  {
+   "code": "IM-NET-075",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "收发Ring配置"
+  },
+  {
+   "code": "IM-NET-076",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "收发Ring配置"
+  },
+  {
+   "code": "IM-NET-077",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "收发Ring配置"
+  },
+  {
+   "code": "IM-NET-078",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "收发Ring配置"
+  },
+  {
+   "code": "IM-NET-079",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "收发Ring配置"
+  },
+  {
+   "code": "IM-NET-080",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "网口逻辑状态"
+  },
+  {
+   "code": "IM-NET-081",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "网口逻辑状态"
+  },
+  {
+   "code": "IM-NET-082",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "网口逻辑状态"
+  },
+  {
+   "code": "IM-NET-083",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "网口逻辑状态"
+  },
+  {
+   "code": "IM-NET-084",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "网口逻辑状态"
+  },
+  {
+   "code": "IM-NET-085",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "网口逻辑状态"
+  },
+  {
+   "code": "IM-NET-086",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "文件传输"
+  },
+  {
+   "code": "IM-NET-087",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "文件传输"
+  },
+  {
+   "code": "IM-NET-088",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "MTU收发包"
+  },
+  {
+   "code": "IM-NET-089",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "MTU收发包"
+  },
+  {
+   "code": "IM-NET-090",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "MTU收发包"
+  },
+  {
+   "code": "IM-NET-091",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "QinQ标签"
+  },
+  {
+   "code": "IM-NET-092",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "QinQ标签"
+  },
+  {
+   "code": "IM-NET-093",
+   "category": "以太网功能测试",
+   "priority": "T2",
+   "title": "SCTP CRC卸载"
+  },
+  {
+   "code": "IM-NET-094",
+   "category": "以太网功能测试",
+   "priority": "T2",
+   "title": "SCTP CRC卸载"
+  },
+  {
+   "code": "IM-NET-095",
+   "category": "以太网功能测试",
+   "priority": "T2",
+   "title": "SCTP CRC卸载"
+  },
+  {
+   "code": "IM-NET-096",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "VLAN功能"
+  },
+  {
+   "code": "IM-NET-097",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "VLAN功能"
+  },
+  {
+   "code": "IM-NET-098",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "VLAN功能"
+  },
+  {
+   "code": "IM-NET-099",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "VLAN功能"
+  },
+  {
+   "code": "IM-NET-100",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "VXLAN功能"
+  },
+  {
+   "code": "IM-NET-101",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "VXLAN功能"
+  },
+  {
+   "code": "IM-NET-102",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "VXLAN功能"
+  },
+  {
+   "code": "IM-NET-103",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "VXLAN功能"
+  },
+  {
+   "code": "IM-NET-104",
+   "category": "以太网功能测试",
+   "priority": "T1",
+   "title": "VXLAN功能"
+  },
+  {
+   "code": "IM-NET-105",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "L2NIC网络功能"
+  },
+  {
+   "code": "IM-NET-106",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "L2NIC网络功能"
+  },
+  {
+   "code": "IM-NET-107",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "L2NIC网络功能"
+  },
+  {
+   "code": "IM-NET-108",
+   "category": "以太网功能测试",
+   "priority": "T2",
+   "title": "L2NIC网络功能"
+  },
+  {
+   "code": "IM-NET-109",
+   "category": "以太网功能测试",
+   "priority": "T2",
+   "title": "L2NIC网络功能"
+  },
+  {
+   "code": "IM-NET-110",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "L2NIC网络功能"
+  },
+  {
+   "code": "IM-NET-111",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "L2NIC网络功能"
+  },
+  {
+   "code": "IM-NET-112",
+   "category": "以太网功能测试",
+   "priority": "T0",
+   "title": "DPDK用户态驱动"
+  },
+  {
+   "code": "IM-NET-113",
+   "category": "以太网功能测试",
+   "priority": "待评审",
+   "title": "物理链路"
+  },
+  {
+   "code": "IM-NET-114",
+   "category": "以太网功能测试",
+   "priority": "待评审",
+   "title": "以太网功能"
+  },
+  {
+   "code": "IM-NET-115",
+   "category": "以太网功能测试",
+   "priority": "待评审",
+   "title": "以太网功能"
+  },
+  {
+   "code": "IM-NET-116",
+   "category": "以太网功能测试",
+   "priority": "待评审",
+   "title": "以太网功能"
+  },
+  {
+   "code": "IM-NET-117",
+   "category": "以太网功能测试",
+   "priority": "待评审",
+   "title": "硬件卸载"
+  },
+  {
+   "code": "IM-NET-118",
+   "category": "以太网功能测试",
+   "priority": "待评审",
+   "title": "硬件卸载"
+  },
+  {
+   "code": "IM-NET-119",
+   "category": "以太网功能测试",
+   "priority": "待评审",
+   "title": "QoS/DCB"
+  },
+  {
+   "code": "IM-NET-120",
+   "category": "以太网功能测试",
+   "priority": "待评审",
+   "title": "QoS/DCB"
+  },
+  {
+   "code": "IM-NET-121",
+   "category": "以太网功能测试",
+   "priority": "待评审",
+   "title": "物理链路"
+  },
+  {
+   "code": "IM-NET-122",
+   "category": "以太网功能测试",
+   "priority": "待评审",
+   "title": "物理链路"
+  },
+  {
+   "code": "IM-NET-123",
+   "category": "以太网功能测试",
+   "priority": "待评审",
+   "title": "物理链路"
+  },
+  {
+   "code": "IM-NET-124",
+   "category": "以太网功能测试",
+   "priority": "待评审",
+   "title": "物理链路"
+  },
+  {
+   "code": "IM-NET-125",
+   "category": "以太网功能测试",
+   "priority": "待评审",
+   "title": "以太网功能"
+  },
+  {
+   "code": "IM-NET-126",
+   "category": "以太网功能测试",
+   "priority": "待评审",
+   "title": "以太网功能"
+  },
+  {
+   "code": "IM-NET-127",
+   "category": "以太网功能测试",
+   "priority": "待评审",
+   "title": "以太网功能"
+  },
+  {
+   "code": "IM-NET-128",
+   "category": "以太网功能测试",
+   "priority": "待评审",
+   "title": "以太网功能"
+  },
+  {
+   "code": "IM-NET-129",
+   "category": "以太网功能测试",
+   "priority": "待评审",
+   "title": "以太网功能"
+  },
+  {
+   "code": "IM-NET-130",
+   "category": "以太网功能测试",
+   "priority": "待评审",
+   "title": "硬件卸载"
+  },
+  {
+   "code": "IM-NET-131",
+   "category": "以太网功能测试",
+   "priority": "待评审",
+   "title": "硬件卸载"
+  },
+  {
+   "code": "IM-NET-132",
+   "category": "以太网功能测试",
+   "priority": "待评审",
+   "title": "硬件卸载"
+  },
+  {
+   "code": "IM-NET-133",
+   "category": "以太网功能测试",
+   "priority": "待评审",
+   "title": "QoS/DCB"
+  },
+  {
+   "code": "IM-NET-134",
+   "category": "以太网功能测试",
+   "priority": "待评审",
+   "title": "QoS/DCB"
+  },
+  {
+   "code": "IM-NET-135",
+   "category": "以太网功能测试",
+   "priority": "待评审",
+   "title": "QoS/DCB"
+  },
+  {
+   "code": "IM-NET-136",
+   "category": "以太网功能测试",
+   "priority": "待评审",
+   "title": "QoS/DCB"
+  },
+  {
+   "code": "IM-NET-137",
+   "category": "以太网功能测试",
+   "priority": "待评审",
+   "title": "QoS/DCB"
+  },
+  {
+   "code": "IM-NET-138",
+   "category": "以太网功能测试",
+   "priority": "待评审",
+   "title": "可管理性"
+  },
+  {
+   "code": "IM-VIR-001",
+   "category": "虚拟化与容器测试",
+   "priority": "T0",
+   "title": "SR-IOV虚拟化"
+  },
+  {
+   "code": "IM-VIR-002",
+   "category": "虚拟化与容器测试",
+   "priority": "T0",
+   "title": "SR-IOV虚拟化"
+  },
+  {
+   "code": "IM-VIR-003",
+   "category": "虚拟化与容器测试",
+   "priority": "T0",
+   "title": "PF/VF共存"
+  },
+  {
+   "code": "IM-VIR-004",
+   "category": "虚拟化与容器测试",
+   "priority": "T0",
+   "title": "容器网络"
+  },
+  {
+   "code": "IM-VIR-005",
+   "category": "虚拟化与容器测试",
+   "priority": "T0",
+   "title": "容器网络"
+  },
+  {
+   "code": "IM-VIR-006",
+   "category": "虚拟化与容器测试",
+   "priority": "待评审",
+   "title": "SR-IOV"
+  },
+  {
+   "code": "IM-VIR-007",
+   "category": "虚拟化与容器测试",
+   "priority": "待评审",
+   "title": "SR-IOV"
+  },
+  {
+   "code": "IM-VIR-008",
+   "category": "虚拟化与容器测试",
+   "priority": "待评审",
+   "title": "SR-IOV"
+  },
+  {
+   "code": "IM-VIR-009",
+   "category": "虚拟化与容器测试",
+   "priority": "待评审",
+   "title": "SR-IOV"
+  },
+  {
+   "code": "IM-VIR-010",
+   "category": "虚拟化与容器测试",
+   "priority": "待评审",
+   "title": "SR-IOV"
+  },
+  {
+   "code": "IM-VIR-011",
+   "category": "虚拟化与容器测试",
+   "priority": "待评审",
+   "title": "SR-IOV"
+  },
+  {
+   "code": "IM-VIR-012",
+   "category": "虚拟化与容器测试",
+   "priority": "待评审",
+   "title": "SR-IOV"
+  },
+  {
+   "code": "IM-VIR-013",
+   "category": "虚拟化与容器测试",
+   "priority": "待评审",
+   "title": "SR-IOV"
+  },
+  {
+   "code": "IM-VIR-014",
+   "category": "虚拟化与容器测试",
+   "priority": "待评审",
+   "title": "Overlay 卸载"
+  },
+  {
+   "code": "IM-VIR-015",
+   "category": "虚拟化与容器测试",
+   "priority": "待评审",
+   "title": "Overlay 卸载"
+  },
+  {
+   "code": "IM-VIR-016",
+   "category": "虚拟化与容器测试",
+   "priority": "待评审",
+   "title": "Overlay 卸载"
+  },
+  {
+   "code": "IM-VIR-017",
+   "category": "虚拟化与容器测试",
+   "priority": "待评审",
+   "title": "Overlay 卸载"
+  },
+  {
+   "code": "IM-VIR-018",
+   "category": "虚拟化与容器测试",
+   "priority": "待评审",
+   "title": "Overlay 卸载"
+  },
+  {
+   "code": "IM-VIR-019",
+   "category": "虚拟化与容器测试",
+   "priority": "待评审",
+   "title": "Overlay 卸载"
+  },
+  {
+   "code": "IM-VIR-020",
+   "category": "虚拟化与容器测试",
+   "priority": "待评审",
+   "title": "容器与 K8s"
+  },
+  {
+   "code": "IM-VIR-021",
+   "category": "虚拟化与容器测试",
+   "priority": "待评审",
+   "title": "容器与 K8s"
+  },
+  {
+   "code": "IM-VIR-022",
+   "category": "虚拟化与容器测试",
+   "priority": "待评审",
+   "title": "容器与 K8s"
+  },
+  {
+   "code": "IM-VIR-023",
+   "category": "虚拟化与容器测试",
+   "priority": "待评审",
+   "title": "容器与 K8s"
+  },
+  {
+   "code": "IM-VIR-024",
+   "category": "虚拟化与容器测试",
+   "priority": "待评审",
+   "title": "容器与 K8s"
+  },
+  {
+   "code": "IM-VIR-025",
+   "category": "虚拟化与容器测试",
+   "priority": "待评审",
+   "title": "SR-IOV"
+  },
+  {
+   "code": "IM-VIR-026",
+   "category": "虚拟化与容器测试",
+   "priority": "待评审",
+   "title": "SR-IOV"
+  },
+  {
+   "code": "IM-VIR-027",
+   "category": "虚拟化与容器测试",
+   "priority": "待评审",
+   "title": "Overlay 卸载"
+  },
+  {
+   "code": "IM-VIR-028",
+   "category": "虚拟化与容器测试",
+   "priority": "待评审",
+   "title": "Overlay 卸载"
+  },
+  {
+   "code": "IM-VIR-029",
+   "category": "虚拟化与容器测试",
+   "priority": "待评审",
+   "title": "Overlay 卸载"
+  },
+  {
+   "code": "IM-VIR-030",
+   "category": "虚拟化与容器测试",
+   "priority": "待评审",
+   "title": "Overlay 卸载"
+  },
+  {
+   "code": "IM-VIR-031",
+   "category": "虚拟化与容器测试",
+   "priority": "待评审",
+   "title": "Overlay 卸载"
+  },
+  {
+   "code": "IM-VIR-032",
+   "category": "虚拟化与容器测试",
+   "priority": "待评审",
+   "title": "容器与 K8s"
+  },
+  {
+   "code": "IM-VIR-033",
+   "category": "虚拟化与容器测试",
+   "priority": "待评审",
+   "title": "容器与 K8s"
+  },
+  {
+   "code": "IM-VIR-034",
+   "category": "虚拟化与容器测试",
+   "priority": "待评审",
+   "title": "容器与 K8s"
+  },
+  {
+   "code": "IM-VIR-035",
+   "category": "虚拟化与容器测试",
+   "priority": "待评审",
+   "title": "容器与 K8s"
+  },
+  {
+   "code": "IM-RDM-001",
+   "category": "RDMA功能测试",
+   "priority": "T0",
+   "title": "RDMA功能"
+  },
+  {
+   "code": "IM-RDM-002",
+   "category": "RDMA功能测试",
+   "priority": "T0",
+   "title": "RDMA功能"
+  },
+  {
+   "code": "IM-RDM-003",
+   "category": "RDMA功能测试",
+   "priority": "T0",
+   "title": "RDMA功能"
+  },
+  {
+   "code": "IM-RDM-004",
+   "category": "RDMA功能测试",
+   "priority": "T0",
+   "title": "RDMA功能"
+  },
+  {
+   "code": "IM-RDM-005",
+   "category": "RDMA功能测试",
+   "priority": "T0",
+   "title": "RDMA功能"
+  },
+  {
+   "code": "IM-RDM-006",
+   "category": "RDMA功能测试",
+   "priority": "T0",
+   "title": "RDMA功能"
+  },
+  {
+   "code": "IM-RDM-007",
+   "category": "RDMA功能测试",
+   "priority": "T0",
+   "title": "RDMA功能"
+  },
+  {
+   "code": "IM-RDM-008",
+   "category": "RDMA功能测试",
+   "priority": "T0",
+   "title": "RDMA功能"
+  },
+  {
+   "code": "IM-RDM-009",
+   "category": "RDMA功能测试",
+   "priority": "T0",
+   "title": "RDMA功能"
+  },
+  {
+   "code": "IM-RDM-010",
+   "category": "RDMA功能测试",
+   "priority": "T0",
+   "title": "RDMA功能"
+  },
+  {
+   "code": "IM-RDM-011",
+   "category": "RDMA功能测试",
+   "priority": "T0",
+   "title": "RDMA功能"
+  },
+  {
+   "code": "IM-RDM-012",
+   "category": "RDMA功能测试",
+   "priority": "T2",
+   "title": "RDMA功能"
+  },
+  {
+   "code": "IM-RDM-013",
+   "category": "RDMA功能测试",
+   "priority": "T0",
+   "title": "RDMA功能"
+  },
+  {
+   "code": "IM-RDM-014",
+   "category": "RDMA功能测试",
+   "priority": "T0",
+   "title": "GPUDirect RDMA"
+  },
+  {
+   "code": "IM-RDM-015",
+   "category": "RDMA功能测试",
+   "priority": "待评审",
+   "title": "RDMA 功能"
+  },
+  {
+   "code": "IM-RDM-016",
+   "category": "RDMA功能测试",
+   "priority": "待评审",
+   "title": "RDMA 功能"
+  },
+  {
+   "code": "IM-RDM-017",
+   "category": "RDMA功能测试",
+   "priority": "待评审",
+   "title": "RDMA 功能"
+  },
+  {
+   "code": "IM-RDM-018",
+   "category": "RDMA功能测试",
+   "priority": "待评审",
+   "title": "RDMA 功能"
+  },
+  {
+   "code": "IM-RDM-019",
+   "category": "RDMA功能测试",
+   "priority": "待评审",
+   "title": "RDMA 功能"
+  },
+  {
+   "code": "IM-RDM-020",
+   "category": "RDMA功能测试",
+   "priority": "待评审",
+   "title": "硬件与标识"
+  },
+  {
+   "code": "IM-RDM-021",
+   "category": "RDMA功能测试",
+   "priority": "待评审",
+   "title": "QoS/DCB"
+  },
+  {
+   "code": "IM-RDM-022",
+   "category": "RDMA功能测试",
+   "priority": "待评审",
+   "title": "QoS/DCB"
+  },
+  {
+   "code": "IM-RDM-023",
+   "category": "RDMA功能测试",
+   "priority": "待评审",
+   "title": "QoS/DCB"
+  },
+  {
+   "code": "IM-RDM-024",
+   "category": "RDMA功能测试",
+   "priority": "待评审",
+   "title": "QoS/DCB"
+  },
+  {
+   "code": "IM-RDM-025",
+   "category": "RDMA功能测试",
+   "priority": "待评审",
+   "title": "QoS/DCB"
+  },
+  {
+   "code": "IM-RDM-026",
+   "category": "RDMA功能测试",
+   "priority": "待评审",
+   "title": "QoS/DCB"
+  },
+  {
+   "code": "IM-RDM-027",
+   "category": "RDMA功能测试",
+   "priority": "待评审",
+   "title": "RDMA 功能"
+  },
+  {
+   "code": "IM-RDM-028",
+   "category": "RDMA功能测试",
+   "priority": "待评审",
+   "title": "互操作"
+  },
+  {
+   "code": "IM-PER-001",
+   "category": "性能测试",
+   "priority": "T0",
+   "title": "物理单口单向性能"
+  },
+  {
+   "code": "IM-PER-002",
+   "category": "性能测试",
+   "priority": "T0",
+   "title": "物理单口单向性能"
+  },
+  {
+   "code": "IM-PER-003",
+   "category": "性能测试",
+   "priority": "T0",
+   "title": "物理单口双向性能"
+  },
+  {
+   "code": "IM-PER-004",
+   "category": "性能测试",
+   "priority": "T0",
+   "title": "物理单口双向性能"
+  },
+  {
+   "code": "IM-PER-005",
+   "category": "性能测试",
+   "priority": "T0",
+   "title": "物理多口单向性能"
+  },
+  {
+   "code": "IM-PER-006",
+   "category": "性能测试",
+   "priority": "T0",
+   "title": "物理多口单向性能"
+  },
+  {
+   "code": "IM-PER-007",
+   "category": "性能测试",
+   "priority": "T0",
+   "title": "物理多口双向性能"
+  },
+  {
+   "code": "IM-PER-008",
+   "category": "性能测试",
+   "priority": "T0",
+   "title": "物理多口双向性能"
+  },
+  {
+   "code": "IM-PER-009",
+   "category": "性能测试",
+   "priority": "T0",
+   "title": "物理单口TCP时延"
+  },
+  {
+   "code": "IM-PER-010",
+   "category": "性能测试",
+   "priority": "T0",
+   "title": "物理单口UDP时延"
+  },
+  {
+   "code": "IM-PER-011",
+   "category": "性能测试",
+   "priority": "T0",
+   "title": "RoCE单口单向性能"
+  },
+  {
+   "code": "IM-PER-012",
+   "category": "性能测试",
+   "priority": "T0",
+   "title": "RoCE单口单向性能"
+  },
+  {
+   "code": "IM-PER-013",
+   "category": "性能测试",
+   "priority": "T0",
+   "title": "RoCE单口单向性能"
+  },
+  {
+   "code": "IM-PER-014",
+   "category": "性能测试",
+   "priority": "T0",
+   "title": "RoCE单口单向性能"
+  },
+  {
+   "code": "IM-PER-015",
+   "category": "性能测试",
+   "priority": "T0",
+   "title": "RoCE单口单向性能"
+  },
+  {
+   "code": "IM-PER-016",
+   "category": "性能测试",
+   "priority": "T0",
+   "title": "RoCE单口双向性能"
+  },
+  {
+   "code": "IM-PER-017",
+   "category": "性能测试",
+   "priority": "T0",
+   "title": "RoCE单口双向性能"
+  },
+  {
+   "code": "IM-PER-018",
+   "category": "性能测试",
+   "priority": "T0",
+   "title": "RoCE单口双向性能"
+  },
+  {
+   "code": "IM-PER-019",
+   "category": "性能测试",
+   "priority": "T0",
+   "title": "RoCE单口双向性能"
+  },
+  {
+   "code": "IM-PER-020",
+   "category": "性能测试",
+   "priority": "T0",
+   "title": "RoCE单口双向性能"
+  },
+  {
+   "code": "IM-PER-021",
+   "category": "性能测试",
+   "priority": "T0",
+   "title": "RoCE多口单向性能"
+  },
+  {
+   "code": "IM-PER-022",
+   "category": "性能测试",
+   "priority": "T0",
+   "title": "RoCE多口单向性能"
+  },
+  {
+   "code": "IM-PER-023",
+   "category": "性能测试",
+   "priority": "T0",
+   "title": "RoCE多口单向性能"
+  },
+  {
+   "code": "IM-PER-024",
+   "category": "性能测试",
+   "priority": "T0",
+   "title": "RoCE多口单向性能"
+  },
+  {
+   "code": "IM-PER-025",
+   "category": "性能测试",
+   "priority": "T0",
+   "title": "RoCE多口单向性能"
+  },
+  {
+   "code": "IM-PER-026",
+   "category": "性能测试",
+   "priority": "T0",
+   "title": "RoCE多口双向性能"
+  },
+  {
+   "code": "IM-PER-027",
+   "category": "性能测试",
+   "priority": "T0",
+   "title": "RoCE多口双向性能"
+  },
+  {
+   "code": "IM-PER-028",
+   "category": "性能测试",
+   "priority": "T0",
+   "title": "RoCE多口双向性能"
+  },
+  {
+   "code": "IM-PER-029",
+   "category": "性能测试",
+   "priority": "T0",
+   "title": "RoCE多口双向性能"
+  },
+  {
+   "code": "IM-PER-030",
+   "category": "性能测试",
+   "priority": "T0",
+   "title": "RoCE多口双向性能"
+  },
+  {
+   "code": "IM-PER-031",
+   "category": "性能测试",
+   "priority": "T0",
+   "title": "双机双卡并行性能"
+  },
+  {
+   "code": "IM-PER-032",
+   "category": "性能测试",
+   "priority": "T0",
+   "title": "双机双卡并行性能"
+  },
+  {
+   "code": "IM-PER-033",
+   "category": "性能测试",
+   "priority": "T0",
+   "title": "双机双卡并行性能"
+  },
+  {
+   "code": "IM-PER-034",
+   "category": "性能测试",
+   "priority": "T0",
+   "title": "双机双卡并行性能"
+  },
+  {
+   "code": "IM-PER-035",
+   "category": "性能测试",
+   "priority": "待评审",
+   "title": "以太网性能"
+  },
+  {
+   "code": "IM-PER-036",
+   "category": "性能测试",
+   "priority": "待评审",
+   "title": "以太网性能"
+  },
+  {
+   "code": "IM-PER-037",
+   "category": "性能测试",
+   "priority": "待评审",
+   "title": "以太网性能"
+  },
+  {
+   "code": "IM-PER-038",
+   "category": "性能测试",
+   "priority": "待评审",
+   "title": "RDMA 性能"
+  },
+  {
+   "code": "IM-PER-039",
+   "category": "性能测试",
+   "priority": "待评审",
+   "title": "RDMA 性能"
+  },
+  {
+   "code": "IM-PER-040",
+   "category": "性能测试",
+   "priority": "待评审",
+   "title": "RDMA 性能"
+  },
+  {
+   "code": "IM-PER-041",
+   "category": "性能测试",
+   "priority": "待评审",
+   "title": "RDMA 性能"
+  },
+  {
+   "code": "IM-PER-042",
+   "category": "性能测试",
+   "priority": "待评审",
+   "title": "GPU/AI"
+  },
+  {
+   "code": "IM-PER-043",
+   "category": "性能测试",
+   "priority": "待评审",
+   "title": "GPU/AI"
+  },
+  {
+   "code": "IM-PER-044",
+   "category": "性能测试",
+   "priority": "待评审",
+   "title": "GPU/AI"
+  },
+  {
+   "code": "IM-PER-045",
+   "category": "性能测试",
+   "priority": "待评审",
+   "title": "GPU/AI"
+  },
+  {
+   "code": "IM-PER-046",
+   "category": "性能测试",
+   "priority": "待评审",
+   "title": "GPU/AI"
+  },
+  {
+   "code": "IM-PER-047",
+   "category": "性能测试",
+   "priority": "待评审",
+   "title": "GPU/AI"
+  },
+  {
+   "code": "IM-PER-048",
+   "category": "性能测试",
+   "priority": "待评审",
+   "title": "GPU/AI"
+  },
+  {
+   "code": "IM-PER-049",
+   "category": "性能测试",
+   "priority": "待评审",
+   "title": "GPU/AI"
+  },
+  {
+   "code": "IM-PER-050",
+   "category": "性能测试",
+   "priority": "待评审",
+   "title": "GPU/AI"
+  },
+  {
+   "code": "IM-PER-051",
+   "category": "性能测试",
+   "priority": "待评审",
+   "title": "GPU/AI"
+  },
+  {
+   "code": "IM-PER-052",
+   "category": "性能测试",
+   "priority": "待评审",
+   "title": "GPU/AI"
+  },
+  {
+   "code": "IM-PER-053",
+   "category": "性能测试",
+   "priority": "待评审",
+   "title": "GPU/AI"
+  },
+  {
+   "code": "IM-PER-054",
+   "category": "性能测试",
+   "priority": "待评审",
+   "title": "GPU/AI"
+  },
+  {
+   "code": "IM-PER-055",
+   "category": "性能测试",
+   "priority": "待评审",
+   "title": "硬件卸载"
+  },
+  {
+   "code": "IM-PER-056",
+   "category": "性能测试",
+   "priority": "待评审",
+   "title": "RDMA 功能"
+  },
+  {
+   "code": "IM-PER-057",
+   "category": "性能测试",
+   "priority": "待评审",
+   "title": "以太网性能"
+  },
+  {
+   "code": "IM-PER-058",
+   "category": "性能测试",
+   "priority": "待评审",
+   "title": "以太网性能"
+  },
+  {
+   "code": "IM-PER-059",
+   "category": "性能测试",
+   "priority": "待评审",
+   "title": "以太网性能"
+  },
+  {
+   "code": "IM-PER-060",
+   "category": "性能测试",
+   "priority": "待评审",
+   "title": "以太网性能"
+  },
+  {
+   "code": "IM-PER-061",
+   "category": "性能测试",
+   "priority": "待评审",
+   "title": "RDMA 性能"
+  },
+  {
+   "code": "IM-PER-062",
+   "category": "性能测试",
+   "priority": "待评审",
+   "title": "GPU/AI"
+  },
+  {
+   "code": "IM-PER-063",
+   "category": "性能测试",
+   "priority": "待评审",
+   "title": "GPU/AI"
+  },
+  {
+   "code": "IM-PER-064",
+   "category": "性能测试",
+   "priority": "待评审",
+   "title": "GPU/AI"
+  },
+  {
+   "code": "IM-PER-065",
+   "category": "性能测试",
+   "priority": "待评审",
+   "title": "性能专项"
+  },
+  {
+   "code": "IM-PER-066",
+   "category": "性能测试",
+   "priority": "待评审",
+   "title": "性能专项"
+  },
+  {
+   "code": "IM-PER-067",
+   "category": "性能测试",
+   "priority": "待评审",
+   "title": "性能专项"
+  },
+  {
+   "code": "IM-PER-068",
+   "category": "性能测试",
+   "priority": "待评审",
+   "title": "性能专项"
+  },
+  {
+   "code": "IM-PER-069",
+   "category": "性能测试",
+   "priority": "待评审",
+   "title": "参考基线"
+  },
+  {
+   "code": "IM-MIX-001",
+   "category": "混流测试",
+   "priority": "T0",
+   "title": "物理口TCP/RDMA混流"
+  },
+  {
+   "code": "IM-MIX-002",
+   "category": "混流测试",
+   "priority": "T0",
+   "title": "物理Bond TCP/RDMA混流"
+  },
+  {
+   "code": "IM-MIX-003",
+   "category": "混流测试",
+   "priority": "T0",
+   "title": "VF TCP/RDMA混流"
+  },
+  {
+   "code": "IM-MIX-004",
+   "category": "混流测试",
+   "priority": "T0",
+   "title": "VF Bond TCP/RDMA混流"
+  },
+  {
+   "code": "IM-MIX-005",
+   "category": "混流测试",
+   "priority": "待评审",
+   "title": "存储网络"
+  },
+  {
+   "code": "IM-MIX-006",
+   "category": "混流测试",
+   "priority": "待评审",
+   "title": "存储网络"
+  },
+  {
+   "code": "IM-MIX-007",
+   "category": "混流测试",
+   "priority": "待评审",
+   "title": "存储网络"
+  },
+  {
+   "code": "IM-MIX-008",
+   "category": "混流测试",
+   "priority": "待评审",
+   "title": "存储网络"
+  },
+  {
+   "code": "IM-MIX-009",
+   "category": "混流测试",
+   "priority": "待评审",
+   "title": "存储网络"
+  },
+  {
+   "code": "IM-MIX-010",
+   "category": "混流测试",
+   "priority": "待评审",
+   "title": "存储网络"
+  },
+  {
+   "code": "IM-MIX-011",
+   "category": "混流测试",
+   "priority": "待评审",
+   "title": "存储网络"
+  },
+  {
+   "code": "IM-MIX-012",
+   "category": "混流测试",
+   "priority": "待评审",
+   "title": "存储网络"
+  },
+  {
+   "code": "IM-MIX-013",
+   "category": "混流测试",
+   "priority": "待评审",
+   "title": "存储网络"
+  },
+  {
+   "code": "IM-MIX-014",
+   "category": "混流测试",
+   "priority": "待评审",
+   "title": "存储网络"
+  },
+  {
+   "code": "IM-STB-001",
+   "category": "稳定性测试",
+   "priority": "T0",
+   "title": "物理口UDP稳定性"
+  },
+  {
+   "code": "IM-STB-002",
+   "category": "稳定性测试",
+   "priority": "T2",
+   "title": "VF虚机UDP稳定性"
+  },
+  {
+   "code": "IM-STB-003",
+   "category": "稳定性测试",
+   "priority": "T0",
+   "title": "物理口TCP稳定性"
+  },
+  {
+   "code": "IM-STB-004",
+   "category": "稳定性测试",
+   "priority": "T2",
+   "title": "VF虚机TCP稳定性"
+  },
+  {
+   "code": "IM-STB-005",
+   "category": "稳定性测试",
+   "priority": "T0",
+   "title": "RDMA收发稳定性"
+  },
+  {
+   "code": "IM-STB-006",
+   "category": "稳定性测试",
+   "priority": "T2",
+   "title": "VF虚机RDMA稳定性"
+  },
+  {
+   "code": "IM-STB-007",
+   "category": "稳定性测试",
+   "priority": "T0",
+   "title": "链路稳定性"
+  },
+  {
+   "code": "IM-STB-008",
+   "category": "稳定性测试",
+   "priority": "T0",
+   "title": "链路稳定性"
+  },
+  {
+   "code": "IM-STB-009",
+   "category": "稳定性测试",
+   "priority": "T0",
+   "title": "重启与电源循环"
+  },
+  {
+   "code": "IM-STB-010",
+   "category": "稳定性测试",
+   "priority": "T0",
+   "title": "重启与电源循环"
+  },
+  {
+   "code": "IM-STB-011",
+   "category": "稳定性测试",
+   "priority": "T0",
+   "title": "重启与电源循环"
+  },
+  {
+   "code": "IM-STB-012",
+   "category": "稳定性测试",
+   "priority": "T0",
+   "title": "重启与电源循环"
+  },
+  {
+   "code": "IM-STB-013",
+   "category": "稳定性测试",
+   "priority": "待评审",
+   "title": "可靠性"
+  },
+  {
+   "code": "IM-STB-014",
+   "category": "稳定性测试",
+   "priority": "待评审",
+   "title": "可靠性"
+  },
+  {
+   "code": "IM-STB-015",
+   "category": "稳定性测试",
+   "priority": "待评审",
+   "title": "物理链路"
+  },
+  {
+   "code": "IM-STB-016",
+   "category": "稳定性测试",
+   "priority": "待评审",
+   "title": "可靠性"
+  },
+  {
+   "code": "IM-STB-017",
+   "category": "稳定性测试",
+   "priority": "待评审",
+   "title": "可靠性"
+  },
+  {
+   "code": "IM-STB-018",
+   "category": "稳定性测试",
+   "priority": "待评审",
+   "title": "可靠性"
+  },
+  {
+   "code": "IM-STB-019",
+   "category": "稳定性测试",
+   "priority": "待评审",
+   "title": "可靠性"
+  },
+  {
+   "code": "IM-STB-020",
+   "category": "稳定性测试",
+   "priority": "待评审",
+   "title": "可靠性"
+  },
+  {
+   "code": "IM-STB-021",
+   "category": "稳定性测试",
+   "priority": "待评审",
+   "title": "可靠性"
+  },
+  {
+   "code": "IM-STB-022",
+   "category": "稳定性测试",
+   "priority": "待评审",
+   "title": "配置恢复"
+  },
+  {
+   "code": "IM-STR-001",
+   "category": "压力测试",
+   "priority": "T0",
+   "title": "物理网口压力"
+  },
+  {
+   "code": "IM-STR-002",
+   "category": "压力测试",
+   "priority": "T0",
+   "title": "Bond压力"
+  },
+  {
+   "code": "IM-STR-003",
+   "category": "压力测试",
+   "priority": "T0",
+   "title": "Bond压力"
+  },
+  {
+   "code": "IM-STR-004",
+   "category": "压力测试",
+   "priority": "T0",
+   "title": "Bond压力"
+  },
+  {
+   "code": "IM-STR-005",
+   "category": "压力测试",
+   "priority": "T0",
+   "title": "Bond压力"
+  },
+  {
+   "code": "IM-STR-006",
+   "category": "压力测试",
+   "priority": "T0",
+   "title": "RoCE压力"
+  },
+  {
+   "code": "IM-STR-007",
+   "category": "压力测试",
+   "priority": "待评审",
+   "title": "可靠性"
+  },
+  {
+   "code": "IM-STR-008",
+   "category": "压力测试",
+   "priority": "待评审",
+   "title": "可靠性"
+  },
+  {
+   "code": "IM-STR-009",
+   "category": "压力测试",
+   "priority": "待评审",
+   "title": "可靠性"
+  },
+  {
+   "code": "IM-STR-010",
+   "category": "压力测试",
+   "priority": "待评审",
+   "title": "可靠性"
+  },
+  {
+   "code": "IM-CER-001",
+   "category": "硬件与认证测试",
+   "priority": "T0",
+   "title": "结构检验"
+  },
+  {
+   "code": "IM-CER-002",
+   "category": "硬件与认证测试",
+   "priority": "T2",
+   "title": "散热验证"
+  },
+  {
+   "code": "IM-CER-003",
+   "category": "硬件与认证测试",
+   "priority": "T2",
+   "title": "SI信号完整性"
+  },
+  {
+   "code": "IM-CER-004",
+   "category": "硬件与认证测试",
+   "priority": "T2",
+   "title": "EMC电磁兼容"
+  },
+  {
+   "code": "IM-CER-005",
+   "category": "硬件与认证测试",
+   "priority": "T2",
+   "title": "SIV信号可视化"
+  },
+  {
+   "code": "IM-CER-006",
+   "category": "硬件与认证测试",
+   "priority": "T2",
+   "title": "Thermal热测试"
+  },
+  {
+   "code": "IM-CER-007",
+   "category": "硬件与认证测试",
+   "priority": "T2",
+   "title": "REL可靠性"
+  },
+  {
+   "code": "IM-CER-008",
+   "category": "硬件与认证测试",
+   "priority": "待评审",
+   "title": "环境与功耗"
+  },
+  {
+   "code": "IM-CER-009",
+   "category": "硬件与认证测试",
+   "priority": "待评审",
+   "title": "环境与功耗"
+  },
+  {
+   "code": "IM-CER-010",
+   "category": "硬件与认证测试",
+   "priority": "待评审",
+   "title": "环境与功耗"
+  },
+  {
+   "code": "IM-CER-011",
+   "category": "硬件与认证测试",
+   "priority": "待评审",
+   "title": "环境与功耗"
+  },
+  {
+   "code": "IM-CER-012",
+   "category": "硬件与认证测试",
+   "priority": "待评审",
+   "title": "环境与功耗"
+  },
+  {
+   "code": "IM-CER-013",
+   "category": "硬件与认证测试",
+   "priority": "待评审",
+   "title": "环境与功耗"
+  },
+  {
+   "code": "IM-CER-014",
+   "category": "硬件与认证测试",
+   "priority": "待评审",
+   "title": "环境与功耗"
+  },
+  {
+   "code": "XCCL-FUNC-001",
+   "category": "CCL通信测试",
+   "priority": "T0",
+   "title": "集合通信功能"
+  },
+  {
+   "code": "XCCL-FUNC-002",
+   "category": "CCL通信测试",
+   "priority": "T0",
+   "title": "集合通信功能"
+  },
+  {
+   "code": "XCCL-FUNC-003",
+   "category": "CCL通信测试",
+   "priority": "T0",
+   "title": "集合通信功能"
+  },
+  {
+   "code": "XCCL-FUNC-004",
+   "category": "CCL通信测试",
+   "priority": "T0",
+   "title": "集合通信功能"
+  },
+  {
+   "code": "XCCL-FUNC-005",
+   "category": "CCL通信测试",
+   "priority": "T0",
+   "title": "集合通信功能"
+  },
+  {
+   "code": "XCCL-FUNC-006",
+   "category": "CCL通信测试",
+   "priority": "T0",
+   "title": "集合通信功能"
+  },
+  {
+   "code": "XCCL-FUNC-007",
+   "category": "CCL通信测试",
+   "priority": "T0",
+   "title": "集合通信功能"
+  },
+  {
+   "code": "XCCL-FUNC-008",
+   "category": "CCL通信测试",
+   "priority": "T0",
+   "title": "集合通信功能"
+  },
+  {
+   "code": "XCCL-FUNC-009",
+   "category": "CCL通信测试",
+   "priority": "T0",
+   "title": "集合通信功能"
+  },
+  {
+   "code": "XCCL-FUNC-010",
+   "category": "CCL通信测试",
+   "priority": "T1",
+   "title": "集合通信功能"
+  },
+  {
+   "code": "XCCL-FUNC-011",
+   "category": "CCL通信测试",
+   "priority": "T1",
+   "title": "集合通信功能"
+  },
+  {
+   "code": "XCCL-FUNC-012",
+   "category": "CCL通信测试",
+   "priority": "T1",
+   "title": "集合通信功能"
+  },
+  {
+   "code": "XCCL-FUNC-013",
+   "category": "CCL通信测试",
+   "priority": "T1",
+   "title": "集合通信功能"
+  },
+  {
+   "code": "XCCL-FUNC-014",
+   "category": "CCL通信测试",
+   "priority": "T1",
+   "title": "集合通信功能"
+  },
+  {
+   "code": "XCCL-FUNC-015",
+   "category": "CCL通信测试",
+   "priority": "T1",
+   "title": "集合通信功能"
+  },
+  {
+   "code": "XCCL-FUNC-016",
+   "category": "CCL通信测试",
+   "priority": "T1",
+   "title": "集合通信功能"
+  },
+  {
+   "code": "XCCL-FUNC-017",
+   "category": "CCL通信测试",
+   "priority": "T1",
+   "title": "集合通信功能"
+  },
+  {
+   "code": "XCCL-FUNC-018",
+   "category": "CCL通信测试",
+   "priority": "T1",
+   "title": "集合通信功能"
+  },
+  {
+   "code": "XCCL-PERF-001",
+   "category": "CCL通信测试",
+   "priority": "T0",
+   "title": "集合通信性能"
+  },
+  {
+   "code": "XCCL-PERF-002",
+   "category": "CCL通信测试",
+   "priority": "T0",
+   "title": "集合通信性能"
+  },
+  {
+   "code": "XCCL-PERF-003",
+   "category": "CCL通信测试",
+   "priority": "T0",
+   "title": "集合通信性能"
+  },
+  {
+   "code": "XCCL-PERF-004",
+   "category": "CCL通信测试",
+   "priority": "T0",
+   "title": "集合通信性能"
+  },
+  {
+   "code": "XCCL-PERF-005",
+   "category": "CCL通信测试",
+   "priority": "T0",
+   "title": "集合通信性能"
+  },
+  {
+   "code": "XCCL-PERF-006",
+   "category": "CCL通信测试",
+   "priority": "T0",
+   "title": "集合通信性能"
+  },
+  {
+   "code": "XCCL-PERF-007",
+   "category": "CCL通信测试",
+   "priority": "T0",
+   "title": "集合通信性能"
+  },
+  {
+   "code": "XCCL-PERF-008",
+   "category": "CCL通信测试",
+   "priority": "T0",
+   "title": "集合通信性能"
+  },
+  {
+   "code": "XCCL-PERF-009",
+   "category": "CCL通信测试",
+   "priority": "T0",
+   "title": "集合通信性能"
+  },
+  {
+   "code": "XCCL-PERF-010",
+   "category": "CCL通信测试",
+   "priority": "T1",
+   "title": "集合通信性能"
+  },
+  {
+   "code": "XCCL-PERF-011",
+   "category": "CCL通信测试",
+   "priority": "T1",
+   "title": "集合通信性能"
+  },
+  {
+   "code": "XCCL-PERF-012",
+   "category": "CCL通信测试",
+   "priority": "T1",
+   "title": "集合通信性能"
+  },
+  {
+   "code": "XCCL-PERF-013",
+   "category": "CCL通信测试",
+   "priority": "T1",
+   "title": "集合通信性能"
+  },
+  {
+   "code": "XCCL-PERF-014",
+   "category": "CCL通信测试",
+   "priority": "T1",
+   "title": "集合通信性能"
+  },
+  {
+   "code": "XCCL-PERF-015",
+   "category": "CCL通信测试",
+   "priority": "T1",
+   "title": "集合通信性能"
+  },
+  {
+   "code": "XCCL-PERF-016",
+   "category": "CCL通信测试",
+   "priority": "T1",
+   "title": "集合通信性能"
+  },
+  {
+   "code": "XCCL-PERF-017",
+   "category": "CCL通信测试",
+   "priority": "T1",
+   "title": "集合通信性能"
+  },
+  {
+   "code": "XCCL-PERF-018",
+   "category": "CCL通信测试",
+   "priority": "T1",
+   "title": "集合通信性能"
+  },
+  {
+   "code": "XCCL-PERF-019",
+   "category": "CCL通信测试",
+   "priority": "T0",
+   "title": "集合通信性能"
+  },
+  {
+   "code": "XCCL-PERF-020",
+   "category": "CCL通信测试",
+   "priority": "T0",
+   "title": "集合通信性能"
+  },
+  {
+   "code": "XCCL-PERF-021",
+   "category": "CCL通信测试",
+   "priority": "T0",
+   "title": "集合通信性能"
+  },
+  {
+   "code": "XCCL-PERF-022",
+   "category": "CCL通信测试",
+   "priority": "T0",
+   "title": "集合通信性能"
+  },
+  {
+   "code": "XCCL-PERF-023",
+   "category": "CCL通信测试",
+   "priority": "T0",
+   "title": "集合通信性能"
+  },
+  {
+   "code": "XCCL-PERF-024",
+   "category": "CCL通信测试",
+   "priority": "T0",
+   "title": "集合通信性能"
+  },
+  {
+   "code": "XCCL-PERF-025",
+   "category": "CCL通信测试",
+   "priority": "T0",
+   "title": "集合通信性能"
+  },
+  {
+   "code": "XCCL-PERF-026",
+   "category": "CCL通信测试",
+   "priority": "T0",
+   "title": "集合通信性能"
+  },
+  {
+   "code": "XCCL-PERF-027",
+   "category": "CCL通信测试",
+   "priority": "T0",
+   "title": "集合通信性能"
+  },
+  {
+   "code": "XCCL-RELI-001",
+   "category": "CCL通信测试",
+   "priority": "T2",
+   "title": "CCL可靠性"
+  },
+  {
+   "code": "XCCL-RELI-002",
+   "category": "CCL通信测试",
+   "priority": "T2",
+   "title": "CCL可靠性"
+  },
+  {
+   "code": "XCCL-STAB-001",
+   "category": "CCL通信测试",
+   "priority": "T2",
+   "title": "CCL稳定性"
+  },
+  {
+   "code": "XCCL-STAB-002",
+   "category": "CCL通信测试",
+   "priority": "T2",
+   "title": "CCL稳定性"
+  },
+  {
+   "code": "XCCL-STAB-003",
+   "category": "CCL通信测试",
+   "priority": "T2",
+   "title": "CCL稳定性"
+  },
+  {
+   "code": "XCCL-STAB-004",
+   "category": "CCL通信测试",
+   "priority": "T2",
+   "title": "CCL稳定性"
+  },
+  {
+   "code": "XCCL-COMP-001",
+   "category": "CCL通信测试",
+   "priority": "T0",
+   "title": "CCL兼容性"
+  },
+  {
+   "code": "XCCL-COMP-002",
+   "category": "CCL通信测试",
+   "priority": "T0",
+   "title": "CCL兼容性"
+  },
+  {
+   "code": "XCCL-COMP-003",
+   "category": "CCL通信测试",
+   "priority": "T0",
+   "title": "CCL兼容性"
+  },
+  {
+   "code": "XCCL-COMP-004",
+   "category": "CCL通信测试",
+   "priority": "T0",
+   "title": "CCL兼容性"
+  },
+  {
+   "code": "XCCL-FUNC-019",
+   "category": "CCL通信测试",
+   "priority": "T0",
+   "title": "集合通信功能"
+  },
+  {
+   "code": "XCCL-PERF-028",
+   "category": "CCL通信测试",
+   "priority": "T0",
+   "title": "集合通信性能"
+  },
+  {
+   "code": "XCCL-COMP-005",
+   "category": "CCL通信测试",
+   "priority": "T0",
+   "title": "CCL兼容性"
+  },
+  {
+   "code": "XCCL-COMP-006",
+   "category": "CCL通信测试",
+   "priority": "T1",
+   "title": "CCL兼容性"
+  },
+  {
+   "code": "XCCL-COMP-007",
+   "category": "CCL通信测试",
+   "priority": "T0",
+   "title": "CCL兼容性"
+  },
+  {
+   "code": "XCCL-RELI-003",
+   "category": "CCL通信测试",
+   "priority": "T2",
+   "title": "CCL可靠性"
+  }
+ ],
+ "scripts": [
+  {
+   "path": "tests/nic/base/test_im_fun_020.py",
+   "case_code": "IM-FUN-020",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_fun_020_pci_device_info"
+   ]
+  },
+  {
+   "path": "tests/nic/base/test_im_fun_055.py",
+   "case_code": "IM-FUN-055",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_fun_055_driver_firmware_compatibility"
+   ]
+  },
+  {
+   "path": "tests/nic/ethernet/test_im_net_002.py",
+   "case_code": "IM-NET-002",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_net_002_module_ddm"
+   ]
+  },
+  {
+   "path": "tests/nic/ethernet/test_im_net_007.py",
+   "case_code": "IM-NET-007",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_net_007_link_autoneg"
+   ]
+  },
+  {
+   "path": "tests/nic/ethernet/test_im_net_116.py",
+   "case_code": "IM-NET-116",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_net_116_ptp_timestamping"
+   ]
+  },
+  {
+   "path": "tests/nic/ethernet/test_im_net_131.py",
+   "case_code": "IM-NET-131",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_net_131_rx_checksum_offload"
+   ]
+  },
+  {
+   "path": "tests/nic/hardware/test_im_cer_008.py",
+   "case_code": "IM-CER-008",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_cer_008_idle_power"
+   ]
+  },
+  {
+   "path": "tests/nic/mixed/test_im_mix_011.py",
+   "case_code": "IM-MIX-011",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_mix_011_gds_platform"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_fun_014.py",
+   "case_code": "IM-FUN-014",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_fun_014_nic_info"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_fun_018.py",
+   "case_code": "IM-FUN-018",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_fun_018_iommu_state"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_fun_021.py",
+   "case_code": "IM-FUN-021",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_fun_021_counter_integrity"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_fun_035.py",
+   "case_code": "IM-FUN-035",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_fun_035_system_nic_info"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_fun_036.py",
+   "case_code": "IM-FUN-036",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_fun_036_nic_log_export"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_fun_037.py",
+   "case_code": "IM-FUN-037",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_fun_037_guid_uniqueness"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_fun_040.py",
+   "case_code": "IM-FUN-040",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_fun_040_max_payload_size"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_fun_041.py",
+   "case_code": "IM-FUN-041",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_fun_041_max_read_request"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_fun_042.py",
+   "case_code": "IM-FUN-042",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_fun_042_numa_affinity"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_fun_043.py",
+   "case_code": "IM-FUN-043",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_fun_043_root_complex_topology"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_fun_044.py",
+   "case_code": "IM-FUN-044",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_fun_044_msix_vectors_and_irq"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_fun_045.py",
+   "case_code": "IM-FUN-045",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_fun_045_pcie_aer_monitor"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_fun_048.py",
+   "case_code": "IM-FUN-048",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_fun_048_secure_boot_capability"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_fun_052.py",
+   "case_code": "IM-FUN-052",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_fun_052_config_snapshot_diff"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_fun_058.py",
+   "case_code": "IM-FUN-058",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_fun_058_pn_sn_psid_ec"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_fun_059.py",
+   "case_code": "IM-FUN-059",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_fun_059_dual_port_mac_unique"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_fun_060.py",
+   "case_code": "IM-FUN-060",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_fun_060_dual_port_rdma_mapping"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_fun_064.py",
+   "case_code": "IM-FUN-064",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_fun_064_inbox_driver_source"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_fun_071.py",
+   "case_code": "IM-FUN-071",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_fun_071_ethtool_counter_dictionary"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_fun_072.py",
+   "case_code": "IM-FUN-072",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_fun_072_rdma_resource_observability"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_fun_073.py",
+   "case_code": "IM-FUN-073",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_fun_073_devlink_topology"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_fun_075.py",
+   "case_code": "IM-FUN-075",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_fun_075_firmware_log_and_health"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_net_004.py",
+   "case_code": "IM-NET-004",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_net_004_optics_identity"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_net_008.py",
+   "case_code": "IM-NET-008",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_net_008_ipv6_connectivity"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_net_015.py",
+   "case_code": "IM-NET-015",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_net_015_advertised_link_modes"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_net_016.py",
+   "case_code": "IM-NET-016",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_net_016_media_type"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_net_022.py",
+   "case_code": "IM-NET-022",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_net_022_gro_off"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_net_023.py",
+   "case_code": "IM-NET-023",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_net_023_gro_on"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_net_028.py",
+   "case_code": "IM-NET-028",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_net_028_lro_off"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_net_034.py",
+   "case_code": "IM-NET-034",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_net_034_tso_off"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_net_040.py",
+   "case_code": "IM-NET-040",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_net_040_gso_off"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_net_052.py",
+   "case_code": "IM-NET-052",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_net_052_tx_checksum_off"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_net_054.py",
+   "case_code": "IM-NET-054",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_net_054_rx_checksum_off"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_net_057.py",
+   "case_code": "IM-NET-057",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_net_057_tx_single_queue"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_net_067.py",
+   "case_code": "IM-NET-067",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_net_067_multi_queue_config"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_net_074.py",
+   "case_code": "IM-NET-074",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_net_074_tx_ring_capacity"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_net_075.py",
+   "case_code": "IM-NET-075",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_net_075_tx_ring_over_limit"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_net_077.py",
+   "case_code": "IM-NET-077",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_net_077_rx_ring_max"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_net_080.py",
+   "case_code": "IM-NET-080",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_net_080_link_down_up"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_net_088.py",
+   "case_code": "IM-NET-088",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_net_088_mtu_1500"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_net_113.py",
+   "case_code": "IM-NET-113",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_net_113_fec_switch"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_net_132.py",
+   "case_code": "IM-NET-132",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_net_132_rss_hash_and_table"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_per_002.py",
+   "case_code": "IM-PER-002",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_per_002_tcp_single_port_throughput"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_per_060.py",
+   "case_code": "IM-PER-060",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_per_060_tcp_cpu_efficiency"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_per_062.py",
+   "case_code": "IM-PER-062",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_per_062_gpu_nic_affinity"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_rdm_001.py",
+   "case_code": "IM-RDM-001",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_rdm_001_rocev2_deploy"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_rdm_021.py",
+   "case_code": "IM-RDM-021",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_rdm_021_single_up_pfc"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_rdm_022.py",
+   "case_code": "IM-RDM-022",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_rdm_022_dual_up_pfc_counters"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_vir_001.py",
+   "case_code": "IM-VIR-001",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_vir_001_sriov_vf_create"
+   ]
+  },
+  {
+   "path": "tests/nic/new_scripts/test_im_vir_002.py",
+   "case_code": "IM-VIR-002",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_vir_002_sriov_vf_limit"
+   ]
+  },
+  {
+   "path": "tests/nic/performance/test_im_per_057.py",
+   "case_code": "IM-PER-057",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_per_057_tcp_single_stream_baseline"
+   ]
+  },
+  {
+   "path": "tests/nic/rdma/test_im_rdm_020.py",
+   "case_code": "IM-RDM-020",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_rdm_020_rdma_device_enumeration"
+   ]
+  },
+  {
+   "path": "tests/nic/rdma/test_im_rdm_027.py",
+   "case_code": "IM-RDM-027",
+   "source": "DOCSTRING",
+   "test_functions": [
+    "test_im_rdm_027_gid_table"
+   ]
+  },
+  {
+   "path": "tests/test_config_and_plan.py",
+   "case_code": "",
+   "source": "NONE",
+   "test_functions": [
+    "test_inventory_and_run_env_load",
+    "test_plan_recorder_records_invoked_commands_and_alternative_branches",
+    "test_factory_builds_two_independent_ssh_host_and_nic_objects",
+    "test_os_adapter_registry_has_ubuntu_and_centos",
+    "test_resource_pool_denies_unlisted_device",
+    "test_same_vendor_different_models_resolve_separately",
+    "test_host_os_adapter_generates_os_specific_package_command",
+    "test_ethtool_s_counter_filter_reuses_one_statistics_payload",
+    "test_step_logging_goes_to_framework_log"
+   ]
+  }
+ ]
+}

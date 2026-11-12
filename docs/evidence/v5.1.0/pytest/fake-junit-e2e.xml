@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="0" skipped="2" tests="2" time="0.062" timestamp="2026-11-12T21:45:35.055387+08:00" hostname="Thinkbook14G5"><testcase classname="tests.nic.base.test_im_fun_020" name="test_im_fun_020_pci_device_info" time="0.031"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/home/evergreen/nic-fake-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-12 21:45:35 INFO     [nic_platform.RUN-20261112214500-fake00] 资源池选定: host=gpu01@10.202.54.101 nic=gpu01@10.202.54.101/ens17np0
+2026-11-12 21:45:35 INFO     [nic_platform.RUN-20261112214500-fake00] 资源池选定: host=gpu02@10.202.54.102 nic=gpu02@10.202.54.102/ens17np0
+2026-11-12 21:45:35 INFO     [root] [准备] 被测端=gpu01@10.202.54.101/ens17np0（资源池第1项）
+2026-11-12 21:45:35 INFO     [root] ===============步骤1. 读取目标网卡的PCI设备地址与身份信息。===============
+2026-11-12 21:45:35 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-12 21:45:35 INFO     [root] ===============步骤2. 检查PCIe链路能力LnkCap及Vendor/Device ID。===============
+2026-11-12 21:45:35 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-12 21:45:35 INFO     [root] ===============步骤3. 读取LnkSta的实际速率及链路宽度。===============
+2026-11-12 21:45:35 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-12 21:45:35 INFO     [nic_platform.RUN-20261112214500-fake00] 资源池选定: host=gpu01@10.202.54.101 nic=gpu01@10.202.54.101/ens17np0
+2026-11-12 21:45:35 INFO     [nic_platform.RUN-20261112214500-fake00] 资源池选定: host=gpu02@10.202.54.102 nic=gpu02@10.202.54.102/ens17np0
+2026-11-12 21:45:35 INFO     [root] [准备] 被测端=gpu01@10.202.54.101/ens17np0（资源池第1项）
+2026-11-12 21:45:35 INFO     [root] ===============步骤1. 读取目标网卡的PCI设备地址与身份信息。===============
+2026-11-12 21:45:35 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-12 21:45:35 INFO     [root] ===============步骤2. 检查PCIe链路能力LnkCap及Vendor/Device ID。===============
+2026-11-12 21:45:35 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-12 21:45:35 INFO     [root] ===============步骤3. 读取LnkSta的实际速率及链路宽度。===============
+2026-11-12 21:45:35 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.ethernet.test_im_net_002" name="test_im_net_002_module_ddm" time="0.002"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/home/evergreen/nic-fake-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-12 21:45:35 INFO     [root] [准备] 被测端=gpu01@10.202.54.101/ens17np0（资源池第1项）
+2026-11-12 21:45:35 INFO     [root] ===============步骤1. 读取光模块数字诊断信息，检查模块温度、电压、发送及接收光功率等实际支持的指标。===============
+2026-11-12 21:45:35 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-12 21:45:35 INFO     [root] [准备] 被测端=gpu01@10.202.54.101/ens17np0（资源池第1项）
+2026-11-12 21:45:35 INFO     [root] ===============步骤1. 读取光模块数字诊断信息，检查模块温度、电压、发送及接收光功率等实际支持的指标。===============
+2026-11-12 21:45:35 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase></testsuite></testsuites>

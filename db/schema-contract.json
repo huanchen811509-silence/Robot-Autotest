@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "expectedTables": 98,
+  "expectedTables": 101,
   "appendOnlyTables": [
     "resource_lease_history",
     "run_attempt",
@@ -31,5 +31,5 @@
     "archived_run": "archived_at",
     "release_record": "deployed_at"
   },
-  "notes": "FR-v4.2-02 同源常量：SchemaIT 与 scripts/db-audit.sh 都读这一个文件。append-only 表没有 updated_*，但必须能看出「何时发生」：要么有 created_at（createdAtRequired），要么有业务时间锚点（appendOnlyTimeColumns）；每张 append-only 表必须二选一，否则解析器判红。2026-11-11（L-49-01）补入 case_version：版本快照表全代码库无 UPDATE，属真 append-only，故走本豁免而不补 updated_*，避免逼业务写假值；其余同批入审计口径的表由 V11_43 补列。"
+  "notes": "FR-v4.2-02 同源常量：SchemaIT 与 scripts/db-audit.sh 都读这一个文件。append-only 表没有 updated_*，但必须能看出「何时发生」：要么有 created_at（createdAtRequired），要么有业务时间锚点（appendOnlyTimeColumns）；每张 append-only 表必须二选一，否则解析器判红。2026-11-11（L-49-01）补入 case_version：版本快照表全代码库无 UPDATE，属真 append-only，故走本豁免而不补 updated_*，避免逼业务写假值；其余同批入审计口径的表由 V11_43 补列。2026-11-12（v5.1.0 / W51-12）新增 pytest_case_step（pytest 步骤与命令证据），业务表 98 → 100（case_script_binding 与 pytest_case_step 各一张）；该表按 run 覆盖写（replace 先删后插），不属 append-only。 2026-11-12（v5.2.0 / W52-01）新增 nic_model_dict（型号字典），业务表 100 → 101；字典表可停用不删行，非 append-only。"
 }

@@ -61,6 +61,11 @@ public class RunExecutionService {
     /** v2.7 双内核：执行链唯一路由真源；null（旧构造/单测）时按 RF 处理，行为不变。 */
     private final com.qa.autotest.application.kernel.KernelSelector kernelSelector;
     private final com.qa.autotest.application.kernel.PytestRunAdapter pytestRuns;
+    /**
+     * v5.1.0 / W51-09：pytest 专属预检。旧构造（单测）为 null 时跳过，
+     * 此时 pytest 分支只做 {@code ExecutionPrecheck} 的通用检查——不崩、不误拦。
+     */
+    private final com.qa.autotest.application.kernel.pytest.PytestPrecheckService pytestPrecheck;
 
     public RunExecutionService(RunService runs,
                                ExecutionProperties props,
@@ -76,7 +81,35 @@ public class RunExecutionService {
                                Clock clock,
                                LeaseWaitRegistry leaseWaits) {
         this(runs, props, precheck, leases, workspaces, commands, orchestrator, artifacts,
-                results, classifier, retryPolicy, clock, leaseWaits, null, null, null, null, null);
+                results, classifier, retryPolicy, clock, leaseWaits, null, null, null, null, null,
+                null);
+    }
+
+    /**
+     * v5.0.0 的 18 参形态。保留是为了既有测试与节点侧调用不必跟着改——
+     * 多出来的 pytest 预检在这里显式传 null（等价于「不启用 pytest 专属检查」）。
+     */
+    public RunExecutionService(RunService runs,
+                               ExecutionProperties props,
+                               ExecutionPrecheck precheck,
+                               LeaseService leases,
+                               ExecutionWorkspaceMaterializer workspaces,
+                               PabotCommandBuilder commands,
+                               PabotOrchestrator orchestrator,
+                               RunArtifactRepository artifacts,
+                               TestResultWriter results,
+                               FailureClassifier classifier,
+                               RetryPolicy retryPolicy,
+                               Clock clock,
+                               LeaseWaitRegistry leaseWaits,
+                               ExecutionNodeRepository nodeRepo,
+                               NodeChannel nodeChannel,
+                               com.fasterxml.jackson.databind.ObjectMapper objectMapper,
+                               com.qa.autotest.application.kernel.KernelSelector kernelSelector,
+                               com.qa.autotest.application.kernel.PytestRunAdapter pytestRuns) {
+        this(runs, props, precheck, leases, workspaces, commands, orchestrator, artifacts,
+                results, classifier, retryPolicy, clock, leaseWaits, nodeRepo, nodeChannel,
+                objectMapper, kernelSelector, pytestRuns, null);
     }
 
     @org.springframework.beans.factory.annotation.Autowired
@@ -97,7 +130,9 @@ public class RunExecutionService {
                                NodeChannel nodeChannel,
                                com.fasterxml.jackson.databind.ObjectMapper objectMapper,
                                com.qa.autotest.application.kernel.KernelSelector kernelSelector,
-                               com.qa.autotest.application.kernel.PytestRunAdapter pytestRuns) {
+                               com.qa.autotest.application.kernel.PytestRunAdapter pytestRuns,
+                               com.qa.autotest.application.kernel.pytest.PytestPrecheckService
+                                       pytestPrecheck) {
         this.runs = runs;
         this.props = props;
         this.precheck = precheck;
@@ -117,6 +152,7 @@ public class RunExecutionService {
                 ? new com.fasterxml.jackson.databind.ObjectMapper() : objectMapper;
         this.kernelSelector = kernelSelector;
         this.pytestRuns = pytestRuns;
+        this.pytestPrecheck = pytestPrecheck;
     }
 
     public RunRecord execute(RunService.CreateRunCommand cmd) {
@@ -214,15 +250,7 @@ public class RunExecutionService {
         }
 
         List<ExecutionPrecheck.Violation> violations = precheck.check(
-                new ExecutionPrecheck.PrecheckRequest(
-                        ExecutionPaths.resolve(props.getVenvBin()),
-                        artifactsRoot,
-                        cmd.suitePaths(),
-                        cmd.concurrency(),
-                        props.getAvailablePorts(),
-                        props.getMinFreeBytes(),
-                        props.getPabotVersionPrefix(),
-                        List.of()));
+                precheckRequest(created, cmd, kernel, artifactsRoot));
         if (!violations.isEmpty()) {
             String reason = "precheck_" + violations.get(0).code().toLowerCase();
             String message = violations.stream()
@@ -352,6 +380,50 @@ public class RunExecutionService {
             keys.add("run:" + runId);
         }
         return keys;
+    }
+
+    /**
+     * 预检请求按内核分派（v5.1.0 / W51-09 / 冲突 C-3）。
+     *
+     * <p>RF 分支保持 v5.0.0 的 8 参形态逐字不变；pytest 分支补齐解释器、契约与未绑定三项，
+     * 并且**不再检查 pabot**——pytest 工程没有 pabot 是正常的，拿它拦人等于永远跑不起来。
+     */
+    private ExecutionPrecheck.PrecheckRequest precheckRequest(
+            RunRecord created, RunService.CreateRunCommand cmd, String kernel, Path artifactsRoot) {
+        boolean pytest = com.qa.autotest.application.kernel.PytestKernel.NAME.equals(kernel);
+        if (!pytest) {
+            return new ExecutionPrecheck.PrecheckRequest(
+                    ExecutionPaths.resolve(props.getVenvBin()),
+                    artifactsRoot,
+                    cmd.suitePaths(),
+                    cmd.concurrency(),
+                    props.getAvailablePorts(),
+                    props.getMinFreeBytes(),
+                    props.getPabotVersionPrefix(),
+                    List.of());
+        }
+        java.util.List<String> hostKeys = cmd.deviceKeys() == null
+                ? List.of() : cmd.deviceKeys();
+        com.qa.autotest.application.kernel.pytest.PytestPrecheckService.PytestContext ctx =
+                pytestPrecheck == null
+                        ? new com.qa.autotest.application.kernel.pytest.PytestPrecheckService
+                        .PytestContext(null, List.of(), List.of(), List.of())
+                        : pytestPrecheck.inspectByNodeIds(created.projectId(),
+                        cmd.suitePaths() == null ? List.of() : cmd.suitePaths(), hostKeys);
+        return new ExecutionPrecheck.PrecheckRequest(
+                ExecutionPaths.resolve(props.getVenvBin()),
+                artifactsRoot,
+                cmd.suitePaths(),
+                cmd.concurrency(),
+                props.getAvailablePorts(),
+                props.getMinFreeBytes(),
+                props.getPabotVersionPrefix(),
+                ctx.deviceProblems(),
+                com.qa.autotest.application.kernel.PytestKernel.NAME,
+                ctx.pythonBin(),
+                ctx.contractMissing(),
+                ctx.unboundCodes(),
+                ctx.pythonVersionProblem());
     }
 
     private RunRecord fail(RunRecord created, String reason, String message) {

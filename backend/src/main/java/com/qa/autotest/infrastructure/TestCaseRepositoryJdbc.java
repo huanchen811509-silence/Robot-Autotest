@@ -351,6 +351,35 @@ public class TestCaseRepositoryJdbc implements TestCaseRepository {
     }
 
     @Override
+    public List<String> listCaseCodes(long projectId) {
+        String sql = "SELECT case_code FROM test_case WHERE project_id = ? ORDER BY case_code";
+        TenantGuard.requireProjectScope(sql, "test_case");
+        return jdbc.queryForList(sql, String.class, projectId);
+    }
+
+    @Override
+    public java.util.Map<Long, String> idToCode(long projectId) {
+        String sql = "SELECT id, case_code FROM test_case WHERE project_id = ?";
+        TenantGuard.requireProjectScope(sql, "test_case");
+        java.util.Map<Long, String> result = new java.util.LinkedHashMap<>();
+        jdbc.query(sql, rs -> {
+            result.put(rs.getLong("id"), rs.getString("case_code"));
+        }, projectId);
+        return result;
+    }
+
+    @Override
+    public java.util.Map<String, String> casePriorities(long projectId) {
+        String sql = "SELECT case_code, priority FROM test_case WHERE project_id = ?";
+        TenantGuard.requireProjectScope(sql, "test_case");
+        java.util.Map<String, String> result = new java.util.LinkedHashMap<>();
+        jdbc.query(sql, rs -> {
+            result.put(rs.getString("case_code"), rs.getString("priority"));
+        }, projectId);
+        return result;
+    }
+
+    @Override
     public List<CapabilityStat> capabilities(long projectId) {
         // 空白串在库里既不等于 NULL 也不等于 ''，会被当成能力桶渲染出空标签，故按 trim 后判空
         String sql = """

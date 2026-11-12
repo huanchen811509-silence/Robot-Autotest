@@ -112,9 +112,17 @@ public class ProjectService {
             throw new BusinessException(ErrorCode.CONFLICT, "项目编码已存在：" + code);
         }
         long ownerId = TenantContext.requireUserId();
+        // 类型先校验再落库：拼错的 kind 存进去会变成一个所有分支都不认的工程
+        // （菜单树、执行分派、覆盖率口径全按 kind 分支），比建失败难查得多。
+        String kindCode;
+        try {
+            kindCode = com.qa.autotest.domain.project.ProjectKind.of(kind).code();
+        } catch (IllegalArgumentException e) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT, e.getMessage());
+        }
         long id = projects.insert(new Project(null, code.trim(), name, description, true,
                 ownerId, visibility == null || visibility.isBlank() ? "private" : visibility,
-                normalizeKernel(testKernel), kind == null ? "standard" : kind, null));
+                normalizeKernel(testKernel), kindCode, null));
         projects.addMember(id, ownerId, RoleCode.ADMIN.code(), ownerId);
         syncKernelSetting(id, normalizeKernel(testKernel));
         audit.recordChange("project:create", "project", String.valueOf(id), null,

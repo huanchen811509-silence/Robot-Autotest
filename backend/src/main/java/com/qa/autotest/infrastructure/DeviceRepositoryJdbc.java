@@ -25,8 +25,27 @@ public class DeviceRepositoryJdbc implements DeviceRepository {
     private static final String SELECT = """
             SELECT d.id, d.project_id, d.name, d.device_type, d.model, d.vendor, d.serial_no,
                    d.management_ip, d.location, d.rack_no, d.domain_tag, d.status, d.owner_id,
-                   d.last_checked_at
+                   d.last_checked_at, d.host_key, d.os_family, d.os_version, d.architecture,
+                   d.ssh_port
               FROM device d
+            """;
+
+    /**
+     * 端口读列（v5.1.0 / W51-03）。抽成常量是为了让三处端口查询
+     * （ports / portsOfVisibleDevices / findPort）共用一份列清单——
+     * 之前三处各自内联，加字段时漏一处就会在某个入口返回 null，排查成本极高。
+     *
+     * <p>`pci_device_id` 是 inventory 的 PCI Device ID（V11_46 里刻意带 pci_ 前缀），
+     * 与第 2 列的 `device_id`（所属设备外键）是两个完全不同的东西。
+     */
+    private static final String PORT_COLUMNS = """
+            dp.id, dp.device_id, dp.port_name, dp.port_type, dp.protocol, dp.mac_address,
+                   dp.speed_gbps, dp.mtu, dp.ip_address, dp.port_status, dp.nic_name,
+                   dp.nic_index, dp.nic_vendor, dp.nic_manufacturer, dp.nic_model,
+                   dp.nic_form_factor, dp.pci_bdf, dp.vendor_id,
+                   dp.pci_device_id, dp.driver, dp.firmware, dp.rdma_device,
+                   dp.nic_port, dp.numa_node, dp.nic_role, dp.capabilities_json,
+                   dp.counter_patterns_json
             """;
 
     private static final RowMapper<Device> MAPPER = (rs, rowNum) -> new Device(
@@ -35,7 +54,10 @@ public class DeviceRepositoryJdbc implements DeviceRepository {
             rs.getString("serial_no"), rs.getString("management_ip"), rs.getString("location"),
             rs.getString("rack_no"), rs.getString("domain_tag"), rs.getInt("status") == 1,
             rs.getObject("owner_id") == null ? null : rs.getLong("owner_id"),
-            JdbcSupport.instant(rs.getTimestamp("last_checked_at")));
+            JdbcSupport.instant(rs.getTimestamp("last_checked_at")),
+            rs.getString("host_key"), rs.getString("os_family"), rs.getString("os_version"),
+            rs.getString("architecture"),
+            rs.getObject("ssh_port") == null ? null : rs.getInt("ssh_port"));
 
     private static final RowMapper<DevicePort> PORT_MAPPER = (rs, rowNum) -> new DevicePort(
             rs.getLong("id"), rs.getLong("device_id"), rs.getString("port_name"),
@@ -44,7 +66,15 @@ public class DeviceRepositoryJdbc implements DeviceRepository {
             rs.getObject("mtu") == null ? null : rs.getInt("mtu"),
             rs.getString("ip_address"), rs.getString("port_status"),
             rs.getString("nic_name"),
-            rs.getObject("nic_index") == null ? null : rs.getInt("nic_index"));
+            rs.getObject("nic_index") == null ? null : rs.getInt("nic_index"),
+            rs.getString("nic_vendor"), rs.getString("nic_manufacturer"),
+            rs.getString("nic_model"), rs.getString("nic_form_factor"), rs.getString("pci_bdf"),
+            rs.getString("vendor_id"), rs.getString("pci_device_id"), rs.getString("driver"),
+            rs.getString("firmware"), rs.getString("rdma_device"),
+            rs.getObject("nic_port") == null ? null : rs.getInt("nic_port"),
+            rs.getObject("numa_node") == null ? null : rs.getInt("numa_node"),
+            rs.getString("nic_role"), rs.getString("capabilities_json"),
+            rs.getString("counter_patterns_json"));
 
     private final JdbcTemplate jdbc;
 
@@ -100,8 +130,9 @@ public class DeviceRepositoryJdbc implements DeviceRepository {
             PreparedStatement ps = connection.prepareStatement("""
                     INSERT INTO device
                       (project_id, name, device_type, model, vendor, serial_no, management_ip,
-                       location, rack_no, domain_tag, status, owner_id, created_by, updated_by)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                       location, rack_no, domain_tag, status, owner_id, created_by, updated_by,
+                       host_key, os_family, os_version, architecture, ssh_port)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """, Statement.RETURN_GENERATED_KEYS);
             ps.setLong(1, device.projectId());
             ps.setString(2, device.name());
@@ -117,6 +148,11 @@ public class DeviceRepositoryJdbc implements DeviceRepository {
             ps.setObject(12, device.ownerId(), java.sql.Types.BIGINT);
             ps.setObject(13, operatorId, java.sql.Types.BIGINT);
             ps.setObject(14, operatorId, java.sql.Types.BIGINT);
+            ps.setString(15, device.hostKey());
+            ps.setString(16, device.osFamily());
+            ps.setString(17, device.osVersion());
+            ps.setString(18, device.architecture());
+            ps.setObject(19, device.sshPort(), java.sql.Types.INTEGER);
             return ps;
         }, keyHolder);
         return keyHolder.getKey() == null ? 0 : keyHolder.getKey().longValue();
@@ -127,14 +163,16 @@ public class DeviceRepositoryJdbc implements DeviceRepository {
         String sql = """
                 UPDATE device SET name = ?, device_type = ?, model = ?, vendor = ?, serial_no = ?,
                        management_ip = ?, location = ?, rack_no = ?, domain_tag = ?, status = ?,
-                       owner_id = ?, updated_by = ?
+                       owner_id = ?, updated_by = ?, host_key = ?, os_family = ?, os_version = ?,
+                       architecture = ?, ssh_port = ?
                  WHERE project_id = ? AND id = ?
                 """;
         TenantGuard.requireProjectScope(sql, "device");
         jdbc.update(sql, device.name(), device.deviceType(), device.model(), device.vendor(),
                 device.serialNo(), device.managementIp(), device.location(), device.rackNo(),
                 device.domainTag(), device.enabled() ? 1 : 0, device.ownerId(), operatorId,
-                device.projectId(), device.id());
+                device.hostKey(), device.osFamily(), device.osVersion(), device.architecture(),
+                device.sshPort(), device.projectId(), device.id());
     }
 
     @Override
@@ -164,10 +202,7 @@ public class DeviceRepositoryJdbc implements DeviceRepository {
 
     @Override
     public List<DevicePort> ports(long projectId, long deviceId) {
-        String sql = """
-                SELECT dp.id, dp.device_id, dp.port_name, dp.port_type, dp.protocol, dp.mac_address,
-                       dp.speed_gbps, dp.mtu, dp.ip_address, dp.port_status, dp.nic_name,
-                       dp.nic_index
+        String sql = "SELECT " + PORT_COLUMNS + """
                   FROM device_port dp JOIN device d ON d.id = dp.device_id
                 """ + AssetScopeSql.DEVICE_JOIN + AssetScopeSql.DEVICE_WHERE
                 + " AND dp.device_id = ? ORDER BY dp.id";
@@ -177,10 +212,7 @@ public class DeviceRepositoryJdbc implements DeviceRepository {
 
     @Override
     public List<DevicePort> portsOfVisibleDevices(long projectId) {
-        String sql = """
-                SELECT dp.id, dp.device_id, dp.port_name, dp.port_type, dp.protocol, dp.mac_address,
-                       dp.speed_gbps, dp.mtu, dp.ip_address, dp.port_status, dp.nic_name,
-                       dp.nic_index
+        String sql = "SELECT " + PORT_COLUMNS + """
                   FROM device_port dp JOIN device d ON d.id = dp.device_id
                 """ + AssetScopeSql.DEVICE_JOIN + AssetScopeSql.DEVICE_WHERE
                 + " ORDER BY dp.device_id, dp.nic_index, dp.nic_name, dp.id";
@@ -198,10 +230,7 @@ public class DeviceRepositoryJdbc implements DeviceRepository {
 
     @Override
     public Optional<DevicePort> findPort(long projectId, long portId) {
-        String sql = """
-                SELECT dp.id, dp.device_id, dp.port_name, dp.port_type, dp.protocol, dp.mac_address,
-                       dp.speed_gbps, dp.mtu, dp.ip_address, dp.port_status, dp.nic_name,
-                       dp.nic_index
+        String sql = "SELECT " + PORT_COLUMNS + """
                   FROM device_port dp JOIN device d ON d.id = dp.device_id
                 """ + AssetScopeSql.DEVICE_JOIN + AssetScopeSql.DEVICE_WHERE + " AND dp.id = ?";
         TenantGuard.requireProjectScope(sql, "device_port");
@@ -215,8 +244,12 @@ public class DeviceRepositoryJdbc implements DeviceRepository {
             PreparedStatement ps = connection.prepareStatement("""
                     INSERT INTO device_port
                       (device_id, port_name, port_type, protocol, mac_address, speed_gbps, mtu,
-                       ip_address, port_status, nic_name, nic_index, created_by, updated_by)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                       ip_address, port_status, nic_name, nic_index, created_by, updated_by,
+                       nic_vendor, nic_manufacturer, nic_model, nic_form_factor, pci_bdf,
+                       vendor_id, pci_device_id, driver, firmware, rdma_device, nic_port,
+                       numa_node, nic_role, capabilities_json, counter_patterns_json)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """, Statement.RETURN_GENERATED_KEYS);
             ps.setLong(1, port.deviceId());
             ps.setString(2, port.portName());
@@ -231,6 +264,22 @@ public class DeviceRepositoryJdbc implements DeviceRepository {
             ps.setObject(11, port.nicIndex(), java.sql.Types.INTEGER);
             ps.setObject(12, operatorId, java.sql.Types.BIGINT);
             ps.setObject(13, operatorId, java.sql.Types.BIGINT);
+            ps.setString(14, port.nicVendor());
+            ps.setString(15, port.nicManufacturer());
+            ps.setString(16, port.nicModel());
+            ps.setString(17, port.nicFormFactor());
+            ps.setString(18, port.pciBdf());
+            ps.setString(19, port.vendorId());
+            // 第 20 列是 PCI Device ID，与第 1 列的「所属设备外键」同名不同义。
+            ps.setString(20, port.pciDeviceId());
+            ps.setString(21, port.driver());
+            ps.setString(22, port.firmware());
+            ps.setString(23, port.rdmaDevice());
+            ps.setObject(24, port.nicPort(), java.sql.Types.INTEGER);
+            ps.setObject(25, port.numaNode(), java.sql.Types.INTEGER);
+            ps.setString(26, port.nicRole());
+            ps.setString(27, port.capabilitiesJson());
+            ps.setString(28, port.counterPatternsJson());
             return ps;
         }, keyHolder);
         return keyHolder.getKey() == null ? 0 : keyHolder.getKey().longValue();
@@ -241,13 +290,21 @@ public class DeviceRepositoryJdbc implements DeviceRepository {
         String sql = """
                 UPDATE device_port SET port_name = ?, port_type = ?, protocol = ?, mac_address = ?,
                        speed_gbps = ?, mtu = ?, ip_address = ?, port_status = ?, nic_name = ?,
-                       nic_index = ?, updated_by = ?
+                       nic_index = ?, updated_by = ?, nic_vendor = ?, nic_manufacturer = ?,
+                       nic_model = ?, nic_form_factor = ?, pci_bdf = ?, vendor_id = ?,
+                       pci_device_id = ?, driver = ?, firmware = ?, rdma_device = ?, nic_port = ?,
+                       numa_node = ?, nic_role = ?, capabilities_json = ?,
+                       counter_patterns_json = ?
                  WHERE id = ? AND device_id IN (SELECT id FROM device WHERE project_id = ?)
                 """;
         TenantGuard.requireProjectScope(sql, "device_port");
         jdbc.update(sql, port.portName(), port.portType(), port.protocol(), port.macAddress(),
                 port.speedGbps(), port.mtu(), port.ipAddress(), port.portStatus(), port.nicName(),
-                port.nicIndex(), operatorId, port.id(), projectId);
+                port.nicIndex(), operatorId, port.nicVendor(), port.nicManufacturer(),
+                port.nicModel(), port.nicFormFactor(), port.pciBdf(), port.vendorId(),
+                port.pciDeviceId(), port.driver(), port.firmware(), port.rdmaDevice(),
+                port.nicPort(), port.numaNode(), port.nicRole(), port.capabilitiesJson(),
+                port.counterPatternsJson(), port.id(), projectId);
     }
 
     @Override

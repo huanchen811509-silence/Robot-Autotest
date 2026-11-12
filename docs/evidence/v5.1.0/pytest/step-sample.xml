@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  金样例：W51-12 步骤证据解析的固定输入（门禁第 38 步交叉验证用）。
+
+  不是手写臆造：每条日志行的形状都照抄自真实产物——
+   · `[明细] <标签>：<取值>`       ← tests/conftest.py StepReporter.check 的 details 分支
+   · `[判定] <标签>：通过`         ← verdict.passed 分支
+   · `[判定] <标签>：不通过（原因）` ← verdict 失败分支
+   · `[明细] <标签>：Plan-only …跳过` ← Plan-only 分支
+   · 日志写在 <system-err> 里，因为框架的 logging.StreamHandler() 默认输出到 stderr，
+     pytest 在 xunit2 下把 capstderr 放进 <system-err>（只读 system-out 会一条都拿不到）。
+-->
+<testsuites>
+  <testsuite name="pytest" errors="1" failures="1" skipped="0" tests="2" time="3.6">
+    <testcase classname="tests.nic.base.test_im_fun_020" name="test_im_fun_020" time="2.4">
+      <system-out>2026-11-12 21:00:00 INFO     [root] 资源池选定: host=gpu01@10.202.54.101 nic=ens17np0</system-out>
+      <system-err>2026-11-12 21:00:01 INFO     [root] [明细] 读取链路状态：LnkSta=8GT/s x8
+2026-11-12 21:00:01 INFO     [root] [判定] 读取链路状态：通过
+2026-11-12 21:00:02 INFO     [root] [明细] 校验速率：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-12 21:00:02 INFO     [root] [判定] 校验速率：不通过（期望 16GT/s，实测 8GT/s）</system-err>
+      <failure message="校验速率：期望 16GT/s，实测 8GT/s">tests/nic/base/test_im_fun_020.py:88: AssertionError</failure>
+    </testcase>
+    <testcase classname="tests.nic.ethernet.test_im_net_131" name="test_im_net_131[vf0]" time="1.2">
+      <system-err>2026-11-12 21:00:04 INFO     [root] [明细] PCI BDF=0000:31:00.0
+2026-11-12 21:00:04 INFO     [root] [明细] Vendor/Device ID=1af4:1000（规格基线 1af4:1000）</system-err>
+    </testcase>
+  </testsuite>
+</testsuites>

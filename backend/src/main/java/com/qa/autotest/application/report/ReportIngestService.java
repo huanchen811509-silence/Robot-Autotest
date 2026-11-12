@@ -52,13 +52,14 @@ public class ReportIngestService {
     private final com.qa.autotest.application.kernel.PytestKernel pytestKernel;
     /** v3.9.0 FR-v3.9-03：pytest 用例日志落盘；旧构造为 null → 不生成日志（RF 不受影响）。 */
     private final PytestLogPersister pytestLogs;
+    private final com.qa.autotest.application.kernel.pytest.PytestResultNormalizer pytestNormalizer;
 
     public ReportIngestService(RunRepository runs,
                                RunArtifactRepository artifacts,
                                ReportRepository reports,
                                AccessControlService access,
                                OutputXmlParser parser) {
-        this(runs, artifacts, reports, access, parser, null, null, null, null);
+        this(runs, artifacts, reports, access, parser, null, null, null, null, null);
     }
 
     public ReportIngestService(RunRepository runs,
@@ -67,7 +68,21 @@ public class ReportIngestService {
                                AccessControlService access,
                                OutputXmlParser parser,
                                CiTriggerRepository ciTriggers) {
-        this(runs, artifacts, reports, access, parser, ciTriggers, null, null, null);
+        this(runs, artifacts, reports, access, parser, ciTriggers, null, null, null, null);
+    }
+
+    /** v5.0.0 的 9 参形态：pytest 编号回填不启用（报告仍显示 nodeid，行为与旧版一致）。 */
+    public ReportIngestService(RunRepository runs,
+                               RunArtifactRepository artifacts,
+                               ReportRepository reports,
+                               AccessControlService access,
+                               OutputXmlParser parser,
+                               CiTriggerRepository ciTriggers,
+                               RunMetadataRepository runMetadata,
+                               com.qa.autotest.application.kernel.PytestKernel pytestKernel,
+                               PytestLogPersister pytestLogs) {
+        this(runs, artifacts, reports, access, parser, ciTriggers, runMetadata, pytestKernel,
+                pytestLogs, null);
     }
 
     @Autowired
@@ -79,7 +94,9 @@ public class ReportIngestService {
                                CiTriggerRepository ciTriggers,
                                RunMetadataRepository runMetadata,
                                com.qa.autotest.application.kernel.PytestKernel pytestKernel,
-                               PytestLogPersister pytestLogs) {
+                               PytestLogPersister pytestLogs,
+                               com.qa.autotest.application.kernel.pytest.PytestResultNormalizer
+                                       pytestNormalizer) {
         this.runs = runs;
         this.artifacts = artifacts;
         this.reports = reports;
@@ -88,6 +105,7 @@ public class ReportIngestService {
         this.ciTriggers = ciTriggers;
         this.runMetadata = runMetadata;
         this.pytestKernel = pytestKernel;
+        this.pytestNormalizer = pytestNormalizer;
         this.pytestLogs = pytestLogs;
     }
 
@@ -158,6 +176,10 @@ public class ReportIngestService {
                 : pytestLogs.persist(artifactDir);
         com.qa.autotest.domain.kernel.NormalizedRun normalized =
                 pytestKernel.normalize(artifactDir, run.runId());
+        // v5.1.0 / W51-07：nodeid → 用例库编号（GAP-09）。报告页要显示 IM-NET-131，
+        // 而不是 test_im_net_131[param]；匹配键与结果归一共用一套（见 matchKey）。
+        java.util.Map<String, String> codeIndex = pytestNormalizer == null
+                ? java.util.Map.of() : pytestNormalizer.caseCodeIndex(projectId);
         java.util.List<com.qa.autotest.domain.report.CaseNode> cases = new java.util.ArrayList<>();
         int pass = 0;
         int fail = 0;
@@ -173,7 +195,8 @@ public class ReportIngestService {
                     ? item.message() == null ? "pytest: " + item.status() : item.message()
                     : null;
             // v3.9.0 / FR-v3.9-02：命令三列随用例一起入库，报告页才有「下发了什么」可看。
-            cases.add(new com.qa.autotest.domain.report.CaseNode(item.name(), status,
+            cases.add(new com.qa.autotest.domain.report.CaseNode(
+                    displayName(item.nodeId(), item.name(), codeIndex), status,
                     Math.round(item.durationSeconds() * 1000.0), message,
                     java.util.List.of(), spans.offsetOf(item.nodeId()), spans.spanOf(item.nodeId()),
                     item.commandText(), item.commandSource(), item.commandExitCode()));
@@ -183,6 +206,26 @@ public class ReportIngestService {
                 new com.qa.autotest.domain.report.SuiteNode("run-" + run.runId(), rootStatus,
                         normalized.metadata(), java.util.List.of(), cases);
         return new ParsedReport(root, normalized.metadata(), pass, fail, skip);
+    }
+
+    /**
+     * 报告里显示的用例名：命中绑定就用库编号，未命中退回 nodeid。
+     *
+     * <p>退回而不是留空：未绑定的用例仍要能在报告里被看见（它是「缺口证据」），
+     * 只是显示成 nodeid，配合 {@code unbound} 计数让人知道哪些还没接上。
+     */
+    private static String displayName(String nodeId, String fallback,
+                                      java.util.Map<String, String> codeIndex) {
+        if (codeIndex.isEmpty() || nodeId == null || nodeId.isBlank()) {
+            return fallback;
+        }
+        int idx = nodeId.lastIndexOf("::");
+        String prefix = idx < 0 ? nodeId : nodeId.substring(0, idx);
+        String func = idx < 0 ? "" : nodeId.substring(idx + 2);
+        String code = codeIndex.get(
+                com.qa.autotest.application.kernel.pytest.PytestResultNormalizer
+                        .matchKey(prefix, func));
+        return code == null || code.isBlank() ? fallback : code;
     }
 
     /** pytest 产物目录：run_artifact(kind=pytest_report_json) → artifactsDir/kernel-pytest-0。 */

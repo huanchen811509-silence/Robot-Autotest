@@ -362,6 +362,15 @@ run 34 ux_regression  "node scripts/ux-regression.mjs"
 run 35 v50_trace      "python3 tools/check_v50_static.py"
 run 36 v50_evidence   "python3 tools/check_v50_evidence.py"
 
+# 37~40 v5.1.0 新增机检（开发计划 §4：只增不删，插序紧接 36 之后）。
+# 37 环境渲染契约；38 结果归一的点分/斜杠匹配键；39 适配层可移除解耦；
+# 40 用例↔脚本绑定覆盖率（含 D12 双口径并列）。
+# 每一步都有 --self-check 真注入自证，跳过式自检不算。
+run 37 pytest_env_render "python3 tools/check_pytest_env_render.py"
+run 38 pytest_artifact   "python3 tools/check_pytest_artifact.py"
+run 39 kernel_decoupling "python3 tools/check_kernel_decoupling.py"
+run 40 pytest_binding    "python3 tools/check_pytest_binding.py"
+
 printf '\nGATES_RESULT FAILS=%s\n' "$FAILS"
 
 exit "$FAILS"
