@@ -123,4 +123,12 @@ public class PytestProjectController {
         access.requireProjectAccess(projectId);
         return ApiResponse.ok(evidence.list(projectId, runId));
     }
+
+    /** 逐用例归因五层（FR-v5.2-06）：只读已入库证据，可复算。 */
+    @GetMapping("/runs/{runId}/attribution")
+    public ApiResponse<List<PytestEvidenceService.CaseAttribution>> attribution(
+            @PathVariable long projectId, @PathVariable String runId) {
+        access.requireProjectAccess(projectId);
+        return ApiResponse.ok(evidence.attribute(projectId, runId));
+    }
 }

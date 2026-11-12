@@ -164,6 +164,77 @@ public class PytestEvidenceService {
     }
 
     /**
+     * 逐用例归因（W52-09 / FR-v5.2-06）。
+     *
+     * <p>只用**已入库的证据**，不重新读盘：归因结果要能复算，而磁盘上的产物会被归档/清理。
+     * 分类由 {@code FailureAttributor} 的确定性规则给出，不调 AI——分类要进统计与环境分流，
+     * 每天漂一点的指标没有意义。
+     */
+    public List<CaseAttribution> attribute(long projectId, String runId) {
+        return attribute(list(projectId, runId));
+    }
+
+    /**
+     * 纯函数部分：证据行 → 归因。抽出来是为了能用手造的证据行直接测，
+     * 不必搭 RunRepository / JdbcTemplate 的桩——分组逻辑最容易写错，
+     * 而它恰恰不需要数据库才能验证。
+     */
+    public static List<CaseAttribution> attribute(List<PytestCaseStep> rows) {
+        Map<String, List<PytestCaseStep>> grouped = new LinkedHashMap<>();
+        if (rows != null) {
+            for (PytestCaseStep row : rows) {
+                grouped.computeIfAbsent(row.nodeId(), key -> new ArrayList<>()).add(row);
+            }
+        }
+        List<CaseAttribution> result = new ArrayList<>();
+        for (Map.Entry<String, List<PytestCaseStep>> entry : grouped.entrySet()) {
+            List<PytestCaseStep> caseSteps = entry.getValue();
+            boolean anyFail = caseSteps.stream().anyMatch(s -> STATUS_FAIL.equals(s.status()));
+            boolean allSkip = !caseSteps.isEmpty() && caseSteps.stream()
+                    .filter(s -> s.status() != null)
+                    .allMatch(s -> "SKIP".equals(s.status()));
+            String verdict = anyFail ? "FAIL" : allSkip ? "SKIP" : "PASS";
+            // 失败原文优先取 FAILURE 行（junit 的 failure message），其次取 FAIL 判定行。
+            String message = lastContent(caseSteps, PytestStepExtractor.KIND_FAILURE);
+            if (message == null) {
+                message = lastContent(caseSteps, PytestStepExtractor.KIND_VERDICT);
+            }
+            // 传「全部步骤内容」而不是只传失败步：Plan-only 的判据（步骤里有没有 plan-only 字样）
+            // 恰恰落在 SKIP 明细行上，只过滤失败步就永远看不到它。
+            List<String> stepContents = caseSteps.stream()
+                    .map(PytestCaseStep::content)
+                    .filter(content -> content != null && !content.isBlank())
+                    .toList();
+            com.qa.autotest.application.report.FailureAttributor.Attribution attribution =
+                    com.qa.autotest.application.report.FailureAttributor.of(
+                            "pytest", verdict, message, stepContents);
+            result.add(new CaseAttribution(entry.getKey(), caseSteps.get(0).caseKey(), verdict,
+                    attribution));
+        }
+        return List.copyOf(result);
+    }
+
+    /** 单用例归因结果：nodeId + 用例库编号 + 结论 + 五层。 */
+    public record CaseAttribution(String nodeId,
+                                  String caseKey,
+                                  String verdict,
+                                  com.qa.autotest.application.report.FailureAttributor.Attribution
+                                          attribution) {
+    }
+
+    private static final String STATUS_FAIL = "FAIL";
+
+    private static String lastContent(List<PytestCaseStep> steps, String kind) {
+        String found = null;
+        for (PytestCaseStep step : steps) {
+            if (kind.equals(step.kind()) && step.content() != null && !step.content().isBlank()) {
+                found = step.content();
+            }
+        }
+        return found;
+    }
+
+    /**
      * junit 文件定位：{@code run.artifacts_dir} 下的 {@code junit*.xml}。
      *
      * <p>按文件名自然序（{@code junit.xml} / {@code junit-0.xml} / {@code junit-1.xml}），
