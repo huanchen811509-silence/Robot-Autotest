@@ -1,0 +1,36 @@
+{
+  "schema": "RA-DORA-TREND-V50",
+  "captured_at": "2026-11-12",
+  "mode": "approximate",
+  "note": "DORA 2025：只做自身趋势线，取消 Elite/High/Medium/Low 分级，不设考核",
+  "metrics": {
+    "deployment_frequency": {
+      "value": 23,
+      "unit": "versions_in_changelog",
+      "approx": true
+    },
+    "lead_time_for_changes": {
+      "value": null,
+      "unit": "days",
+      "approx": true,
+      "reason": "无逐变更部署时点，不给估算"
+    },
+    "change_failure_rate": {
+      "value": null,
+      "unit": "ratio",
+      "approx": true,
+      "reason": "门禁 FAILS=1 不能折算变更失败率"
+    },
+    "time_to_restore": {
+      "value": null,
+      "unit": "hours",
+      "approx": true,
+      "reason": "RTO 未计时（docs/ROLLBACK.md）"
+    }
+  },
+  "sample": {
+    "commits": 186,
+    "span_days": 9,
+    "gate_fails": 1
+  }
+}

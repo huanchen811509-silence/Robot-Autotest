@@ -1,0 +1,14 @@
+{
+  "schema": "RA-AI-EVAL-V2",
+  "version": "2.0-template",
+  "status": "NOT-RUN",
+  "reason": "D6 裁定本版不授权真实端点评测",
+  "golden_set_size": 100,
+  "evaluated": 0,
+  "facts_consistent": null,
+  "cases": [],
+  "endpoint": null,
+  "credentials": null,
+  "mode": "not_measured",
+  "captured_at": "2026-11-12"
+}

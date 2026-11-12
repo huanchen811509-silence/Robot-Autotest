@@ -3,10 +3,10 @@
 **对应需求** FR-v1.0-13 / FR-v1.0-14 / FR-v1.0-15 ｜ **配套脚本** `scripts/rollback.sh`、`scripts/window-stats.sql`（运行统计）
 
 > **两种形态必须分清，不要混用命令：**
-> - **D = Windows 开发态**：本机 `E:\workspace\自动化测试\Robot-Autotest`，后端 jar 跑在 8081、Vite 跑在 5173、MySQL 在 WSL `Ubuntu-24.04`（Windows 经 `127.0.0.1:3306` 访问）。这是**今天实际在跑**的形态。
-> - **P = 本地 WSL 常驻态**：本地 WSL Ubuntu + systemd **用户级** unit。本产品尚未在本地 WSL 部署；下面的 unit 名与路径是**部署约定值**，首次部署后必须按实际值回填本手册。端口默认 **8081**（`application-prod.yml` 的 `${SERVER_PORT:8081}`），不要改回 8080。
+> - **D = Windows 开发态**：本机 `E:\workspace\自动化测试\Robot-Autotest`，后端 jar 跑在 8081、Vite 跑在 5173、MySQL 在 WSL `Ubuntu-24.04`（Windows 经 `127.0.0.1:3306` 访问）。这是**历史记录**的开发形态，现以 P 形态为主。
+> - **P = 本地 WSL 常驻态**：本地 WSL Ubuntu + systemd **用户级** unit。已于 2026-11-12 部署并复核，unit 名、路径与端口见 §1.2（按 `systemctl --user cat` 实读回填）。后端端口 **8081**（`application-prod.yml` 的 `${SERVER_PORT:8081}`），统一入口 **8001**，不要改回 8080。
 >
-> **验证状态（2026-11-03）**：D 的命令已在本机逐条只读执行过；P 的命令**未在本地 WSL 执行**，属待人工验证项。
+> **验证状态（2026-11-03 / 2026-11-12 复核）**：D 的命令已在本机逐条只读执行过；P 形态三个 unit（`robot-autotest-backend` / `robot-autotest-entry` / `robot-autotest-frontend`）均 `active running`，`Linger=yes`，本节命令已在 WSL 实测。
 > **禁止**把 D 的 `java -jar` / `npm run dev` 当成生产启动方式；也禁止把 P 的 `systemctl` 命令拿到 Windows 上跑。
 
 ---
@@ -30,22 +30,26 @@ Get-NetTCPConnection -State Listen -LocalPort 8081, 5173 |
     Select-Object LocalAddress, LocalPort, OwningProcess
 ```
 
-### 1.2 P 形态（本地 WSL 常驻态，部署约定）
+### 1.2 P 形态（本地 WSL 常驻态，2026-11-12 实测回填）
 
-| 服务 | 端口 | systemd 用户 unit | 关键路径 |
+| 服务 | 端口 | systemd 用户 unit | 关键路径 / 启动命令 |
 |---|---:|---|---|
-| 后端 Spring Boot（API） | `${SERVER_PORT:-8081}` | `robot-autotest.service` | jar `~/robot-autotest/app/robot-autotest-backend.jar`；环境文件 `~/.config/robot-autotest/env` |
-| 前端 dist（静态） | 同域，由后端静态资源或 Nginx 承载 | Nginx 为系统 unit `nginx`（若使用） | `~/robot-autotest/dist/` |
-| MySQL | 3306（仅本机监听） | `mysql`（系统 unit） | 库名以 `DB_NAME` 为准，建议 `robot_dev` |
-| Robot 执行器 | 无监听端口 | 由后端 spawn | `~/rf-stack/.venv/bin/{robot,pabot}`，PATH 必须前置 |
+| 后端 Spring Boot（API） | **8081** | `robot-autotest-backend.service` | `/usr/bin/java -jar ~/robot-autotest/backend/target/robot-autotest-backend-0.1.0-SNAPSHOT.jar --planning.scheduler-enabled=true`；WorkingDirectory `~/robot-autotest/backend`；EnvironmentFile `~/.config/robot-autotest/env` |
+| 统一入口（静态 dist 与反代） | **8001** | `robot-autotest-entry.service` | `~/.local/bin/node ~/robot-autotest/scripts/serve-entry.mjs`；`ENTRY_PORT=8001`、`ENTRY_BACKEND=http://127.0.0.1:8081`；静态源 `~/robot-autotest/frontend/dist/` |
+| 前端 Vite 开发服务 | **5273** | `robot-autotest-frontend.service` | `~/robot-autotest/frontend/node_modules/.bin/vite --host 127.0.0.1 --port 5273 --strictPort` |
+| MySQL | 3306（仅本机监听） | `mysql`（系统 unit） | 库名以 `DB_NAME` 为准（开发库 `robot_dev` / 集成库 `robot_it`） |
+| Robot 执行器 | 无监听端口 | 由后端 spawn | `~/rf-stack/.venv/bin/{robot,pabot}`，PATH 必须前置；pytest 内核另由 `EXECUTION_PYTEST_BIN` 指向 `~/venvs/deepseek-harness/bin/pytest` |
 
 ```bash
-# 本地 WSL 上先确认 unit 真实名字与 linger（用户级 unit 不加 linger，重启后不会自动拉起）
+# 复核 unit 真实名字与 linger（用户级 unit 不加 linger，重启后不会自动拉起）
 systemctl --user list-units --type=service --state=running | grep -E 'robot-autotest|nginx'
 loginctl show-user "$USER" | grep Linger
+systemctl --user cat robot-autotest-backend.service robot-autotest-entry.service robot-autotest-frontend.service
 ```
 
-**首次部署时必须回填**：unit 名、`SERVER_PORT`、库名、`LOG_DIR`、dist 承载方式。未回填前，本节的 P 命令只是通用骨架。
+**回填记录（2026-11-12）**：上表 unit 名、后端与入口端口、Vite 端口、jar 与 dist 路径、env 文件均取 `systemctl --user cat` 实读，
+`Linger=yes`。部署统一走 `bash scripts/deploy.sh`（构建 → 停旧 → 启新 → `/healthz` 健康检查），
+不要手工 `java -jar` 顶替；就绪探针必须打 `:8081`，`:8001/_ping` 是 node 入口自回 200 不算数。
 
 ---
 
@@ -420,3 +424,15 @@ FROM export_record ORDER BY id DESC LIMIT 10;"
 | 特性开关清单（默认关闭、可关闭、最小字段） | `docs/release/v3.5.0/FEATURE-FLAGS.md` | 已冻结 |
 
 > 所有演练记录 `PASS` 必须有原始命令输出；未执行的一律标 `BLOCKED` 并写阻塞原因与所需条件。
+
+## 5.0.X · SLI / SLO 与错误预算规则（W50-28，D5：只落规则不启用通知）
+
+| 对象 | SLI | SLO | 错误预算消耗规则 |
+|---|---|---|---|
+| `:8001` 入口 | 静态资源与页面可用率 | 月度 99.9% | 连续 5 分钟不可用计 1 个预算单元；耗尽即冻结非修复类变更 |
+| `:8081` 后端 | 就绪探针成功比率 | 月度 99.9% | 就绪探针必须打 `:8081`；`:8001/_ping` 是 node 入口自回 200，不算数 |
+| 执行链 | 运行创建与状态回写成功率 | 月度 99.5% | 双内核任一失败率越线即停止批次推进并复核 `RUN_ID` 关联 |
+| 报告生成 | 四格式导出成功率 | 月度 99.5% | 同一 `RUN_ID` 连续两次导出失败计 1 个单元 |
+
+**D5 裁定**：本版只落上述规则与默认关闭的开关，**不外接任何告警通知通道**、不启用 RUM；
+告警触发后的通知路径须大师单独授权。错误预算按自然月归零，读数来源为门禁汇总与运维日志，不做自动考核。

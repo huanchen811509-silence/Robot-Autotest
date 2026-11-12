@@ -15,6 +15,11 @@
 | `ADMISSION_ENFORCE` | `true`（既有） | `RunAdmissionService` 50 / 20 / 10 三层上限 | 409 背压次数、队列积压 | 需 ADR 与评审，不擅自关 | 同上 |
 | `AI_ASSISTANT_ENABLED` | `true`（既有） | AI 工作台与 SSE 流式 | 首字 / 完成时延、降级次数、配额 | 配置关闭；CLI 故障时自动 `degraded=true` | 门禁 24 步 |
 | `AI_DRAFT_AUTO_PERSIST` | `false` | 用例草稿落库 | `reviewed=true` 比例 | 恒 false，禁止自动写库 | 门禁 19 步 AI 契约机检 |
+| `V50_RUM_ENABLED` | `false` | 真实用户 CWV 采集 | 事件量、p75 分布 | 恒 false，D5 裁定不启用 | `docs/plan/v5.0-口径裁决清单.md` |
+| `V50_ALERT_NOTIFY_ENABLED` | `false` | 告警通知外接通道 | 通知送达率 | 恒 false，D5 裁定不外接 | `docs/OPS-MANUAL.md` |
+| `V50_AI_LIVE_EVAL_ENABLED` | `false` | AI 真实端点评测 | 事实一致性 | 恒 false，D6 裁定不授权 | `docs/plan/v5.0-AI评测协议.md` |
+
+> 机检类检查（门禁 33~36 步）**常开**，属于判据而非灰度能力，不纳入上表；由 `tools/check_v50_flags.py` 校验登记与默认值。
 
 ## 2. 隐私与数据边界
 

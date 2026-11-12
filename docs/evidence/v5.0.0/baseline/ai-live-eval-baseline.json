@@ -1,0 +1,13 @@
+{
+  "metric": "AI 真实端点事实一致性",
+  "status": "未测量",
+  "golden_set_size": 100,
+  "evaluated": 0,
+  "facts_consistent": null,
+  "blocker": "D6 裁定本版不授权真实端点评测；fake CLI 20/20 不得折算",
+  "captured_at": "2026-11-12",
+  "captured_by": "RA-B0",
+  "mode": "not_measured",
+  "source": "B0 先证明，采集开关默认关闭",
+  "note": "本文件是前后对照的「前测」框架；任何数值字段为 null 表示未测量，禁止填 0 或估算"
+}

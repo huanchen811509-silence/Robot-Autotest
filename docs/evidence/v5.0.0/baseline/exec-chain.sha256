@@ -1,0 +1,13 @@
+# 5.0.X 双内核执行链禁改清单（W50-03）
+# 基线 HEAD=6815b7f ｜ 生成 2026-11-12 ｜ 判据：sha256 全等
+# 由 tools/check_v50_boundary.py 校验；本版禁止改动以下文件
+597994aa542e1ffcf0ae2dad7c2c0c4a6dccbe87de32f67860f647f5ee167768  backend/src/main/java/com/qa/autotest/api/execution/RunMetadataController.java
+7aae3049ea465c02f35bc52a9091dd35f58622e2ec85a65d664e970c6f95ed22  backend/src/main/java/com/qa/autotest/application/execution/RunExecutionService.java
+19797dfe19408dffd4daf7f03fd87affca654fd49cf5a2a0fef60e6e5cb2908c  backend/src/main/java/com/qa/autotest/application/execution/RunMetadataService.java
+3382aad3ab4a066e8c70d72d62e0c9a8304853a575d58196d8533cec5537e9ce  backend/src/main/java/com/qa/autotest/application/kernel/PytestRunAdapter.java
+d9b03a84ebe8534015f465818c5c4a7bc21b482458c67b524cfcd98ee2bf05cf  backend/src/main/java/com/qa/autotest/application/report/CaseCommandExtractor.java
+631188e7d1cc089eb7b180b5e7f4ecbaa004454a44bc1d2eb878412c8421a1b8  backend/src/main/java/com/qa/autotest/application/report/KernelStatusMapper.java
+ca48156c8063034c921f327aeb42b7d57c7cbcfb41fb3708081c5fb6869340ee  backend/src/main/java/com/qa/autotest/application/repository/RunMetadataRepository.java
+ec163c4dde3ffe64712acf97d41477b821d4bca8d041e25d7d8671dd9fb0ea21  backend/src/main/java/com/qa/autotest/domain/report/MetadataGate.java
+afca5ed1d3bce74c57712492cb3c63c7805d1e0b29a9da07e09db38d57187060  backend/src/main/java/com/qa/autotest/domain/report/MetadataOverlay.java
+ca47eeea47f3392c0a8fb9e844dfba715b31c3a78881b0e8f182db9ea25db578  backend/src/main/java/com/qa/autotest/infrastructure/RunMetadataRepositoryJdbc.java

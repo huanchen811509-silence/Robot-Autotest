@@ -1,0 +1,13 @@
+{
+  "metric": "DORA 四指标自身趋势线",
+  "status": "未测量",
+  "deployment_frequency": null,
+  "lead_time_for_changes": null,
+  "change_failure_rate": null,
+  "time_to_restore": null,
+  "note": "本文件是前后对照的「前测」框架；任何数值字段为 null 表示未测量，禁止填 0 或估算",
+  "captured_at": "2026-11-12",
+  "captured_by": "RA-B0",
+  "mode": "not_measured",
+  "source": "B0 先证明，采集开关默认关闭"
+}

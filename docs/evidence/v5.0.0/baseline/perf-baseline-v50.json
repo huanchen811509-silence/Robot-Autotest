@@ -1,0 +1,13 @@
+{
+  "metric": "长列表 fps / 运行链 createP95",
+  "status": "未测量",
+  "longlist_10000_min_fps": null,
+  "runchain_create_p95_ms": null,
+  "existing_readonly_p95_ms": "见 docs/evidence/perf-baseline.json（既有 5 场景，非本版新增）",
+  "blocker": "零数据改动约束下不造 10000 行测试数据；压测脚本产出样本规模如实登记",
+  "captured_at": "2026-11-12",
+  "captured_by": "RA-B0",
+  "mode": "not_measured",
+  "source": "B0 先证明，采集开关默认关闭",
+  "note": "本文件是前后对照的「前测」框架；任何数值字段为 null 表示未测量，禁止填 0 或估算"
+}

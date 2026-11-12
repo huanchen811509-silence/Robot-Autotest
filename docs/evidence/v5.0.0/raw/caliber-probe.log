@@ -1,0 +1,51 @@
+# 5.0.X 口径裁决取证命令与原始输出
+
+日期：2026-11-12（GMT+8）｜只读实测，未改任何数据
+
+## C-01 · i18n 键数
+
+```
+$ python3 tools/check_i18n.py
+[1/5] 语言包解析：zh-CN 2383 键 / en-US 2383 键
+[2/5] 键集相等：通过
+[3/5] 源码扫描：202 个文件，硬编码中文 0 处
+[4/5] 同值漏译与键引用：通过
+[5/5] 受控词表：27 个值逐个核对，全部有键
+[RESULT] 通过：键集相等 / 无硬编码中文 / 无同值漏译 / 键引用完整 / 枚举全覆盖
+```
+
+裁决值：zh-CN 与 en-US 各 **2383** 键（语言包 `frontend/src/locales/`，实跑读数）。
+
+## C-02 · 业务表数（分库实测）
+
+```
+select count(*) from information_schema.tables where table_schema=<db> and table_type='BASE TABLE'
+{"robot_dev": 99, "robot_it": 99, "robot_autotest": 0}
+```
+
+裁决：三个数是**不同库 / 不同时点**的读数，不合并成一个数；新判据只取 `git diff` 后的契约声明值并标库名。
+
+## C-04 · Flyway 最大版本与 README
+
+```
+ls db/migration/V*.sql | wc -l ; 按 V<major>_<minor> 自然排序取最大
+79 个 V*.sql；最大 V11_45
+```
+
+裁决：README 第 16 行 `V11_37` 与第 18 行 `2072 i18n 键` 属过时读数，回写为实测值；
+`CHANGELOG` 与版本历史表里的 `V11_37` 是**历史陈述**，保留不改。
+
+## C-03 · CDP `:9222`
+
+**D1 已裁定「保持取消」**（大师 11:09），无需实测裁决：
+基线门禁 `docs/evidence/v5.0.0/raw/gates-baseline-before.log` 记录 `FAIL 13-browser_regression`、
+`GATES_RESULT FAILS=1`；B0 只登记该值，不重启 CDP、不复跑浏览器回归。
+
+## C-02 复核（开工后追加）
+
+```
+robot_dev 全部 BASE TABLE = 99
+元数据表 = ['flyway_schema_history']
+排除元数据后业务表 = 98
+结论：98（契约声明）与 98（实测业务表）不是同一口径，按各自定义共存，不强行统一。
+```

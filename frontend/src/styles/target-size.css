@@ -1,0 +1,27 @@
+/* v5.0 W50-18 · WCAG 2.2 AA 2.5.8 最小交互目标（24×24 CSS px）
+ * 针对 docs/evidence/v3.5.0/EW35-05/remediation.md 的 18 处历史读数：
+ *   select 128×21 / 26×21（高不足），表格行内按钮 56×14（高不足）。
+ * 只补最小尺寸，不改结构、不删控件、不改断言；24px 已在 tools/px-allow.txt 白名单内。
+ * 注意：真实浏览器几何读数依赖 CDP :9222（D1 裁定保持取消），本文件不代表探针达标；
+ *       人工走查项见 docs/evidence/v5.0.0/manual-backlog.md。 */
+:root {
+  --v50-target-min: 24px;
+}
+
+select,
+.n-base-selection,
+.data-table .row-action,
+.data-table button,
+.n-button--tiny,
+.n-button--small.n-button--round,
+.toolbar-button {
+  min-height: var(--v50-target-min);
+  min-width: var(--v50-target-min);
+}
+
+/* W50-19 · 键盘焦点可见：用 currentColor，不写死 hex（check_colors 连 fallback 也拦）。
+   2px 在 tools/px-allow.txt 白名单内；真实键盘走查仍需人工，见 a11y/keyboard-walk.md。 */
+:where(select, button, a, input, [tabindex]):focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}

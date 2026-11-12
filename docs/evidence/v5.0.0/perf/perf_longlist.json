@@ -1,0 +1,15 @@
+{
+  "metric": "10000 行长列表滚动 minFps",
+  "target": "minFps >= 50",
+  "status": "未测量",
+  "mode": "not_measured",
+  "captured_at": "2026-11-12",
+  "sample_size": 0,
+  "machine": null,
+  "rounds": 0,
+  "p50": null,
+  "p95": null,
+  "min_fps": null,
+  "blocker": "零数据改动约束下不造 10000 行测试数据；前端 fps 需真实浏览器（CDP 按 D1 关闭）",
+  "note": "本脚本产出的是前后对照框架，不是压测结论；禁止把 0 轮采样写成达标"
+}

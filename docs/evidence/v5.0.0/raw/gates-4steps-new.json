@@ -1,0 +1,14 @@
+{
+  "scope": "新增 33~36 步（v5.0.X）",
+  "pass": 4,
+  "fail": 0,
+  "fails": 0,
+  "steps": [
+    "33-v50_boundary",
+    "34-ux_regression",
+    "35-v50_trace",
+    "36-v50_evidence"
+  ],
+  "selfcheck": "gates.sh --selfcheck 的 SELFCHECK 33-36 PASS；12 个新机检脚本正向与负向自检全绿",
+  "log": "docs/evidence/v5.0.0/raw/gates-final-after.log"
+}

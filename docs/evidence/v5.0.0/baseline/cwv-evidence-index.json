@@ -1,0 +1,23 @@
+{
+  "metric": "CWV p75（LCP / INP / CLS）",
+  "status": "未测量",
+  "lab": {
+    "lcp_ms": null,
+    "inp_ms": null,
+    "cls": null,
+    "mode": "lab",
+    "note": "历史本机 CDP 读数仅作历史证据，不代表真实用户 p75"
+  },
+  "field": {
+    "lcp_ms": null,
+    "inp_ms": null,
+    "cls": null,
+    "mode": "field",
+    "note": "D5 裁定不启用 RUM，本版无 field 数据"
+  },
+  "captured_at": "2026-11-12",
+  "captured_by": "RA-B0",
+  "mode": "not_measured",
+  "source": "B0 先证明，采集开关默认关闭",
+  "note": "本文件是前后对照的「前测」框架；任何数值字段为 null 表示未测量，禁止填 0 或估算"
+}

@@ -1,0 +1,11 @@
+{
+  "scope": "原 32 步（判据不动）",
+  "pass": 31,
+  "fail": 1,
+  "fails": 1,
+  "fail_step": [
+    "13-browser_regression"
+  ],
+  "verdict": "D1 已裁定 CDP :9222 保持取消，如实记录 FAILS=1，不删步不降判据不称全绿",
+  "log": "docs/evidence/v5.0.0/raw/gates-final-after.log"
+}

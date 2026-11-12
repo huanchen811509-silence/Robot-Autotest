@@ -1,0 +1,76 @@
+{
+  "metric": "Top8 任务成功率 / 步数 / 耗时",
+  "status": "未测量",
+  "tasks": [
+    {
+      "task_id": "T01",
+      "name": "创建项目",
+      "success_rate": null,
+      "completed_steps": null,
+      "duration_ms_p95": null,
+      "sus_score": null
+    },
+    {
+      "task_id": "T02",
+      "name": "导入用例",
+      "success_rate": null,
+      "completed_steps": null,
+      "duration_ms_p95": null,
+      "sus_score": null
+    },
+    {
+      "task_id": "T03",
+      "name": "配置执行参数",
+      "success_rate": null,
+      "completed_steps": null,
+      "duration_ms_p95": null,
+      "sus_score": null
+    },
+    {
+      "task_id": "T04",
+      "name": "启动运行",
+      "success_rate": null,
+      "completed_steps": null,
+      "duration_ms_p95": null,
+      "sus_score": null
+    },
+    {
+      "task_id": "T05",
+      "name": "查看实时日志",
+      "success_rate": null,
+      "completed_steps": null,
+      "duration_ms_p95": null,
+      "sus_score": null
+    },
+    {
+      "task_id": "T06",
+      "name": "打开测试报告",
+      "success_rate": null,
+      "completed_steps": null,
+      "duration_ms_p95": null,
+      "sus_score": null
+    },
+    {
+      "task_id": "T07",
+      "name": "导出报告",
+      "success_rate": null,
+      "completed_steps": null,
+      "duration_ms_p95": null,
+      "sus_score": null
+    },
+    {
+      "task_id": "T08",
+      "name": "定位失败用例",
+      "success_rate": null,
+      "completed_steps": null,
+      "duration_ms_p95": null,
+      "sus_score": null
+    }
+  ],
+  "blocker": "UX_TELEMETRY_ENABLED 默认 false（D5），且 CDP :9222 按 D1 保持关闭",
+  "captured_at": "2026-11-12",
+  "captured_by": "RA-B0",
+  "mode": "not_measured",
+  "source": "B0 先证明，采集开关默认关闭",
+  "note": "本文件是前后对照的「前测」框架；任何数值字段为 null 表示未测量，禁止填 0 或估算"
+}

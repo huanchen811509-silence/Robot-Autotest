@@ -1,0 +1,15 @@
+{
+  "metric": "运行链 createP95 / 5000 行每秒",
+  "target": "createP95 <= 200ms",
+  "status": "未测量",
+  "mode": "not_measured",
+  "captured_at": "2026-11-12",
+  "sample_size": 0,
+  "machine": null,
+  "rounds": 0,
+  "p50": null,
+  "p95": null,
+  "min_fps": null,
+  "blocker": "零数据改动约束下不造 5000 行运行数据；真实端点需单独授权",
+  "note": "本脚本产出的是前后对照框架，不是压测结论；禁止把 0 轮采样写成达标"
+}

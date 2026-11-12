@@ -1,0 +1,277 @@
+{
+  "version": "5.0.X",
+  "date": "2026-11-12",
+  "total": 42,
+  "summary": {
+    "PASS": 29,
+    "PARTIAL": 8,
+    "NOT-RUN": 4,
+    "BLOCKED": 1
+  },
+  "gate": {
+    "old32": {
+      "pass": 31,
+      "fail": 1,
+      "fails": 1
+    },
+    "new4": {
+      "pass": 4,
+      "fail": 0,
+      "fails": 0
+    }
+  },
+  "cases": [
+    {
+      "tc": "TC-v5.0-01",
+      "result": "PASS",
+      "evidence": "gates 33 步 + check_v50_boundary 正向/selfcheck",
+      "note": "双内核执行链 10 个文件 sha256 零改动"
+    },
+    {
+      "tc": "TC-v5.0-02",
+      "result": "PASS",
+      "evidence": "check_doc_endpoints 正向/selfcheck",
+      "note": "规划文档端点精确命中 293 条契约路径，零孤儿；反例引用已区分"
+    },
+    {
+      "tc": "TC-v5.0-03",
+      "result": "PASS",
+      "evidence": "baseline/exec-chain.sha256 + check_v50_boundary",
+      "note": "以 HEAD=6815b7f 为基线，边界机检每步复核"
+    },
+    {
+      "tc": "TC-v5.0-04",
+      "result": "PASS",
+      "evidence": "docs/adr/ADR-50-01~08 + check_v50_adr 真删自检",
+      "note": "8 份五段齐全"
+    },
+    {
+      "tc": "TC-v5.0-05",
+      "result": "PASS",
+      "evidence": "raw/caliber-probe.log + v5.0-口径裁决清单.md",
+      "note": "C-01 i18n 2383；C-02 99=98+flyway 元数据；C-03 按 D1；C-04 V11_45"
+    },
+    {
+      "tc": "TC-v5.0-06",
+      "result": "PASS",
+      "evidence": "README.md 两处内容匹配补丁",
+      "note": "2072→2383 键、V11_37→V11_45；CHANGELOG 历史陈述保留"
+    },
+    {
+      "tc": "TC-v5.0-07",
+      "result": "PARTIAL",
+      "evidence": "frontend/src/config/resultStates.ts + check_v50_states",
+      "note": "单一真源与静态守护已建；采集/报告/台账三处引用迁移未做（D1 下无端到端验证条件）"
+    },
+    {
+      "tc": "TC-v5.0-08",
+      "result": "PASS",
+      "evidence": "FEATURE-FLAGS.md + check_v50_flags",
+      "note": "3 个 v5.0 能力开关登记且恒 false（D5/D6）"
+    },
+    {
+      "tc": "TC-v5.0-09",
+      "result": "PASS",
+      "evidence": "v5.0-质量属性场景.md + check_v50_scenarios",
+      "note": "9 条场景覆盖八特性，Safety 排除理由成文（D4）"
+    },
+    {
+      "tc": "TC-v5.0-10",
+      "result": "PASS",
+      "evidence": "baseline/*.json（5 份）+ check_v50_metric_schema",
+      "note": "未测量字段保持 null，0 与估算被自检判红"
+    },
+    {
+      "tc": "TC-v5.0-11",
+      "result": "PARTIAL",
+      "evidence": "perf/perf_longlist.json",
+      "note": "框架报告已产出，sample_size=0、status=未测量；零数据改动下不造 10000 行数据"
+    },
+    {
+      "tc": "TC-v5.0-12",
+      "result": "PARTIAL",
+      "evidence": "perf/perf_runchain.json",
+      "note": "同上；真实运行链压测需单独授权"
+    },
+    {
+      "tc": "TC-v5.0-13",
+      "result": "PASS",
+      "evidence": "gates 17 步 perf_baseline",
+      "note": "既有 5 场景只读基线判据保持，未劣化"
+    },
+    {
+      "tc": "TC-v5.0-14",
+      "result": "PASS",
+      "evidence": "gates 06 lint + frontend/src/styles/target-size.css",
+      "note": "24px 在 px-allow 白名单；零 hex、零非白名单 px；DataTable 56 处不降"
+    },
+    {
+      "tc": "TC-v5.0-15",
+      "result": "NOT-RUN",
+      "evidence": "v5.0-AI评测协议.md + golden-eval-v2.template.json",
+      "note": "D6 裁定本版不授权真实端点；协议与空模板齐，fake CLI 不折算"
+    },
+    {
+      "tc": "TC-v5.0-16",
+      "result": "PASS",
+      "evidence": "gates 13 步 + raw/gates-32steps-baseline.json",
+      "note": "第 13 步继续 FAIL，原 32 步汇总如实 FAILS=1，不删步不降判据"
+    },
+    {
+      "tc": "TC-v5.0-17",
+      "result": "PASS",
+      "evidence": "check_v50_trace 正向/selfcheck",
+      "note": "FR 30 / TC 42 / WBS 30 连续，覆盖矩阵双向零孤儿"
+    },
+    {
+      "tc": "TC-v5.0-18",
+      "result": "PASS",
+      "evidence": "12 个新机检脚本 --selfcheck + gates --selfcheck 33-36",
+      "note": "注入反例均判红、干净均判绿；ADR 与证据脚本为真删/真注入"
+    },
+    {
+      "tc": "TC-v5.0-19",
+      "result": "PASS",
+      "evidence": "check_v50_evidence/adr/boundary/trace selfcheck 日志",
+      "note": "备份→注入→判红→还原→复跑绿；未用 git checkout"
+    },
+    {
+      "tc": "TC-v5.0-20",
+      "result": "PASS",
+      "evidence": "docs/evidence/v5.0.0/manual-backlog.md",
+      "note": "12 类人工项逐条写所需条件/阻塞/裁定；机检不代判人工"
+    },
+    {
+      "tc": "TC-v5.0-21",
+      "result": "PARTIAL",
+      "evidence": "target-size.css + a11y/keyboard-walk.md",
+      "note": "18 处最小尺寸静态整改已落；真实浏览器几何读数依赖 CDP，按 D1 NOT-RUN"
+    },
+    {
+      "tc": "TC-v5.0-22",
+      "result": "NOT-RUN",
+      "evidence": "a11y/keyboard-walk.md",
+      "note": "焦点/缩放/读屏/Tab 顺序人工走查需 CDP 与人工值守"
+    },
+    {
+      "tc": "TC-v5.0-23",
+      "result": "NOT-RUN",
+      "evidence": "manual-backlog.md",
+      "note": "dark-select-probe 复用 CDP :9222，按 D1 保持关闭"
+    },
+    {
+      "tc": "TC-v5.0-24",
+      "result": "PASS",
+      "evidence": "check_v50_contrast_extra 正向/selfcheck",
+      "note": "新增四类控件态独立判据；原 280 项由门禁 27 步守护，未删原项换绿"
+    },
+    {
+      "tc": "TC-v5.0-25",
+      "result": "PARTIAL",
+      "evidence": "a11y/error-state-checklist.md + wbs-deviations.md",
+      "note": "离线盘点与判据齐；分页组件 .vue 未改（需真实浏览器验收）"
+    },
+    {
+      "tc": "TC-v5.0-26",
+      "result": "NOT-RUN",
+      "evidence": "manual-backlog.md",
+      "note": "density-probe 复用 CDP，按 D1 保持关闭"
+    },
+    {
+      "tc": "TC-v5.0-27",
+      "result": "PARTIAL",
+      "evidence": "baseline/ux-top8-baseline.json",
+      "note": "Top8 前测框架已建、8 条任务字段齐；无后测、无埋点，成功率与 SUS 保持未测量"
+    },
+    {
+      "tc": "TC-v5.0-28",
+      "result": "PASS",
+      "evidence": "baseline/cwv-evidence-index.json + check_v50_mode",
+      "note": "lab/field 分离、mode 字段齐；D5 不启用 RUM，lab 不折算达标"
+    },
+    {
+      "tc": "TC-v5.0-29",
+      "result": "PARTIAL",
+      "evidence": "a11y/error-state-checklist.md",
+      "note": "Top8 错误态清单与三要素判据齐；前端文案就地修正未实施（需浏览器走查）"
+    },
+    {
+      "tc": "TC-v5.0-30",
+      "result": "PASS",
+      "evidence": "gates 34 步 ux_regression + 6 个回归点定义",
+      "note": "静态契约检查全绿；脚本明确不替代真实浏览器探针"
+    },
+    {
+      "tc": "TC-v5.0-31",
+      "result": "PARTIAL",
+      "evidence": "ops/dora-trend.json + v50_dora_trend",
+      "note": "自身趋势线已产出、不分级不考核；lead time / 失败率 / 恢复时长三项无源，保持 null"
+    },
+    {
+      "tc": "TC-v5.0-32",
+      "result": "PASS",
+      "evidence": "docs/OPS-MANUAL.md SLO 章节 + check_v50_slo",
+      "note": "四类 SLI/SLO 与错误预算规则齐；D5 不外接通知通道"
+    },
+    {
+      "tc": "TC-v5.0-33",
+      "result": "BLOCKED",
+      "evidence": "manual-backlog.md + docs/ROLLBACK.md",
+      "note": "D5 裁定不启用隔离环境演练；RTO 仍未计时，dry-run 与 6 条护栏未放宽"
+    },
+    {
+      "tc": "TC-v5.0-34",
+      "result": "PASS",
+      "evidence": "gates 23/30 步 + check_delivery_bundle",
+      "note": "版本五处同源、交付包契约 PASS；代码未提交故 HEAD 未变，运行期 commit 与 HEAD 一致"
+    },
+    {
+      "tc": "TC-v5.0-35",
+      "result": "PASS",
+      "evidence": "check_md_tables.py（13 份显式路径）",
+      "note": "152 个表格块 / 1105 数据行列数一致；门禁 09 步亦 PASS"
+    },
+    {
+      "tc": "TC-v5.0-36",
+      "result": "PASS",
+      "evidence": "gates 23 步 version_consistency",
+      "note": "VERSION 仍 4.12.0，本版按 D7 不 bump"
+    },
+    {
+      "tc": "TC-v5.0-37",
+      "result": "PASS",
+      "evidence": "gates 27 步 i18n_contrast + check_i18n 实跑",
+      "note": "2383 键中英一致、硬编码中文 0 处；C-01 裁决后统一口径"
+    },
+    {
+      "tc": "TC-v5.0-38",
+      "result": "PASS",
+      "evidence": "gates 06 lint + check_v50_evidence + check_report_sensitive",
+      "note": "无内网 IP、无口令字面量、无 U+FFFD；metadata 十项未改"
+    },
+    {
+      "tc": "TC-v5.0-39",
+      "result": "PASS",
+      "evidence": "gates 30 步 delivery_bundle",
+      "note": "MANIFEST 与 sha256 可复核；按 D7 只做准备不产生对外口径"
+    },
+    {
+      "tc": "TC-v5.0-40",
+      "result": "PASS",
+      "evidence": "本报告 + 三份权威文档修订记录",
+      "note": "评估/PRD/DEV/TEST/报告五件同步回写"
+    },
+    {
+      "tc": "TC-v5.0-41",
+      "result": "PASS",
+      "evidence": "gates 34 步 ux_regression 日志",
+      "note": "6 个回归集接入门禁，输出与 TC 结果对应"
+    },
+    {
+      "tc": "TC-v5.0-42",
+      "result": "PASS",
+      "evidence": "raw/gates-32steps-baseline.json + raw/gates-4steps-new.json",
+      "note": "36 步逐步有读数；原 32 步 FAILS=1、新增 4 步 FAILS=0，两份日志分开归档，不称全绿"
+    }
+  ]
+}

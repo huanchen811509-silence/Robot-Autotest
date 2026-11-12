@@ -7,6 +7,7 @@ import { i18n } from './locales'
 // 放在 theme.css 之前，保证首帧解析 @font-face 时语义变量也已就位。
 import './styles/fonts.css'
 import './styles/theme.css'
+import './styles/target-size.css'
 import './styles/main.css'
 
 const app = createApp(App)

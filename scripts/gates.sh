@@ -12,7 +12,7 @@
 #   19 证据完整性（v2.2 CLOS-02：output.xml metadata 六必填 + 三处单测基线只增不减
 #      + AI 契约机检（AI-06：零 prompt 文件开关 / 零硬编码凭据 / 零 L4-L5 自动提交））
 #
-# 本脚本共 32 步：01–17 为 run 步，18 为末尾 structure_selfcheck 内联块，19 为证据完整性 run 步，
+# 本脚本共 36 步（原 32 步判据不动，33~36 为 v5.0.X 新增，只增不删）：01–17 为 run 步，18 为末尾 structure_selfcheck 内联块，19 为证据完整性 run 步，
 # 20–23 为 v3.2.0 的契约 / 包体 / 性能预算 / 版本一致性门禁。
 # 24–27 为 v3.3.0+v3.4.0 的 AI 评测 / 安全扫描 / 容量+备份演练 / i18n+对比度门禁。
 # 28 为 v3.9.0 的用例级命令契约（FR-v3.9-02：三列贯通 + 双内核真实 run 覆盖率 100%）。
@@ -75,7 +75,12 @@ check_structure() {
   grep -qE '^run 30 delivery_bundle ' "$file" || { echo "STRUCT_FAIL 缺少步骤 30 delivery_bundle"; bad=1; }
   grep -qE '^run 31 update_mechanism ' "$file" || { echo "STRUCT_FAIL 缺少步骤 31 update_mechanism"; bad=1; }
   grep -qE '^run 32 workspace_bundle ' "$file" || { echo "STRUCT_FAIL 缺少步骤 32 workspace_bundle"; bad=1; }
+  grep -qE '^run 33 v50_boundary ' "$file" || { echo "STRUCT_FAIL 缺少步骤 33 v50_boundary"; bad=1; }
+  grep -qE '^run 34 ux_regression ' "$file" || { echo "STRUCT_FAIL 缺少步骤 34 ux_regression"; bad=1; }
+  grep -qE '^run 35 v50_trace ' "$file" || { echo "STRUCT_FAIL 缺少步骤 35 v50_trace"; bad=1; }
+  grep -qE '^run 36 v50_evidence ' "$file" || { echo "STRUCT_FAIL 缺少步骤 36 v50_evidence"; bad=1; }
   return "$bad"
+
 }
 
 if [ "${1:-}" = "--selfcheck" ]; then
@@ -201,8 +206,15 @@ if [ "${1:-}" = "--selfcheck" ]; then
   else
     echo 'SELFCHECK 删步骤 32 PASS（删了变红）'
   fi
+  if python3 tools/check_v50_boundary.py --selfcheck && python3 tools/check_v50_static.py --selfcheck \
+     && python3 tools/check_v50_evidence.py --selfcheck && node scripts/ux-regression.mjs --selfcheck; then
+    echo 'SELFCHECK 33-36 PASS（新增四步负向自检均判红 / 干净判绿）'
+  else
+    echo 'SELFCHECK 33-36 FAIL'; FAILS=$((FAILS + 1))
+  fi
   rm -rf "$tmp"
   printf '\nSELFCHECK_RESULT FAILS=%s\n' "$FAILS"
+
   exit "$FAILS"
 fi
 
@@ -342,5 +354,14 @@ run 31 update_mechanism "python3 tools/check_update_mechanism.py"
 #    backup 覆盖 / 只读文件系统明确报错）。--bundle 由 workspace-contract.sh 另跑真包。
 run 32 workspace_bundle "python3 tools/check_workspace_bundle.py"
 
+# 33~36 v5.0.X 新增机检（ADR-50-06：只增不删、不降判据）。
+# 33 双内核执行链 sha256 零改动；34 六个体验回归集静态契约（不替代 CDP 探针）；
+# 35 FR/TC/WBS 追溯双向零孤儿；36 v5.0.0 证据入库路径与敏感字面量。
+run 33 v50_boundary   "python3 tools/check_v50_boundary.py"
+run 34 ux_regression  "node scripts/ux-regression.mjs"
+run 35 v50_trace      "python3 tools/check_v50_static.py"
+run 36 v50_evidence   "python3 tools/check_v50_evidence.py"
+
 printf '\nGATES_RESULT FAILS=%s\n' "$FAILS"
+
 exit "$FAILS"
