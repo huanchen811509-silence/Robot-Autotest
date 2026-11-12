@@ -12,6 +12,7 @@
     3. frontend/public/CHANGELOG.md 首条版本 = VERSION（部署静态副本已刷新）
     4. docs/contracts/openapi.json 的 info.version = VERSION
     5. 运行期：登录后 /api/system/build-info 的 version = VERSION（后端已按新版本重启）
+    7. 运行期：/api/_ping 的 data.version = VERSION（关于页与运行期同源，免认证）
     6. 运行期：GET {entry}/CHANGELOG.md 首条版本 = VERSION（入口已托管新前端 dist）
 
 运行期检查默认开启（门禁 13/17 本就要求 :8001 可用）；仅做静态检查时传 --static。
@@ -200,6 +201,16 @@ def main():
                                       % (runtime, version))
             except Exception as exc:  # noqa: BLE001 - 门禁要把网络错误转成红
                 errors.append("运行期检查失败: %s" % exc)
+
+        try:
+            ping = json.loads(call("/api/_ping")).get("data") or {}
+            ping_version = ping.get("version")
+            print("INFO  /api/_ping version=%s" % ping_version)
+            if ping_version != version:
+                errors.append("/api/_ping version=%s，应=%s（关于页与运行期版本不一致）"
+                              % (ping_version, version))
+        except Exception as exc:  # noqa: BLE001
+            errors.append("/api/_ping 读取失败: %s" % exc)
 
         try:
             text = call("/CHANGELOG.md")

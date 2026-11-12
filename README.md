@@ -11,21 +11,22 @@
 
 | 项 | 值 | 说明 |
 |---|---|---|
-| 版本 | `4.12.0` | 唯一真源是根 [`VERSION`](VERSION)；可用 `APP_VERSION` 运行期覆盖；`5.0.X` 为未落号的内部打磨批次 |
+| 版本 | `5.0.0` | 唯一真源是根 [`VERSION`](VERSION)；可用 `APP_VERSION` 运行期覆盖；由 5.0.X 存量打磨批次落号而来（2026-11-12 13:09 大师授权） |
 | 门禁 | 36 步 | `bash scripts/gates.sh`（35 PASS / 1 FAIL，唯一＝第 13 步 CDP `:9222` 按裁定取消；新增 33~36 为 v5.0 静态契约组）；第 07 步发布文档机检、第 30 步交付包机检 |
 | 数据库 | 契约声明 98 张业务表（分库实测见 `docs/plan/v5.0-口径裁决清单.md`） | Flyway 迁移至 `V11_45`（`V11_30`–`V11_37` 八组均附 `db/down/` 回滚），`scripts/db-audit.sh` 体检 |
 | API 契约 | 358 operations / 293 paths | `docs/contracts/openapi.json` 实读（2026-11-12）；口径见 [`v5.0-口径裁决清单`](docs/plan/v5.0-口径裁决清单.md) |
 | 前端 | 2383 i18n 键（中英一致，`check_i18n.py` 实跑） | `tools/check_i18n.py`；硬编码中文 0 处 |
 | 交付物 | linux-x64 tarball | GitHub Actions `delivery.yml` 产出，见 [交付指南](docs/DELIVERY-GUIDE.md) |
 
-**口径**：当前源码版本 `4.12.0`（唯一真源 [`VERSION`](VERSION)），发布说明见 [v4.12.0](docs/release/v4.12.0/RELEASE-NOTES.md)；
+**口径**：当前源码版本 `5.0.0`（唯一真源 [`VERSION`](VERSION)），发布说明见 [v5.0.0](docs/release/v5.0.0/RELEASE-NOTES.md)；
 统一入口 `:8001` 由 `robot-autotest-entry.service` 托管、后端 `:8081` 由 `robot-autotest-backend.service` 托管（2026-11-12 实测回填，见 [运维手册](docs/OPS-MANUAL.md) §1.2）。
 G4 / G5 / G7 / G8 **门禁仍未判过**，真库 down→up 全量演练与真实 DUT / 负载未执行
 （`V11_30`–`V11_37` 正向迁移已于 2026-11-10 在开发库实跑）
 （见 [已知限制](docs/release/v4.9.2/KNOWN-LIMITATIONS.md) 与本轮 [未闭合项](docs/evidence/v5.0.0/manual-backlog.md)），**不得对外称 GA**。
 开发期遵守 [ADR-0013](docs/adr/ADR-0013-执行安全分级与开发期禁跑令.md)：不在真实 DUT / 交换机执行台账用例。
-**5.0.X 存量打磨是未落号的内部批次**：B0~B4 已完成、42 条 TC 已测、门禁 `FAILS=1` 如实保留；不判 G 门、不落号、不产生对外口径，
-成件与证据见 [归档索引](docs/plan/v5.0.X存量打磨-归档索引-20261112.md)。
+**5.0.X 存量打磨已落号 `v5.0.0`**：B0~B4 已完成、42 条 TC 已测（PASS 29 / PARTIAL 8 / NOT-RUN 4 / BLOCKED 1 / FAIL 0）、门禁 `FAILS=1` 如实保留；
+**落号不等于判定**——G 门仍未判过、不得对外称 GA，判定动作归大师。正式成件见 [v5.0.0 发布说明](docs/release/v5.0.0/RELEASE-NOTES.md)，
+过程件见 [归档索引](docs/plan/v5.0.X存量打磨-归档索引-20261112.md)，书面核验见 [门禁核验纪要](docs/plan/门禁核验纪要-v5.0.0-20261112.md)。
 版本历史见 [版本地图](docs/release/README.md) 与 [CHANGELOG](CHANGELOG.md)；「关于」页和「版本迭代」页分别读构建信息与本 CHANGELOG。
 
 ---
@@ -240,12 +241,13 @@ releases/          本地打包产物（按脚本重建，不入库）
 | `4.9.2` | 收尾与发布 | `VERSION` / build-info / OpenAPI / CHANGELOG 同源，发布六件套、已知限制与人工核对清单 | [v4.9.2](docs/release/v4.9.2/) |
 | `4.10.0` | 11 项体验与契约整改 | 统一用例详情、两级分类与按分类组集、资产详情三分区、模板工作台、从模板建项目、顶栏主题与语言快捷切换 | [v4.10.0](docs/release/v4.10.0/) |
 | `4.11.0` | 全局导航与执行计划 | 全局模式两级菜单、即时发起台、用户管理只读页、菜单不变量机检、导航 query 化 | [v4.11.0](docs/release/v4.11.0/) |
-| `4.12.0` | 资产采集闭环（当前版本） | 凭据与设备双向可用、三类采集通道、失败四分类、手工录入、我的账户、真正的平台设置 | [v4.12.0](docs/release/v4.12.0/) |
+| `4.12.0` | 资产采集闭环 | 凭据与设备双向可用、三类采集通道、失败四分类、手工录入、我的账户、真正的平台设置 | [v4.12.0](docs/release/v4.12.0/) |
+| `5.0.0` | 存量打磨（当前版本） | 口径冻结、12 个机检脚本、门禁 36 步、关于页版本统一、A11y 静态整改 | [v5.0.0](docs/release/v5.0.0/) |
 
 合并计划：[PRD](docs/plan/v4.4-v4.9-软件迭代开发PRD-20261110.md) /
 [开发计划](docs/plan/v4.4-v4.9-开发计划-20261110.md) /
-[测试计划](docs/plan/v4.4-v4.9-测试计划-20261110.md)。4.10.0 起逐版本条目见 [CHANGELOG](CHANGELOG.md)（当前 `v4.12.0`）；
-5.0.X 内部批次见 [归档索引](docs/plan/v5.0.X存量打磨-归档索引-20261112.md)。
+[测试计划](docs/plan/v4.4-v4.9-测试计划-20261110.md)。4.10.0 起逐版本条目见 [CHANGELOG](CHANGELOG.md)（当前 `v5.0.0`）；
+`v5.0.0` 成件见 [发布说明](docs/release/v5.0.0/RELEASE-NOTES.md)，过程件见 [归档索引](docs/plan/v5.0.X存量打磨-归档索引-20261112.md)。
 
 ### 待办
 

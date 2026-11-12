@@ -1,0 +1,162 @@
+# 5.0.X 存量功能优化打磨 · 05-TEST-REPORT（测试结果）
+
+> **状态补记（2026-11-12 13:09）**：D7 的「不落号」已由大师授权落号 `v5.0.0` 覆盖；**G 门仍未判定、不得对外称 GA**。详见文末「落号补记」。
+
+| 项 | 内容 |
+|---|---|
+| 文档编号 | RA-TR-50-001 |
+| 文档版本 | 1.0（实测结果） |
+| 日期 | 2026-11-12（GMT+8） |
+| 流程位置 | 七道流程第 ⑥ 环产物；**TC 结果只写在本文件**，不写回 TEST-PLAN |
+| 基线 | `VERSION=4.12.0`；`HEAD=6815b7f`（本版未提交，HEAD 未变） |
+| 裁定依据 | D1~D9（大师 11:09 拍板）；开工令 11:37 |
+| 结论 | **FAIL=0，但不判发版、不判 G 门、不落号（D7）**；效果类提升未量化，见 §5 |
+
+## 0. 结论先行
+
+1. 42 条 TC 实测：**PASS 29 / PARTIAL 8 / NOT-RUN 4 / BLOCKED 1 / FAIL 0**。`FAIL=0` 达成；所有非 PASS 项均写明阻塞原因与所需条件，不接受实现方自证。
+2. 全量门禁 **36 步：35 PASS / 1 FAIL，`GATES_RESULT FAILS=1`**。唯一失败＝第 13 步 `browser_regression`（CDP `:9222` 按 D1 保持取消），与改动前基线读数完全一致。
+3. **两种读数分开归档，不并成「全绿」**：原 32 步 `31 PASS / 1 FAIL / FAILS=1`（`raw/gates-32steps-baseline.json`），新增 33~36 步 `4 PASS / 0 FAIL / FAILS=0`（`raw/gates-4steps-new.json`）。
+4. 新增 12 个机检脚本全部**正向绿 + 负向自检判红有效**；`check_v50_static.py` 汇总 11 项静态契约接入门禁第 35 步，`--selfcheck` 11/11 全绿。
+5. **本版不产出「用户体验提升 X%」这类结论**：Top8 成功率、SUS、长列表 fps、运行链、真实端点评测仍是「未测量」，B0 只建了前后对照框架。lab 数据未折算成达标。
+6. 本轮仍**未编码业务逻辑、未改双内核、未建迁移、未提交、未推送、未同步双远程、未判 G 门、未发版、未产生对外口径**；改动集中在文档、机检脚本、静态样式与证据。
+
+## 1. 测试执行环境
+
+| 项 | 读数 |
+|---|---|
+| 副本 | WSL `~/robot-autotest`（ext4 权威副本）；E 盘为文档工作区 |
+| 工具链 | OpenJDK 21.0.13.0.3 / Maven 3.9.16 / Node v22.23.2 |
+| 服务 | `robot-autotest-backend` systemd user unit `active`；`:8081` 就绪 |
+| 数据库 | MySQL 8.0；只读查询，零数据改动（实测 `robot_dev` 99 表＝98 业务表 + `flyway_schema_history`） |
+| CDP | `:9222` **按 D1 保持关闭**；9 支体验探针因此不可采集 |
+| 真机 / 现场 | **不启用**（D2 / ADR-0013） |
+| 隔离演练 / 真实端点 | **不启用**（D5 / D6） |
+
+## 2. 门禁与构建读数
+
+| 层 | 结果 | 证据 |
+|---|---|---|
+| 前端 vitest / vue-tsc / vite build | 门禁 02 / 03 / 04 步 PASS | `raw/gates-final-after.log` |
+| 后端 `mvn -o -B test` | 门禁 05 步 PASS | 同上 |
+| editor 独立 vitest | 门禁 11 步 PASS | 同上 |
+| `scripts/lint.sh` 20+ 项 | 门禁 06 步 PASS | 同上 |
+| `db_audit` / `release_docs` / `md_tables` | 门禁 12 / 07 / 09 步 PASS | 28 版本 FAIL 0 WARN 0 |
+| 原 32 步 | 31 PASS / 1 FAIL → `FAILS=1` | `raw/gates-32steps-baseline.json` |
+| 新增 33~36 步 | 4 PASS / 0 FAIL → `FAILS=0` | `raw/gates-4steps-new.json` |
+| 变更前后对照 | 改动前 `FAILS=1`（`raw/gates-baseline-before.log`）、改动后 `FAILS=1` | **没有把已知失败洗绿，也没有新增失败** |
+
+## 3. 42 条 TC 结果
+
+| TC | 结果 | 证据 | 说明 |
+|---|---|---|---|
+| TC-v5.0-01 | PASS | gates 33 步 + check_v50_boundary 正向/selfcheck | 双内核执行链 10 个文件 sha256 零改动 |
+| TC-v5.0-02 | PASS | check_doc_endpoints 正向/selfcheck | 规划文档端点精确命中 293 条契约路径，零孤儿；反例引用已区分 |
+| TC-v5.0-03 | PASS | baseline/exec-chain.sha256 + check_v50_boundary | 以 HEAD=6815b7f 为基线，边界机检每步复核 |
+| TC-v5.0-04 | PASS | docs/adr/ADR-50-01~08 + check_v50_adr 真删自检 | 8 份五段齐全 |
+| TC-v5.0-05 | PASS | raw/caliber-probe.log + v5.0-口径裁决清单.md | C-01 i18n 2383；C-02 99=98+flyway 元数据；C-03 按 D1；C-04 V11_45 |
+| TC-v5.0-06 | PASS | README.md 两处内容匹配补丁 | 2072→2383 键、V11_37→V11_45；CHANGELOG 历史陈述保留 |
+| TC-v5.0-07 | PARTIAL | frontend/src/config/resultStates.ts + check_v50_states | 单一真源与静态守护已建；采集/报告/台账三处引用迁移未做（D1 下无端到端验证条件） |
+| TC-v5.0-08 | PASS | FEATURE-FLAGS.md + check_v50_flags | 3 个 v5.0 能力开关登记且恒 false（D5/D6） |
+| TC-v5.0-09 | PASS | v5.0-质量属性场景.md + check_v50_scenarios | 9 条场景覆盖八特性，Safety 排除理由成文（D4） |
+| TC-v5.0-10 | PASS | baseline/*.json（5 份）+ check_v50_metric_schema | 未测量字段保持 null，0 与估算被自检判红 |
+| TC-v5.0-11 | PARTIAL | perf/perf_longlist.json | 框架报告已产出，sample_size=0、status=未测量；零数据改动下不造 10000 行数据 |
+| TC-v5.0-12 | PARTIAL | perf/perf_runchain.json | 同上；真实运行链压测需单独授权 |
+| TC-v5.0-13 | PASS | gates 17 步 perf_baseline | 既有 5 场景只读基线判据保持，未劣化 |
+| TC-v5.0-14 | PASS | gates 06 lint + frontend/src/styles/target-size.css | 24px 在 px-allow 白名单；零 hex、零非白名单 px；DataTable 56 处不降 |
+| TC-v5.0-15 | NOT-RUN | v5.0-AI评测协议.md + golden-eval-v2.template.json | D6 裁定本版不授权真实端点；协议与空模板齐，fake CLI 不折算 |
+| TC-v5.0-16 | PASS | gates 13 步 + raw/gates-32steps-baseline.json | 第 13 步继续 FAIL，原 32 步汇总如实 FAILS=1，不删步不降判据 |
+| TC-v5.0-17 | PASS | check_v50_trace 正向/selfcheck | FR 30 / TC 42 / WBS 30 连续，覆盖矩阵双向零孤儿 |
+| TC-v5.0-18 | PASS | 12 个新机检脚本 --selfcheck + gates --selfcheck 33-36 | 注入反例均判红、干净均判绿；ADR 与证据脚本为真删/真注入 |
+| TC-v5.0-19 | PASS | check_v50_evidence/adr/boundary/trace selfcheck 日志 | 备份→注入→判红→还原→复跑绿；未用 git checkout |
+| TC-v5.0-20 | PASS | docs/evidence/v5.0.0/manual-backlog.md | 12 类人工项逐条写所需条件/阻塞/裁定；机检不代判人工 |
+| TC-v5.0-21 | PARTIAL | target-size.css + a11y/keyboard-walk.md | 18 处最小尺寸静态整改已落；真实浏览器几何读数依赖 CDP，按 D1 NOT-RUN |
+| TC-v5.0-22 | NOT-RUN | a11y/keyboard-walk.md | 焦点/缩放/读屏/Tab 顺序人工走查需 CDP 与人工值守 |
+| TC-v5.0-23 | NOT-RUN | manual-backlog.md | dark-select-probe 复用 CDP :9222，按 D1 保持关闭 |
+| TC-v5.0-24 | PASS | check_v50_contrast_extra 正向/selfcheck | 新增四类控件态独立判据；原 280 项由门禁 27 步守护，未删原项换绿 |
+| TC-v5.0-25 | PARTIAL | a11y/error-state-checklist.md + wbs-deviations.md | 离线盘点与判据齐；分页组件 .vue 未改（需真实浏览器验收） |
+| TC-v5.0-26 | NOT-RUN | manual-backlog.md | density-probe 复用 CDP，按 D1 保持关闭 |
+| TC-v5.0-27 | PARTIAL | baseline/ux-top8-baseline.json | Top8 前测框架已建、8 条任务字段齐；无后测、无埋点，成功率与 SUS 保持未测量 |
+| TC-v5.0-28 | PASS | baseline/cwv-evidence-index.json + check_v50_mode | lab/field 分离、mode 字段齐；D5 不启用 RUM，lab 不折算达标 |
+| TC-v5.0-29 | PARTIAL | a11y/error-state-checklist.md | Top8 错误态清单与三要素判据齐；前端文案就地修正未实施（需浏览器走查） |
+| TC-v5.0-30 | PASS | gates 34 步 ux_regression + 6 个回归点定义 | 静态契约检查全绿；脚本明确不替代真实浏览器探针 |
+| TC-v5.0-31 | PARTIAL | ops/dora-trend.json + v50_dora_trend | 自身趋势线已产出、不分级不考核；lead time / 失败率 / 恢复时长三项无源，保持 null |
+| TC-v5.0-32 | PASS | docs/OPS-MANUAL.md SLO 章节 + check_v50_slo | 四类 SLI/SLO 与错误预算规则齐；D5 不外接通知通道 |
+| TC-v5.0-33 | BLOCKED | manual-backlog.md + docs/ROLLBACK.md | D5 裁定不启用隔离环境演练；RTO 仍未计时，dry-run 与 6 条护栏未放宽 |
+| TC-v5.0-34 | PASS | gates 23/30 步 + check_delivery_bundle | 版本五处同源、交付包契约 PASS；代码未提交故 HEAD 未变，运行期 commit 与 HEAD 一致 |
+| TC-v5.0-35 | PASS | check_md_tables.py（13 份显式路径） | 152 个表格块 / 1105 数据行列数一致；门禁 09 步亦 PASS |
+| TC-v5.0-36 | PASS | gates 23 步 version_consistency | VERSION 仍 4.12.0，本版按 D7 不 bump |
+| TC-v5.0-37 | PASS | gates 27 步 i18n_contrast + check_i18n 实跑 | 2383 键中英一致、硬编码中文 0 处；C-01 裁决后统一口径 |
+| TC-v5.0-38 | PASS | gates 06 lint + check_v50_evidence + check_report_sensitive | 无内网 IP、无口令字面量、无 U+FFFD；metadata 十项未改 |
+| TC-v5.0-39 | PASS | gates 30 步 delivery_bundle | MANIFEST 与 sha256 可复核；按 D7 只做准备不产生对外口径 |
+| TC-v5.0-40 | PASS | 本报告 + 三份权威文档修订记录 | 评估/PRD/DEV/TEST/报告五件同步回写 |
+| TC-v5.0-41 | PASS | gates 34 步 ux_regression 日志 | 6 个回归集接入门禁，输出与 TC 结果对应 |
+| TC-v5.0-42 | PASS | raw/gates-32steps-baseline.json + raw/gates-4steps-new.json | 36 步逐步有读数；原 32 步 FAILS=1、新增 4 步 FAILS=0，两份日志分开归档，不称全绿 |
+
+**结果纪律**：`PARTIAL` / `NOT-RUN` / `BLOCKED` 不是隐藏缺陷，是 D1 / D2 / D5 / D6 裁定边界下的如实登记；机检 PASS 未被当作人工 PASS；TC 结果只写在本文件。
+
+## 4. 遗留缺陷与非 PASS 清单
+
+| TC | 结果 | 阻塞原因 / 所需条件 |
+|---|---|---|
+| TC-v5.0-07 | PARTIAL | 单一真源与静态守护已建；采集/报告/台账三处引用迁移未做（D1 下无端到端验证条件） |
+| TC-v5.0-11 | PARTIAL | 框架报告已产出，sample_size=0、status=未测量；零数据改动下不造 10000 行数据 |
+| TC-v5.0-12 | PARTIAL | 同上；真实运行链压测需单独授权 |
+| TC-v5.0-15 | NOT-RUN | D6 裁定本版不授权真实端点；协议与空模板齐，fake CLI 不折算 |
+| TC-v5.0-21 | PARTIAL | 18 处最小尺寸静态整改已落；真实浏览器几何读数依赖 CDP，按 D1 NOT-RUN |
+| TC-v5.0-22 | NOT-RUN | 焦点/缩放/读屏/Tab 顺序人工走查需 CDP 与人工值守 |
+| TC-v5.0-23 | NOT-RUN | dark-select-probe 复用 CDP :9222，按 D1 保持关闭 |
+| TC-v5.0-25 | PARTIAL | 离线盘点与判据齐；分页组件 .vue 未改（需真实浏览器验收） |
+| TC-v5.0-26 | NOT-RUN | density-probe 复用 CDP，按 D1 保持关闭 |
+| TC-v5.0-27 | PARTIAL | Top8 前测框架已建、8 条任务字段齐；无后测、无埋点，成功率与 SUS 保持未测量 |
+| TC-v5.0-29 | PARTIAL | Top8 错误态清单与三要素判据齐；前端文案就地修正未实施（需浏览器走查） |
+| TC-v5.0-31 | PARTIAL | 自身趋势线已产出、不分级不考核；lead time / 失败率 / 恢复时长三项无源，保持 null |
+| TC-v5.0-33 | BLOCKED | D5 裁定不启用隔离环境演练；RTO 仍未计时，dry-run 与 6 条护栏未放宽 |
+
+**销账规则（D8）**：先离线复核 → 逐条列证据 → 单独提请大师授权 → 一条一销；不批量销账、不改 WBS 130 包分母。
+
+## 5. 六项版本目标达成情况
+
+| 目标 | 判定 | 依据 |
+|---|---|---|
+| 易用性 | **部分达成** | Top8 前测框架已建；真实成功率 / 步数无前后对照，`PARTIAL` |
+| 实用性 | **部分达成** | 口径统一、错误态清单与 SLO 规则落地；就地修正未实施 |
+| 界面美观度 | **部分达成** | 静态令牌与最小目标整改已落；真实浏览器几何读数 `NOT-RUN` |
+| 操作便捷性 | **部分达成** | 焦点环静态规则与 6 个回归集契约；键盘 / 缩放走查 `NOT-RUN` |
+| 运行效率 | **部分达成** | 既有 5 场景基线未劣化；长列表 fps 与运行链压测「未测量」 |
+| 智能化水平 | **未达成（按裁定不执行）** | D6 不授权真实端点；协议与空模板已产出，`NOT-RUN` |
+
+**总判定**：本版交付的是**可复核的基线、口径与机检加固**，不是量化的体验提升。按 D7 不落号、不判 G 门、不产生对外口径；六项目标的量化收口须待 CDP / 现场 / 真实端点授权后另立版本。
+
+## 6. 偏差记录引用
+
+实施期 11 项偏差逐条留痕于 `docs/evidence/v5.0.0/raw/wbs-deviations.md`，并在《开发计划》§7 同步；判据与计划不一致处均未悄悄改计划。
+
+## 7. 文档回写清单（七道流程 ⑦）
+
+| 文档 | 回写内容 |
+|---|---|
+| 评估报告 `RA-ASM-50-001` | 补 H-07 / H-08 两条被实测推翻的假设、修订记录 v1.1 |
+| 调研笔记 `RA-RES-50-001` | 补实测读数与修订记录 v1.1 |
+| PRD `RA-PRD-50-001` | 验收项状态落定、修订记录 v1.2 |
+| 开发计划 `RA-DEV-50-001` | 30 包实际完成情况与偏差原因、修订记录 v1.1 |
+| 测试计划 `RA-TEST-50-001` | 遗留缺陷与设计变更、修订记录 v1.1 |
+| **本文件** | 42 条 TC 实测结果、门禁读数、遗留清单 |
+
+## 8. 修订记录
+
+| 版本 | 日期 | 变更 |
+|---|---|---|
+| 1.0 | 2026-11-12 | 首次实测成件：42 条 TC 结果、36 步门禁双读数分离、遗留清单、六目标判定、回写清单 |
+
+
+---
+
+## 落号补记（2026-11-12 13:09，大师新裁定）
+
+> 本文件产出于 D7「本版不落号、不判 G 门、不产生对外口径」裁定生效期间，文中各处 D7 表述**保留原文**作为过程记录，不代表当前状态。
+> 2026-11-12 13:09 大师另行授权**正式落号 `v5.0.0`**，覆盖 D7 中「不落号」部分；本补记与原文冲突时以本补记为准。
+> 本次落号只完成版本真源、CHANGELOG、发布目录与文档口径的机械动作；**G 门判定、对外口径仍归大师**，
+> 依据 `docs/plan/门禁核验纪要-v5.0.0-20261112.md` 逐门书面核验，结论为**未判过、不得对外称 GA**。
+> 门禁第 13 步 CDP `:9222` 仍按 D1 保持关闭，如实 `FAILS=1`；效果类指标仍「未测量」。
+> 正式版本成件见 `docs/release/v5.0.0/`，本文件保留为过程留档并由 `tools/check_v50_*.py` 继续守门。

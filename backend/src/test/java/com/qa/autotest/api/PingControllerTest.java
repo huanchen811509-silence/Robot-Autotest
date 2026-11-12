@@ -4,6 +4,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.qa.autotest.application.system.BuildInfoService;
 import com.qa.autotest.common.BusinessException;
 import com.qa.autotest.common.ErrorCode;
 import org.junit.jupiter.api.DisplayName;
@@ -21,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 class PingControllerTest {
 
     private final MockMvc mockMvc = MockMvcBuilders
-            .standaloneSetup(new PingController(), new BoomController())
+            .standaloneSetup(new PingController(new BuildInfoService()), new BoomController())
             .setControllerAdvice(new GlobalExceptionHandler())
             .build();
 
@@ -33,7 +34,17 @@ class PingControllerTest {
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.codeName").value("OK"))
                 .andExpect(jsonPath("$.data.status").value("UP"))
-                .andExpect(jsonPath("$.data.app").value("robot-autotest"));
+                .andExpect(jsonPath("$.data.app").value("robot-autotest"))
+                .andExpect(jsonPath("$.data.version").isNotEmpty());
+    }
+
+    @Test
+    @DisplayName("/api/_ping 版本号来自构建产物，不再硬编码 v0.1")
+    void ping_版本来自构建产物() throws Exception {
+        String expected = new BuildInfoService().info().get("version").toString();
+        mockMvc.perform(get("/api/_ping"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.version").value(expected));
     }
 
     @Test
