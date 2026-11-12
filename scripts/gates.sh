@@ -12,7 +12,8 @@
 #   19 证据完整性（v2.2 CLOS-02：output.xml metadata 六必填 + 三处单测基线只增不减
 #      + AI 契约机检（AI-06：零 prompt 文件开关 / 零硬编码凭据 / 零 L4-L5 自动提交））
 #
-# 本脚本共 36 步（原 32 步判据不动，33~36 为 v5.0.X 新增，只增不删）：01–17 为 run 步，18 为末尾 structure_selfcheck 内联块，19 为证据完整性 run 步，
+# 本脚本共 48 步（01–36 判据不动，41–48 为 v5.1–v5.4 新增，只增不删）：01–17 为 run 步，
+# 18 为末尾 structure_selfcheck 内联块，19 为证据完整性 run 步，
 # 20–23 为 v3.2.0 的契约 / 包体 / 性能预算 / 版本一致性门禁。
 # 24–27 为 v3.3.0+v3.4.0 的 AI 评测 / 安全扫描 / 容量+备份演练 / i18n+对比度门禁。
 # 28 为 v3.9.0 的用例级命令契约（FR-v3.9-02：三列贯通 + 双内核真实 run 覆盖率 100%）。
@@ -79,6 +80,16 @@ check_structure() {
   grep -qE '^run 34 ux_regression ' "$file" || { echo "STRUCT_FAIL 缺少步骤 34 ux_regression"; bad=1; }
   grep -qE '^run 35 v50_trace ' "$file" || { echo "STRUCT_FAIL 缺少步骤 35 v50_trace"; bad=1; }
   grep -qE '^run 36 v50_evidence ' "$file" || { echo "STRUCT_FAIL 缺少步骤 36 v50_evidence"; bad=1; }
+  # 41–48 是 v5.1–v5.4 的机检段（只增不删）：少一步就意味着对应口径没人守，
+  # 而这类口径（分母、分列、真注入自证）恰恰是「编译过、单测过、但数错了」的那一类。
+  grep -qE '^run 41 command_set ' "$file" || { echo "STRUCT_FAIL 缺少步骤 41 command_set"; bad=1; }
+  grep -qE '^run 42 duration_baseline ' "$file" || { echo "STRUCT_FAIL 缺少步骤 42 duration_baseline"; bad=1; }
+  grep -qE '^run 43 report_chapters ' "$file" || { echo "STRUCT_FAIL 缺少步骤 43 report_chapters"; bad=1; }
+  grep -qE '^run 44 nav_kind ' "$file" || { echo "STRUCT_FAIL 缺少步骤 44 nav_kind"; bad=1; }
+  grep -qE '^run 45 progress_channel ' "$file" || { echo "STRUCT_FAIL 缺少步骤 45 progress_channel"; bad=1; }
+  grep -qE '^run 46 manual_split ' "$file" || { echo "STRUCT_FAIL 缺少步骤 46 manual_split"; bad=1; }
+  grep -qE '^run 47 dual_kernel_view ' "$file" || { echo "STRUCT_FAIL 缺少步骤 47 dual_kernel_view"; bad=1; }
+  grep -qE '^run 48 failure_breakdown ' "$file" || { echo "STRUCT_FAIL 缺少步骤 48 failure_breakdown"; bad=1; }
   return "$bad"
 
 }
@@ -404,6 +415,12 @@ run 46 manual_split    "python3 tools/check_manual_split.py --db"
 #    + 排除 manual + 按内核分列无合并通过率 + 只有一个内核时如实降级。
 #    自证方式是删掉 GROUP BY，必须判红。
 run 47 dual_kernel_view "python3 tools/check_dual_kernel_view.py"
+
+# 48 归因分布与环境失败分流（v5.2.3 / FR-v5.2-06 / W52-10）：四侧常量齐
+#    + 产品分母只含「通过 + 产品失败」+ 未归类不混入产品侧 + 已派发未回不重复计数
+#    + 无失败时第 4 章标 NO_DATA（不许跳过）+ 页面与报告同一份计算。
+#    自证方式是把环境失败并进分母（一行改动、编译与单测都不会红），必须判红。
+run 48 failure_breakdown "python3 tools/check_failure_breakdown.py"
 
 printf '\nGATES_RESULT FAILS=%s\n' "$FAILS"
 

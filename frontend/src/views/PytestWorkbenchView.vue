@@ -6,11 +6,14 @@
  * 配置对不对（工程配置）。刻意不做「多层 tab」：这四件事互相印证，
  * 分开看会让人反复切页面对数字。
  */
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, h, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import type { DataTableColumns } from 'naive-ui'
+import DataTable from '@/components/DataTable.vue'
 import {
   pytestProjectApi,
   type BindingStats,
+  type CaseScriptBinding,
   type EvidenceExtractResult,
   type PytestCaseStep,
   type PytestHealth,
@@ -29,6 +32,35 @@ const projectId = computed(() => auth.projectId ?? 0)
 
 const health = ref<PytestHealth | null>(null)
 const bindings = ref<BindingStats | null>(null)
+
+/**
+ * 绑定列表列定义（迁 DataTable 壳，W54-06 遗留清理）。
+ *
+ * <p>四列与原来的原生表格一一对应：脚本路径 / nodeid / 解析来源 / 是否已校验。
+ * 用 render 而不是直接给 key，是为了保留原来的等宽字体与弱化色——
+ * 迁壳只换容器，不换呈现。
+ */
+const bindingColumns = computed<DataTableColumns<CaseScriptBinding>>(() => [
+  {
+    title: t('pytestWorkbench.scriptPath'),
+    key: 'scriptPath',
+    render: (row) => h('span', { class: 'mono' }, row.scriptPath),
+  },
+  {
+    title: t('pytestWorkbench.nodeId'),
+    key: 'nodeId',
+    render: (row) => h('span', { class: 'mono muted' }, row.nodeId ?? '—'),
+  },
+  {
+    title: t('pytestWorkbench.source'),
+    key: 'resolveSource',
+  },
+  {
+    title: t('pytestWorkbench.verified'),
+    key: 'verified',
+    render: (row) => (row.verified ? '✓' : '—'),
+  },
+])
 const settings = reactive<Record<string, string>>({})
 const loading = ref(false)
 /** 保存被拒时的逐字段原因（后端整体拒绝，不存一半）。 */
@@ -436,24 +468,12 @@ onMounted(load)
       <p v-if="!bindings || bindings.items.length === 0" class="muted">
         {{ t('pytestWorkbench.empty') }}
       </p>
-      <table v-else class="table">
-        <thead>
-          <tr>
-            <th>{{ t('pytestWorkbench.scriptPath') }}</th>
-            <th>{{ t('pytestWorkbench.nodeId') }}</th>
-            <th>{{ t('pytestWorkbench.source') }}</th>
-            <th>{{ t('pytestWorkbench.verified') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="item in bindings.items" :key="item.id">
-            <td class="mono">{{ item.scriptPath }}</td>
-            <td class="mono muted">{{ item.nodeId ?? '—' }}</td>
-            <td>{{ item.resolveSource }}</td>
-            <td>{{ item.verified ? '✓' : '—' }}</td>
-          </tr>
-        </tbody>
-      </table>
+      <DataTable
+        v-else
+        :columns="bindingColumns"
+        :data="bindings.items"
+        :max-height="360"
+      />
     </section>
 
     <section class="card" data-test="evidence">
