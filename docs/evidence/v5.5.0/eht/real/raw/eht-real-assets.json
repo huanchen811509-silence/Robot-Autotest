@@ -1,0 +1,84 @@
+{
+  "projectId": 95,
+  "created": [
+    {
+      "name": "gpu01",
+      "id": 20,
+      "body": {
+        "id": 20,
+        "projectId": 95,
+        "name": "gpu01",
+        "deviceType": "HOST",
+        "model": "GPU 服务器",
+        "vendor": "Inspur",
+        "serialNo": null,
+        "managementIp": "10.202.54.101",
+        "location": "EHT 实验室",
+        "rackNo": "A01",
+        "domainTag": "lab",
+        "enabled": true,
+        "ownerId": null,
+        "lastCheckedAt": null,
+        "hostKey": null,
+        "osFamily": null,
+        "osVersion": null,
+        "architecture": null,
+        "sshPort": null,
+        "modelDictId": null
+      }
+    },
+    {
+      "name": "gpu02",
+      "id": 21,
+      "body": {
+        "id": 21,
+        "projectId": 95,
+        "name": "gpu02",
+        "deviceType": "HOST",
+        "model": "GPU 服务器",
+        "vendor": "Inspur",
+        "serialNo": null,
+        "managementIp": "10.202.54.102",
+        "location": "EHT 实验室",
+        "rackNo": "A02",
+        "domainTag": "lab",
+        "enabled": true,
+        "ownerId": null,
+        "lastCheckedAt": null,
+        "hostKey": null,
+        "osFamily": null,
+        "osVersion": null,
+        "architecture": null,
+        "sshPort": null,
+        "modelDictId": null
+      }
+    }
+  ],
+  "ports": [
+    {
+      "device": "gpu01",
+      "netdev": "ens17np0",
+      "action": "created",
+      "id": 63
+    },
+    {
+      "device": "gpu01",
+      "netdev": "ens24np0",
+      "action": "created",
+      "id": 64
+    },
+    {
+      "device": "gpu02",
+      "netdev": "ens17np0",
+      "action": "created",
+      "id": 65
+    },
+    {
+      "device": "gpu02",
+      "netdev": "ens24np0",
+      "action": "created",
+      "id": 66
+    }
+  ],
+  "skipped": []
+}

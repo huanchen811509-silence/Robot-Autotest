@@ -61,6 +61,23 @@ class PytestKernelTest {
     }
 
     @Test
+    void junitFailureMessageKeepsReasonInsteadOfStatusName(@TempDir Path dir) throws Exception {
+        String xml = """
+                <testsuite name="s" tests="2">
+                  <testcase classname="t" name="bad" time="0.2">
+                    <failure message="AssertionError: PFC 使能优先级不符">traceback here</failure>
+                  </testcase>
+                  <testcase classname="t" name="err"><error>KeyError: '资源定位不唯一'</error></testcase>
+                </testsuite>""";
+        Files.writeString(dir.resolve("junit.xml"), xml);
+        NormalizedRun run = kernel.normalize(dir, "R5");
+        assertEquals("AssertionError: PFC 使能优先级不符", run.cases().get(0).message(),
+                "失败消息必须是 junit 的 message 属性，不能退化成状态名 FAIL");
+        assertEquals("KeyError: '资源定位不唯一'", run.cases().get(1).message(),
+                "缺 message 属性时应取正文首个非空行");
+    }
+
+    @Test
     void missingArtifactsRejected(@TempDir Path dir) {
         assertThrows(IllegalArgumentException.class, () -> kernel.normalize(dir, "R3"));
     }

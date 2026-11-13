@@ -1,0 +1,98 @@
+{
+  "group": "L0",
+  "hosts": [
+    "gpu01@10.202.54.101",
+    "gpu02@10.202.54.102"
+  ],
+  "generatedAt": "2026-11-13 22:04:22+0800",
+  "elapsedSeconds": 213.6,
+  "runs": [
+    {
+      "runId": "EHT-REAL-L0-20261113-220048-01",
+      "status": 200,
+      "count": 21,
+      "success": true,
+      "reason": "ok",
+      "exitCode": 0,
+      "elapsedMs": 62747,
+      "statusCounts": {
+        "PASS": 21
+      },
+      "totalCases": 21,
+      "passRateDisplay": "按比例计算",
+      "runDir": "/tmp/eht-real-runs/EHT-REAL-L0-20261113-220048-01",
+      "artifactNotes": [
+        "metadata 已落 run_metadata：10 项",
+        "junit_xml 已登记 junit.xml",
+        "pytest_report_json 已登记 junit.xml"
+      ],
+      "nodeIds": [
+        "tests/nic/hardware/test_im_cer_008.py::test_im_cer_008_idle_power",
+        "tests/nic/new_scripts/test_im_fun_014.py::test_im_fun_014_nic_info",
+        "tests/nic/new_scripts/test_im_fun_018.py::test_im_fun_018_iommu_state",
+        "tests/nic/base/test_im_fun_020.py::test_im_fun_020_pci_device_info",
+        "tests/nic/new_scripts/test_im_fun_021.py::test_im_fun_021_counter_integrity",
+        "tests/nic/new_scripts/test_im_fun_035.py::test_im_fun_035_system_nic_info",
+        "tests/nic/new_scripts/test_im_fun_036.py::test_im_fun_036_nic_log_export",
+        "tests/nic/new_scripts/test_im_fun_037.py::test_im_fun_037_guid_uniqueness",
+        "tests/nic/new_scripts/test_im_fun_040.py::test_im_fun_040_max_payload_size",
+        "tests/nic/new_scripts/test_im_fun_041.py::test_im_fun_041_max_read_request",
+        "tests/nic/new_scripts/test_im_fun_042.py::test_im_fun_042_numa_affinity",
+        "tests/nic/new_scripts/test_im_fun_043.py::test_im_fun_043_root_complex_topology",
+        "tests/nic/new_scripts/test_im_fun_044.py::test_im_fun_044_msix_vectors_and_irq",
+        "tests/nic/new_scripts/test_im_fun_045.py::test_im_fun_045_pcie_aer_monitor",
+        "tests/nic/new_scripts/test_im_fun_048.py::test_im_fun_048_secure_boot_capability",
+        "tests/nic/base/test_im_fun_055.py::test_im_fun_055_driver_firmware_compatibility",
+        "tests/nic/new_scripts/test_im_fun_058.py::test_im_fun_058_pn_sn_psid_ec",
+        "tests/nic/new_scripts/test_im_fun_059.py::test_im_fun_059_dual_port_mac_unique",
+        "tests/nic/new_scripts/test_im_fun_060.py::test_im_fun_060_dual_port_rdma_mapping",
+        "tests/nic/new_scripts/test_im_fun_064.py::test_im_fun_064_inbox_driver_source",
+        "tests/nic/new_scripts/test_im_fun_071.py::test_im_fun_071_ethtool_counter_dictionary"
+      ]
+    },
+    {
+      "runId": "EHT-REAL-L0-20261113-220151-02",
+      "status": 200,
+      "count": 20,
+      "success": false,
+      "reason": "pytest_exit_1",
+      "exitCode": 1,
+      "elapsedMs": 150512,
+      "statusCounts": {
+        "PASS": 18,
+        "ERROR": 1,
+        "FAIL": 1
+      },
+      "totalCases": 20,
+      "passRateDisplay": "按比例计算",
+      "runDir": "/tmp/eht-real-runs/EHT-REAL-L0-20261113-220151-02",
+      "artifactNotes": [
+        "metadata 已落 run_metadata：10 项",
+        "junit_xml 已登记 junit.xml",
+        "pytest_report_json 已登记 junit.xml"
+      ],
+      "nodeIds": [
+        "tests/nic/new_scripts/test_im_fun_072.py::test_im_fun_072_rdma_resource_observability",
+        "tests/nic/new_scripts/test_im_fun_073.py::test_im_fun_073_devlink_topology",
+        "tests/nic/new_scripts/test_im_fun_075.py::test_im_fun_075_firmware_log_and_health",
+        "tests/nic/mixed/test_im_mix_011.py::test_im_mix_011_gds_platform",
+        "tests/nic/ethernet/test_im_net_002.py::test_im_net_002_module_ddm",
+        "tests/nic/new_scripts/test_im_net_004.py::test_im_net_004_optics_identity",
+        "tests/nic/ethernet/test_im_net_007.py::test_im_net_007_link_autoneg",
+        "tests/nic/new_scripts/test_im_net_008.py::test_im_net_008_ipv6_connectivity",
+        "tests/nic/new_scripts/test_im_net_015.py::test_im_net_015_advertised_link_modes",
+        "tests/nic/new_scripts/test_im_net_016.py::test_im_net_016_media_type",
+        "tests/nic/ethernet/test_im_net_116.py::test_im_net_116_ptp_timestamping",
+        "tests/nic/ethernet/test_im_net_131.py::test_im_net_131_rx_checksum_offload",
+        "tests/nic/new_scripts/test_im_net_132.py::test_im_net_132_rss_hash_and_table",
+        "tests/nic/new_scripts/test_im_per_002.py::test_im_per_002_tcp_single_port_throughput",
+        "tests/nic/performance/test_im_per_057.py::test_im_per_057_tcp_single_stream_baseline",
+        "tests/nic/new_scripts/test_im_per_060.py::test_im_per_060_tcp_cpu_efficiency",
+        "tests/nic/new_scripts/test_im_per_062.py::test_im_per_062_gpu_nic_affinity",
+        "tests/nic/new_scripts/test_im_rdm_001.py::test_im_rdm_001_rocev2_deploy",
+        "tests/nic/rdma/test_im_rdm_020.py::test_im_rdm_020_rdma_device_enumeration",
+        "tests/nic/rdma/test_im_rdm_027.py::test_im_rdm_027_gid_table"
+      ]
+    }
+  ]
+}

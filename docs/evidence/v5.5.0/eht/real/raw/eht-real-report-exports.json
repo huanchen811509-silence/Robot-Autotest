@@ -1,0 +1,59 @@
+{
+  "generatedAt": "2026-11-13 22:11:00+0800",
+  "items": [
+    {
+      "runId": "EHT-REAL-L0-20261113-220048-01",
+      "format": "pdf",
+      "status": 200,
+      "bytes": 302061,
+      "exportId": 42,
+      "saved": "/home/evergreen/robot-autotest/docs/evidence/v5.5.0/eht/real/raw/report-EHT-REAL-L0-20261113-220048-01-pdf.pdf",
+      "savedBytes": 302061
+    },
+    {
+      "runId": "EHT-REAL-L0-20261113-220048-01",
+      "format": "docx",
+      "status": 200,
+      "bytes": 4304,
+      "exportId": 43,
+      "saved": "/home/evergreen/robot-autotest/docs/evidence/v5.5.0/eht/real/raw/report-EHT-REAL-L0-20261113-220048-01-docx.docx",
+      "savedBytes": 4304
+    },
+    {
+      "runId": "EHT-REAL-L0-20261113-220048-01",
+      "format": "xlsx",
+      "status": 200,
+      "bytes": 3865,
+      "exportId": 44,
+      "saved": "/home/evergreen/robot-autotest/docs/evidence/v5.5.0/eht/real/raw/report-EHT-REAL-L0-20261113-220048-01-xlsx.xlsx",
+      "savedBytes": 3865
+    },
+    {
+      "runId": "EHT-REAL-L1-20261113-220422-01",
+      "format": "pdf",
+      "status": 200,
+      "bytes": 294065,
+      "exportId": 45,
+      "saved": "/home/evergreen/robot-autotest/docs/evidence/v5.5.0/eht/real/raw/report-EHT-REAL-L1-20261113-220422-01-pdf.pdf",
+      "savedBytes": 294065
+    },
+    {
+      "runId": "EHT-REAL-L1-20261113-220422-01",
+      "format": "docx",
+      "status": 200,
+      "bytes": 4487,
+      "exportId": 46,
+      "saved": "/home/evergreen/robot-autotest/docs/evidence/v5.5.0/eht/real/raw/report-EHT-REAL-L1-20261113-220422-01-docx.docx",
+      "savedBytes": 4487
+    },
+    {
+      "runId": "EHT-REAL-L1-20261113-220422-01",
+      "format": "xlsx",
+      "status": 200,
+      "bytes": 3866,
+      "exportId": 47,
+      "saved": "/home/evergreen/robot-autotest/docs/evidence/v5.5.0/eht/real/raw/report-EHT-REAL-L1-20261113-220422-01-xlsx.xlsx",
+      "savedBytes": 3866
+    }
+  ]
+}

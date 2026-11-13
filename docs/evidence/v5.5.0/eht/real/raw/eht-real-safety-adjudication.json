@@ -1,0 +1,571 @@
+{
+  "projectId": 95,
+  "generatedAt": "2026-11-13 21:50:46+0800",
+  "authorization": "大师 2026-11-13 21:42 授权对 61 条可执行用例做真实测试（优先 gpu01/02）",
+  "policy": "ADR-0013：L2 与 LX 一律 blocksExecution，补判只走 cases/batch setSafetyLevel",
+  "counts": {
+    "L0": 41,
+    "L1": 18,
+    "L2": 2
+  },
+  "batches": [
+    {
+      "level": "L0",
+      "status": 200,
+      "ok": 41,
+      "failed": [],
+      "undoToken": "5ddbf936-475f-4f1a-b1d9-1015f592152c"
+    },
+    {
+      "level": "L1",
+      "status": 200,
+      "ok": 18,
+      "failed": [],
+      "undoToken": "67c6f718-a17f-49c3-b087-f24b49361d7f"
+    }
+  ],
+  "readback": [
+    [
+      "L0",
+      "41"
+    ],
+    [
+      "L1",
+      "18"
+    ],
+    [
+      "LX",
+      "2"
+    ]
+  ],
+  "cases": [
+    {
+      "caseId": 1921,
+      "caseCode": "IM-FUN-020",
+      "script": "tests/nic/base/test_im_fun_020.py",
+      "currentSafety": "LX",
+      "judged": "L0",
+      "basis": []
+    },
+    {
+      "caseId": 1956,
+      "caseCode": "IM-FUN-055",
+      "script": "tests/nic/base/test_im_fun_055.py",
+      "currentSafety": "LX",
+      "judged": "L0",
+      "basis": []
+    },
+    {
+      "caseId": 1981,
+      "caseCode": "IM-NET-002",
+      "script": "tests/nic/ethernet/test_im_net_002.py",
+      "currentSafety": "LX",
+      "judged": "L0",
+      "basis": []
+    },
+    {
+      "caseId": 1986,
+      "caseCode": "IM-NET-007",
+      "script": "tests/nic/ethernet/test_im_net_007.py",
+      "currentSafety": "LX",
+      "judged": "L0",
+      "basis": []
+    },
+    {
+      "caseId": 2095,
+      "caseCode": "IM-NET-116",
+      "script": "tests/nic/ethernet/test_im_net_116.py",
+      "currentSafety": "LX",
+      "judged": "L0",
+      "basis": []
+    },
+    {
+      "caseId": 2110,
+      "caseCode": "IM-NET-131",
+      "script": "tests/nic/ethernet/test_im_net_131.py",
+      "currentSafety": "LX",
+      "judged": "L0",
+      "basis": []
+    },
+    {
+      "caseId": 2303,
+      "caseCode": "IM-CER-008",
+      "script": "tests/nic/hardware/test_im_cer_008.py",
+      "currentSafety": "LX",
+      "judged": "L0",
+      "basis": []
+    },
+    {
+      "caseId": 2260,
+      "caseCode": "IM-MIX-011",
+      "script": "tests/nic/mixed/test_im_mix_011.py",
+      "currentSafety": "LX",
+      "judged": "L0",
+      "basis": []
+    },
+    {
+      "caseId": 1915,
+      "caseCode": "IM-FUN-014",
+      "script": "tests/nic/new_scripts/test_im_fun_014.py",
+      "currentSafety": "LX",
+      "judged": "L0",
+      "basis": []
+    },
+    {
+      "caseId": 1919,
+      "caseCode": "IM-FUN-018",
+      "script": "tests/nic/new_scripts/test_im_fun_018.py",
+      "currentSafety": "LX",
+      "judged": "L0",
+      "basis": []
+    },
+    {
+      "caseId": 1922,
+      "caseCode": "IM-FUN-021",
+      "script": "tests/nic/new_scripts/test_im_fun_021.py",
+      "currentSafety": "LX",
+      "judged": "L0",
+      "basis": []
+    },
+    {
+      "caseId": 1936,
+      "caseCode": "IM-FUN-035",
+      "script": "tests/nic/new_scripts/test_im_fun_035.py",
+      "currentSafety": "LX",
+      "judged": "L0",
+      "basis": []
+    },
+    {
+      "caseId": 1937,
+      "caseCode": "IM-FUN-036",
+      "script": "tests/nic/new_scripts/test_im_fun_036.py",
+      "currentSafety": "LX",
+      "judged": "L0",
+      "basis": []
+    },
+    {
+      "caseId": 1938,
+      "caseCode": "IM-FUN-037",
+      "script": "tests/nic/new_scripts/test_im_fun_037.py",
+      "currentSafety": "LX",
+      "judged": "L0",
+      "basis": []
+    },
+    {
+      "caseId": 1941,
+      "caseCode": "IM-FUN-040",
+      "script": "tests/nic/new_scripts/test_im_fun_040.py",
+      "currentSafety": "LX",
+      "judged": "L0",
+      "basis": []
+    },
+    {
+      "caseId": 1942,
+      "caseCode": "IM-FUN-041",
+      "script": "tests/nic/new_scripts/test_im_fun_041.py",
+      "currentSafety": "LX",
+      "judged": "L0",
+      "basis": []
+    },
+    {
+      "caseId": 1943,
+      "caseCode": "IM-FUN-042",
+      "script": "tests/nic/new_scripts/test_im_fun_042.py",
+      "currentSafety": "LX",
+      "judged": "L0",
+      "basis": []
+    },
+    {
+      "caseId": 1944,
+      "caseCode": "IM-FUN-043",
+      "script": "tests/nic/new_scripts/test_im_fun_043.py",
+      "currentSafety": "LX",
+      "judged": "L0",
+      "basis": []
+    },
+    {
+      "caseId": 1945,
+      "caseCode": "IM-FUN-044",
+      "script": "tests/nic/new_scripts/test_im_fun_044.py",
+      "currentSafety": "LX",
+      "judged": "L0",
+      "basis": []
+    },
+    {
+      "caseId": 1946,
+      "caseCode": "IM-FUN-045",
+      "script": "tests/nic/new_scripts/test_im_fun_045.py",
+      "currentSafety": "LX",
+      "judged": "L0",
+      "basis": []
+    },
+    {
+      "caseId": 1949,
+      "caseCode": "IM-FUN-048",
+      "script": "tests/nic/new_scripts/test_im_fun_048.py",
+      "currentSafety": "LX",
+      "judged": "L0",
+      "basis": []
+    },
+    {
+      "caseId": 1953,
+      "caseCode": "IM-FUN-052",
+      "script": "tests/nic/new_scripts/test_im_fun_052.py",
+      "currentSafety": "LX",
+      "judged": "L1",
+      "basis": [
+        "set_mtu"
+      ]
+    },
+    {
+      "caseId": 1959,
+      "caseCode": "IM-FUN-058",
+      "script": "tests/nic/new_scripts/test_im_fun_058.py",
+      "currentSafety": "LX",
+      "judged": "L0",
+      "basis": []
+    },
+    {
+      "caseId": 1960,
+      "caseCode": "IM-FUN-059",
+      "script": "tests/nic/new_scripts/test_im_fun_059.py",
+      "currentSafety": "LX",
+      "judged": "L0",
+      "basis": []
+    },
+    {
+      "caseId": 1961,
+      "caseCode": "IM-FUN-060",
+      "script": "tests/nic/new_scripts/test_im_fun_060.py",
+      "currentSafety": "LX",
+      "judged": "L0",
+      "basis": []
+    },
+    {
+      "caseId": 1965,
+      "caseCode": "IM-FUN-064",
+      "script": "tests/nic/new_scripts/test_im_fun_064.py",
+      "currentSafety": "LX",
+      "judged": "L0",
+      "basis": []
+    },
+    {
+      "caseId": 1972,
+      "caseCode": "IM-FUN-071",
+      "script": "tests/nic/new_scripts/test_im_fun_071.py",
+      "currentSafety": "LX",
+      "judged": "L0",
+      "basis": []
+    },
+    {
+      "caseId": 1973,
+      "caseCode": "IM-FUN-072",
+      "script": "tests/nic/new_scripts/test_im_fun_072.py",
+      "currentSafety": "LX",
+      "judged": "L0",
+      "basis": []
+    },
+    {
+      "caseId": 1974,
+      "caseCode": "IM-FUN-073",
+      "script": "tests/nic/new_scripts/test_im_fun_073.py",
+      "currentSafety": "LX",
+      "judged": "L0",
+      "basis": []
+    },
+    {
+      "caseId": 1976,
+      "caseCode": "IM-FUN-075",
+      "script": "tests/nic/new_scripts/test_im_fun_075.py",
+      "currentSafety": "LX",
+      "judged": "L0",
+      "basis": []
+    },
+    {
+      "caseId": 1983,
+      "caseCode": "IM-NET-004",
+      "script": "tests/nic/new_scripts/test_im_net_004.py",
+      "currentSafety": "LX",
+      "judged": "L0",
+      "basis": []
+    },
+    {
+      "caseId": 1987,
+      "caseCode": "IM-NET-008",
+      "script": "tests/nic/new_scripts/test_im_net_008.py",
+      "currentSafety": "LX",
+      "judged": "L0",
+      "basis": []
+    },
+    {
+      "caseId": 1994,
+      "caseCode": "IM-NET-015",
+      "script": "tests/nic/new_scripts/test_im_net_015.py",
+      "currentSafety": "LX",
+      "judged": "L0",
+      "basis": []
+    },
+    {
+      "caseId": 1995,
+      "caseCode": "IM-NET-016",
+      "script": "tests/nic/new_scripts/test_im_net_016.py",
+      "currentSafety": "LX",
+      "judged": "L0",
+      "basis": []
+    },
+    {
+      "caseId": 2001,
+      "caseCode": "IM-NET-022",
+      "script": "tests/nic/new_scripts/test_im_net_022.py",
+      "currentSafety": "LX",
+      "judged": "L1",
+      "basis": [
+        "ethtool -K"
+      ]
+    },
+    {
+      "caseId": 2002,
+      "caseCode": "IM-NET-023",
+      "script": "tests/nic/new_scripts/test_im_net_023.py",
+      "currentSafety": "LX",
+      "judged": "L1",
+      "basis": [
+        "ethtool -K"
+      ]
+    },
+    {
+      "caseId": 2007,
+      "caseCode": "IM-NET-028",
+      "script": "tests/nic/new_scripts/test_im_net_028.py",
+      "currentSafety": "LX",
+      "judged": "L1",
+      "basis": [
+        "ethtool -K"
+      ]
+    },
+    {
+      "caseId": 2013,
+      "caseCode": "IM-NET-034",
+      "script": "tests/nic/new_scripts/test_im_net_034.py",
+      "currentSafety": "LX",
+      "judged": "L1",
+      "basis": [
+        "ethtool -K"
+      ]
+    },
+    {
+      "caseId": 2019,
+      "caseCode": "IM-NET-040",
+      "script": "tests/nic/new_scripts/test_im_net_040.py",
+      "currentSafety": "LX",
+      "judged": "L1",
+      "basis": [
+        "ethtool -K"
+      ]
+    },
+    {
+      "caseId": 2031,
+      "caseCode": "IM-NET-052",
+      "script": "tests/nic/new_scripts/test_im_net_052.py",
+      "currentSafety": "LX",
+      "judged": "L1",
+      "basis": [
+        "ethtool -K"
+      ]
+    },
+    {
+      "caseId": 2033,
+      "caseCode": "IM-NET-054",
+      "script": "tests/nic/new_scripts/test_im_net_054.py",
+      "currentSafety": "LX",
+      "judged": "L1",
+      "basis": [
+        "ethtool -K"
+      ]
+    },
+    {
+      "caseId": 2036,
+      "caseCode": "IM-NET-057",
+      "script": "tests/nic/new_scripts/test_im_net_057.py",
+      "currentSafety": "LX",
+      "judged": "L1",
+      "basis": [
+        "set_channels"
+      ]
+    },
+    {
+      "caseId": 2046,
+      "caseCode": "IM-NET-067",
+      "script": "tests/nic/new_scripts/test_im_net_067.py",
+      "currentSafety": "LX",
+      "judged": "L1",
+      "basis": [
+        "set_channels"
+      ]
+    },
+    {
+      "caseId": 2053,
+      "caseCode": "IM-NET-074",
+      "script": "tests/nic/new_scripts/test_im_net_074.py",
+      "currentSafety": "LX",
+      "judged": "L1",
+      "basis": [
+        "set_ring"
+      ]
+    },
+    {
+      "caseId": 2054,
+      "caseCode": "IM-NET-075",
+      "script": "tests/nic/new_scripts/test_im_net_075.py",
+      "currentSafety": "LX",
+      "judged": "L1",
+      "basis": [
+        "set_ring"
+      ]
+    },
+    {
+      "caseId": 2056,
+      "caseCode": "IM-NET-077",
+      "script": "tests/nic/new_scripts/test_im_net_077.py",
+      "currentSafety": "LX",
+      "judged": "L1",
+      "basis": [
+        "set_ring"
+      ]
+    },
+    {
+      "caseId": 2059,
+      "caseCode": "IM-NET-080",
+      "script": "tests/nic/new_scripts/test_im_net_080.py",
+      "currentSafety": "LX",
+      "judged": "L1",
+      "basis": [
+        "set_link_state"
+      ]
+    },
+    {
+      "caseId": 2067,
+      "caseCode": "IM-NET-088",
+      "script": "tests/nic/new_scripts/test_im_net_088.py",
+      "currentSafety": "LX",
+      "judged": "L1",
+      "basis": [
+        "set_mtu"
+      ]
+    },
+    {
+      "caseId": 2092,
+      "caseCode": "IM-NET-113",
+      "script": "tests/nic/new_scripts/test_im_net_113.py",
+      "currentSafety": "LX",
+      "judged": "L1",
+      "basis": [
+        "set_fec"
+      ]
+    },
+    {
+      "caseId": 2111,
+      "caseCode": "IM-NET-132",
+      "script": "tests/nic/new_scripts/test_im_net_132.py",
+      "currentSafety": "LX",
+      "judged": "L0",
+      "basis": []
+    },
+    {
+      "caseId": 2182,
+      "caseCode": "IM-PER-002",
+      "script": "tests/nic/new_scripts/test_im_per_002.py",
+      "currentSafety": "LX",
+      "judged": "L0",
+      "basis": []
+    },
+    {
+      "caseId": 2240,
+      "caseCode": "IM-PER-060",
+      "script": "tests/nic/new_scripts/test_im_per_060.py",
+      "currentSafety": "LX",
+      "judged": "L0",
+      "basis": []
+    },
+    {
+      "caseId": 2242,
+      "caseCode": "IM-PER-062",
+      "script": "tests/nic/new_scripts/test_im_per_062.py",
+      "currentSafety": "LX",
+      "judged": "L0",
+      "basis": []
+    },
+    {
+      "caseId": 2153,
+      "caseCode": "IM-RDM-001",
+      "script": "tests/nic/new_scripts/test_im_rdm_001.py",
+      "currentSafety": "LX",
+      "judged": "L0",
+      "basis": []
+    },
+    {
+      "caseId": 2173,
+      "caseCode": "IM-RDM-021",
+      "script": "tests/nic/new_scripts/test_im_rdm_021.py",
+      "currentSafety": "LX",
+      "judged": "L1",
+      "basis": [
+        "set_pfc"
+      ]
+    },
+    {
+      "caseId": 2174,
+      "caseCode": "IM-RDM-022",
+      "script": "tests/nic/new_scripts/test_im_rdm_022.py",
+      "currentSafety": "LX",
+      "judged": "L1",
+      "basis": [
+        "set_pfc"
+      ]
+    },
+    {
+      "caseId": 2118,
+      "caseCode": "IM-VIR-001",
+      "script": "tests/nic/new_scripts/test_im_vir_001.py",
+      "currentSafety": "LX",
+      "judged": "L2",
+      "basis": [
+        "set_sriov_numvfs"
+      ]
+    },
+    {
+      "caseId": 2119,
+      "caseCode": "IM-VIR-002",
+      "script": "tests/nic/new_scripts/test_im_vir_002.py",
+      "currentSafety": "LX",
+      "judged": "L2",
+      "basis": [
+        "set_sriov_numvfs"
+      ]
+    },
+    {
+      "caseId": 2237,
+      "caseCode": "IM-PER-057",
+      "script": "tests/nic/performance/test_im_per_057.py",
+      "currentSafety": "LX",
+      "judged": "L0",
+      "basis": []
+    },
+    {
+      "caseId": 2172,
+      "caseCode": "IM-RDM-020",
+      "script": "tests/nic/rdma/test_im_rdm_020.py",
+      "currentSafety": "LX",
+      "judged": "L0",
+      "basis": []
+    },
+    {
+      "caseId": 2179,
+      "caseCode": "IM-RDM-027",
+      "script": "tests/nic/rdma/test_im_rdm_027.py",
+      "currentSafety": "LX",
+      "judged": "L0",
+      "basis": []
+    }
+  ]
+}

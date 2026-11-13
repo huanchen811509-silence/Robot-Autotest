@@ -1,0 +1,48 @@
+{
+  "nodeId": "tests/nic/new_scripts/test_im_rdm_022.py::test_im_rdm_022_dual_up_pfc_counters",
+  "runId": "EHT-REAL-ISOLATED-20261113-215841",
+  "status": 200,
+  "response": {
+    "runId": "EHT-REAL-ISOLATED-20261113-215841",
+    "mode": "real",
+    "success": false,
+    "reason": "pytest_exit_1",
+    "batches": 1,
+    "exitCode": 1,
+    "elapsedMs": 13787,
+    "runDir": "/tmp/eht-real-runs/EHT-REAL-ISOLATED-20261113-215841",
+    "junitFiles": [
+      "/tmp/eht-real-runs/EHT-REAL-ISOLATED-20261113-215841/junit.xml"
+    ],
+    "totalCases": 1,
+    "metadata": {
+      "CASE_KIND": "PYTEST-REAL-ISO",
+      "DUT": "gpu01,gpu02",
+      "CASE_ID": "EHT-ISO",
+      "RUN_ID": "EHT-REAL-ISOLATED-20261113-215841",
+      "QA_PROJECT": "EHT-PYTEST-LIB",
+      "SW_BUILD": "v5.5.0-eht",
+      "LINK": "ens17np0"
+    },
+    "statusCounts": {
+      "FAIL": 1
+    },
+    "boundMatched": 1,
+    "unboundResults": 0,
+    "planOnly": false,
+    "nonSkippedCases": 1,
+    "passRateApplicable": true,
+    "passRateDisplay": "按比例计算",
+    "gap": "",
+    "command": "/home/evergreen/venvs/nic-fake/bin/python -m pytest --env_config /tmp/eht-real-runs/EHT-REAL-ISOLATED-20261113-215841/run_env.yaml --mode real --junitxml=/tmp/eht-real-runs/EHT-REAL-ISOLATED-20261113-215841/junit.xml -o junit_family=xunit2 -o junit_logging=out-err --capture=fd -q tests/nic/new_scripts/test_im_rdm_022.py::test_im_rdm_022_dual_up_pfc_counters",
+    "junitConditions": {
+      "--capture=fd": true,
+      "junit_logging=out-err": true,
+      "junit_family=xunit2": true
+    },
+    "artifactNotes": [
+      "junit_xml 已登记 junit.xml",
+      "pytest_report_json 已登记 junit.xml"
+    ]
+  }
+}

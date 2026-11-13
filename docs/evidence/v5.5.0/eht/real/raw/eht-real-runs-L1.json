@@ -1,0 +1,52 @@
+{
+  "group": "L1",
+  "hosts": [
+    "gpu01@10.202.54.101",
+    "gpu02@10.202.54.102"
+  ],
+  "generatedAt": "2026-11-13 22:06:44+0800",
+  "elapsedSeconds": 142.1,
+  "runs": [
+    {
+      "runId": "EHT-REAL-L1-20261113-220422-01",
+      "status": 200,
+      "count": 18,
+      "success": false,
+      "reason": "pytest_exit_1",
+      "exitCode": 1,
+      "elapsedMs": 141965,
+      "statusCounts": {
+        "PASS": 17,
+        "FAIL": 1
+      },
+      "totalCases": 18,
+      "passRateDisplay": "按比例计算",
+      "runDir": "/tmp/eht-real-runs/EHT-REAL-L1-20261113-220422-01",
+      "artifactNotes": [
+        "metadata 已落 run_metadata：10 项",
+        "junit_xml 已登记 junit.xml",
+        "pytest_report_json 已登记 junit.xml"
+      ],
+      "nodeIds": [
+        "tests/nic/new_scripts/test_im_fun_052.py::test_im_fun_052_config_snapshot_diff",
+        "tests/nic/new_scripts/test_im_net_022.py::test_im_net_022_gro_off",
+        "tests/nic/new_scripts/test_im_net_023.py::test_im_net_023_gro_on",
+        "tests/nic/new_scripts/test_im_net_028.py::test_im_net_028_lro_off",
+        "tests/nic/new_scripts/test_im_net_034.py::test_im_net_034_tso_off",
+        "tests/nic/new_scripts/test_im_net_040.py::test_im_net_040_gso_off",
+        "tests/nic/new_scripts/test_im_net_052.py::test_im_net_052_tx_checksum_off",
+        "tests/nic/new_scripts/test_im_net_054.py::test_im_net_054_rx_checksum_off",
+        "tests/nic/new_scripts/test_im_net_057.py::test_im_net_057_tx_single_queue",
+        "tests/nic/new_scripts/test_im_net_067.py::test_im_net_067_multi_queue_config",
+        "tests/nic/new_scripts/test_im_net_074.py::test_im_net_074_tx_ring_capacity",
+        "tests/nic/new_scripts/test_im_net_075.py::test_im_net_075_tx_ring_over_limit",
+        "tests/nic/new_scripts/test_im_net_077.py::test_im_net_077_rx_ring_max",
+        "tests/nic/new_scripts/test_im_net_080.py::test_im_net_080_link_down_up",
+        "tests/nic/new_scripts/test_im_net_088.py::test_im_net_088_mtu_1500",
+        "tests/nic/new_scripts/test_im_net_113.py::test_im_net_113_fec_switch",
+        "tests/nic/new_scripts/test_im_rdm_021.py::test_im_rdm_021_single_up_pfc",
+        "tests/nic/new_scripts/test_im_rdm_022.py::test_im_rdm_022_dual_up_pfc_counters"
+      ]
+    }
+  ]
+}

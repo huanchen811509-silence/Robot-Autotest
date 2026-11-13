@@ -1,0 +1,49 @@
+{
+  "nodeId": "tests/nic/ethernet/test_im_net_002.py::test_im_net_002_module_ddm",
+  "runId": "EHT-REAL-RETRY2-20261113-220704",
+  "status": 200,
+  "response": {
+    "runId": "EHT-REAL-RETRY2-20261113-220704",
+    "mode": "real",
+    "success": true,
+    "reason": "ok",
+    "batches": 1,
+    "exitCode": 0,
+    "elapsedMs": 6152,
+    "runDir": "/tmp/eht-real-runs/EHT-REAL-RETRY2-20261113-220704",
+    "junitFiles": [
+      "/tmp/eht-real-runs/EHT-REAL-RETRY2-20261113-220704/junit.xml"
+    ],
+    "totalCases": 1,
+    "metadata": {
+      "CASE_KIND": "PYTEST-REAL-ISO",
+      "DUT": "gpu01,gpu02",
+      "CASE_ID": "EHT-ISO",
+      "RUN_ID": "EHT-REAL-RETRY2-20261113-220704",
+      "QA_PROJECT": "EHT-PYTEST-LIB",
+      "SW_BUILD": "v5.5.0-eht",
+      "LINK": "ens17np0"
+    },
+    "statusCounts": {
+      "PASS": 1
+    },
+    "boundMatched": 1,
+    "unboundResults": 0,
+    "planOnly": false,
+    "nonSkippedCases": 1,
+    "passRateApplicable": true,
+    "passRateDisplay": "按比例计算",
+    "gap": "",
+    "command": "/home/evergreen/venvs/nic-fake/bin/python -m pytest --env_config /tmp/eht-real-runs/EHT-REAL-RETRY2-20261113-220704/run_env.yaml --mode real --junitxml=/tmp/eht-real-runs/EHT-REAL-RETRY2-20261113-220704/junit.xml -o junit_family=xunit2 -o junit_logging=out-err --capture=fd -q tests/nic/ethernet/test_im_net_002.py::test_im_net_002_module_ddm",
+    "junitConditions": {
+      "--capture=fd": true,
+      "junit_logging=out-err": true,
+      "junit_family=xunit2": true
+    },
+    "artifactNotes": [
+      "metadata 已落 run_metadata：7 项",
+      "junit_xml 已登记 junit.xml",
+      "pytest_report_json 已登记 junit.xml"
+    ]
+  }
+}

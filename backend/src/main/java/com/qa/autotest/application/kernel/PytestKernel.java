@@ -180,13 +180,48 @@ public class PytestKernel implements ExecutionKernel {
                     status = CaseStatus.SKIP;
                 }
                 cases.add(new NormalizedCaseResult(nodeId, name, status,
-                        parseDouble(node.getAttribute("time")), status.name()));
+                        parseDouble(node.getAttribute("time")), failureMessage(node, status)));
             }
             Map<String, String> metadata = canonicalMetadata(doc);
             return new NormalizedRun(NAME, runId, cases, withRunId(metadata, runId));
         } catch (Exception e) {
             throw new IllegalStateException("junit.xml 解析失败: " + path, e);
         }
+    }
+
+    /**
+     * 取 junit 的失败/错误消息。
+     *
+     * <p>旧实现直接把状态名（{@code FAIL}）当消息塞进结果，报告里「失败消息」一列
+     * 就只剩两个字，对外报告等于没有原因。这里按 junit 语义取 {@code message} 属性，
+     * 缺属性时退回正文首个非空行，并截断到 600 字符避免整段 traceback 进报告。
+     */
+    private static String failureMessage(Element testCase, CaseStatus status) {
+        if (status != CaseStatus.FAIL && status != CaseStatus.ERROR) {
+            return null;
+        }
+        String tag = status == CaseStatus.FAIL ? "failure" : "error";
+        NodeList hits = testCase.getElementsByTagName(tag);
+        if (hits.getLength() == 0) {
+            return status.name();
+        }
+        Element node = (Element) hits.item(0);
+        String message = node.getAttribute("message");
+        if (message == null || message.isBlank()) {
+            String body = node.getTextContent();
+            if (body != null) {
+                for (String line : body.split("\\R")) {
+                    if (!line.isBlank()) {
+                        message = line.trim();
+                        break;
+                    }
+                }
+            }
+        }
+        if (message == null || message.isBlank()) {
+            return status.name();
+        }
+        return message.length() > 600 ? message.substring(0, 600) : message;
     }
 
     private static double parseDouble(String raw) {

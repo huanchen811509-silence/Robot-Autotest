@@ -1,0 +1,1259 @@
+{
+  "generatedAt": "2026-11-13 22:10:29+0800",
+  "runs": [
+    {
+      "runId": "EHT-REAL-L0-20261113-220048-01",
+      "parse": {
+        "status": 200,
+        "data": {
+          "runId": "EHT-REAL-L0-20261113-220048-01",
+          "projectId": 95,
+          "state": "finished",
+          "exportable": true,
+          "metadataMissing": [],
+          "metadata": {
+            "LINK": "ens17np0",
+            "CASE_KIND": "PYTEST-REAL",
+            "BASELINE": "eht-real-20261113",
+            "RUN_ID": "EHT-REAL-L0-20261113-220048-01",
+            "OPERATOR": "xuetu",
+            "QA_PROJECT": "EHT-PYTEST-LIB",
+            "DUT": "gpu01,gpu02",
+            "CASE_ID": "EHT-REAL-L0",
+            "STARTED_AT": "2026-11-13T22:00:48",
+            "SW_BUILD": "v5.5.0-eht"
+          },
+          "counts": {
+            "pass": 21,
+            "fail": 0,
+            "skip": 0
+          },
+          "startedAt": "2026-11-13T14:00:48.908Z",
+          "finishedAt": "2026-11-13T14:01:51.704Z"
+        }
+      },
+      "detail": {
+        "status": 200,
+        "data": {
+          "runId": "EHT-REAL-L0-20261113-220048-01",
+          "projectId": 95,
+          "state": "finished",
+          "exportable": true,
+          "metadataMissing": [],
+          "metadata": {
+            "LINK": "ens17np0",
+            "CASE_KIND": "PYTEST-REAL",
+            "BASELINE": "eht-real-20261113",
+            "RUN_ID": "EHT-REAL-L0-20261113-220048-01",
+            "OPERATOR": "xuetu",
+            "QA_PROJECT": "EHT-PYTEST-LIB",
+            "DUT": "gpu01,gpu02",
+            "CASE_ID": "EHT-REAL-L0",
+            "STARTED_AT": "2026-11-13T22:00:48",
+            "SW_BUILD": "v5.5.0-eht"
+          },
+          "counts": {
+            "pass": 21,
+            "fail": 0,
+            "skip": 0
+          },
+          "startedAt": "2026-11-13T14:00:48.908Z",
+          "finishedAt": "2026-11-13T14:01:51.704Z"
+        }
+      },
+      "tree": {
+        "status": 200,
+        "data": {
+          "name": "EHT-REAL-L0-20261113-220048-01",
+          "status": "PASS",
+          "suites": [
+            {
+              "name": "IM-CER-008",
+              "status": "PASS",
+              "suites": [],
+              "cases": [
+                {
+                  "caseKey": "IM-CER-008",
+                  "name": "IM-CER-008",
+                  "verdict": "PASS",
+                  "durationMs": 22998,
+                  "failureMsg": null,
+                  "commandText": "NONE",
+                  "commandSource": "NONE",
+                  "commandExitCode": null,
+                  "keywords": []
+                }
+              ]
+            },
+            {
+              "name": "IM-FUN-014",
+              "status": "PASS",
+              "suites": [],
+              "cases": [
+                {
+                  "caseKey": "IM-FUN-014",
+                  "name": "IM-FUN-014",
+                  "verdict": "PASS",
+                  "durationMs": 796,
+                  "failureMsg": null,
+                  "commandText": "NONE",
+                  "commandSource": "NONE",
+                  "commandExitCode": null,
+                  "keywords": []
+                }
+              ]
+            },
+            {
+              "name": "IM-FUN-018",
+              "status": "PASS",
+              "suites": [],
+              "cases": [
+                {
+                  "caseKey": "IM-FUN-018",
+                  "name": "IM-FUN-018",
+                  "verdict": "PASS",
+                  "durationMs": 578,
+                  "failureMsg": null,
+                  "commandText": "NONE",
+                  "commandSource": "NONE",
+                  "commandExitCode": null,
+                  "keywords": []
+                }
+              ]
+            },
+            {
+              "name": "IM-FUN-020",
+              "status": "PASS",
+              "suites": [],
+              "cases": [
+                {
+                  "caseKey": "IM-FUN-020",
+                  "name": "IM-FUN-020",
+                  "verdict": "PASS",
+                  "durationMs": 537,
+                  "failureMsg": null,
+                  "commandText": "NONE",
+                  "commandSource": "NONE",
+                  "commandExitCode": null,
+                  "keywords": []
+                }
+              ]
+            },
+            {
+              "name": "IM-FUN-021",
+              "status": "PASS",
+              "suites": [],
+              "cases": [
+                {
+                  "caseKey": "IM-FUN-021",
+                  "name": "IM-FUN-021",
+                  "verdict": "PASS",
+                  "durationMs": 2157,
+                  "failureMsg": null,
+                  "commandText": "NONE",
+                  "commandSource": "NONE",
+                  "commandExitCode": null,
+                  "keywords": []
+                }
+              ]
+            },
+            {
+              "name": "IM-FUN-035",
+              "status": "PASS",
+              "suites": [],
+              "cases": [
+                {
+                  "caseKey": "IM-FUN-035",
+                  "name": "IM-FUN-035",
+                  "verdict": "PASS",
+                  "durationMs": 1062,
+                  "failureMsg": null,
+                  "commandText": "NONE",
+                  "commandSource": "NONE",
+                  "commandExitCode": null,
+                  "keywords": []
+                }
+              ]
+            },
+            {
+              "name": "IM-FUN-036",
+              "status": "PASS",
+              "suites": [],
+              "cases": [
+                {
+                  "caseKey": "IM-FUN-036",
+                  "name": "IM-FUN-036",
+                  "verdict": "PASS",
+                  "durationMs": 803,
+                  "failureMsg": null,
+                  "commandText": "NONE",
+                  "commandSource": "NONE",
+                  "commandExitCode": null,
+                  "keywords": []
+                }
+              ]
+            },
+            {
+              "name": "IM-FUN-037",
+              "status": "PASS",
+              "suites": [],
+              "cases": [
+                {
+                  "caseKey": "IM-FUN-037",
+                  "name": "IM-FUN-037",
+                  "verdict": "PASS",
+                  "durationMs": 511,
+                  "failureMsg": null,
+                  "commandText": "NONE",
+                  "commandSource": "NONE",
+                  "commandExitCode": null,
+                  "keywords": []
+                }
+              ]
+            },
+            {
+              "name": "IM-FUN-040",
+              "status": "PASS",
+              "suites": [],
+              "cases": [
+                {
+                  "caseKey": "IM-FUN-040",
+                  "name": "IM-FUN-040",
+                  "verdict": "PASS",
+                  "durationMs": 507,
+                  "failureMsg": null,
+                  "commandText": "NONE",
+                  "commandSource": "NONE",
+                  "commandExitCode": null,
+                  "keywords": []
+                }
+              ]
+            },
+            {
+              "name": "IM-FUN-041",
+              "status": "PASS",
+              "suites": [],
+              "cases": [
+                {
+                  "caseKey": "IM-FUN-041",
+                  "name": "IM-FUN-041",
+                  "verdict": "PASS",
+                  "durationMs": 658,
+                  "failureMsg": null,
+                  "commandText": "NONE",
+                  "commandSource": "NONE",
+                  "commandExitCode": null,
+                  "keywords": []
+                }
+              ]
+            },
+            {
+              "name": "IM-FUN-042",
+              "status": "PASS",
+              "suites": [],
+              "cases": [
+                {
+                  "caseKey": "IM-FUN-042",
+                  "name": "IM-FUN-042",
+                  "verdict": "PASS",
+                  "durationMs": 1101,
+                  "failureMsg": null,
+                  "commandText": "NONE",
+                  "commandSource": "NONE",
+                  "commandExitCode": null,
+                  "keywords": []
+                }
+              ]
+            },
+            {
+              "name": "IM-FUN-043",
+              "status": "PASS",
+              "suites": [],
+              "cases": [
+                {
+                  "caseKey": "IM-FUN-043",
+                  "name": "IM-FUN-043",
+                  "verdict": "PASS",
+                  "durationMs": 659,
+                  "failureMsg": null,
+                  "commandText": "NONE",
+                  "commandSource": "NONE",
+                  "commandExitCode": null,
+                  "keywords": []
+                }
+              ]
+            },
+            {
+              "name": "IM-FUN-044",
+              "status": "PASS",
+              "suites": [],
+              "cases": [
+                {
+                  "caseKey": "IM-FUN-044",
+                  "name": "IM-FUN-044",
+                  "verdict": "PASS",
+                  "durationMs": 2619,
+                  "failureMsg": null,
+                  "commandText": "NONE",
+                  "commandSource": "NONE",
+                  "commandExitCode": null,
+                  "keywords": []
+                }
+              ]
+            },
+            {
+              "name": "IM-FUN-045",
+              "status": "PASS",
+              "suites": [],
+              "cases": [
+                {
+                  "caseKey": "IM-FUN-045",
+                  "name": "IM-FUN-045",
+                  "verdict": "PASS",
+                  "durationMs": 3134,
+                  "failureMsg": null,
+                  "commandText": "NONE",
+                  "commandSource": "NONE",
+                  "commandExitCode": null,
+                  "keywords": []
+                }
+              ]
+            },
+            {
+              "name": "IM-FUN-048",
+              "status": "PASS",
+              "suites": [],
+              "cases": [
+                {
+                  "caseKey": "IM-FUN-048",
+                  "name": "IM-FUN-048",
+                  "verdict": "PASS",
+                  "durationMs": 1194,
+                  "failureMsg": null,
+                  "commandText": "NONE",
+                  "commandSource": "NONE",
+                  "commandExitCode": null,
+                  "keywords": []
+                }
+              ]
+            },
+            {
+              "name": "IM-FUN-055",
+              "status": "PASS",
+              "suites": [],
+              "cases": [
+                {
+                  "caseKey": "IM-FUN-055",
+                  "name": "IM-FUN-055",
+                  "verdict": "PASS",
+                  "durationMs": 2518,
+                  "failureMsg": null,
+                  "commandText": "NONE",
+                  "commandSource": "NONE",
+                  "commandExitCode": null,
+                  "keywords": []
+                }
+              ]
+            },
+            {
+              "name": "IM-FUN-058",
+              "status": "PASS",
+              "suites": [],
+              "cases": [
+                {
+                  "caseKey": "IM-FUN-058",
+                  "name": "IM-FUN-058",
+                  "verdict": "PASS",
+                  "durationMs": 1067,
+                  "failureMsg": null,
+                  "commandText": "NONE",
+                  "commandSource": "NONE",
+                  "commandExitCode": null,
+                  "keywords": []
+                }
+              ]
+            },
+            {
+              "name": "IM-FUN-059",
+              "status": "PASS",
+              "suites": [],
+              "cases": [
+                {
+                  "caseKey": "IM-FUN-059",
+                  "name": "IM-FUN-059",
+                  "verdict": "PASS",
+                  "durationMs": 849,
+                  "failureMsg": null,
+                  "commandText": "NONE",
+                  "commandSource": "NONE",
+                  "commandExitCode": null,
+                  "keywords": []
+                }
+              ]
+            },
+            {
+              "name": "IM-FUN-060",
+              "status": "PASS",
+              "suites": [],
+              "cases": [
+                {
+                  "caseKey": "IM-FUN-060",
+                  "name": "IM-FUN-060",
+                  "verdict": "PASS",
+                  "durationMs": 1953,
+                  "failureMsg": null,
+                  "commandText": "NONE",
+                  "commandSource": "NONE",
+                  "commandExitCode": null,
+                  "keywords": []
+                }
+              ]
+            },
+            {
+              "name": "IM-FUN-064",
+              "status": "PASS",
+              "suites": [],
+              "cases": [
+                {
+                  "caseKey": "IM-FUN-064",
+                  "name": "IM-FUN-064",
+                  "verdict": "PASS",
+                  "durationMs": 796,
+                  "failureMsg": null,
+                  "commandText": "NONE",
+                  "commandSource": "NONE",
+                  "commandExitCode": null,
+                  "keywords": []
+                }
+              ]
+            },
+            {
+              "name": "IM-FUN-071",
+              "status": "PASS",
+              "suites": [],
+              "cases": [
+                {
+                  "caseKey": "IM-FUN-071",
+                  "name": "IM-FUN-071",
+                  "verdict": "PASS",
+                  "durationMs": 490,
+                  "failureMsg": null,
+                  "commandText": "NONE",
+                  "commandSource": "NONE",
+                  "commandExitCode": null,
+                  "keywords": []
+                }
+              ]
+            }
+          ],
+          "cases": []
+        }
+      },
+      "cases": [
+        {
+          "code": "IM-CER-008",
+          "verdict": "PASS",
+          "durationMs": 22998
+        },
+        {
+          "code": "IM-FUN-014",
+          "verdict": "PASS",
+          "durationMs": 796
+        },
+        {
+          "code": "IM-FUN-018",
+          "verdict": "PASS",
+          "durationMs": 578
+        },
+        {
+          "code": "IM-FUN-020",
+          "verdict": "PASS",
+          "durationMs": 537
+        },
+        {
+          "code": "IM-FUN-021",
+          "verdict": "PASS",
+          "durationMs": 2157
+        },
+        {
+          "code": "IM-FUN-035",
+          "verdict": "PASS",
+          "durationMs": 1062
+        },
+        {
+          "code": "IM-FUN-036",
+          "verdict": "PASS",
+          "durationMs": 803
+        },
+        {
+          "code": "IM-FUN-037",
+          "verdict": "PASS",
+          "durationMs": 511
+        },
+        {
+          "code": "IM-FUN-040",
+          "verdict": "PASS",
+          "durationMs": 507
+        },
+        {
+          "code": "IM-FUN-041",
+          "verdict": "PASS",
+          "durationMs": 658
+        },
+        {
+          "code": "IM-FUN-042",
+          "verdict": "PASS",
+          "durationMs": 1101
+        },
+        {
+          "code": "IM-FUN-043",
+          "verdict": "PASS",
+          "durationMs": 659
+        },
+        {
+          "code": "IM-FUN-044",
+          "verdict": "PASS",
+          "durationMs": 2619
+        },
+        {
+          "code": "IM-FUN-045",
+          "verdict": "PASS",
+          "durationMs": 3134
+        },
+        {
+          "code": "IM-FUN-048",
+          "verdict": "PASS",
+          "durationMs": 1194
+        },
+        {
+          "code": "IM-FUN-055",
+          "verdict": "PASS",
+          "durationMs": 2518
+        },
+        {
+          "code": "IM-FUN-058",
+          "verdict": "PASS",
+          "durationMs": 1067
+        },
+        {
+          "code": "IM-FUN-059",
+          "verdict": "PASS",
+          "durationMs": 849
+        },
+        {
+          "code": "IM-FUN-060",
+          "verdict": "PASS",
+          "durationMs": 1953
+        },
+        {
+          "code": "IM-FUN-064",
+          "verdict": "PASS",
+          "durationMs": 796
+        },
+        {
+          "code": "IM-FUN-071",
+          "verdict": "PASS",
+          "durationMs": 490
+        }
+      ],
+      "summary": {
+        "status": 200,
+        "data": {
+          "conclusion": "PASSED",
+          "total": 21,
+          "passed": 21,
+          "failed": 0,
+          "skipped": 0,
+          "passRate": 100.0,
+          "durationMs": 62796,
+          "topFailures": [],
+          "risks": [],
+          "generatedAt": "2026-11-13T14:10:29.898099605Z"
+        }
+      },
+      "export": {
+        "html": {
+          "status": 400,
+          "data": {
+            "code": 40001,
+            "codeName": "INVALID_ARGUMENT",
+            "message": "format 只能是 pdf / docx / xlsx",
+            "data": null,
+            "success": false
+          }
+        },
+        "pdf": {
+          "status": 200,
+          "data": {
+            "exportId": 40,
+            "format": "pdf",
+            "mode": "external",
+            "bytes": 302061,
+            "sha256": "d39ef265c96e42ba4003d472fde67ab1be02ea853f233fe9d6582939d6635f30",
+            "downloadUrl": "/api/exports/40/download?projectId=95"
+          }
+        }
+      },
+      "exportHistory": {
+        "status": 200,
+        "data": [
+          {
+            "exportId": 40,
+            "runId": "EHT-REAL-L0-20261113-220048-01",
+            "format": "pdf",
+            "mode": "external",
+            "fileName": "report_EHT-REAL-L0-20261113-220048-01_external.pdf",
+            "bytes": 302061,
+            "sha256": "d39ef265c96e42ba4003d472fde67ab1be02ea853f233fe9d6582939d6635f30",
+            "status": "created",
+            "requestedBy": 17,
+            "createdAt": "2026-11-13T14:10:35.971Z"
+          },
+          {
+            "exportId": 36,
+            "runId": "EHT-REAL-L0-20261113-220048-01",
+            "format": "xlsx",
+            "mode": "external",
+            "fileName": "report_EHT-REAL-L0-20261113-220048-01_external.xlsx",
+            "bytes": 3866,
+            "sha256": "e648f6d2af6e03d0bef683e3252888a704005dc3cf1e0b643b6651d06d08e4b2",
+            "status": "created",
+            "requestedBy": 17,
+            "createdAt": "2026-11-13T14:08:09.858Z"
+          },
+          {
+            "exportId": 35,
+            "runId": "EHT-REAL-L0-20261113-220048-01",
+            "format": "docx",
+            "mode": "external",
+            "fileName": "report_EHT-REAL-L0-20261113-220048-01_external.docx",
+            "bytes": 4307,
+            "sha256": "516c05f4ca84b0c0c963e15fdb7168bcfe368803688e3ec3cd9fcb3079ec8cd3",
+            "status": "created",
+            "requestedBy": 17,
+            "createdAt": "2026-11-13T14:08:09.462Z"
+          },
+          {
+            "exportId": 34,
+            "runId": "EHT-REAL-L0-20261113-220048-01",
+            "format": "pdf",
+            "mode": "external",
+            "fileName": "report_EHT-REAL-L0-20261113-220048-01_external.pdf",
+            "bytes": 302059,
+            "sha256": "9d84c3a1fc9c553425ffe9b2baad5ae877cdc563df99b2d7044abd54d3638479",
+            "status": "created",
+            "requestedBy": 17,
+            "createdAt": "2026-11-13T14:08:08.370Z"
+          },
+          {
+            "exportId": 32,
+            "runId": "EHT-REAL-L0-20261113-220048-01",
+            "format": "pdf",
+            "mode": "external",
+            "fileName": "report_EHT-REAL-L0-20261113-220048-01_external.pdf",
+            "bytes": 302060,
+            "sha256": "4bc195204e7e8d148093b8de0ce07bdb8dae7c69822fa023873230d39e6cb3bb",
+            "status": "created",
+            "requestedBy": 17,
+            "createdAt": "2026-11-13T14:07:39.860Z"
+          }
+        ]
+      }
+    },
+    {
+      "runId": "EHT-REAL-L1-20261113-220422-01",
+      "parse": {
+        "status": 200,
+        "data": {
+          "runId": "EHT-REAL-L1-20261113-220422-01",
+          "projectId": 95,
+          "state": "failed",
+          "exportable": true,
+          "metadataMissing": [],
+          "metadata": {
+            "LINK": "ens17np0",
+            "CASE_KIND": "PYTEST-REAL",
+            "BASELINE": "eht-real-20261113",
+            "RUN_ID": "EHT-REAL-L1-20261113-220422-01",
+            "OPERATOR": "xuetu",
+            "QA_PROJECT": "EHT-PYTEST-LIB",
+            "DUT": "gpu01,gpu02",
+            "CASE_ID": "EHT-REAL-L1",
+            "STARTED_AT": "2026-11-13T22:04:22",
+            "SW_BUILD": "v5.5.0-eht"
+          },
+          "counts": {
+            "pass": 17,
+            "fail": 1,
+            "skip": 0
+          },
+          "startedAt": "2026-11-13T14:04:22.707Z",
+          "finishedAt": "2026-11-13T14:06:44.699Z"
+        }
+      },
+      "detail": {
+        "status": 200,
+        "data": {
+          "runId": "EHT-REAL-L1-20261113-220422-01",
+          "projectId": 95,
+          "state": "failed",
+          "exportable": true,
+          "metadataMissing": [],
+          "metadata": {
+            "LINK": "ens17np0",
+            "CASE_KIND": "PYTEST-REAL",
+            "BASELINE": "eht-real-20261113",
+            "RUN_ID": "EHT-REAL-L1-20261113-220422-01",
+            "OPERATOR": "xuetu",
+            "QA_PROJECT": "EHT-PYTEST-LIB",
+            "DUT": "gpu01,gpu02",
+            "CASE_ID": "EHT-REAL-L1",
+            "STARTED_AT": "2026-11-13T22:04:22",
+            "SW_BUILD": "v5.5.0-eht"
+          },
+          "counts": {
+            "pass": 17,
+            "fail": 1,
+            "skip": 0
+          },
+          "startedAt": "2026-11-13T14:04:22.707Z",
+          "finishedAt": "2026-11-13T14:06:44.699Z"
+        }
+      },
+      "tree": {
+        "status": 200,
+        "data": {
+          "name": "EHT-REAL-L1-20261113-220422-01",
+          "status": "FAIL",
+          "suites": [
+            {
+              "name": "IM-FUN-052",
+              "status": "PASS",
+              "suites": [],
+              "cases": [
+                {
+                  "caseKey": "IM-FUN-052",
+                  "name": "IM-FUN-052",
+                  "verdict": "PASS",
+                  "durationMs": 4592,
+                  "failureMsg": null,
+                  "commandText": "NONE",
+                  "commandSource": "NONE",
+                  "commandExitCode": null,
+                  "keywords": []
+                }
+              ]
+            },
+            {
+              "name": "IM-NET-022",
+              "status": "PASS",
+              "suites": [],
+              "cases": [
+                {
+                  "caseKey": "IM-NET-022",
+                  "name": "IM-NET-022",
+                  "verdict": "PASS",
+                  "durationMs": 2159,
+                  "failureMsg": null,
+                  "commandText": "NONE",
+                  "commandSource": "NONE",
+                  "commandExitCode": null,
+                  "keywords": []
+                }
+              ]
+            },
+            {
+              "name": "IM-NET-023",
+              "status": "PASS",
+              "suites": [],
+              "cases": [
+                {
+                  "caseKey": "IM-NET-023",
+                  "name": "IM-NET-023",
+                  "verdict": "PASS",
+                  "durationMs": 1023,
+                  "failureMsg": null,
+                  "commandText": "NONE",
+                  "commandSource": "NONE",
+                  "commandExitCode": null,
+                  "keywords": []
+                }
+              ]
+            },
+            {
+              "name": "IM-NET-028",
+              "status": "PASS",
+              "suites": [],
+              "cases": [
+                {
+                  "caseKey": "IM-NET-028",
+                  "name": "IM-NET-028",
+                  "verdict": "PASS",
+                  "durationMs": 1196,
+                  "failureMsg": null,
+                  "commandText": "NONE",
+                  "commandSource": "NONE",
+                  "commandExitCode": null,
+                  "keywords": []
+                }
+              ]
+            },
+            {
+              "name": "IM-NET-034",
+              "status": "PASS",
+              "suites": [],
+              "cases": [
+                {
+                  "caseKey": "IM-NET-034",
+                  "name": "IM-NET-034",
+                  "verdict": "PASS",
+                  "durationMs": 2526,
+                  "failureMsg": null,
+                  "commandText": "NONE",
+                  "commandSource": "NONE",
+                  "commandExitCode": null,
+                  "keywords": []
+                }
+              ]
+            },
+            {
+              "name": "IM-NET-040",
+              "status": "PASS",
+              "suites": [],
+              "cases": [
+                {
+                  "caseKey": "IM-NET-040",
+                  "name": "IM-NET-040",
+                  "verdict": "PASS",
+                  "durationMs": 1175,
+                  "failureMsg": null,
+                  "commandText": "NONE",
+                  "commandSource": "NONE",
+                  "commandExitCode": null,
+                  "keywords": []
+                }
+              ]
+            },
+            {
+              "name": "IM-NET-052",
+              "status": "PASS",
+              "suites": [],
+              "cases": [
+                {
+                  "caseKey": "IM-NET-052",
+                  "name": "IM-NET-052",
+                  "verdict": "PASS",
+                  "durationMs": 963,
+                  "failureMsg": null,
+                  "commandText": "NONE",
+                  "commandSource": "NONE",
+                  "commandExitCode": null,
+                  "keywords": []
+                }
+              ]
+            },
+            {
+              "name": "IM-NET-054",
+              "status": "PASS",
+              "suites": [],
+              "cases": [
+                {
+                  "caseKey": "IM-NET-054",
+                  "name": "IM-NET-054",
+                  "verdict": "PASS",
+                  "durationMs": 2768,
+                  "failureMsg": null,
+                  "commandText": "NONE",
+                  "commandSource": "NONE",
+                  "commandExitCode": null,
+                  "keywords": []
+                }
+              ]
+            },
+            {
+              "name": "IM-NET-057",
+              "status": "PASS",
+              "suites": [],
+              "cases": [
+                {
+                  "caseKey": "IM-NET-057",
+                  "name": "IM-NET-057",
+                  "verdict": "PASS",
+                  "durationMs": 5862,
+                  "failureMsg": null,
+                  "commandText": "NONE",
+                  "commandSource": "NONE",
+                  "commandExitCode": null,
+                  "keywords": []
+                }
+              ]
+            },
+            {
+              "name": "IM-NET-067",
+              "status": "PASS",
+              "suites": [],
+              "cases": [
+                {
+                  "caseKey": "IM-NET-067",
+                  "name": "IM-NET-067",
+                  "verdict": "PASS",
+                  "durationMs": 5886,
+                  "failureMsg": null,
+                  "commandText": "NONE",
+                  "commandSource": "NONE",
+                  "commandExitCode": null,
+                  "keywords": []
+                }
+              ]
+            },
+            {
+              "name": "IM-NET-074",
+              "status": "PASS",
+              "suites": [],
+              "cases": [
+                {
+                  "caseKey": "IM-NET-074",
+                  "name": "IM-NET-074",
+                  "verdict": "PASS",
+                  "durationMs": 5903,
+                  "failureMsg": null,
+                  "commandText": "NONE",
+                  "commandSource": "NONE",
+                  "commandExitCode": null,
+                  "keywords": []
+                }
+              ]
+            },
+            {
+              "name": "IM-NET-075",
+              "status": "PASS",
+              "suites": [],
+              "cases": [
+                {
+                  "caseKey": "IM-NET-075",
+                  "name": "IM-NET-075",
+                  "verdict": "PASS",
+                  "durationMs": 2019,
+                  "failureMsg": null,
+                  "commandText": "NONE",
+                  "commandSource": "NONE",
+                  "commandExitCode": null,
+                  "keywords": []
+                }
+              ]
+            },
+            {
+              "name": "IM-NET-077",
+              "status": "PASS",
+              "suites": [],
+              "cases": [
+                {
+                  "caseKey": "IM-NET-077",
+                  "name": "IM-NET-077",
+                  "verdict": "PASS",
+                  "durationMs": 4246,
+                  "failureMsg": null,
+                  "commandText": "NONE",
+                  "commandSource": "NONE",
+                  "commandExitCode": null,
+                  "keywords": []
+                }
+              ]
+            },
+            {
+              "name": "IM-NET-080",
+              "status": "PASS",
+              "suites": [],
+              "cases": [
+                {
+                  "caseKey": "IM-NET-080",
+                  "name": "IM-NET-080",
+                  "verdict": "PASS",
+                  "durationMs": 5722,
+                  "failureMsg": null,
+                  "commandText": "NONE",
+                  "commandSource": "NONE",
+                  "commandExitCode": null,
+                  "keywords": []
+                }
+              ]
+            },
+            {
+              "name": "IM-NET-088",
+              "status": "PASS",
+              "suites": [],
+              "cases": [
+                {
+                  "caseKey": "IM-NET-088",
+                  "name": "IM-NET-088",
+                  "verdict": "PASS",
+                  "durationMs": 9879,
+                  "failureMsg": null,
+                  "commandText": "NONE",
+                  "commandSource": "NONE",
+                  "commandExitCode": null,
+                  "keywords": []
+                }
+              ]
+            },
+            {
+              "name": "IM-NET-113",
+              "status": "PASS",
+              "suites": [],
+              "cases": [
+                {
+                  "caseKey": "IM-NET-113",
+                  "name": "IM-NET-113",
+                  "verdict": "PASS",
+                  "durationMs": 62286,
+                  "failureMsg": null,
+                  "commandText": "NONE",
+                  "commandSource": "NONE",
+                  "commandExitCode": null,
+                  "keywords": []
+                }
+              ]
+            },
+            {
+              "name": "IM-RDM-021",
+              "status": "PASS",
+              "suites": [],
+              "cases": [
+                {
+                  "caseKey": "IM-RDM-021",
+                  "name": "IM-RDM-021",
+                  "verdict": "PASS",
+                  "durationMs": 1675,
+                  "failureMsg": null,
+                  "commandText": "NONE",
+                  "commandSource": "NONE",
+                  "commandExitCode": null,
+                  "keywords": []
+                }
+              ]
+            },
+            {
+              "name": "IM-RDM-022",
+              "status": "FAIL",
+              "suites": [],
+              "cases": [
+                {
+                  "caseKey": "IM-RDM-022",
+                  "name": "IM-RDM-022",
+                  "verdict": "FAIL",
+                  "durationMs": 1386,
+                  "failureMsg": "AssertionError: 步骤2：PFC 使能优先级 '3,4,6' 与期望 '3,6' 不符\nassert False\n +  where False = DiagnosticVerdict(executed=True, passed=False, reasons=[\"PFC 使能优先级 '3,4,6' 与期望 '3,6' 不符\"], metrics={'pfc_mask': '0,0,0...enabled_priorities': '3,4,6', 'trust': 'dscp', 'expected_mask': '0,0,0,1,1,0,1,0'}, status=<ResultStatus.PASS: 'PASS'>).passed",
+                  "commandText": "NONE",
+                  "commandSource": "NONE",
+                  "commandExitCode": null,
+                  "keywords": []
+                }
+              ]
+            }
+          ],
+          "cases": []
+        }
+      },
+      "cases": [
+        {
+          "code": "IM-FUN-052",
+          "verdict": "PASS",
+          "durationMs": 4592
+        },
+        {
+          "code": "IM-NET-022",
+          "verdict": "PASS",
+          "durationMs": 2159
+        },
+        {
+          "code": "IM-NET-023",
+          "verdict": "PASS",
+          "durationMs": 1023
+        },
+        {
+          "code": "IM-NET-028",
+          "verdict": "PASS",
+          "durationMs": 1196
+        },
+        {
+          "code": "IM-NET-034",
+          "verdict": "PASS",
+          "durationMs": 2526
+        },
+        {
+          "code": "IM-NET-040",
+          "verdict": "PASS",
+          "durationMs": 1175
+        },
+        {
+          "code": "IM-NET-052",
+          "verdict": "PASS",
+          "durationMs": 963
+        },
+        {
+          "code": "IM-NET-054",
+          "verdict": "PASS",
+          "durationMs": 2768
+        },
+        {
+          "code": "IM-NET-057",
+          "verdict": "PASS",
+          "durationMs": 5862
+        },
+        {
+          "code": "IM-NET-067",
+          "verdict": "PASS",
+          "durationMs": 5886
+        },
+        {
+          "code": "IM-NET-074",
+          "verdict": "PASS",
+          "durationMs": 5903
+        },
+        {
+          "code": "IM-NET-075",
+          "verdict": "PASS",
+          "durationMs": 2019
+        },
+        {
+          "code": "IM-NET-077",
+          "verdict": "PASS",
+          "durationMs": 4246
+        },
+        {
+          "code": "IM-NET-080",
+          "verdict": "PASS",
+          "durationMs": 5722
+        },
+        {
+          "code": "IM-NET-088",
+          "verdict": "PASS",
+          "durationMs": 9879
+        },
+        {
+          "code": "IM-NET-113",
+          "verdict": "PASS",
+          "durationMs": 62286
+        },
+        {
+          "code": "IM-RDM-021",
+          "verdict": "PASS",
+          "durationMs": 1675
+        },
+        {
+          "code": "IM-RDM-022",
+          "verdict": "FAIL",
+          "durationMs": 1386
+        }
+      ],
+      "summary": {
+        "status": 200,
+        "data": {
+          "conclusion": "FAILED",
+          "total": 18,
+          "passed": 17,
+          "failed": 1,
+          "skipped": 0,
+          "passRate": 94.4,
+          "durationMs": 141992,
+          "topFailures": [
+            {
+              "name": "AssertionError: 步骤<n>：PFC 使能优先级 '…11be",
+              "count": 1
+            }
+          ],
+          "risks": [],
+          "generatedAt": "2026-11-13T14:10:36.269395596Z"
+        }
+      },
+      "export": {
+        "html": {
+          "status": 400,
+          "data": {
+            "code": 40001,
+            "codeName": "INVALID_ARGUMENT",
+            "message": "format 只能是 pdf / docx / xlsx",
+            "data": null,
+            "success": false
+          }
+        },
+        "pdf": {
+          "status": 200,
+          "data": {
+            "exportId": 41,
+            "format": "pdf",
+            "mode": "external",
+            "bytes": 294065,
+            "sha256": "0f860d364df3eea900179965413e36cc38f9df44e4a1107755be8906eb13edaf",
+            "downloadUrl": "/api/exports/41/download?projectId=95"
+          }
+        }
+      },
+      "exportHistory": {
+        "status": 200,
+        "data": [
+          {
+            "exportId": 41,
+            "runId": "EHT-REAL-L1-20261113-220422-01",
+            "format": "pdf",
+            "mode": "external",
+            "fileName": "report_EHT-REAL-L1-20261113-220422-01_external.pdf",
+            "bytes": 294065,
+            "sha256": "0f860d364df3eea900179965413e36cc38f9df44e4a1107755be8906eb13edaf",
+            "status": "created",
+            "requestedBy": 17,
+            "createdAt": "2026-11-13T14:10:43.162Z"
+          },
+          {
+            "exportId": 39,
+            "runId": "EHT-REAL-L1-20261113-220422-01",
+            "format": "xlsx",
+            "mode": "external",
+            "fileName": "report_EHT-REAL-L1-20261113-220422-01_external.xlsx",
+            "bytes": 3867,
+            "sha256": "cc5e0b7bdb03d50cbbf0dc526de6b7282a61eeca44bcf062930c2984ff04d41c",
+            "status": "created",
+            "requestedBy": 17,
+            "createdAt": "2026-11-13T14:08:16.238Z"
+          },
+          {
+            "exportId": 38,
+            "runId": "EHT-REAL-L1-20261113-220422-01",
+            "format": "docx",
+            "mode": "external",
+            "fileName": "report_EHT-REAL-L1-20261113-220422-01_external.docx",
+            "bytes": 4235,
+            "sha256": "6746f93fd0d30daa6552152506be2c73c791fac72d6a9e66ac4c90a2a397192e",
+            "status": "created",
+            "requestedBy": 17,
+            "createdAt": "2026-11-13T14:08:16.102Z"
+          },
+          {
+            "exportId": 37,
+            "runId": "EHT-REAL-L1-20261113-220422-01",
+            "format": "pdf",
+            "mode": "external",
+            "fileName": "report_EHT-REAL-L1-20261113-220422-01_external.pdf",
+            "bytes": 288226,
+            "sha256": "a28e63c9447ad8fe1bfe3677c259b1789a730fe8d5f25f40578575e6b4b9fa9b",
+            "status": "created",
+            "requestedBy": 17,
+            "createdAt": "2026-11-13T14:08:15.953Z"
+          },
+          {
+            "exportId": 33,
+            "runId": "EHT-REAL-L1-20261113-220422-01",
+            "format": "pdf",
+            "mode": "external",
+            "fileName": "report_EHT-REAL-L1-20261113-220422-01_external.pdf",
+            "bytes": 288227,
+            "sha256": "a6d132480d9d3ba712db5d5d8b20f8eb961cf41ac877820bf91ad8ee0b2de45b",
+            "status": "created",
+            "requestedBy": 17,
+            "createdAt": "2026-11-13T14:07:48.578Z"
+          }
+        ]
+      }
+    }
+  ]
+}

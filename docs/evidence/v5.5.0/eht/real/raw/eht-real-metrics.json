@@ -1,0 +1,536 @@
+{
+  "generatedAt": "2026-11-13",
+  "totalCases": 59,
+  "verdicts": {
+    "FAIL": 1,
+    "PASS": 57,
+    "ERROR": 1
+  },
+  "durationSec": {
+    "sum": 297.7,
+    "median": 1.2,
+    "p90": 9.9,
+    "max": 62.3,
+    "maxCase": "tests.nic.new_scripts.test_im_net_113::test_im_net_113_fec_switch"
+  },
+  "nonPass": [
+    {
+      "nodeId": "tests.nic.new_scripts.test_im_rdm_022::test_im_rdm_022_dual_up_pfc_counters",
+      "verdict": "FAIL",
+      "message": "AssertionError: 步骤2：PFC 使能优先级 '3,4,6' 与期望 '3,6' 不符\nassert False\n +  where False = DiagnosticVerdict(executed=True, passed=False, reasons=[\"PFC 使能优先级 '3,4,6' 与期望 '3,6' 不符\"], metrics={'pfc_mask': '0,0,0"
+    },
+    {
+      "nodeId": "tests.nic.mixed.test_im_mix_011::test_im_mix_011_gds_platform",
+      "verdict": "ERROR",
+      "message": "failed on setup with \"pytest.UsageError: 资源池中没有可用的 GPU；请在 run_env 的 resource_pool.gpus 中登记\""
+    }
+  ],
+  "topSlow": [
+    {
+      "nodeId": "tests.nic.new_scripts.test_im_net_113::test_im_net_113_fec_switch",
+      "durationSec": 62.286
+    },
+    {
+      "nodeId": "tests.nic.performance.test_im_per_057::test_im_per_057_tcp_single_stream_baseline",
+      "durationSec": 35.867
+    },
+    {
+      "nodeId": "tests.nic.new_scripts.test_im_per_002::test_im_per_002_tcp_single_port_throughput",
+      "durationSec": 26.846
+    },
+    {
+      "nodeId": "tests.nic.new_scripts.test_im_per_060::test_im_per_060_tcp_cpu_efficiency",
+      "durationSec": 26.551
+    },
+    {
+      "nodeId": "tests.nic.hardware.test_im_cer_008::test_im_cer_008_idle_power",
+      "durationSec": 22.998
+    },
+    {
+      "nodeId": "tests.nic.ethernet.test_im_net_131::test_im_net_131_rx_checksum_offload",
+      "durationSec": 16.089
+    },
+    {
+      "nodeId": "tests.nic.new_scripts.test_im_net_088::test_im_net_088_mtu_1500",
+      "durationSec": 9.879
+    },
+    {
+      "nodeId": "tests.nic.new_scripts.test_im_net_008::test_im_net_008_ipv6_connectivity",
+      "durationSec": 8.2
+    }
+  ],
+  "cases": [
+    {
+      "run": "EHT-REAL-L0-20261113-220048-01",
+      "nodeId": "tests.nic.base.test_im_fun_020::test_im_fun_020_pci_device_info",
+      "script": "tests/nic/base/test_im_fun_020.py",
+      "verdict": "PASS",
+      "durationSec": 0.537,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L0-20261113-220048-01",
+      "nodeId": "tests.nic.base.test_im_fun_055::test_im_fun_055_driver_firmware_compatibility",
+      "script": "tests/nic/base/test_im_fun_055.py",
+      "verdict": "PASS",
+      "durationSec": 2.518,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-RETRY2-20261113-220704",
+      "nodeId": "tests.nic.ethernet.test_im_net_002::test_im_net_002_module_ddm",
+      "script": "tests/nic/ethernet/test_im_net_002.py",
+      "verdict": "PASS",
+      "durationSec": 0.902,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L0-20261113-220151-02",
+      "nodeId": "tests.nic.ethernet.test_im_net_007::test_im_net_007_link_autoneg",
+      "script": "tests/nic/ethernet/test_im_net_007.py",
+      "verdict": "PASS",
+      "durationSec": 0.4,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L0-20261113-220151-02",
+      "nodeId": "tests.nic.ethernet.test_im_net_116::test_im_net_116_ptp_timestamping",
+      "script": "tests/nic/ethernet/test_im_net_116.py",
+      "verdict": "PASS",
+      "durationSec": 0.41,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L0-20261113-220151-02",
+      "nodeId": "tests.nic.ethernet.test_im_net_131::test_im_net_131_rx_checksum_offload",
+      "script": "tests/nic/ethernet/test_im_net_131.py",
+      "verdict": "PASS",
+      "durationSec": 16.089,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L0-20261113-220048-01",
+      "nodeId": "tests.nic.hardware.test_im_cer_008::test_im_cer_008_idle_power",
+      "script": "tests/nic/hardware/test_im_cer_008.py",
+      "verdict": "PASS",
+      "durationSec": 22.998,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L0-20261113-220151-02",
+      "nodeId": "tests.nic.mixed.test_im_mix_011::test_im_mix_011_gds_platform",
+      "script": "tests/nic/mixed/test_im_mix_011.py",
+      "verdict": "ERROR",
+      "durationSec": 0.0,
+      "message": "failed on setup with \"pytest.UsageError: 资源池中没有可用的 GPU；请在 run_env 的 resource_pool.gpus 中登记\""
+    },
+    {
+      "run": "EHT-REAL-L0-20261113-220048-01",
+      "nodeId": "tests.nic.new_scripts.test_im_fun_014::test_im_fun_014_nic_info",
+      "script": "tests/nic/new_scripts/test_im_fun_014.py",
+      "verdict": "PASS",
+      "durationSec": 0.796,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L0-20261113-220048-01",
+      "nodeId": "tests.nic.new_scripts.test_im_fun_018::test_im_fun_018_iommu_state",
+      "script": "tests/nic/new_scripts/test_im_fun_018.py",
+      "verdict": "PASS",
+      "durationSec": 0.578,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L0-20261113-220048-01",
+      "nodeId": "tests.nic.new_scripts.test_im_fun_021::test_im_fun_021_counter_integrity",
+      "script": "tests/nic/new_scripts/test_im_fun_021.py",
+      "verdict": "PASS",
+      "durationSec": 2.157,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L0-20261113-220048-01",
+      "nodeId": "tests.nic.new_scripts.test_im_fun_035::test_im_fun_035_system_nic_info",
+      "script": "tests/nic/new_scripts/test_im_fun_035.py",
+      "verdict": "PASS",
+      "durationSec": 1.062,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L0-20261113-220048-01",
+      "nodeId": "tests.nic.new_scripts.test_im_fun_036::test_im_fun_036_nic_log_export",
+      "script": "tests/nic/new_scripts/test_im_fun_036.py",
+      "verdict": "PASS",
+      "durationSec": 0.803,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L0-20261113-220048-01",
+      "nodeId": "tests.nic.new_scripts.test_im_fun_037::test_im_fun_037_guid_uniqueness",
+      "script": "tests/nic/new_scripts/test_im_fun_037.py",
+      "verdict": "PASS",
+      "durationSec": 0.511,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L0-20261113-220048-01",
+      "nodeId": "tests.nic.new_scripts.test_im_fun_040::test_im_fun_040_max_payload_size",
+      "script": "tests/nic/new_scripts/test_im_fun_040.py",
+      "verdict": "PASS",
+      "durationSec": 0.507,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L0-20261113-220048-01",
+      "nodeId": "tests.nic.new_scripts.test_im_fun_041::test_im_fun_041_max_read_request",
+      "script": "tests/nic/new_scripts/test_im_fun_041.py",
+      "verdict": "PASS",
+      "durationSec": 0.658,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L0-20261113-220048-01",
+      "nodeId": "tests.nic.new_scripts.test_im_fun_042::test_im_fun_042_numa_affinity",
+      "script": "tests/nic/new_scripts/test_im_fun_042.py",
+      "verdict": "PASS",
+      "durationSec": 1.101,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L0-20261113-220048-01",
+      "nodeId": "tests.nic.new_scripts.test_im_fun_043::test_im_fun_043_root_complex_topology",
+      "script": "tests/nic/new_scripts/test_im_fun_043.py",
+      "verdict": "PASS",
+      "durationSec": 0.659,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L0-20261113-220048-01",
+      "nodeId": "tests.nic.new_scripts.test_im_fun_044::test_im_fun_044_msix_vectors_and_irq",
+      "script": "tests/nic/new_scripts/test_im_fun_044.py",
+      "verdict": "PASS",
+      "durationSec": 2.619,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L0-20261113-220048-01",
+      "nodeId": "tests.nic.new_scripts.test_im_fun_045::test_im_fun_045_pcie_aer_monitor",
+      "script": "tests/nic/new_scripts/test_im_fun_045.py",
+      "verdict": "PASS",
+      "durationSec": 3.134,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L0-20261113-220048-01",
+      "nodeId": "tests.nic.new_scripts.test_im_fun_048::test_im_fun_048_secure_boot_capability",
+      "script": "tests/nic/new_scripts/test_im_fun_048.py",
+      "verdict": "PASS",
+      "durationSec": 1.194,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L1-20261113-220422-01",
+      "nodeId": "tests.nic.new_scripts.test_im_fun_052::test_im_fun_052_config_snapshot_diff",
+      "script": "tests/nic/new_scripts/test_im_fun_052.py",
+      "verdict": "PASS",
+      "durationSec": 4.592,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L0-20261113-220048-01",
+      "nodeId": "tests.nic.new_scripts.test_im_fun_058::test_im_fun_058_pn_sn_psid_ec",
+      "script": "tests/nic/new_scripts/test_im_fun_058.py",
+      "verdict": "PASS",
+      "durationSec": 1.067,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L0-20261113-220048-01",
+      "nodeId": "tests.nic.new_scripts.test_im_fun_059::test_im_fun_059_dual_port_mac_unique",
+      "script": "tests/nic/new_scripts/test_im_fun_059.py",
+      "verdict": "PASS",
+      "durationSec": 0.849,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L0-20261113-220048-01",
+      "nodeId": "tests.nic.new_scripts.test_im_fun_060::test_im_fun_060_dual_port_rdma_mapping",
+      "script": "tests/nic/new_scripts/test_im_fun_060.py",
+      "verdict": "PASS",
+      "durationSec": 1.953,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L0-20261113-220048-01",
+      "nodeId": "tests.nic.new_scripts.test_im_fun_064::test_im_fun_064_inbox_driver_source",
+      "script": "tests/nic/new_scripts/test_im_fun_064.py",
+      "verdict": "PASS",
+      "durationSec": 0.796,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L0-20261113-220048-01",
+      "nodeId": "tests.nic.new_scripts.test_im_fun_071::test_im_fun_071_ethtool_counter_dictionary",
+      "script": "tests/nic/new_scripts/test_im_fun_071.py",
+      "verdict": "PASS",
+      "durationSec": 0.49,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L0-20261113-220151-02",
+      "nodeId": "tests.nic.new_scripts.test_im_fun_072::test_im_fun_072_rdma_resource_observability",
+      "script": "tests/nic/new_scripts/test_im_fun_072.py",
+      "verdict": "PASS",
+      "durationSec": 3.119,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L0-20261113-220151-02",
+      "nodeId": "tests.nic.new_scripts.test_im_fun_073::test_im_fun_073_devlink_topology",
+      "script": "tests/nic/new_scripts/test_im_fun_073.py",
+      "verdict": "PASS",
+      "durationSec": 0.693,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L0-20261113-220151-02",
+      "nodeId": "tests.nic.new_scripts.test_im_fun_075::test_im_fun_075_firmware_log_and_health",
+      "script": "tests/nic/new_scripts/test_im_fun_075.py",
+      "verdict": "PASS",
+      "durationSec": 0.59,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L0-20261113-220151-02",
+      "nodeId": "tests.nic.new_scripts.test_im_net_004::test_im_net_004_optics_identity",
+      "script": "tests/nic/new_scripts/test_im_net_004.py",
+      "verdict": "PASS",
+      "durationSec": 1.782,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L0-20261113-220151-02",
+      "nodeId": "tests.nic.new_scripts.test_im_net_008::test_im_net_008_ipv6_connectivity",
+      "script": "tests/nic/new_scripts/test_im_net_008.py",
+      "verdict": "PASS",
+      "durationSec": 8.2,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L0-20261113-220151-02",
+      "nodeId": "tests.nic.new_scripts.test_im_net_015::test_im_net_015_advertised_link_modes",
+      "script": "tests/nic/new_scripts/test_im_net_015.py",
+      "verdict": "PASS",
+      "durationSec": 0.413,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L0-20261113-220151-02",
+      "nodeId": "tests.nic.new_scripts.test_im_net_016::test_im_net_016_media_type",
+      "script": "tests/nic/new_scripts/test_im_net_016.py",
+      "verdict": "PASS",
+      "durationSec": 1.055,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L1-20261113-220422-01",
+      "nodeId": "tests.nic.new_scripts.test_im_net_022::test_im_net_022_gro_off",
+      "script": "tests/nic/new_scripts/test_im_net_022.py",
+      "verdict": "PASS",
+      "durationSec": 2.159,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L1-20261113-220422-01",
+      "nodeId": "tests.nic.new_scripts.test_im_net_023::test_im_net_023_gro_on",
+      "script": "tests/nic/new_scripts/test_im_net_023.py",
+      "verdict": "PASS",
+      "durationSec": 1.023,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L1-20261113-220422-01",
+      "nodeId": "tests.nic.new_scripts.test_im_net_028::test_im_net_028_lro_off",
+      "script": "tests/nic/new_scripts/test_im_net_028.py",
+      "verdict": "PASS",
+      "durationSec": 1.196,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L1-20261113-220422-01",
+      "nodeId": "tests.nic.new_scripts.test_im_net_034::test_im_net_034_tso_off",
+      "script": "tests/nic/new_scripts/test_im_net_034.py",
+      "verdict": "PASS",
+      "durationSec": 2.526,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L1-20261113-220422-01",
+      "nodeId": "tests.nic.new_scripts.test_im_net_040::test_im_net_040_gso_off",
+      "script": "tests/nic/new_scripts/test_im_net_040.py",
+      "verdict": "PASS",
+      "durationSec": 1.175,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L1-20261113-220422-01",
+      "nodeId": "tests.nic.new_scripts.test_im_net_052::test_im_net_052_tx_checksum_off",
+      "script": "tests/nic/new_scripts/test_im_net_052.py",
+      "verdict": "PASS",
+      "durationSec": 0.963,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L1-20261113-220422-01",
+      "nodeId": "tests.nic.new_scripts.test_im_net_054::test_im_net_054_rx_checksum_off",
+      "script": "tests/nic/new_scripts/test_im_net_054.py",
+      "verdict": "PASS",
+      "durationSec": 2.768,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L1-20261113-220422-01",
+      "nodeId": "tests.nic.new_scripts.test_im_net_057::test_im_net_057_tx_single_queue",
+      "script": "tests/nic/new_scripts/test_im_net_057.py",
+      "verdict": "PASS",
+      "durationSec": 5.862,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L1-20261113-220422-01",
+      "nodeId": "tests.nic.new_scripts.test_im_net_067::test_im_net_067_multi_queue_config",
+      "script": "tests/nic/new_scripts/test_im_net_067.py",
+      "verdict": "PASS",
+      "durationSec": 5.886,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L1-20261113-220422-01",
+      "nodeId": "tests.nic.new_scripts.test_im_net_074::test_im_net_074_tx_ring_capacity",
+      "script": "tests/nic/new_scripts/test_im_net_074.py",
+      "verdict": "PASS",
+      "durationSec": 5.903,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L1-20261113-220422-01",
+      "nodeId": "tests.nic.new_scripts.test_im_net_075::test_im_net_075_tx_ring_over_limit",
+      "script": "tests/nic/new_scripts/test_im_net_075.py",
+      "verdict": "PASS",
+      "durationSec": 2.019,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L1-20261113-220422-01",
+      "nodeId": "tests.nic.new_scripts.test_im_net_077::test_im_net_077_rx_ring_max",
+      "script": "tests/nic/new_scripts/test_im_net_077.py",
+      "verdict": "PASS",
+      "durationSec": 4.246,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L1-20261113-220422-01",
+      "nodeId": "tests.nic.new_scripts.test_im_net_080::test_im_net_080_link_down_up",
+      "script": "tests/nic/new_scripts/test_im_net_080.py",
+      "verdict": "PASS",
+      "durationSec": 5.722,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L1-20261113-220422-01",
+      "nodeId": "tests.nic.new_scripts.test_im_net_088::test_im_net_088_mtu_1500",
+      "script": "tests/nic/new_scripts/test_im_net_088.py",
+      "verdict": "PASS",
+      "durationSec": 9.879,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L1-20261113-220422-01",
+      "nodeId": "tests.nic.new_scripts.test_im_net_113::test_im_net_113_fec_switch",
+      "script": "tests/nic/new_scripts/test_im_net_113.py",
+      "verdict": "PASS",
+      "durationSec": 62.286,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L0-20261113-220151-02",
+      "nodeId": "tests.nic.new_scripts.test_im_net_132::test_im_net_132_rss_hash_and_table",
+      "script": "tests/nic/new_scripts/test_im_net_132.py",
+      "verdict": "PASS",
+      "durationSec": 0.597,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L0-20261113-220151-02",
+      "nodeId": "tests.nic.new_scripts.test_im_per_002::test_im_per_002_tcp_single_port_throughput",
+      "script": "tests/nic/new_scripts/test_im_per_002.py",
+      "verdict": "PASS",
+      "durationSec": 26.846,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L0-20261113-220151-02",
+      "nodeId": "tests.nic.new_scripts.test_im_per_060::test_im_per_060_tcp_cpu_efficiency",
+      "script": "tests/nic/new_scripts/test_im_per_060.py",
+      "verdict": "PASS",
+      "durationSec": 26.551,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L0-20261113-220151-02",
+      "nodeId": "tests.nic.new_scripts.test_im_per_062::test_im_per_062_gpu_nic_affinity",
+      "script": "tests/nic/new_scripts/test_im_per_062.py",
+      "verdict": "PASS",
+      "durationSec": 1.926,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L0-20261113-220151-02",
+      "nodeId": "tests.nic.new_scripts.test_im_rdm_001::test_im_rdm_001_rocev2_deploy",
+      "script": "tests/nic/new_scripts/test_im_rdm_001.py",
+      "verdict": "PASS",
+      "durationSec": 2.413,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L1-20261113-220422-01",
+      "nodeId": "tests.nic.new_scripts.test_im_rdm_021::test_im_rdm_021_single_up_pfc",
+      "script": "tests/nic/new_scripts/test_im_rdm_021.py",
+      "verdict": "PASS",
+      "durationSec": 1.675,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L1-20261113-220422-01",
+      "nodeId": "tests.nic.new_scripts.test_im_rdm_022::test_im_rdm_022_dual_up_pfc_counters",
+      "script": "tests/nic/new_scripts/test_im_rdm_022.py",
+      "verdict": "FAIL",
+      "durationSec": 1.386,
+      "message": "AssertionError: 步骤2：PFC 使能优先级 '3,4,6' 与期望 '3,6' 不符\nassert False\n +  where False = DiagnosticVerdict(executed=True, passed=False, reasons=[\"PFC 使能优先级 '3,4,6' 与期望 '3,6' 不符\"], metrics={'pfc_mask': '0,0,0"
+    },
+    {
+      "run": "EHT-REAL-L0-20261113-220151-02",
+      "nodeId": "tests.nic.performance.test_im_per_057::test_im_per_057_tcp_single_stream_baseline",
+      "script": "tests/nic/performance/test_im_per_057.py",
+      "verdict": "PASS",
+      "durationSec": 35.867,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L0-20261113-220151-02",
+      "nodeId": "tests.nic.rdma.test_im_rdm_020::test_im_rdm_020_rdma_device_enumeration",
+      "script": "tests/nic/rdma/test_im_rdm_020.py",
+      "verdict": "PASS",
+      "durationSec": 0.909,
+      "message": ""
+    },
+    {
+      "run": "EHT-REAL-L0-20261113-220151-02",
+      "nodeId": "tests.nic.rdma.test_im_rdm_027::test_im_rdm_027_gid_table",
+      "script": "tests/nic/rdma/test_im_rdm_027.py",
+      "verdict": "PASS",
+      "durationSec": 0.64,
+      "message": ""
+    }
+  ]
+}
