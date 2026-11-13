@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-13T22:22:10+0800",
+  "generatedAt": "2026-11-13T22:27:34+0800",
   "base": "http://127.0.0.1:8081",
   "total": 5,
   "passed": 5,
@@ -25,7 +25,7 @@
       "id": "duplicate-runId",
       "expect": "4xx（非 500）",
       "http": 409,
-      "message": "runId 已存在：EHT-REG-FAKE-1794579720（换一个 runId 重试）",
+      "message": "runId 已存在：EHT-REG-FAKE-1794580044（换一个 runId 重试）",
       "pass": true
     },
     {
