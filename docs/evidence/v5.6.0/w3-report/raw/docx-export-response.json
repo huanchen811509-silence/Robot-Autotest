@@ -1,0 +1,19 @@
+{
+  "code": 0,
+  "codeName": "OK",
+  "message": "OK",
+  "data": {
+    "exportId": 48,
+    "format": "docx",
+    "mode": "internal",
+    "bytes": 4412,
+    "sha256": "43caa090e85b0044be14f8bb26217b77619f7318b3fae1130cfcd6c3e568a157",
+    "downloadUrl": "/api/exports/48/download?projectId=95",
+    "qualityGate": {
+      "passed": true,
+      "missing": [],
+      "label": "FINAL"
+    }
+  },
+  "success": true
+}

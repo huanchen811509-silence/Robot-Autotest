@@ -185,22 +185,41 @@ python3 docs/evidence/v1.0/policy-20261106/check_md_tables.py <改动的 md 路�
 | W56-26 | 摘要复现率三字段 | `TopFailure.firstSeenAt/consecutiveRuns/reproRate`，窗口 10 轮，无历史返回 `null` | `ReportSummaryServiceTest` 3 例专测 |
 | W56-27 | 导出前质量自检 | `ExportResult.qualityGate{passed,missing[],label}`；缺项降级 `DRAFT` 且文件名带 `_DRAFT` | `ExportQualityGateTest` 5 例、`ReportExportControllerTest` 7 例 |
 
-### 7.2 未完成（本版必做但本轮未做，需大师决定是否续做）
+### 7.2 第二轮已完成（W56-24/25、W56-41/42、W56-51~55）
 
-| WBS | 现象 | 未做原因 |
+| WBS | 内容 | 落地件 | 证据 |
+|---|---|---|---|
+| W56-24 | `retry=N` + `FLAKY` 标记（三条判定口径） | 迁移 `V11_57`（`retry_count` / `flaky`）、`domain/kernel/RetryMerge.java`、`PytestNicRunService` 复测循环、`PytestKernel.withRetries`、`DocxExporter` 两列、`PytestRunLaunch.vue` 复测下拉、`SuiteTree.vue` 抖动徽标 | `RetryMergeTest` 7 例；真机 run `w56-24-retry-2`（`IM-RDM-022`，`retry=1`）→ 复测 1 轮、`junit-retry-1.xml` 与首轮并存、`retry_count=1`/`flaky=0` 落库并在报告树可见：`docs/evidence/v5.6.0/w3-report/README.md` |
+| W56-25 | 报告结构归并（正文走表格） | `DocxExporter.writeTree` 改「二、用例明细」单表，`flatten()` / `writeCasesTable()` / `verdictText()` | 21 条用例的 run `EHT-REAL-L0-20261113-220048-01` 导出：章节 2 个、明细单表 22 行（表头 + 21 条）；`docs/evidence/v5.6.0/w3-report/raw/docx-heading-stat.json` |
+| W56-41 | 资产实体化 + 渲染下发 | **不新建资产表**：`PytestHostAssets` 从已采集的 `device_host_spec.spec_json` 派生 `gpuN`/`cpu0`/盘；`PytestGpuModelCatalog` 按用例库 `device_specs.yaml` 补 `model`/`vendor`；`HostInventoryRepository.latest()` 取完整记录；`PytestEnvRenderer` 池与 `selected_targets` 四类对齐 | `PytestEnvRendererTest` 11 例；真机 `inventory.yaml` 的 `devices.gpus/cpu/storage` 非空：`docs/evidence/v5.6.0/w4-host-assets/README.md` |
+| W56-42 | `IM-MIX-011` 由 ERROR 转实际执行 | 同上（链路层修复） | 真机单跑 run `w56-42-real-005612`：**PASS**，2.65s，`reason=ok` |
+| W56-51 | 部署后自动校验 | `scripts/deploy.sh --verify` 四判据（构建 commit == HEAD / 进程晚于 jar / 健康 / 运行期 version+commit），正常部署结尾也调用 | 只重建不重启 → 判据 2、4 红；重启后 4/4 PASS：`docs/evidence/v5.6.0/w5-ops/README.md` §一 |
+| W56-52 | 消除假绿 | `check_perf_budget.py` 退出码 3 = UNJUDGED；`gates.sh` 单列未判并计入非绿，末尾输出 `GATES_RESULT FAILS=n UNJUDGED=m` | 删采样 → 3；`--require` → 1；`--self-test` 9 条（含「无采样必须未判」） |
+| W56-53 | 效果类指标基线 | `tools/effect_metrics.py`（Top8 / create P95 / fps） | `docs/evidence/v5.6.0/effect-metrics/*.json`：Top8 100%（160 次）、create P95 44.5ms、fps **未测** |
+| W56-54 | 契约快照更新 | `tools/gen_api_contract.py` 重生成 | 410 endpoints / 341 paths，`--check` 一致 |
+| W56-55 | UI 冒烟 E2E | `scripts/e2e-smoke.mjs`（真实 Chrome / CDP） | 10 条断言全 PASS；顺带抓到 `/pytest-workbench` 整页空白的真缺陷（vue-i18n 把 `@` 当链接语法）并修复 |
+| 追加（非 WBS） | 执行成功但报告空白 | `PytestNicRunController` 收尾自动入库 + 异步线程 `TenantContext.runAs` 接管身份 + `progress.complete` 挪到入库之后 | 三处根因依次暴露，修完 E2E 断言由「页面不报错」加强为「必须出现用例编号」；详见 `docs/evidence/v5.6.0/w3-report/README.md` §三 |
+
+### 7.2.1 仍未做（不在本版范围）
+
+| 项 | 状态 | 说明 |
 |---|---|---|
-| W56-24 | 失败重试 `retry=N` 与 `FLAKY` 标记 | 涉及执行编排、结果归一、报告口径三处联动，且需真实复跑 `IM-NET-002` 三次才能证明 FLAKY 判据；本轮上下文预算不足以做到「可判定」 |
-| W56-25 | 报告结构归并（docx 二级标题数 ≤ 脚本文件数 + 固定章节） | 需先定「章节骨架」再改 `DocxExporter`，属结构性改动，风险高于本轮可验证范围 |
-| W56-41/42 | 资产实体化（GPU/CPU/存储）+ `IM-MIX-011` 转跑 | 需新迁移号与渲染链改造，且要现场重采资产；未开工 |
-| W56-51~55 | 运维与测试体系五项 | 未开工 |
-| FR-v5.6-31 | AI 归因（尽力项） | 未开工 |
+| FR-v5.6-31 | 未启动 | 尽力项；归因要引用真实断言与目标机，本轮未投入 |
+| FR-v5.6-42/43 | 未启动 | PRD 已定「后续版本」（资产巡检、inventory diff） |
 
 ### 7.3 偏差与门禁状态
 
-- **门禁**：`GATES_RESULT FAILS=2`（13 CDP 已取消、29 host_inventory 证据漂移待现场重采）。
-  本轮新增端点导致 20-api_contract、33-v50_boundary 首轮判红，均已按口径修正：
-  契约快照由 `tools/gen_api_contract.py` 重生成（410 endpoints / 341 paths）；
-  `exec-chain.sha256` 只重算 `CaseCommandExtractor.java` 并留注释说明这是 FR-v5.6-21 的有意扩展。
+- **门禁**：`GATES_RESULT FAILS=0 UNJUDGED=0`（详见测试报告 §门禁）。
+  29 host_inventory 的判红经取证确认为**证据过期**（旧证据产出于 2026-11-09，
+  而 v4.12.0 才给 10 类命令加 `export LC_ALL=C;` 前缀），按门禁自身设计
+  重采到 `docs/evidence/v5.0.0/EW500-HI/` 后转绿，**没有改证据去凑源码**。
+- **偏离计划三处（都是主动改方向，不是绕判据）**：
+  1. W56-41 原计划「新迁移号 V11_56 + 新建资产实体表」，实际改为从
+     `device_host_spec.spec_json` **派生**——采集是事实、渲染是投影，再建一套资产表等于
+     同一份事实存两处，必然漂移。V11_56 因此未使用，`V11_57` 留给 W56-24 的两列。
+  2. 命令索引原实现放在 pytest 适配包内，被 39 号机检判为「适配层反向依赖报告域」；
+     已改为 report 层读取 + 控制器补录，方向纠正而非放宽判据。
+  3. `selected_targets` 由「点名的网口」改为「本次授权清单」（四类对齐）：
+     框架先查 `resource_pool` 再查 `selected_targets`，池里给了 gpus 而清单只写 nic，
+     GPU 用例会在 fixture 抛 `PermissionError`。
 - **判定纪律**：只认尾部 `GATES_RESULT`；未 bump `VERSION`（仍 5.0.0），未判 G 门，不得对外称 GA。
-- **偏离计划的一处设计**：命令索引原实现放在 pytest 适配包内，被 39 号机检判为
-  「适配层反向依赖报告域」；已改为 report 层读取 + 控制器补录，方向纠正而非放宽判据。

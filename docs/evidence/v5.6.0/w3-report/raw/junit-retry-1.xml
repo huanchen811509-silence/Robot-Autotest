@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="1" failures="0" skipped="0" tests="1" time="5.703" timestamp="2026-11-14T01:34:44.465925+08:00" hostname="Thinkbook14G5"><testcase classname="tests.nic.new_scripts.test_im_rdm_022" name="test_im_rdm_022_dual_up_pfc_counters" time="0.042"><error message="failed on setup with &quot;pytest.UsageError: 双端用例需要至少 2 台 Host，当前资源池按顺序只有 1 台: ['gpu01@10.202.54.101']&quot;">runtime = &lt;nic_platform.core.runtime.Runtime object at 0x7f3fee2298b0&gt;
+
+    @pytest.fixture(scope="session")
+    def case_hosts(runtime):
+        """从 Runtime 的 Host 资源池按顺序挑选 2 台 Host 及各自的 NIC。
+    
+        返回 ``(第一台, 第二台)`` 两个 SelectedHost；双端用例自行决定谁做 RX / TX。
+        """
+        hosts = _ordered_pool_hosts(runtime)
+        if len(hosts) &lt; 2:
+&gt;           raise pytest.UsageError(
+                f"双端用例需要至少 2 台 Host，当前资源池按顺序只有 {len(hosts)} 台: {hosts}"
+            )
+E           pytest.UsageError: 双端用例需要至少 2 台 Host，当前资源池按顺序只有 1 台: ['gpu01@10.202.54.101']
+
+tests/conftest.py:122: UsageError</error><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+
+</system-err></testcase></testsuite></testsuites>

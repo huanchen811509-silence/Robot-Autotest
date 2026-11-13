@@ -56,16 +56,24 @@ class PytestNicRunControllerTest {
     private final CaseScriptBindingRepository bindings = mock(CaseScriptBindingRepository.class);
     private final TestCaseRepository cases = mock(TestCaseRepository.class);
 
-    /** 控制器依赖在 v5.6.0 从 8 个涨到 12 个（进度 / 就绪度 / 设备 / 进程表），统一在这里拼。 */
+    /** 控制器依赖在 v5.6.0 从 8 个涨到 13 个（进度 / 就绪度 / 设备 / 进程表 / 入库器），统一在这里拼。 */
     private PytestNicRunController controller(PytestNicRunService runs,
                                               ProjectSettingRepository settings,
                                               RunRepository runRepo,
                                               PytestRunProgressRegistry progress) {
+        return controller(runs, settings, runRepo, progress, null);
+    }
+
+    private PytestNicRunController controller(PytestNicRunService runs,
+                                              ProjectSettingRepository settings,
+                                              RunRepository runRepo,
+                                              PytestRunProgressRegistry progress,
+                                              com.qa.autotest.application.report.ReportIngestService ingest) {
         return new PytestNicRunController(runs, settings, runRepo, artifacts,
                 mock(RunMetadataRepository.class), bindings, cases,
                 progress, mock(PytestReadinessService.class), mock(DeviceRepository.class),
                 mock(ProcessRegistry.class), mock(AccessControlService.class),
-                new com.qa.autotest.application.report.PytestCommandEnricher());
+                new com.qa.autotest.application.report.PytestCommandEnricher(), ingest);
     }
 
     private MockMvc mvc(PytestNicRunService runs, ProjectSettingRepository settings) {
@@ -180,6 +188,52 @@ class PytestNicRunControllerTest {
                 .andExpect(jsonPath("$.message").value(
                         org.hamcrest.Matchers.containsString("test_typo")));
         verify(runs, never()).execute(any());
+    }
+
+    /** 带报告入库器的 MockMvc（构造器注入，测试里直接给桩）。 */
+    private MockMvc mvcWithIngest(PytestNicRunService runs, ProjectSettingRepository settings,
+                                  com.qa.autotest.application.report.ReportIngestService ingest) {
+        PytestNicRunController built = controller(runs, settings, mock(RunRepository.class),
+                new PytestRunProgressRegistry(), ingest);
+        return MockMvcBuilders.standaloneSetup(built)
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .build();
+    }
+
+    @Test
+    @DisplayName("跑完即入库：报告页读的是 test_result，不入库就是「跑完但报告空白」")
+    void runIngestsReport() throws Exception {
+        PytestNicRunService runs = mock(PytestNicRunService.class);
+        ProjectSettingRepository settings = mock(ProjectSettingRepository.class);
+        when(settings.findAll(anyLong(), any())).thenReturn(Map.of("repo_path", "/tmp/eht-repo"));
+        when(runs.execute(any())).thenReturn(fakeResult());
+        com.qa.autotest.application.report.ReportIngestService ingest =
+                mock(com.qa.autotest.application.report.ReportIngestService.class);
+        mvcWithIngest(runs, settings, ingest)
+                .perform(post("/api/projects/95/pytest/runs/fake")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"runId\":\"EHT-INGEST-1\"}"))
+                .andExpect(status().isOk());
+        verify(ingest).parseAndIngest(95L, "EHT-INGEST-1", null);
+    }
+
+    @Test
+    @DisplayName("入库失败不改判执行结果：先保住执行事实，让人手工补 parse")
+    void ingestFailureKeepsRunVerdict() throws Exception {
+        PytestNicRunService runs = mock(PytestNicRunService.class);
+        ProjectSettingRepository settings = mock(ProjectSettingRepository.class);
+        when(settings.findAll(anyLong(), any())).thenReturn(Map.of("repo_path", "/tmp/eht-repo"));
+        when(runs.execute(any())).thenReturn(fakeResult());
+        com.qa.autotest.application.report.ReportIngestService ingest =
+                mock(com.qa.autotest.application.report.ReportIngestService.class);
+        when(ingest.parseAndIngest(anyLong(), any(), any()))
+                .thenThrow(new IllegalStateException("产物目录不存在"));
+        mvcWithIngest(runs, settings, ingest)
+                .perform(post("/api/projects/95/pytest/runs/fake")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"runId\":\"EHT-INGEST-2\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.mode").value("fake"));
     }
 
     @Test
@@ -357,7 +411,7 @@ class PytestNicRunControllerTest {
                 mock(RunRepository.class), artifacts, mock(RunMetadataRepository.class),
                 bindings, cases, new PytestRunProgressRegistry(), readiness, devices,
                 mock(ProcessRegistry.class), mock(AccessControlService.class),
-                new com.qa.autotest.application.report.PytestCommandEnricher());
+                new com.qa.autotest.application.report.PytestCommandEnricher(), null);
         MockMvc mvc = MockMvcBuilders.standaloneSetup(controller)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();

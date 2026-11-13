@@ -6,6 +6,7 @@ import com.qa.autotest.application.kernel.pytest.PytestNicRunService;
 import com.qa.autotest.application.kernel.pytest.PytestProjectSettings;
 import com.qa.autotest.application.kernel.pytest.PytestReadinessService;
 import com.qa.autotest.application.kernel.pytest.PytestResultNormalizer;
+import com.qa.autotest.application.report.ReportIngestService;
 import com.qa.autotest.application.kernel.pytest.PytestRunProgressRegistry;
 import com.qa.autotest.application.repository.CaseScriptBindingRepository;
 import com.qa.autotest.application.repository.DeviceRepository;
@@ -48,6 +49,8 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -83,6 +86,8 @@ public class PytestNicRunController {
     private static final String MODE_FAKE = "fake";
     private static final String MODE_REAL = "real";
 
+    private static final Logger LOG = LoggerFactory.getLogger(PytestNicRunController.class);
+
     private final PytestNicRunService runs;
     private final ProjectSettingRepository settings;
     private final RunRepository runRepo;
@@ -96,6 +101,20 @@ public class PytestNicRunController {
     private final ProcessRegistry processes;
     private final AccessControlService access;
     private final com.qa.autotest.application.report.PytestCommandEnricher commandEnricher;
+
+    /**
+     * 跑完即入库用的报告入库器（构造器注入，可传 null）。
+     *
+     * <p><b>为什么需要它</b>：报告页读的是 {@code test_result}，不是 junit 文件。
+     * 只跑不入库的结果是「执行成功、报告空白」，用户会当成执行失败。
+     * RF 链路在编排收尾时自动入库，pytest 入口此前缺这一步（L-55-01）。
+     *
+     * <p><b>为什么不用字段注入</b>：`ArchitectureTest` 的 R6 明令禁止 {@code @Autowired}
+     * 字段注入（字段注入把装配错误推到运行期）。所以走构造器，测试里传 null 就跳过入库，
+     * 执行链路本身不依赖它。类里仍然只有<b>一个</b>公开构造器——多构造器会让 Spring
+     * 无法选择并抛 {@code NoSuchMethodException: <init>()}（本版 {@code PytestEnvRenderer} 踩过）。
+     */
+    private final ReportIngestService reportIngest;
 
     /** 异步执行线程池。固定 2 线程：同时跑两个 pytest 批次已经是这台机器的上限。 */
     private final ExecutorService worker = Executors.newFixedThreadPool(2, runnable -> {
@@ -117,7 +136,8 @@ public class PytestNicRunController {
                                   ProcessRegistry processes,
                                   AccessControlService access,
                                   com.qa.autotest.application.report.PytestCommandEnricher
-                                          commandEnricher) {
+                                          commandEnricher,
+                                  ReportIngestService reportIngest) {
         this.runs = runs;
         this.settings = settings;
         this.runRepo = runRepo;
@@ -131,6 +151,7 @@ public class PytestNicRunController {
         this.processes = processes;
         this.access = access;
         this.commandEnricher = commandEnricher;
+        this.reportIngest = reportIngest;
     }
 
     @PreDestroy
@@ -223,16 +244,22 @@ public class PytestNicRunController {
         progress.begin(prepared.runId(), total);
         progress.stage(prepared.runId(), PytestRunProgressRegistry.Stage.PREPARING);
 
-        worker.submit(() -> {
+        // 后台线程没有请求上下文：租户守卫按 ThreadLocal 取身份，不显式接管的话
+        // 「报告入库」这类需要鉴权的收尾会直接抛「未认证」——表现为执行成功、报告空白。
+        // 这里把调用方身份带进线程，跑完即恢复（runAs 自带 finally 复原）。
+        final Long callerId = TenantContext.userId();
+        final String callerName = TenantContext.username();
+        worker.submit(() -> TenantContext.runAs(callerId, callerName, projectId, () -> {
             try {
                 runPrepared(prepared, new ProgressBridge(prepared.runId()));
             } catch (RuntimeException ex) {
                 // 后台线程的异常没人接，必须自己落终态，否则页面永远转圈。
+                LOG.error("pytest 异步执行失败：{}", prepared.runId(), ex);
                 progress.complete(prepared.runId(), PytestRunProgressRegistry.Stage.FAILED);
                 runRepo.updateState(prepared.runId(), RunState.RUNNING, RunState.FAILED,
                         prepared.started(), Instant.now(), "PYTEST_ASYNC", String.valueOf(ex), null);
             }
-        });
+        }));
 
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("runId", prepared.runId());
@@ -549,11 +576,6 @@ public class PytestNicRunController {
         runRepo.updateState(runId, RunState.RUNNING, terminal,
                 started, Instant.now(), canceled ? "USER_CANCEL" : "PYTEST_EXIT",
                 result.reason(), null);
-        if (bridge != null) {
-            progress.complete(runId, canceled ? PytestRunProgressRegistry.Stage.CANCELED
-                    : result.success() ? PytestRunProgressRegistry.Stage.FINISHED
-                    : PytestRunProgressRegistry.Stage.FAILED);
-        }
 
         List<String> notes = new ArrayList<>();
         // 请求里的 metadata 必须落 run_metadata：报告解析读的是 run_artifact 侧的 junit，
@@ -571,6 +593,28 @@ public class PytestNicRunController {
         // 报告链路只认 run_artifact：不登记产物，执行完就只剩一个临时目录，
         // 「生成报告」按钮永远报「找不到 pytest 产物」。
         notes.addAll(registerArtifacts(prepared.projectId(), runId, runDir, result.junitFiles()));
+        // 跑完即入库：报告页/摘要/导出读的都是 test_result，不在这里入库就是
+        // 「跑完了但报告是空的」。取消的 run 不入库（结果不完整，入库只会留半截事实）。
+        if (reportIngest != null && !canceled) {
+            try {
+                reportIngest.parseAndIngest(prepared.projectId(), runId, null);
+                notes.add("报告已入库：报告页与摘要可直接查看");
+            } catch (RuntimeException ex) {
+                // 入库失败不能把一次已经跑完的执行判成失败：先保住执行事实，
+                // 让人用 POST /api/reports/{runId}/parse 手工补。
+                // 但必须留日志——吞掉异常的结果是「报告空白、日志也没有」，等于没有线索。
+                LOG.warn("pytest run {} 自动入库失败，可手工调用 /api/reports/{}/parse 重试",
+                        runId, runId, ex);
+                notes.add("报告入库失败（可手工重试 parse）：" + ex.getMessage());
+            }
+        }
+        // 进度终态放在最后上报：页面看到「已完成」就会去点报告，若那时还没入库，
+        // 用户看到的是「执行成功但报告空白」——收尾顺序本身就是界面体验的一部分。
+        if (bridge != null) {
+            progress.complete(runId, canceled ? PytestRunProgressRegistry.Stage.CANCELED
+                    : result.success() ? PytestRunProgressRegistry.Stage.FINISHED
+                    : PytestRunProgressRegistry.Stage.FAILED);
+        }
         Map<String, Object> payload = view(result, runId, runDir, mode);
         payload.put("artifactNotes", notes);
         return payload;

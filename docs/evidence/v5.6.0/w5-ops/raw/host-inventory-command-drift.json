@@ -1,0 +1,68 @@
+{
+  "why": "门禁 29 判定「接口命令与源码不一致」的取证：比对 2026-11-09 旧证据与 2026-11-14 新采集",
+  "oldEvidence": "docs/evidence/v3.11.0/EW311-01/host-inventory.json (host=localhost)",
+  "newCollection": "device_host_spec id=100 (gpu01 / 10.202.54.101, 2026-11-14 00:37)",
+  "conclusion": "新采集的 10 类命令均带 export LC_ALL=C; 前缀，与源码白名单一致；旧证据缺该前缀（v4.12.0 W-D 才加），属证据过期而非运行期缺陷",
+  "categories": [
+    {
+      "category": "OS",
+      "evidence20261109": "grep -m1 '^PRETTY_NAME=' /etc/os-release",
+      "collect20261114": "export LC_ALL=C; grep -m1 '^PRETTY_NAME=' /etc/os-release",
+      "same": false
+    },
+    {
+      "category": "KERNEL",
+      "evidence20261109": "uname -r",
+      "collect20261114": "export LC_ALL=C; uname -r",
+      "same": false
+    },
+    {
+      "category": "CPU",
+      "evidence20261109": "nproc; lscpu | grep -m1 'Model name'",
+      "collect20261114": "export LC_ALL=C; nproc; lscpu | grep -m1 'Model name'",
+      "same": false
+    },
+    {
+      "category": "MEMORY",
+      "evidence20261109": "free -m | head -2",
+      "collect20261114": "export LC_ALL=C; free -m | head -2",
+      "same": false
+    },
+    {
+      "category": "DISK",
+      "evidence20261109": "df -P / | tail -1; echo ---; lsblk -d -o NAME,SIZE,ROTA 2>/dev/null",
+      "collect20261114": "export LC_ALL=C; df -P / | tail -1; echo ---; lsblk -d -o NAME,SIZE,ROTA 2>/dev/null",
+      "same": false
+    },
+    {
+      "category": "GPU",
+      "evidence20261109": "nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader",
+      "collect20261114": "export LC_ALL=C; nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader",
+      "same": false
+    },
+    {
+      "category": "NIC",
+      "evidence20261109": "ip -br link; for i in /sys/class/net/*; do printf '%s %s\\n' \"$(basename $i)\" \"$(cat $i/speed 2>/dev/null)\"; done",
+      "collect20261114": "export LC_ALL=C; ip -br link; for i in /sys/class/net/*; do printf '%s %s\\n' \"$(basename $i)\" \"$(cat $i/speed 2>/dev/null)\"; done",
+      "same": false
+    },
+    {
+      "category": "IP",
+      "evidence20261109": "ip -br addr",
+      "collect20261114": "export LC_ALL=C; ip -br addr",
+      "same": false
+    },
+    {
+      "category": "ROCE",
+      "evidence20261109": "for p in /sys/class/infiniband/*/ports/*; do printf '%s|%s|%s\\n' \"$p\" \"$(cat $p/state 2>/dev/null)\" \"$(cat $p/rate 2>/dev/null)\"; done",
+      "collect20261114": "export LC_ALL=C; for p in /sys/class/infiniband/*/ports/*; do printf '%s|%s|%s\\n' \"$p\" \"$(cat $p/state 2>/dev/null)\" \"$(cat $p/rate 2>/dev/null)\"; done",
+      "same": false
+    },
+    {
+      "category": "ROUTE",
+      "evidence20261109": "ip route show",
+      "collect20261114": "export LC_ALL=C; ip route show",
+      "same": false
+    }
+  ]
+}

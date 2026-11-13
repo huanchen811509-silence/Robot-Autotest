@@ -13,10 +13,16 @@ v3.2.0 的「快」必须是可判定的：没有预算文件、没有采样报�
   前端：入口 ≤300 KiB gzip、单路由块 ≤150 KiB gzip，由
         `tools/check_bundle_budget.py` 判（产物量级，不需要接口采样）。
 
-报告缺失时的口径
-----------------
-默认 SKIP（退出 0）并显式打印原因，避免本机没起后端就把门禁变红；
-CI 用 `--require` 把「缺报告」升级为失败，防止「忘了跑采样」被当成通过。
+报告缺失时的口径（v5.6.0 / FR-v5.6-63 修订）
+--------------------------------------------
+历史口径是「默认 SKIP 并退出 0」，结果是**没采样 = 通过**：门禁 22 步照样绿，
+「性能达标」这句话从来没被任何数字支撑过。现在改为「未判」：
+
+  退出 3 = UNJUDGED（未判）——报告缺失、或报告里没有任何可判段落。
+  退出 1 = 越线（`--require` 下报告缺失同样是 1）。
+
+两者都非 0：门禁总表把 3 计为「未判」而不是「通过」，最终 `GATES_RESULT`
+的 FAILS 仍然非 0，不会出现「少了采样却全绿」。自检会真删报告路径验证这一点。
 
 基线 diff
 ---------
@@ -29,7 +35,8 @@ CI 用 `--require` 把「缺报告」升级为失败，防止「忘了跑采样�
     python3 tools/check_perf_budget.py --self-test
     python3 tools/check_perf_budget.py --require        # CI：报告缺失即失败
 
-退出码：0 = 通过/SKIP；1 = 越线；2 = 预算或报告本身不可读（疑似假绿）。
+退出码：0 = 通过；1 = 越线（含 --require 下报告缺失）；2 = 预算或报告不可读；
+        3 = UNJUDGED（未判：没有采样，不算通过也不算越线，门禁按「未判」计）。
 """
 
 from __future__ import annotations
@@ -197,6 +204,20 @@ def _fixture(budget: dict, p95: float, p99: float,
     return report
 
 
+EXIT_UNJUDGED = 3
+
+
+def missing_report_exit(report: Path, require: bool) -> int:
+    """报告缺失时的判定：_require 判失败，否则判「未判」，两者都不算通过。"""
+    message = f"未找到性能报告：{report}（先跑 tools/perf_sample.py）"
+    if require:
+        print(f"[FAIL] {message}（--require 模式）", file=sys.stderr)
+        return 1
+    print(f"[SKIP] {message}")
+    print("PERF_RESULT UNJUDGED(没有采样，未判；不算通过)")
+    return EXIT_UNJUDGED
+
+
 def self_test() -> int:
     budget = {
         "api": {
@@ -251,6 +272,22 @@ def self_test() -> int:
         print(f"[FAIL] 自检失准：相对回退未判红（{result.violations}）", file=sys.stderr)
         failures += 1
 
+    # v5.6.0 / FR-v5.6-63：删掉采样文件必须判「未判」，不能默认通过。
+    # 这条自检是本次修订的存在理由——之前正是这里默认 return 0，让门禁 22 步假绿。
+    absent = ROOT / "tools" / "__selftest_no_such_perf_report__.json"
+    code = missing_report_exit(absent, require=False)
+    if code == EXIT_UNJUDGED:
+        print(f"[SELFTEST] 通过：无采样 → UNJUDGED（退出 {code}，不计为通过）")
+    else:
+        print(f"[FAIL] 自检失准：无采样应返回 {EXIT_UNJUDGED}，实际 {code}", file=sys.stderr)
+        failures += 1
+    code = missing_report_exit(absent, require=True)
+    if code == 1:
+        print("[SELFTEST] 通过：--require 下无采样 → 失败（退出 1）")
+    else:
+        print(f"[FAIL] 自检失准：--require 下无采样应返回 1，实际 {code}", file=sys.stderr)
+        failures += 1
+
     if failures:
         print(f"[FAIL] 自检失败：{failures} 个用例未按预期工作", file=sys.stderr)
         return 1
@@ -282,12 +319,7 @@ def main() -> int:
             return 2
 
     if not args.report.is_file():
-        message = f"未找到性能报告：{args.report}（先跑 tools/perf_sample.py）"
-        if args.require:
-            print(f"[FAIL] {message}（--require 模式）", file=sys.stderr)
-            return 1
-        print(f"[SKIP] {message}；本机冒烟口径不判红")
-        return 0
+        return missing_report_exit(args.report, args.require)
 
     try:
         report = load_json(args.report, "性能报告")

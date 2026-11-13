@@ -1,0 +1,17 @@
+{
+  "run_id" : "w56-24-retry-1",
+  "kernel" : "pytest",
+  "metadata" : {
+    "CASE_ID" : "IM-RDM-022",
+    "RUN_ID" : "w56-24-retry-1",
+    "QA_PROJECT" : "EHT-PYTEST-LIB",
+    "DUT" : "gpu01",
+    "LINK" : "dual-up-pfc",
+    "SW_BUILD" : "v5.6.0-w56-24",
+    "CASE_KIND" : "pytest",
+    "BASELINE" : "v5.6.0",
+    "OPERATOR" : "xuetu"
+  },
+  "required" : [ "CASE_ID", "RUN_ID", "QA_PROJECT", "DUT", "LINK", "SW_BUILD", "BASELINE", "OPERATOR", "STARTED_AT", "CASE_KIND" ],
+  "missing" : [ "STARTED_AT" ]
+}

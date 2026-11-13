@@ -2021,7 +2021,7 @@ export default {
       repo_url: '仓库地址',
       branch: '分支 / tag',
       mode_default: '默认模式（fake / real）',
-      inventory_key_rule: 'host_key 规则（hostname / hostname@ip）',
+      inventory_key_rule: "host_key 规则（hostname / hostname{'@'}ip）",
       fake_plan_file: 'Fake 计划文件',
       extra_args: '追加参数',
       timeout_s: 'run 级超时（秒）',

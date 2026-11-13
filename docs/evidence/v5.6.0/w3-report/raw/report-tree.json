@@ -1,0 +1,33 @@
+{
+  "code": 0,
+  "codeName": "OK",
+  "message": "OK",
+  "data": {
+    "name": "w56-24-retry-2",
+    "status": "FAIL",
+    "suites": [
+      {
+        "name": "IM-RDM-022",
+        "status": "FAIL",
+        "suites": [],
+        "cases": [
+          {
+            "caseKey": "IM-RDM-022",
+            "name": "IM-RDM-022",
+            "verdict": "FAIL",
+            "durationMs": 42,
+            "failureMsg": "failed on setup with \"pytest.UsageError: 双端用例需要至少 2 台 Host，当前资源池按顺序只有 1 台: ['gpu01@10.202.54.101']\"",
+            "commandText": "NONE",
+            "commandSource": "NONE",
+            "commandExitCode": null,
+            "keywords": [],
+            "retryCount": 1,
+            "flaky": false
+          }
+        ]
+      }
+    ],
+    "cases": []
+  },
+  "success": true
+}

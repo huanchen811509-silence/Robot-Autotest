@@ -1,0 +1,14 @@
+total 40
+-rw-rw-r-- 1 evergreen evergreen  194 Nov 14 01:34 contract.json
+-rw-rw-r-- 1 evergreen evergreen 2810 Nov 14 01:34 inventory.yaml
+-rw-rw-r-- 1 evergreen evergreen 1531 Nov 14 01:34 junit-retry-1.xml
+-rw-rw-r-- 1 evergreen evergreen 1531 Nov 14 01:34 junit.xml
+drwxrwxr-x 2 evergreen evergreen 4096 Nov 14 01:34 pytest-batch-0
+drwxrwxr-x 2 evergreen evergreen 4096 Nov 14 01:34 pytest-retry-1
+-rw-rw-r-- 1 evergreen evergreen 1056 Nov 14 01:34 run.log
+-rw-rw-r-- 1 evergreen evergreen  949 Nov 14 01:34 run_env.yaml
+-rw-rw-r-- 1 evergreen evergreen  506 Nov 14 01:34 run_metadata.json
+-rw-rw-r-- 1 evergreen evergreen    0 Nov 14 01:34 stderr-batch-0.log
+-rw-rw-r-- 1 evergreen evergreen 1178 Nov 14 01:34 stdout-batch-0.log
+846e9407797b91b4d3c303d7e80ec73282f3f5df1fa9317648b8d7bc4d7fc789  /tmp/eht-real-runs/w56-24-retry-2/junit-retry-1.xml
+41c6628a39e6125c69c667f842b8ad91a23a4ebe77b05e8c8b6eebf785fc9653  /tmp/eht-real-runs/w56-24-retry-2/junit.xml

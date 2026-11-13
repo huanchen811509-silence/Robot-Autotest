@@ -1,0 +1,16 @@
+{
+  "docx": "/tmp/w56-docx/report-EHT-REAL-L0-20261113-220048-01.docx",
+  "paragraphs": 138,
+  "chapters": 2,
+  "chapterTitles": [
+    "一、十项 metadata",
+    "二、用例明细"
+  ],
+  "tables": 2,
+  "tableRows": [
+    11,
+    22
+  ],
+  "caseIdCells": 0,
+  "caseIds": []
+}

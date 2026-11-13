@@ -2012,7 +2012,7 @@ export default {
       repo_url: 'Repository URL',
       branch: 'Branch / tag',
       mode_default: 'Default mode (fake / real)',
-      inventory_key_rule: 'host_key rule (hostname / hostname@ip)',
+      inventory_key_rule: "host_key rule (hostname / hostname{'@'}ip)",
       fake_plan_file: 'Fake plan file',
       extra_args: 'Extra arguments',
       timeout_s: 'Run-level timeout (seconds)',

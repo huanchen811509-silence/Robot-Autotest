@@ -1,0 +1,21 @@
+{
+  "metric": "创建工程 P95（写路径：审计 + 租户守卫 + 唯一约束）",
+  "status": "已测",
+  "capturedAt": "2026-11-14T01:01:19+08:00",
+  "sampleSize": 20,
+  "environment": {
+    "base": "http://127.0.0.1:8001",
+    "machine": {
+      "host": "Thinkbook14G5",
+      "platform": "Linux 5.15.167.4-microsoft-standard-WSL2",
+      "python": "3.12.3"
+    }
+  },
+  "p50Ms": 29.9,
+  "p95Ms": 44.5,
+  "minMs": 25.0,
+  "maxMs": 53.4,
+  "failedSamples": [],
+  "leftovers": [],
+  "note": "每次创建后立即删除，不留脏数据；leftovers 非空即表示有残留待手工清理。预算里的 runChain.createP95 需要起真实执行，本文件不等价于它。"
+}

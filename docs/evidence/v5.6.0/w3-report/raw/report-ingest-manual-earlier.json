@@ -1,0 +1,33 @@
+{
+  "code": 0,
+  "codeName": "OK",
+  "message": "OK",
+  "data": {
+    "runId": "w56-24-retry-1",
+    "projectId": 95,
+    "state": "failed",
+    "exportable": false,
+    "metadataMissing": [
+      "STARTED_AT"
+    ],
+    "metadata": {
+      "LINK": "dual-up-pfc",
+      "OPERATOR": "xuetu",
+      "DUT": "gpu01",
+      "CASE_KIND": "pytest",
+      "RUN_ID": "w56-24-retry-1",
+      "SW_BUILD": "v5.6.0-w56-24",
+      "BASELINE": "v5.6.0",
+      "CASE_ID": "IM-RDM-022",
+      "QA_PROJECT": "EHT-PYTEST-LIB"
+    },
+    "counts": {
+      "pass": 0,
+      "fail": 1,
+      "skip": 0
+    },
+    "startedAt": "2026-11-13T17:20:35.648Z",
+    "finishedAt": "2026-11-13T17:20:58.573Z"
+  },
+  "success": true
+}

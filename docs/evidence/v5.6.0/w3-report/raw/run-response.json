@@ -1,0 +1,55 @@
+{
+  "code": 0,
+  "codeName": "OK",
+  "message": "OK",
+  "data": {
+    "runId": "w56-24-retry-2",
+    "mode": "real",
+    "success": false,
+    "reason": "pytest_exit_1",
+    "batches": 2,
+    "exitCode": 1,
+    "elapsedMs": 22514,
+    "runDir": "/tmp/eht-real-runs/w56-24-retry-2",
+    "junitFiles": [
+      "/tmp/eht-real-runs/w56-24-retry-2/junit.xml",
+      "/tmp/eht-real-runs/w56-24-retry-2/junit-retry-1.xml"
+    ],
+    "totalCases": 1,
+    "metadata": {
+      "CASE_KIND": "pytest",
+      "RUN_ID": "w56-24-retry-2",
+      "SW_BUILD": "v5.6.0-w56-24b",
+      "BASELINE": "v5.6.0",
+      "CASE_ID": "IM-RDM-022",
+      "QA_PROJECT": "EHT-PYTEST-LIB",
+      "LINK": "dual-up-pfc",
+      "OPERATOR": "xuetu",
+      "DUT": "gpu01"
+    },
+    "statusCounts": {
+      "ERROR": 1
+    },
+    "boundMatched": 1,
+    "unboundResults": 0,
+    "planOnly": false,
+    "nonSkippedCases": 1,
+    "passRateApplicable": true,
+    "passRateDisplay": "按比例计算",
+    "gap": "",
+    "command": "/home/evergreen/venvs/nic-fake/bin/python -m pytest --env_config /tmp/eht-real-runs/w56-24-retry-2/run_env.yaml --mode real --junitxml=/tmp/eht-real-runs/w56-24-retry-2/junit.xml -o junit_family=xunit2 -o junit_logging=out-err --capture=fd -q tests/nic/new_scripts/test_im_rdm_022.py::test_im_rdm_022_dual_up_pfc_counters",
+    "junitConditions": {
+      "--capture=fd": true,
+      "junit_logging=out-err": true,
+      "junit_family=xunit2": true
+    },
+    "artifactNotes": [
+      "metadata 已落 run_metadata：9 项",
+      "junit_xml 已登记 junit.xml",
+      "junit_xml 已登记 junit-retry-1.xml",
+      "pytest_report_json 已登记 junit.xml",
+      "报告已入库：报告页与摘要可直接查看"
+    ]
+  },
+  "success": true
+}

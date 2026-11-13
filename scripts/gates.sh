@@ -37,6 +37,7 @@ SELF="$0"
 L=docs/evidence/gates/logs
 mkdir -p "$L"
 FAILS=0
+UNJUDGED=0
 
 # 门禁依赖的凭据不落仓库：有 env 文件就加载（已导出的环境变量优先）。
 if [ -z "${DB_PASSWORD:-}" ] && [ -f "$HOME/.config/robot-autotest/env" ]; then
@@ -48,13 +49,23 @@ fi
 
 run() {
   local no="$1" name="$2" cmd="$3"
-  local log="$L/$no-$name.log" t0=$SECONDS
-  if bash -lc "$cmd" > "$log" 2>&1; then
+  local log="$L/$no-$name.log" t0=$SECONDS rc
+  bash -lc "$cmd" > "$log" 2>&1
+  rc=$?
+  if [[ "$rc" == "0" ]]; then
     printf '  PASS  %s (%ss)\n' "$no-$name" "$((SECONDS - t0))"
-  else
-    printf '  FAIL  %s (%ss) -> %s\n' "$no-$name" "$((SECONDS - t0))" "$log"
-    FAILS=$((FAILS + 1))
+    return 0
   fi
+  if [[ "$rc" == "3" ]]; then
+    # 退出码 3 = 未判（例如性能门禁没有采样）：既不是通过也不是越线，
+    # 但仍然要让整体非绿——否则「没采到数据」就成了最稳的过关方式。
+    printf '  UNJUDGED  %s (%ss) 未判，不计通过 -> %s\n' "$no-$name" "$((SECONDS - t0))" "$log"
+    UNJUDGED=$((UNJUDGED + 1))
+    FAILS=$((FAILS + 1))
+    return 0
+  fi
+  printf '  FAIL  %s (%ss) -> %s\n' "$no-$name" "$((SECONDS - t0))" "$log"
+  FAILS=$((FAILS + 1))
 }
 
 check_structure() {
@@ -350,9 +361,12 @@ run 28 case_command "python3 tools/check_case_command.py"
 #    证据目录按版本走（v4.12.0 起）：v4.12.0 给 10 类命令统一加了 `export LC_ALL=C;`
 #    前缀，这是有意的行为变更——若继续比对 v3.11.0 的冻结快照，命令表一改就必然报
 #    「接口命令与源码不一致」，把「命令表按设计演进」误判成「证据漂移」。
-#    取当前版本目录；当前版本还没产出证据时回落到脚本默认目录（v3.11.0 那份）。
-HI_VER="$(tr -d '[:space:]' < VERSION)"
-HI_EVID="$(ls -d "docs/evidence/v${HI_VER}"/EW* 2>/dev/null | head -1)"
+#    取**最近的、确有 EW* 证据的版本目录**，而不是按 VERSION 拼路径：5.x 开发期 VERSION
+#    一直停在 5.0.0，而 v5.0.0 证据目录被 36 号机检约束（不得含内网 IP）；主机清单是
+#    真实采集产物、必然带内网 IP，放进去要么判 36 号红，要么为了过闸把 IP 抹掉——
+#    两种都不算证据。按目录名做版本排序取最新，v5.6.0/EW56-HI 这类当版证据自然生效，
+#    该版本没产出证据时才回落到更早的冻结快照。
+HI_EVID="$(ls -d docs/evidence/v*/EW* 2>/dev/null | sort -V | tail -1)"
 run 29 host_inventory "python3 tools/check_host_inventory.py ${HI_EVID:+--evidence-dir $HI_EVID}"
 
 # 30 交付包（v3.11.0 / FR-v3.11-D05）：安装/拆卸/运维脚本 + CI workflow 静态契约，
@@ -447,6 +461,6 @@ run 51 eht_case_ui "python3 tools/check_eht_case_ui.py"
 #    自证方式是真注入把端点封装或页面改成本地 mock，必须判红。
 run 52 eht_pages_live "python3 tools/check_eht_pages_live.py"
 
-printf '\nGATES_RESULT FAILS=%s\n' "$FAILS"
+printf '\nGATES_RESULT FAILS=%s UNJUDGED=%s\n' "$FAILS" "${UNJUDGED:-0}"
 
 exit "$FAILS"

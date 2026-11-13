@@ -1,0 +1,115 @@
+{
+  "metric": "Top8 主页面首屏接口成功率",
+  "status": "已测",
+  "capturedAt": "2026-11-14T01:01:17+08:00",
+  "sampleSize": 160,
+  "environment": {
+    "base": "http://127.0.0.1:8001",
+    "machine": {
+      "host": "Thinkbook14G5",
+      "platform": "Linux 5.15.167.4-microsoft-standard-WSL2",
+      "python": "3.12.3"
+    },
+    "projectId": 95
+  },
+  "overallSuccessRate": 1.0,
+  "pages": [
+    {
+      "page": "workbench",
+      "path": "/api/projects/cards",
+      "samples": 20,
+      "ok": 20,
+      "successRate": 1.0,
+      "p50Ms": 24.5,
+      "p95Ms": 32.3,
+      "codes": [
+        200
+      ]
+    },
+    {
+      "page": "cases",
+      "path": "/api/projects/95/cases?page=1&size=20",
+      "samples": 20,
+      "ok": 20,
+      "successRate": 1.0,
+      "p50Ms": 22.0,
+      "p95Ms": 25.4,
+      "codes": [
+        200
+      ]
+    },
+    {
+      "page": "runs",
+      "path": "/api/execution/runs?projectId=95&page=1&size=20",
+      "samples": 20,
+      "ok": 20,
+      "successRate": 1.0,
+      "p50Ms": 21.4,
+      "p95Ms": 27.1,
+      "codes": [
+        200
+      ]
+    },
+    {
+      "page": "reports",
+      "path": "/api/reports?projectId=95&page=1&size=20",
+      "samples": 20,
+      "ok": 20,
+      "successRate": 1.0,
+      "p50Ms": 22.3,
+      "p95Ms": 26.6,
+      "codes": [
+        200
+      ]
+    },
+    {
+      "page": "assets",
+      "path": "/api/projects/95/devices",
+      "samples": 20,
+      "ok": 20,
+      "successRate": 1.0,
+      "p50Ms": 20.5,
+      "p95Ms": 24.5,
+      "codes": [
+        200
+      ]
+    },
+    {
+      "page": "audit",
+      "path": "/api/audit?page=1&size=20",
+      "samples": 20,
+      "ok": 20,
+      "successRate": 1.0,
+      "p50Ms": 16.9,
+      "p95Ms": 20.6,
+      "codes": [
+        200
+      ]
+    },
+    {
+      "page": "case-library",
+      "path": "/api/global/cases?page=1&size=20",
+      "samples": 20,
+      "ok": 20,
+      "successRate": 1.0,
+      "p50Ms": 18.6,
+      "p95Ms": 22.4,
+      "codes": [
+        200
+      ]
+    },
+    {
+      "page": "about",
+      "path": "/api/system/build-info",
+      "samples": 20,
+      "ok": 20,
+      "successRate": 1.0,
+      "p50Ms": 14.8,
+      "p95Ms": 19.9,
+      "codes": [
+        200
+      ]
+    }
+  ],
+  "note": "成功率只按 HTTP 2xx 判，不猜业务码；code=0 表示连接失败。"
+}

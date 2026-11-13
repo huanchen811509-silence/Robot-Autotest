@@ -1,0 +1,22 @@
+{
+  "metric": "10000 行长列表滚动 minFps",
+  "status": "未测",
+  "capturedAt": "2026-11-14T01:08:18+08:00",
+  "sampleSize": 20,
+  "environment": {
+    "machine": {
+      "host": "Thinkbook14G5",
+      "platform": "Linux 5.15.167.4-microsoft-standard-WSL2",
+      "python": "3.12.3"
+    },
+    "source": "docs/evidence/v5.6.0/effect-metrics/e2e-smoke-20261114.json"
+  },
+  "minFps": null,
+  "observed": {
+    "rows": 20,
+    "fps": 60.9,
+    "worstFrameMs": 16.8,
+    "frames": 122
+  },
+  "reason": "目标场景是 10000 行，本机列表只有 20 行/页；该观测不能代表 10000 行，按「无样本写未测」的口径不记为达标"
+}

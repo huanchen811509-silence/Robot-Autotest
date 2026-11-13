@@ -1,0 +1,5 @@
+[system] 第 0 批启动：/home/evergreen/venvs/nic-fake/bin/python -m pytest --env_config /tmp/eht-real-runs/w56-24-retry-2/run_env.yaml --mode real --junitxml=/tmp/eht-real-runs/w56-24-retry-2/junit.xml -o junit_family=xunit2 -o junit_logging=out-err --capture=fd -q tests/nic/new_scripts/test_im_rdm_022.py::test_im_rdm_022_dual_up_pfc_counters（cwd=/mnt/e/workspace/自动化测试/pytest-cases）
+[system] 第 0 批退出码=1，产物=/tmp/eht-real-runs/w56-24-retry-2/junit.xml
+[system] 第 0 批启动：/home/evergreen/venvs/nic-fake/bin/python -m pytest --env_config /tmp/eht-real-runs/w56-24-retry-2/run_env.yaml --mode real --junitxml=/tmp/eht-real-runs/w56-24-retry-2/junit-retry-1.xml -o junit_family=xunit2 -o junit_logging=out-err --capture=fd -q tests/nic/new_scripts/test_im_rdm_022.py::test_im_rdm_022_dual_up_pfc_counters（cwd=/mnt/e/workspace/自动化测试/pytest-cases）
+[system] 第 0 批退出码=1，产物=/tmp/eht-real-runs/w56-24-retry-2/junit-retry-1.xml
+[retry] 第 1 轮复测完成：提交 1 条，剩余失败 1 条

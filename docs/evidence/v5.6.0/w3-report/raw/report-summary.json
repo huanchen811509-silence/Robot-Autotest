@@ -1,0 +1,32 @@
+{
+  "code": 0,
+  "codeName": "OK",
+  "message": "OK",
+  "data": {
+    "conclusion": "FAILED",
+    "total": 1,
+    "passed": 0,
+    "failed": 1,
+    "skipped": 0,
+    "passRate": 0.0,
+    "durationMs": 22584,
+    "topFailures": [
+      {
+        "name": "failed on setup with \"pytest.UsageError: 双端用例需要至少 2 台 Host，当前资源池按顺序只有 1 台: ['gpu01@10.202.54.101']\"",
+        "display": "failed on setup with \"pytest.UsageError: 双端用例需要至少 2 台 Host，当前资源池按顺序只有 1 台: ['gpu01@10.202.54.101']\"",
+        "clusterKey": "failed on setup with \"pytest.Usag…1efe",
+        "count": 1,
+        "firstSeenAt": "2026-11-13T17:20:58.573Z",
+        "consecutiveRuns": 1,
+        "reproRate": 0.4
+      }
+    ],
+    "risks": [
+      "报告元数据缺失：STARTED_AT",
+      "报告当前不可对外交付"
+    ],
+    "generatedAt": "2026-11-13T17:34:50.499270587Z",
+    "flaky": 0
+  },
+  "success": true
+}

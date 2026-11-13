@@ -1,0 +1,300 @@
+{
+  "host": "localhost",
+  "deviceId": null,
+  "collectedAt": "2026-11-13T17:23:54.271056938Z",
+  "status": "PARTIAL",
+  "items": [
+    {
+      "category": "OS",
+      "label": "操作系统",
+      "command": "export LC_ALL=C; grep -m1 '^PRETTY_NAME=' /etc/os-release",
+      "collectedAt": "2026-11-13T17:23:54.276986194Z",
+      "value": "Ubuntu 24.04.5 LTS",
+      "reason": null
+    },
+    {
+      "category": "KERNEL",
+      "label": "内核",
+      "command": "export LC_ALL=C; uname -r",
+      "collectedAt": "2026-11-13T17:23:54.280115511Z",
+      "value": "5.15.167.4-microsoft-standard-WSL2",
+      "reason": null
+    },
+    {
+      "category": "CPU",
+      "label": "CPU",
+      "command": "export LC_ALL=C; nproc; lscpu | grep -m1 'Model name'",
+      "collectedAt": "2026-11-13T17:23:54.289090276Z",
+      "value": {
+        "cores": 16,
+        "model": "13th Gen Intel(R) Core(TM) i5-13500H"
+      },
+      "reason": null
+    },
+    {
+      "category": "MEMORY",
+      "label": "内存",
+      "command": "export LC_ALL=C; free -m | head -2",
+      "collectedAt": "2026-11-13T17:23:54.295999690Z",
+      "value": {
+        "totalMb": 15860,
+        "usedMb": 1661,
+        "availableMb": 14198
+      },
+      "reason": null
+    },
+    {
+      "category": "DISK",
+      "label": "磁盘",
+      "command": "export LC_ALL=C; df -P / | tail -1; echo ---; lsblk -d -o NAME,SIZE,ROTA 2>/dev/null",
+      "collectedAt": "2026-11-13T17:23:54.304102233Z",
+      "value": {
+        "root": {
+          "size": "1055762868",
+          "used": "43940488",
+          "available": "958118908",
+          "usePercent": "5%"
+        },
+        "disks": [
+          {
+            "name": "sda",
+            "size": "388.4M",
+            "type": "HDD"
+          },
+          {
+            "name": "sdb",
+            "size": "32G",
+            "type": "HDD"
+          },
+          {
+            "name": "sdc",
+            "size": "1T",
+            "type": "HDD"
+          }
+        ]
+      },
+      "reason": null
+    },
+    {
+      "category": "GPU",
+      "label": "GPU",
+      "command": "export LC_ALL=C; nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader",
+      "collectedAt": "2026-11-13T17:23:54.306969234Z",
+      "value": null,
+      "reason": "未采集到 GPU 信息：unreachable: sh: 1: nvidia-smi: not found"
+    },
+    {
+      "category": "NIC",
+      "label": "网卡",
+      "command": "export LC_ALL=C; ip -br link; for i in /sys/class/net/*; do printf '%s %s\\n' \"$(basename $i)\" \"$(cat $i/speed 2>/dev/null)\"; done",
+      "collectedAt": "2026-11-13T17:23:54.326037826Z",
+      "value": [
+        {
+          "name": "lo",
+          "state": "UNKNOWN",
+          "mac": "00:00:00:00:00:00",
+          "speedMbps": null
+        },
+        {
+          "name": "eth0",
+          "state": "DOWN",
+          "mac": "74:d7:13:af:59:53",
+          "speedMbps": null
+        },
+        {
+          "name": "eth1",
+          "state": "DOWN",
+          "mac": "00:50:56:c0:00:01",
+          "speedMbps": null
+        },
+        {
+          "name": "eth2",
+          "state": "DOWN",
+          "mac": "00:50:56:c0:00:02",
+          "speedMbps": null
+        },
+        {
+          "name": "eth3",
+          "state": "DOWN",
+          "mac": "0a:00:27:00:00:1c",
+          "speedMbps": null
+        },
+        {
+          "name": "eth4",
+          "state": "DOWN",
+          "mac": "4e:4c:c9:1b:71:d8",
+          "speedMbps": null
+        },
+        {
+          "name": "eth5",
+          "state": "DOWN",
+          "mac": "00:50:56:c0:00:08",
+          "speedMbps": null
+        },
+        {
+          "name": "loopback0",
+          "state": "UP",
+          "mac": "00:15:5d:a3:8b:c0",
+          "speedMbps": 10000
+        },
+        {
+          "name": "eth6",
+          "state": "DOWN",
+          "mac": "00:ff:08:ad:eb:0e",
+          "speedMbps": null
+        },
+        {
+          "name": "eth7",
+          "state": "DOWN",
+          "mac": "00:15:5d:e4:ae:07",
+          "speedMbps": null
+        },
+        {
+          "name": "eth8",
+          "state": "UP",
+          "mac": "00:15:5d:7f:43:21",
+          "speedMbps": 10000
+        },
+        {
+          "name": "eth9",
+          "state": "UP",
+          "mac": "e4:0d:36:fc:e9:05",
+          "speedMbps": 10000
+        },
+        {
+          "name": "docker0",
+          "state": "-1",
+          "mac": "9e:1f:64:f6:a6:0e",
+          "speedMbps": null
+        }
+      ],
+      "reason": null
+    },
+    {
+      "category": "IP",
+      "label": "IP 地址",
+      "command": "export LC_ALL=C; ip -br addr",
+      "collectedAt": "2026-11-13T17:23:54.333968919Z",
+      "value": [
+        {
+          "interface": "lo",
+          "state": "UNKNOWN",
+          "addresses": [
+            "127.0.0.1/8",
+            "10.255.255.254/32",
+            "::1/128"
+          ]
+        },
+        {
+          "interface": "eth0",
+          "state": "DOWN",
+          "addresses": []
+        },
+        {
+          "interface": "eth1",
+          "state": "DOWN",
+          "addresses": []
+        },
+        {
+          "interface": "eth2",
+          "state": "DOWN",
+          "addresses": []
+        },
+        {
+          "interface": "eth3",
+          "state": "DOWN",
+          "addresses": []
+        },
+        {
+          "interface": "eth4",
+          "state": "DOWN",
+          "addresses": []
+        },
+        {
+          "interface": "eth5",
+          "state": "DOWN",
+          "addresses": []
+        },
+        {
+          "interface": "loopback0",
+          "state": "UP",
+          "addresses": []
+        },
+        {
+          "interface": "eth6",
+          "state": "DOWN",
+          "addresses": []
+        },
+        {
+          "interface": "eth7",
+          "state": "DOWN",
+          "addresses": []
+        },
+        {
+          "interface": "eth8",
+          "state": "UP",
+          "addresses": [
+            "100.113.225.35/32",
+            "fd7a:115c:a1e0::ca32:e123/128",
+            "fe80::8bdb:3eca:790c:721b/64"
+          ]
+        },
+        {
+          "interface": "eth9",
+          "state": "UP",
+          "addresses": [
+            "10.202.16.5/24",
+            "fe80::b4f9:7515:c6ce:28d7/64"
+          ]
+        },
+        {
+          "interface": "docker0",
+          "state": "DOWN",
+          "addresses": [
+            "172.17.0.1/16"
+          ]
+        }
+      ],
+      "reason": null
+    },
+    {
+      "category": "ROCE",
+      "label": "RoCE",
+      "command": "export LC_ALL=C; for p in /sys/class/infiniband/*/ports/*; do printf '%s|%s|%s\\n' \"$p\" \"$(cat $p/state 2>/dev/null)\" \"$(cat $p/rate 2>/dev/null)\"; done",
+      "collectedAt": "2026-11-13T17:23:54.337668014Z",
+      "value": [
+        {
+          "device": "*",
+          "port": "*",
+          "state": "",
+          "rate": null,
+          "rateGbps": null
+        }
+      ],
+      "reason": null
+    },
+    {
+      "category": "ROUTE",
+      "label": "路由",
+      "command": "export LC_ALL=C; ip route show",
+      "collectedAt": "2026-11-13T17:23:54.371543313Z",
+      "value": {
+        "defaultRoute": "default via 10.202.16.1 dev eth9 proto kernel metric 45",
+        "routes": [
+          "default via 10.202.16.1 dev eth9 proto kernel metric 45",
+          "10.202.16.0/24 dev eth9 proto kernel scope link metric 301",
+          "10.202.16.1 dev eth9 proto kernel scope link metric 45",
+          "100.66.144.62 dev eth8 proto kernel scope link metric 5",
+          "100.73.37.36 dev eth8 proto kernel scope link metric 5",
+          "100.77.41.66 dev eth8 proto kernel scope link metric 5",
+          "100.91.145.104 dev eth8 proto kernel scope link metric 5",
+          "100.99.230.59 dev eth8 proto kernel scope link metric 5",
+          "100.100.100.100 dev eth8 proto kernel scope link metric 5",
+          "100.120.85.40 dev eth8 proto kernel scope link metric 5",
+          "172.17.0.0/16 dev docker0 proto kernel scope link src 172.17.0.1 linkdown"
+        ]
+      },
+      "reason": null
+    }
+  ]
+}
