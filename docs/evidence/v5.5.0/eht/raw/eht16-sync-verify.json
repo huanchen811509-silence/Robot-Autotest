@@ -1,0 +1,21 @@
+{
+  "captured_at": "2026-11-13 21:18:32",
+  "timezone": "GMT+8",
+  "purpose": "EHT-16 / TC-v5.5-18 收口证据：实施提交与四处 sha 一致",
+  "implementation_commit": "ba148b73672ddbc370ccecdfcfcbd68a14a2d0fc",
+  "wsl_head": "ba148b73672ddbc370ccecdfcfcbd68a14a2d0fc",
+  "origin_main": "ba148b73672ddbc370ccecdfcfcbd68a14a2d0fc",
+  "github_main": "ba148b73672ddbc370ccecdfcfcbd68a14a2d0fc",
+  "e_drive_head": "ba148b73672ddbc370ccecdfcfcbd68a14a2d0fc",
+  "four_way_equal": true,
+  "ls_remote_origin": "ba148b73672ddbc370ccecdfcfcbd68a14a2d0fc\trefs/heads/main",
+  "ls_remote_github": "ba148b73672ddbc370ccecdfcfcbd68a14a2d0fc\trefs/heads/main",
+  "wsl_status_before_evidence": "",
+  "e_drive_status_short": "",
+  "gates_result": "GATES_RESULT FAILS=2",
+  "gates_fail_steps": [
+    "FAIL  13-browser_regression (0s) -> docs/evidence/gates/logs/13-browser_regression.log",
+    "FAIL  29-host_inventory (0s) -> docs/evidence/gates/logs/29-host_inventory.log"
+  ],
+  "note": "本文件为收口证据单独提交；实施交付为 implementation_commit，最终 HEAD 以本证据提交为准，推送后四处 sha 再以 git ls-remote 复核。门禁 FAILS=2 的 13/29 为已知外部遗留，如实保留。"
+}
