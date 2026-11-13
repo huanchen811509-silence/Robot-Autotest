@@ -1,0 +1,53 @@
+{
+  "generatedAt": "2026-11-13T22:22:10+0800",
+  "base": "http://127.0.0.1:8081",
+  "total": 5,
+  "passed": 5,
+  "failed": [],
+  "checks": [
+    {
+      "id": "fake-new-runId",
+      "expect": "200 + planOnly=true",
+      "http": 200,
+      "planOnly": true,
+      "statusCounts": {
+        "SKIP": 1
+      },
+      "exports": null,
+      "notes": [
+        "metadata 已落 run_metadata：2 项",
+        "junit_xml 已登记 junit.xml",
+        "pytest_report_json 已登记 junit.xml"
+      ],
+      "pass": true
+    },
+    {
+      "id": "duplicate-runId",
+      "expect": "4xx（非 500）",
+      "http": 409,
+      "message": "runId 已存在：EHT-REG-FAKE-1794579720（换一个 runId 重试）",
+      "pass": true
+    },
+    {
+      "id": "real-without-confirm",
+      "expect": "400",
+      "http": 400,
+      "message": "real 模式需要显式确认：请求体加 confirmReal=true（真实执行会登录 DUT）",
+      "pass": true
+    },
+    {
+      "id": "real-unbound-node",
+      "expect": "400 fail-closed",
+      "http": 400,
+      "message": "以下 nodeId 未绑定用例，无法判定安全级，按 fail-closed 拒跑：tests/nic/new_scripts/test_im_vir_001.py::test_im_vir_001_sriov_basic",
+      "pass": true
+    },
+    {
+      "id": "real-on-fake-endpoint",
+      "expect": "400",
+      "http": 400,
+      "message": "此端点只跑 fake；real 请用 POST /runs 并带 confirmReal=true",
+      "pass": true
+    }
+  ]
+}

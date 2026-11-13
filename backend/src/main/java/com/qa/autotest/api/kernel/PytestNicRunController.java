@@ -160,6 +160,14 @@ public class PytestNicRunController {
                         "目标用例安全级未判定或属高危，按 ADR-0013 拒跑（先人工补判）："
                                 + String.join(", ", blocked));
             }
+            // fail-closed：点名了却映射不到用例，就等于「不知道它是什么风险」。
+            // 放行的话，任何拼错/未绑定的 nodeid 都能绕过安全闸直接登录 DUT。
+            List<String> unmapped = unmappedNodes(projectId, nodeIds);
+            if (!unmapped.isEmpty()) {
+                throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                        "以下 nodeId 未绑定用例，无法判定安全级，按 fail-closed 拒跑："
+                                + String.join(", ", unmapped));
+            }
         }
         String runId = req.runId() == null || req.runId().isBlank()
                 ? "EHT-" + mode.toUpperCase(Locale.ROOT) + "-" + System.currentTimeMillis()
@@ -170,6 +178,12 @@ public class PytestNicRunController {
         }
         Path runDir = Path.of(System.getProperty("java.io.tmpdir"),
                 "fake".equals(mode) ? "eht-fake-runs" : "eht-real-runs", runId);
+        // 重复 runId 直接 409：底层唯一键冲突会抛 500，看上去像服务出错，
+        // 实际是「这个名字已经用过」，调用方重试时应带新 runId。
+        if (runRepo.findByRunId(projectId, runId).isPresent()) {
+            throw new BusinessException(ErrorCode.CONFLICT,
+                    "runId 已存在：" + runId + "（换一个 runId 重试）");
+        }
         int seconds = req.timeoutSeconds() == null ? 1800 : Math.max(30, req.timeoutSeconds());
 
         // 孤儿清扫器按 DB 活跃运行对账 ProcessRegistry：不先落一条 RUNNING 的 run，
@@ -375,6 +389,31 @@ public class PytestNicRunController {
             }
         }
         return new ArrayList<>(blocked);
+    }
+
+    /**
+     * 点名但未绑定到用例的 nodeId 列表。
+     *
+     * <p>real 模式下这份清单必须为空：绑定关系是安全级的唯一入口，找不到绑定就
+     * 无从判断 L0/L1/L2，只能按最保守的方式拒跑（fail-closed），不能默认放行。
+     * nodeIds 为空（整库执行）时返回空——此时按项目已绑定用例全量核对。
+     */
+    private List<String> unmappedNodes(long projectId, List<String> nodeIds) {
+        List<String> unmapped = new ArrayList<>();
+        for (String raw : nodeIds) {
+            String base = raw == null ? "" : raw.trim();
+            int bracket = base.indexOf('[');
+            if (bracket > 0) {
+                base = base.substring(0, bracket);
+            }
+            if (base.isEmpty()) {
+                continue;
+            }
+            if (bindings.findByNodeId(projectId, "pytest", base).isEmpty()) {
+                unmapped.add(base);
+            }
+        }
+        return unmapped;
     }
 
     /** 把执行结果摊平成可取证的结构；null 字段一律显式留空，不抛 NPE。 */

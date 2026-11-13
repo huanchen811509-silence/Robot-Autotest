@@ -144,6 +144,45 @@ class PytestNicRunControllerTest {
     }
 
     @Test
+    @DisplayName("fail-closed：real 点名未绑定的 nodeId 必须拒跑，不能绕过安全闸")
+    void realRejectsUnmappedNode() throws Exception {
+        PytestNicRunService runs = mock(PytestNicRunService.class);
+        ProjectSettingRepository settings = mock(ProjectSettingRepository.class);
+        when(settings.findAll(anyLong(), any())).thenReturn(Map.of("repo_path", "/tmp/eht-repo"));
+        when(bindings.findByNodeId(anyLong(), any(), any())).thenReturn(Optional.empty());
+        mvc(runs, settings).perform(post("/api/projects/95/pytest/runs")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"mode\":\"real\",\"confirmReal\":true,"
+                                + "\"nodeIds\":[\"tests/x.py::test_typo\"]}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(
+                        org.hamcrest.Matchers.containsString("test_typo")));
+        verify(runs, never()).execute(any());
+    }
+
+    @Test
+    @DisplayName("重复 runId 返回 409，不把唯一键冲突暴露成 500")
+    void duplicateRunIdConflicts() throws Exception {
+        PytestNicRunService runs = mock(PytestNicRunService.class);
+        ProjectSettingRepository settings = mock(ProjectSettingRepository.class);
+        when(settings.findAll(anyLong(), any())).thenReturn(Map.of("repo_path", "/tmp/eht-repo"));
+        RunRepository runRepo = mock(RunRepository.class);
+        when(runRepo.findByRunId(anyLong(), any()))
+                .thenReturn(Optional.of(mock(com.qa.autotest.domain.execution.RunRecord.class)));
+        MockMvc mvc = MockMvcBuilders.standaloneSetup(new PytestNicRunController(runs, settings,
+                        runRepo, artifacts,
+                        mock(com.qa.autotest.application.repository.RunMetadataRepository.class),
+                        bindings, cases, mock(AccessControlService.class)))
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .build();
+        mvc.perform(post("/api/projects/95/pytest/runs/fake")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"runId\":\"EHT-DUP-1\"}"))
+                .andExpect(status().isConflict());
+        verify(runs, never()).execute(any());
+    }
+
+    @Test
     @DisplayName("缺 pytest.repo_path 必须 400，不拿空路径硬跑")
     void missingRepoPathRejected() throws Exception {
         PytestNicRunService runs = mock(PytestNicRunService.class);
