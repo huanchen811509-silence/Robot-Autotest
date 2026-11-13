@@ -528,7 +528,7 @@ export default {
     digest: {
       title: '报告结果',
       window: '近 {days} 天',
-      coverage: '用例覆盖',
+    coverage: '用例覆盖',
       coverageValue: '{covered} / {total} 条用例已有结果',
       neverExecuted: '从未执行',
       coverageHint: '按用例编号精确匹配；脚本步骤名（如 Bench-1-A）不计入覆盖',
@@ -1114,7 +1114,12 @@ export default {
       sourceRf: 'RF 关键字',
       sourceMark: 'pytest 标记',
       sourceStdout: 'stdout 提取',
+      sourceCommandIndex: '命令索引',
       sourceNone: '无',
+      // v5.6.0 / FR-v5.6-21：NONE 不再直接裸露给用户，改成「未采集（原因）」
+      notCollectedReason: '未采集（{reason}）',
+      reasonNoCommand: '用例库未记录命令行',
+      reasonSourceMismatch: '提取器未命中命令行',
     },
     logTitle: '日志',
     logEmpty: '暂无日志',
@@ -1137,6 +1142,8 @@ export default {
       exporting: '导出中…',
       done: '已生成 {format}：{size}，sha256 {sha256}',
       download: '下载文件',
+      // v5.6.0 / FR-v5.6-27：质量自检未过时明确说是草稿，并列出缺项
+      draftHint: '本次导出为草稿（DRAFT），不建议对外交付。缺项：{missing}',
       historyTitle: '导出历史',
       historyEmpty: '暂无导出记录',
       historyMode: '版本',
@@ -1954,6 +1961,49 @@ export default {
     healthFailed: '健康检查查询失败（可能是尚未配置 pytest 工程）',
   },
 
+  // v5.6.0 / FR-v5.6-11、12、14：执行发起台的文案。
+  // 阶段名不做「美化」：RENDERING 就说「渲染环境」，不要写成「准备中」——
+  // 用户排查卡住时，需要知道到底卡在渲染还是卡在 pytest 进程。
+  pytestLaunch: {
+    title: '发起执行',
+    subtitle: '先在界面上看「能不能跑」，再决定这一批发不发。提交后进度会自己刷新。',
+    recheck: '重新预检',
+    precheckReady: '预检通过，可以发起',
+    precheckBlocked: '还差 {count} 项才能跑',
+    precheckLoading: '正在预检…',
+    optional: '（本模式不拦）',
+    fix: '去补齐',
+    mode: '模式',
+    runId: '运行号（留空自动生成）',
+    runIdPlaceholder: '如 EHT-V56-001',
+    onlySelected: '只跑勾选的用例（当前可选 {count} 条）',
+    unbound: '（未绑定）',
+    confirmReal: '我确认会登录真实设备并执行命令',
+    submit: '发起执行',
+    submitting: '提交中…',
+    cancel: '取消执行',
+    cancelRequested: '已请求取消，正在等当前批次结束',
+    submitted: '已提交，运行号 {runId}',
+    blockedHint: '补齐上面的缺项后按钮才可用',
+    counters: '已完成 {finished}/{total} · 通过 {passed} · 失败 {failed}',
+    viewReport: '去报告页看结果',
+    check: {
+      bench: '台架',
+      config: '配置',
+      devices: '设备',
+      safety: '安全级',
+    },
+    stage: {
+      PREPARING: '准备中',
+      RENDERING: '渲染环境',
+      LAUNCHING: '启动进程',
+      RUNNING: '执行中',
+      FINALIZING: '收尾归一',
+      FINISHED: '已完成',
+      FAILED: '失败',
+      CANCELED: '已取消',
+    },
+  },
   pytestWorkbench: {
     settingLabels: {
       repo_path: '仓库路径（执行机本地）',
@@ -1981,6 +2031,22 @@ export default {
     contractOk: '满足',
     contractMissing: '缺 {items}',
     mode: '默认模式',
+      // v5.6.0 / FR-v5.6-04：台架就绪度。四项口径见 PytestReadinessService。
+    readiness: {
+      title: '台架就绪度',
+      ready: '就绪',
+      blocked: '缺 {count} 项',
+      readyHint: '设备、凭据、环境、绑定四项齐备，可以直接发起执行。',
+      blockedHint: '少任何一项都发不出执行；按下面的入口补齐后刷新本页即可。',
+      done: '已就绪',
+      fix: '去补齐',
+      items: {
+        devices: '设备（DUT）',
+        credentials: 'SSH 凭据',
+        environment: '环境采集',
+        bindings: '用例绑定',
+      },
+    },
     coverage: '覆盖率',
     coverageDetail: '{bound} / {total} 条已绑定',
     coverageHint: '含待评审 {withPending}% ／ 排除待评审 {withoutPending}%（D12 双口径并列）',
@@ -2037,6 +2103,36 @@ export default {
     failed: '加载失败',
   },
 
+  // v5.6.0 / FR-v5.6-03：空态必须回答「为什么没有、能做什么」。
+  // 文案集中在这里而不是各页硬编码：同一件事（比如拓扑来自快照）只有一个说法。
+  emptyGuide: {
+    action: {
+      assets: '去登记设备',
+      collect: '去采集一次',
+      launch: '去即时发起',
+      principles: '看执行原则',
+    },
+    nodes: {
+      title: '还没有执行节点',
+      reason: '执行节点用于把用例分发到远程机器；pytest 工程在当前主机起子进程执行，不需要节点。',
+    },
+    topology: {
+      title: '还没有环境快照',
+      reason: '拓扑来自环境快照。采集一次之后，这里会列出主机、网口与链路的真实画像。',
+    },
+    analysis: {
+      title: '还没有可分析的采集结果',
+      reason: '采集分析基于采集历史。至少采集一次，这里才会出现分类汇总与异常项。',
+    },
+    records: {
+      title: '还没有恢复记录',
+      reason: '恢复记录只在执行中断并触发恢复时产生；没有记录通常说明还没发生过需要恢复的故障。',
+    },
+    plans: {
+      title: '还没有测试计划',
+      reason: '测试计划用于按周期自动跑；只想现在跑一批，用「即时发起」更快。',
+    },
+  },
   nodesView: {
     title: '执行节点',
     subtitle: '平台级执行资源：注册后由节点上的 agent 心跳保活；离线节点拒绝发起（不排队）',
@@ -2419,6 +2515,8 @@ export default {
     skipped: '跳过',
     duration: '耗时 {value}',
     topFailures: 'Top 失败项',
+    // v5.6.0 / FR-v5.6-26：复现信息
+    repro: '连续 {runs} 轮 · 复现率 {rate}%',
     failureCount: '{count} 次',
     risks: '风险提示',
     generatedAt: '生成于 {at}',

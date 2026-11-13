@@ -39,6 +39,12 @@ public class FailureClusterService {
     /** 每簇最多展示几条样例：超过 3 条在表格里已经看不清，且用户只需要判断「是不是同一回事」。 */
     private static final int SAMPLE_LIMIT = 3;
 
+    /**
+     * 展示名上限（字符）。取 300 是因为常见断言消息在 100~200 字符，
+     * 再长的多行堆栈只解析首行，正常不会触发；设上限只为防单行超长污染响应体。
+     */
+    private static final int DISPLAY_MAX_LENGTH = 300;
+
     private final FailureResultRepository results;
     private final FailureClassifier classifier;
     private final AccessControlService access;
@@ -186,8 +192,34 @@ public class FailureClusterService {
                 .map(FailureResultRepository.FailureRow::caseId)
                 .filter(java.util.Objects::nonNull)
                 .toList();
-        return new FailureClusterView.Cluster(key, rows.size(), ratio(rows.size(), total),
-                samples, caseIds);
+        return new FailureClusterView.Cluster(key, displayOf(rows, key), rows.size(),
+                ratio(rows.size(), total), samples, caseIds);
+    }
+
+    /**
+     * 展示名取首个样本失败消息的首行（FR-v5.6-22）。
+     *
+     * <p>为什么用首行而不是整段：失败消息常带多行堆栈，首行才是「同一回事」的判据；
+     * 全塞进表格会把行高撑到无法扫读。为什么不用指纹：指纹为了聚合稳定做了数字抹除与截断，
+     * 用户看到 {@code ... <n> != <n>} 并不知道哪条断言炸了。
+     *
+     * @param key 簇指纹，原文为空时回落，避免界面出现空白标题
+     */
+    private static String displayOf(List<FailureResultRepository.FailureRow> rows, String key) {
+        for (FailureResultRepository.FailureRow row : rows) {
+            String message = row.failureMsg();
+            if (message == null) {
+                continue;
+            }
+            int lineEnd = message.indexOf('\n');
+            String firstLine = (lineEnd < 0 ? message : message.substring(0, lineEnd)).strip();
+            if (!firstLine.isEmpty()) {
+                return firstLine.length() > DISPLAY_MAX_LENGTH
+                        ? firstLine.substring(0, DISPLAY_MAX_LENGTH) + "…"
+                        : firstLine;
+            }
+        }
+        return key;
     }
 
     /** 簇排序：条数倒序，同条数按簇键字典序（稳定，不依赖插入顺序）。 */

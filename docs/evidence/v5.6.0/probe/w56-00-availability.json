@@ -1,0 +1,65 @@
+{
+  "generatedAt": "2026-11-13T23:02:17",
+  "projectId": 95,
+  "projectKind": "pytest-suite",
+  "conclusion": "四个入口在 API 层全部可用（200）；/plans 与 /environment/collect 在工程 95 里为空数据，属 FR-v5.6-03 空态范围，不登记缺陷",
+  "kernelVerdict": "工程 95 无计划，未实测编排；内核选择依赖项目设置 kernel.default=pytest（已核实存在）",
+  "results": [
+    {
+      "item": "/sync",
+      "endpoint": "POST /api/projects/95/sync/preview",
+      "http": 200,
+      "usable": true,
+      "note": "差异预览返回结构合法",
+      "sample": "{\"code\": 0, \"codeName\": \"OK\", \"message\": \"OK\", \"data\": {\"jobId\": 2, \"total\": 730, \"newCount\": 730, \"updateCount\": 0, \"conflictCount\": 0, \"unchangedCount\": 0, \"skippedCount\": 0, \"previewSha\": \"bc7cfce6c07732f84e50a99d4e79d8f29d5ee86530748f07…"
+    },
+    {
+      "item": "/plans",
+      "endpoint": "GET /api/plans?projectId=95",
+      "http": 200,
+      "usable": true,
+      "note": "计划列表可读，0 条（工程 95 为空 → 需空态）",
+      "sample": "{\"code\": 0, \"codeName\": \"OK\", \"message\": \"OK\", \"data\": {\"items\": [], \"total\": 0, \"page\": 1, \"size\": 20}, \"success\": true}"
+    },
+    {
+      "item": "/environment/collect",
+      "endpoint": "GET /api/asset-host-inventory?projectId=95",
+      "http": 200,
+      "usable": true,
+      "note": "采集历史可读，0 条（工程 95 为空 → 需空态）",
+      "sample": "{\"code\": 0, \"codeName\": \"OK\", \"message\": \"OK\", \"data\": [], \"success\": true}"
+    },
+    {
+      "item": "/environment/collect#commands",
+      "endpoint": "GET /api/asset-host-inventory/commands?projectId=95",
+      "http": 200,
+      "usable": true,
+      "note": "命令白名单可读",
+      "sample": "{\"code\": 0, \"codeName\": \"OK\", \"message\": \"OK\", \"data\": {\"OS\": \"export LC_ALL=C; grep -m1 '^PRETTY_NAME=' /etc/os-release\", \"KERNEL\": \"export LC_ALL=C; uname -r\"…"
+    },
+    {
+      "item": "/assets?tab=links",
+      "endpoint": "GET /api/projects/95/links",
+      "http": 200,
+      "usable": true,
+      "note": "链路列表可读，0 条（为空 → 需空态）",
+      "sample": "{\"code\": 0, \"codeName\": \"OK\", \"message\": \"OK\", \"data\": {\"items\": [], \"total\": 0, \"page\": 1, \"size\": 20}, \"success\": true}"
+    },
+    {
+      "item": "/assets?tab=devices",
+      "endpoint": "GET /api/projects/95/devices",
+      "http": 200,
+      "usable": true,
+      "note": "设备 4 台",
+      "sample": "{\"code\": 0, \"codeName\": \"OK\", \"message\": \"OK\", \"data\": {\"items\": [{\"id\": 21, \"projectId\": 95, \"name\": \"gpu02\", \"deviceType\": \"HOST\", \"model\": \"GPU 服务器\", \"vendor…"
+    },
+    {
+      "item": "/assets?tab=credentials",
+      "endpoint": "GET /api/projects/95/credentials",
+      "http": 200,
+      "usable": true,
+      "note": "凭据 0 条",
+      "sample": "{\"code\": 0, \"codeName\": \"OK\", \"message\": \"OK\", \"data\": [], \"success\": true}"
+    }
+  ]
+}

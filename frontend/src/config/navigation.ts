@@ -466,115 +466,59 @@ export const NAVIGATION: NavNode[] = [
 ]
 
 /**
- * pytest 用例库工程的导航树（v5.2.0 / FR-v5.2-07 / W52-08）。
+ * pytest 用例库工程的增量叶子（v5.6.0 / FR-v5.6-01 / W56-01）。
  *
- * **为什么要有第二棵树**：`pytest-suite` 工程里没有台架资产、没有环境拓扑、
- * 没有维护恢复——这些页面对它是纯噪音，还会让新用户以为「要先配资产才能跑 pytest」。
- * 它日常只做四件事：看用例库覆盖、绑脚本、发起执行、看报告。
+ * **第二棵树已删除**（v5.6.0 / FR-v5.6-02）。原实现给 `pytest-suite` 单独维护一棵
+ * 4 组 9 项的树，理由是「pytest 工程没有台架资产、没有环境拓扑，这些入口是噪音」。
+ * 这个前提是错的：pytest 工程同样要先登记 DUT 与网口、配 SSH 凭据、拉环境，
+ * 才谈得上执行；把资产页藏起来，用户反而找不到唯一能配 DUT 的地方。
  *
- * 与 `NAVIGATION` 的关系是**真子集 + 重排**，不是另写一套：
- * key / labelKey / path / capability 全部沿用原树的定义，只有分组方式和顺序不同。
- * 这样两棵树的选中态判定、能力过滤、路径匹配走的都是同一套函数，不会出现
- * 「切了工程类型后某项点不亮」这种双份实现的经典缺陷。
+ * 现在只有一套菜单：`NAVIGATION`。工程类型的唯一差别是这个叶子——
+ * 它把用户直接送到该工程类型的落地面（工程健康 / 覆盖率 / 绑定 / 证据），
+ * 并入「工作台」组首位，而不是另立一个组。
  *
- * 刻意**不出现**的项（差异化必须是真的差异化）：资产台账、凭证、链路、
- * 环境与拓扑、维护与恢复、执行节点、测试计划。要在 pytest 工程里配资产，
- * 走「系统设置 → 项目设置」或切回标准工程——不在这棵树里留半套入口。
+ * 为什么是「并入工作台组首位」而不是「放最后」：这个工程的日常入口就是工作台，
+ * 首屏拿不到就得多点一次。分组数量不变（项目一级仍 7 组），层级仍 ≤2。
  */
-export const PYTEST_SUITE_NAVIGATION: NavNode[] = [
-  {
-    key: 'pytest-workbench',
-    labelKey: 'menu.pytestWorkbench',
-    icon: 'dashboard',
-    children: [
-      {
-        // 工程健康 + 覆盖率 + 绑定 + 证据，是这个工程类型的落地面。
-        key: 'pytest-workbench-health',
-        labelKey: 'menu.pytestHealth',
-        icon: 'dashboard',
-        path: '/pytest-workbench',
-        capability: 'execution:read',
-      },
-      {
-        key: 'pytest-workbench-board',
-        labelKey: 'menu.overview',
-        icon: 'reports',
-        path: '/overview',
-      },
-    ],
-  },
-  {
-    key: 'pytest-library',
-    labelKey: 'menu.pytestLibrary',
-    icon: 'cases',
-    children: [
-      {
-        key: 'pytest-library-cases',
-        labelKey: 'menu.cases',
-        icon: 'cases',
-        path: '/cases',
-        capability: 'case:read',
-      },
-      {
-        key: 'pytest-library-sets',
-        labelKey: 'menu.caseSets',
-        icon: 'cases',
-        path: '/cases/sets',
-        capability: 'case:read',
-      },
-      {
-        key: 'pytest-library-board',
-        labelKey: 'menu.casesBoard',
-        icon: 'boxes',
-        path: '/cases/board',
-        capability: 'case:read',
-      },
-    ],
-  },
-  {
-    key: 'pytest-execution',
-    labelKey: 'menu.execution',
-    icon: 'runs',
-    children: [
-      {
-        key: 'pytest-execution-launch',
-        labelKey: 'menu.executionPlans',
-        icon: 'plus',
-        path: '/execution-plans',
-        capability: 'execution:read',
-      },
-      {
-        key: 'pytest-execution-runs',
-        labelKey: 'menu.runsList',
-        icon: 'runs',
-        path: '/runs',
-        alsoMatch: ['/runs/failure-clusters'],
-        capability: 'execution:read',
-      },
-      {
-        // 内核页在 pytest 工程里是常用页（探契约、看解释器版本），保留为一等入口。
-        key: 'pytest-execution-kernels',
-        labelKey: 'menu.kernels',
-        icon: 'system',
-        path: '/kernels',
-        capability: 'execution:read',
-      },
-      {
-        key: 'pytest-execution-reports',
-        labelKey: 'menu.reports',
-        icon: 'reports',
-        path: '/reports',
-        exclude: ['/reports/templates'],
-      },
-    ],
-  },
-  {
-    key: 'pytest-settings',
-    labelKey: 'menu.settings',
-    icon: 'admin',
-    children: projectSettingsChildren,
-  },
-]
+export const pytestWorkbenchLeaf: NavLeaf = {
+  key: 'pytest-workbench-health',
+  labelKey: 'menu.pytestHealth',
+  icon: 'dashboard',
+  path: '/pytest-workbench',
+  capability: 'execution:read',
+}
+
+/**
+ * 给标准树挂上 pytest 增量叶子的结果（memo 化单例）。
+ *
+ * 为什么 memo：`App.vue` 与单测都用 `toBe` 断言「同一工程类型每次拿到同一个对象」，
+ * 每次调用新建数组会让引用相等断言失效，还会让侧栏在每次渲染时重算 diff。
+ * 树是模块级常量、不会变，所以缓存一次就够。
+ */
+let pytestTreeCache: NavNode[] | null = null
+
+export function withPytestWorkbench(base: NavNode[] = NAVIGATION): NavNode[] {
+  if (base === NAVIGATION) {
+    if (pytestTreeCache) return pytestTreeCache
+    pytestTreeCache = base.map((node) =>
+      isGroup(node) && node.key === 'workbench'
+        ? { ...node, children: [pytestWorkbenchLeaf, ...node.children] }
+        : node,
+    )
+    return pytestTreeCache
+  }
+  // 非标准树（单测传自定义树）不缓存，避免把测试数据钉死在模块状态里。
+  return base.map((node) =>
+    isGroup(node) && node.key === 'workbench'
+      ? { ...node, children: [pytestWorkbenchLeaf, ...node.children] }
+      : node,
+  )
+}
+
+/** 仅测试用：清掉 memo，避免用例之间互相污染。 */
+export function resetPytestTreeCache(): void {
+  pytestTreeCache = null
+}
 
 /** 工程类型取值（与后端 `ProjectKind` 对齐）。 */
 export type ProjectKind = 'standard' | 'platform' | 'pytest-suite'
@@ -585,6 +529,8 @@ export type ProjectKind = 'standard' | 'platform' | 'pytest-suite'
  * 这是唯一入口：`App.vue` 不再自己三元判断。把选择逻辑收成函数，才能在单测里
  * 穷举三种工程类型 × 两种模式，而不是靠人工点界面确认。
  *
+ * v5.6.0 / FR-v5.6-02：只有 global / project 两种模式，不再按工程类型分树。
+ *
  * @param mode  `global`（跨项目）/ `project`（项目内）
  * @param kind  工程类型；空或未知一律按标准工程处理（宁可多显示，不要少显示入口）
  */
@@ -592,7 +538,9 @@ export function navTreeFor(mode: 'global' | 'project', kind?: string | null): Na
   if (mode === 'global') {
     return GLOBAL_NAVIGATION
   }
-  return kind === 'pytest-suite' ? PYTEST_SUITE_NAVIGATION : NAVIGATION
+  // v5.6.0 / FR-v5.6-01：全量菜单。工程类型只决定「是否多一个落地面叶子」，
+  // 不再决定「看不看得到资产/环境/维护」——那套差异化已被证伪。
+  return kind === 'pytest-suite' ? withPytestWorkbench() : NAVIGATION
 }
 
 /** 路由上参与判定所需的字段（避免依赖完整 RouteLocation，便于单测构造）。 */

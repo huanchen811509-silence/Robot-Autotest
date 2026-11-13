@@ -11,6 +11,8 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { NButton, NInput, type DataTableColumns } from 'naive-ui'
 import DataTable from '@/components/DataTable.vue'
+import EmptyState from '@/components/EmptyState.vue'
+import EmptyGuide from '@/components/EmptyGuide.vue'
 import { useAuthStore } from '@/stores/auth'
 import { hostInventoryApi, type HostInventoryRecord } from '@/api/environment'
 import { formatDateTime } from '@/utils/format'
@@ -125,7 +127,17 @@ watch(projectId, load)
       <p v-if="loading" class="muted" data-testid="analysis-loading">{{ t('env.common.loading') }}</p>
       <DataTable v-else :columns="columns" :data="rows" :row-key="(row: Row) => row.id">
         <template #empty>
-          <p class="empty" data-testid="analysis-empty">{{ t('env.common.empty') }}</p>
+          <EmptyState
+            data-testid="analysis-empty"
+            :title="t('emptyGuide.analysis.title')"
+            :description="t('emptyGuide.analysis.reason')"
+            icon="device"
+            :illustration-width="64"
+          >
+            <template #action>
+              <EmptyGuide to="/environment/collect" :label="t('emptyGuide.action.collect')" />
+            </template>
+          </EmptyState>
         </template>
       </DataTable>
     </section>

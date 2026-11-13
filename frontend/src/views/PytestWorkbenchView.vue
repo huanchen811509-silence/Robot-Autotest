@@ -10,6 +10,7 @@ import { computed, h, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { DataTableColumns } from 'naive-ui'
 import DataTable from '@/components/DataTable.vue'
+import PytestRunLaunch from '@/views/pytest/PytestRunLaunch.vue'
 import {
   pytestProjectApi,
   type BindingStats,
@@ -17,6 +18,7 @@ import {
   type EvidenceExtractResult,
   type PytestCaseStep,
   type PytestHealth,
+  type PytestReadiness,
   type SyncReport,
 } from '@/api/pytestProject'
 import {
@@ -32,6 +34,14 @@ const projectId = computed(() => auth.projectId ?? 0)
 
 const health = ref<PytestHealth | null>(null)
 const bindings = ref<BindingStats | null>(null)
+/**
+ * 台架就绪度（v5.6.0 / FR-v5.6-04）。
+ *
+ * 为什么放在 health 之前：「能不能跑」在本工程里是两件事——解释器与契约是
+ * 「环境装好了没有」，这里是「台架配齐了没有」。后者缺一项就一条用例都发不出去，
+ * 所以它必须是首屏第一块，而不是折叠在某个 tab 里。
+ */
+const readiness = ref<PytestReadiness | null>(null)
 
 /**
  * 绑定列表列定义（迁 DataTable 壳，W54-06 遗留清理）。
@@ -162,6 +172,26 @@ const calibers = computed(() => {
 })
 
 /**
+ * 就绪度四项的展示行：后端只给 key/ready/count，标签与跳转路径在这里映射。
+ *
+ * 跳转路径必须与「唯一能配这一项的地方」一致，否则按钮点了还是找不到北：
+ * 设备与凭据在资产页的两个页签、环境采集在 `/environment/collect`、
+ * 绑定由工作台自己的「同步绑定」负责（`#bindings` 锚点会滚到那一块）。
+ */
+const readinessRows = computed(() => {
+  const actions: Record<string, string> = {
+    devices: '/assets?tab=devices',
+    credentials: '/assets?tab=credentials',
+    environment: '/environment/collect',
+    bindings: '#bindings',
+  }
+  return (readiness.value?.items ?? []).map((item) => ({
+    ...item,
+    action: actions[item.key] ?? '/assets',
+  }))
+})
+
+/**
  * 秒 → 「1 小时 12 分」/「3 分 5 秒」。
  *
  * 不用 `Intl.RelativeTimeFormat`：那是「3 分钟前」这类相对表述，
@@ -183,6 +213,7 @@ async function load(): Promise<void> {
   try {
     health.value = await pytestProjectApi.health(projectId.value)
     bindings.value = await pytestProjectApi.bindings(projectId.value)
+    readiness.value = await pytestProjectApi.readiness(projectId.value)
     const raw = await pytestProjectApi.settings(projectId.value)
     for (const key of Object.keys(settings)) delete settings[key]
     Object.assign(settings, raw)
@@ -324,6 +355,50 @@ onMounted(load)
 
     <p v-if="failed" class="notice notice-fail">{{ t('pytestWorkbench.failed') }}</p>
     <p v-if="message" class="notice notice-ok">{{ message }}</p>
+
+    <!-- v5.6.0 / FR-v5.6-04：先回答「台架齐了没有」，再谈覆盖率。 -->
+    <section
+      v-if="readiness"
+      class="card readiness"
+      :class="readiness.ready ? 'readiness-ok' : 'readiness-blocked'"
+      data-test="readiness"
+    >
+      <div class="card-head">
+        <h2>{{ t('pytestWorkbench.readiness.title') }}</h2>
+        <span :class="['badge', readiness.ready ? 'ok' : 'warn']" data-test="readiness-state">
+          {{ readiness.ready
+            ? t('pytestWorkbench.readiness.ready')
+            : t('pytestWorkbench.readiness.blocked', { count: readiness.missing.length }) }}
+        </span>
+      </div>
+      <p class="muted small" data-test="readiness-hint">
+        {{ readiness.ready
+          ? t('pytestWorkbench.readiness.readyHint')
+          : t('pytestWorkbench.readiness.blockedHint') }}
+      </p>
+      <ul class="readiness-list">
+        <li
+          v-for="item in readinessRows"
+          :key="item.key"
+          :class="['readiness-item', item.ready ? 'ok' : 'missing']"
+          :data-test="`readiness-${item.key}`"
+        >
+          <span class="readiness-label">{{ t(`pytestWorkbench.readiness.items.${item.key}`) }}</span>
+          <span class="readiness-count">{{ item.count }}</span>
+          <RouterLink
+            v-if="!item.ready"
+            class="readiness-link"
+            :to="item.action"
+            :data-test="`readiness-fix-${item.key}`"
+          >{{ t('pytestWorkbench.readiness.fix') }}</RouterLink>
+          <span v-else class="readiness-done">{{ t('pytestWorkbench.readiness.done') }}</span>
+        </li>
+      </ul>
+    </section>
+
+    <!-- v5.6.0 / FR-v5.6-11：执行发起台。放在健康/覆盖率之后、明细之前——
+         先看「台架齐不齐」「环境健不健康」，再决定要不要发这一批。 -->
+    <PytestRunLaunch />
 
     <section v-if="health" class="card">
       <div class="card-head">
@@ -467,7 +542,7 @@ onMounted(load)
       </ul>
     </section>
 
-    <section class="card">
+    <section id="bindings" class="card">
       <div class="card-head">
         <h2>{{ t('pytestWorkbench.bindings') }}</h2>
         <div class="actions">
@@ -606,4 +681,53 @@ onMounted(load)
 .kind { border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; font-size: 11px; color: var(--text-muted); }
 .label { font-weight: 600; }
 .content { color: var(--text-muted); word-break: break-all; }
+
+/* v5.6.0 / FR-v5.6-04：台架就绪度。左侧竖条用语义色区分「能不能跑」，
+   不靠文字颜色——色弱用户读不出「红字=缺项」。 */
+.readiness-list {
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.readiness-item {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-left: 3px solid var(--border);
+  background: var(--surface-hover);
+  border-radius: var(--radius-sm);
+}
+
+.readiness-item.missing {
+  border-left-color: var(--warn, var(--accent));
+}
+
+.readiness-item.ok {
+  border-left-color: var(--ok, var(--accent));
+}
+
+.readiness-label {
+  font-size: var(--font-size-sm);
+}
+
+.readiness-count {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--font-size-sm);
+}
+
+.readiness-link {
+  color: var(--accent);
+  font-size: var(--font-size-sm);
+}
+
+.readiness-done {
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+}
 </style>

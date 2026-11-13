@@ -114,10 +114,28 @@ function formatPassRate(rate: number): string {
       <div v-if="topFailures.length" class="report-summary__block">
         <h3 class="report-summary__block-title">{{ t('reportSummary.topFailures') }}</h3>
         <ol class="report-summary__failures">
-          <li v-for="item in topFailures" :key="item.name" class="report-summary__failure">
-            <span class="report-summary__failure-name">{{ item.name }}</span>
+          <li
+            v-for="item in topFailures"
+            :key="item.clusterKey"
+            class="report-summary__failure"
+            :title="item.clusterKey"
+          >
+            <span class="report-summary__failure-name">{{ item.display }}</span>
             <span class="report-summary__failure-count">
               {{ t('reportSummary.failureCount', { count: item.count }) }}
+            </span>
+            <!-- FR-v5.6-26：有历史才显示复现信息；null 表示「没有历史可比」，不能显示成 0 -->
+            <span
+              v-if="item.consecutiveRuns !== null && item.consecutiveRuns !== undefined"
+              class="report-summary__failure-repro"
+              data-test="repro"
+            >
+              {{
+                t('reportSummary.repro', {
+                  runs: item.consecutiveRuns,
+                  rate: Math.round((item.reproRate ?? 0) * 1000) / 10,
+                })
+              }}
             </span>
           </li>
         </ol>
@@ -233,6 +251,9 @@ function formatPassRate(rate: number): string {
 
 .report-summary__failure {
   display: flex;
+  /* 展示名可能是长断言原文，复现信息跟在后面：允许换行比挤成一行更好读 */
+  flex-wrap: wrap;
+  align-items: baseline;
   justify-content: space-between;
   gap: var(--space-3);
   font-size: var(--font-size-sm);
@@ -240,14 +261,25 @@ function formatPassRate(rate: number): string {
 
 .report-summary__failure-name {
   min-width: 0;
+  /* 展示名现在是断言原文，一两行才看得懂；单行 ellipsis 会把关键差异截掉 */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  line-height: 1.45;
 }
 
 .report-summary__failure-count {
   flex: none;
   color: var(--text-muted);
+}
+
+.report-summary__failure-repro {
+  flex: none;
+  font-size: 12px;
+  color: var(--text-muted);
+  opacity: 0.9;
 }
 
 .report-summary__risks {

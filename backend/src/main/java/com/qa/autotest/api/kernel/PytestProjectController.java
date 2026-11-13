@@ -5,6 +5,7 @@ import com.qa.autotest.application.kernel.pytest.PytestBindingSyncService;
 import com.qa.autotest.application.kernel.pytest.PytestEvidenceService;
 import com.qa.autotest.application.kernel.pytest.PytestHealthService;
 import com.qa.autotest.application.kernel.pytest.PytestProjectSettings;
+import com.qa.autotest.application.kernel.pytest.PytestReadinessService;
 import com.qa.autotest.application.kernel.pytest.PytestSettingsService;
 import com.qa.autotest.application.repository.ProjectSettingRepository;
 import com.qa.autotest.common.ApiResponse;
@@ -38,17 +39,20 @@ public class PytestProjectController {
     private final PytestEvidenceService evidence;
     private final PytestSettingsService settingsService;
     private final ProjectSettingRepository settings;
+    private final PytestReadinessService readiness;
     private final AccessControlService access;
 
     public PytestProjectController(PytestHealthService health, PytestBindingSyncService sync,
                                    PytestEvidenceService evidence,
                                    PytestSettingsService settingsService,
-                                   ProjectSettingRepository settings, AccessControlService access) {
+                                   ProjectSettingRepository settings,
+                                   PytestReadinessService readiness, AccessControlService access) {
         this.health = health;
         this.sync = sync;
         this.evidence = evidence;
         this.settingsService = settingsService;
         this.settings = settings;
+        this.readiness = readiness;
         this.access = access;
     }
 
@@ -59,6 +63,18 @@ public class PytestProjectController {
             @RequestParam(defaultValue = "false") boolean refresh) {
         access.requireProjectAccess(projectId);
         return ApiResponse.ok(health.health(projectId, refresh));
+    }
+
+    /**
+     * 台架就绪度（v5.6.0 / FR-v5.6-04）：设备 / 凭据 / 环境 / 绑定四项。
+     *
+     * <p>独立于 {@code /health}：health 回答「解释器与契约对不对」，这里回答「台架齐不齐」。
+     * 合成一个响应会让两件事的缓存一并失效——解释器版本一天不变，台架却可能每小时在变。
+     */
+    @GetMapping("/readiness")
+    public ApiResponse<PytestReadinessService.Readiness> readiness(@PathVariable long projectId) {
+        access.requireProjectAccess(projectId);
+        return ApiResponse.ok(readiness.readiness(projectId));
     }
 
     /** 绑定列表与计数（只读，不扫盘）。 */

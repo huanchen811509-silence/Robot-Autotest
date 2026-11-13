@@ -34,7 +34,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 EVIDENCE = ROOT / "docs/evidence/v3.9.0/EW39-02/case-command-coverage.json"
 
-ALLOWED_SOURCES = ["RF_KEYWORD", "PYTEST_MARK", "STDOUT_EXTRACT", "NONE"]
+ALLOWED_SOURCES = ["RF_KEYWORD", "PYTEST_MARK", "STDOUT_EXTRACT", "COMMAND_INDEX", "NONE"]
 KERNELS = ["RF", "PYTEST"]
 
 # (相对路径, 必须出现的片段, 说明)
@@ -63,7 +63,8 @@ STATIC_CHECKS = [
     ("frontend/src/api/reports.ts",
      ["commandText", "commandSource", "commandExitCode"], "前端类型三列"),
     ("frontend/src/components/report/SuiteTree.vue",
-     ["command.notCollected", "command.none", "command.expand", "command.copy"],
+     ["command.notCollected", "command.notCollectedReason", "command.expand",
+      "command.copy", "sourceCommandIndex"],
      "前端三态与折叠/复制"),
     ("frontend/src/views/ReportPrintView.vue",
      ["commandText", "reports.command.label"], "打印页命令列"),

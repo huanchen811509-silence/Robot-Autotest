@@ -86,13 +86,37 @@ public class ExportService {
         this.clock = clock;
     }
 
-    /** 导出结果：与接口返回字段一一对应。 */
+    /**
+     * 导出前质量自检结果（v5.6.0 / FR-v5.6-27）。
+     *
+     * @param passed  三项机检全过
+     * @param missing 未通过项的可读说明；空表示全过
+     * @param label   对外口径标记：{@code FINAL} 可直接交付，{@code DRAFT} 仅供内部评审
+     */
+    public record QualityGate(boolean passed, List<String> missing, String label) {
+
+        public static final String FINAL = "FINAL";
+        public static final String DRAFT = "DRAFT";
+
+        public QualityGate {
+            missing = missing == null ? List.of() : List.copyOf(missing);
+        }
+    }
+
+    /**
+     * 导出结果：与接口返回字段一一对应。
+     *
+     * <p>v5.6.0 追加 {@code qualityGate}：导出不再「要么成功要么失败」，
+     * 而是「导出了，但这份能不能对外发」——缺项时仍允许导出（内部评审要用），
+     * 只降级为 DRAFT 并在文件名上标出来，避免草稿被当成正式件发出去。
+     */
     public record ExportResult(long exportId,
                                String format,
                                String mode,
                                long bytes,
                                String sha256,
-                               String downloadUrl) {
+                               String downloadUrl,
+                               QualityGate qualityGate) {
     }
 
     /** 下载定位结果。 */
@@ -127,17 +151,24 @@ public class ExportService {
         }
 
         Path directory = resolveArtifactDirectory(projectId, runId);
+        // 树只读一次：三格式共用同一份逐条结果，既省一次全表扫描，
+        // 也让质量自检与正文必然一致（自检读 A、正文读 B 是最难查的一类不一致）。
+        ReportTreeService.TreeSuite tree = trees.treeForPrint(projectId, runId);
+        QualityGate qualityGate = qualityGate(report, gate, tree);
         String fileName = "report_" + safeName(runId) + "_" + mode.wireName()
+                + (qualityGate.passed() ? "" : "_" + QualityGate.DRAFT)
                 + "." + format.extension();
         Instant exportedAt = clock.instant();
         byte[] bytes = switch (format) {
             case PDF -> pdfExportService.render(projectId, runId, mode);
-            case DOCX -> docxExporter.render(new ExportDocument(report,
-                    trees.treeForPrint(projectId, runId), mode, exportedAt, operator()));
+            case DOCX -> docxExporter.render(new ExportDocument(report, tree, mode, exportedAt,
+                    operator()));
             // run 级导出的 xlsx 只给汇总计数 + metadata：模板化（按字段裁剪 + 自定义标题）
             // 的报告导出在 /api/test-reports/{id}/export，那条链路才有快照内模板可用。
+            // v5.6.0 / FR-v5.6-23：追加「用例明细」sheet——只有汇总的 xlsx 拿到手
+            // 第一件事就是问「哪几条失败了」，而失败原因与命令只存在于逐条结果里。
             case XLSX -> reportExports.export("xlsx",
-                    summarySheet(report, mode));
+                    summarySheet(report, mode, qualityGate.label()), Map.of(), detailRows(tree));
         };
         Path target = directory.resolve(fileName);
         try {
@@ -156,7 +187,43 @@ public class ExportService {
         String downloadUrl = "/api/exports/" + exportId + "/download?projectId=" + projectId;
         audit.record("report_export", "report", runId, auditDetail(runId, format, mode, sha256));
         return new ExportResult(exportId, format.wireName(), mode.wireName(),
-                bytes.length, sha256, downloadUrl);
+                bytes.length, sha256, downloadUrl, qualityGate);
+    }
+
+    /**
+     * 导出前三项机检（FR-v5.6-27）。
+     *
+     * <p>三项选的是「拿出去会被挑回来」的三类问题，不是全部质量问题：
+     * <ol>
+     *   <li><b>metadata 十项</b>：缺 CASE_ID/DUT/... 的报告无法追溯，对外等于黑盒；</li>
+     *   <li><b>必填列</b>：用例没有编号，评审对着 xlsx 无法回指台账；</li>
+     *   <li><b>失败原因非空</b>：失败却没有原因，等于让人重跑一遍才知道发生了什么。</li>
+     * </ol>
+     * 缺项不阻断导出（内部评审正是要看问题），只把口径降为 DRAFT。
+     */
+    static QualityGate qualityGate(ReportRecord report, GateResult metadataGate,
+                                   ReportTreeService.TreeSuite tree) {
+        List<String> missing = new java.util.ArrayList<>(metadataGate.missing());
+        int unnamed = 0;
+        int reasonless = 0;
+        for (ReportExportService.CaseDetailRow row : detailRows(tree)) {
+            if (row.code() == null || row.code().isBlank()) {
+                unnamed++;
+            }
+            boolean failed = "FAIL".equalsIgnoreCase(row.verdict())
+                    || "ERROR".equalsIgnoreCase(row.verdict());
+            if (failed && (row.failureMsg() == null || row.failureMsg().isBlank())) {
+                reasonless++;
+            }
+        }
+        if (unnamed > 0) {
+            missing.add("用例编号缺失 " + unnamed + " 条");
+        }
+        if (reasonless > 0) {
+            missing.add("失败原因缺失 " + reasonless + " 条");
+        }
+        return new QualityGate(missing.isEmpty(), missing,
+                missing.isEmpty() ? QualityGate.FINAL : QualityGate.DRAFT);
     }
 
     public List<ExportRecord> history(long projectId, String runId) {
@@ -220,13 +287,45 @@ public class ExportService {
      * run 级 xlsx 的视图：汇总计数 + C5 metadata 白名单，内部版把水印换成内部标识。
      * 与 docx / pdf 走同一份 ReportRecord，不另查库，避免三格式数字对不上。
      */
-    private static Map<String, Object> summarySheet(ReportRecord report, ExportMode mode) {
+    private static Map<String, Object> summarySheet(ReportRecord report, ExportMode mode,
+                                                    String qualityLabel) {
         Map<String, Object> sheet = ReportExportService.summaryView(report.runId(), report.state(),
                 report.passCount(), report.failCount(), report.skipCount(), report.metadata());
         if (mode == ExportMode.INTERNAL) {
             sheet.put("watermark", ReportExportService.WATERMARK + " / INTERNAL");
         }
+        // FR-v5.6-27：草稿要在件里也标出来，不能只靠文件名——文件被改名转发后
+        // 只剩这一行还能证明它是草稿。
+        sheet.put("qualityGate", qualityLabel);
         return sheet;
+    }
+
+    /**
+     * 摊平套件树得到明细行（FR-v5.6-23）。
+     *
+     * <p>顺序即树的先序顺序，与报告页看到的顺序一致——用户拿着 xlsx 对屏幕时不该重排。
+     * 命令列原样透传 {@code commandText}：{@code NONE} 也照写，
+     * 因为明细 sheet 是「事实表」，把 NONE 改成空会让「没下发」与「没采集」混淆。
+     */
+    private static List<ReportExportService.CaseDetailRow> detailRows(
+            ReportTreeService.TreeSuite root) {
+        List<ReportExportService.CaseDetailRow> rows = new java.util.ArrayList<>();
+        collectDetailRows(root, rows);
+        return rows;
+    }
+
+    private static void collectDetailRows(ReportTreeService.TreeSuite suite,
+                                          List<ReportExportService.CaseDetailRow> out) {
+        if (suite == null) {
+            return;
+        }
+        for (ReportTreeService.TreeCase item : suite.cases()) {
+            out.add(new ReportExportService.CaseDetailRow(item.name(), item.verdict(),
+                    item.durationMs(), item.failureMsg(), item.commandText()));
+        }
+        for (ReportTreeService.TreeSuite child : suite.suites()) {
+            collectDetailRows(child, out);
+        }
     }
 
     private String auditDetail(String runId, ExportFormat format, ExportMode mode, String sha256) {

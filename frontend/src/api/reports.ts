@@ -70,7 +70,7 @@ export interface ReportCaseNode {
   failureMsg: string | null
   /** 命令原文 / `NONE` / null（历史未采集）。 */
   commandText: string | null
-  /** 来源：RF_KEYWORD / PYTEST_MARK / STDOUT / NONE / null。 */
+  /** 来源：RF_KEYWORD / PYTEST_MARK / STDOUT_EXTRACT / COMMAND_INDEX / NONE / null。 */
   commandSource: string | null
   /** 退出码，未知为 null。 */
   commandExitCode: number | null
@@ -199,6 +199,17 @@ export type ReportExportMode = 'external' | 'internal'
 /** 导出格式。 */
 export type ReportExportFormat = 'pdf' | 'docx'
 
+/**
+ * 导出前质量自检（v5.6.0 / FR-v5.6-27）。
+ *
+ * `label` 为 `DRAFT` 时文件名也带 `_DRAFT`，两处同源——文件被改名转发后仍能看出是草稿。
+ */
+export interface ReportQualityGate {
+  passed: boolean
+  missing: string[]
+  label: 'FINAL' | 'DRAFT'
+}
+
 /** 导出成功响应，字段与后端 ExportService.ExportResult 对齐。 */
 export interface ReportExportResult {
   exportId: number
@@ -207,6 +218,7 @@ export interface ReportExportResult {
   bytes: number
   sha256: string
   downloadUrl: string
+  qualityGate: ReportQualityGate
 }
 
 /** 导出历史行。 */
@@ -247,12 +259,26 @@ export interface IssuedPrintToken {
   mode: ReportExportMode
 }
 
-/** 报告速览（FR-3.1-07）：数字由后端从报告详情直接汇总，前端不重算。 */
+/**
+ * Top 失败项（v5.6.0 / FR-v5.6-22）。
+ *
+ * `display` 是可读原文，列表请用它；`clusterKey` 是内部指纹，只用于重跑与去重。
+ * `name` 为后端兼容字段，值与 `display` 相同，新代码不要再读它。
+ */
 export interface ReportSummaryTopFailure {
   name: string
+  display: string
+  clusterKey: string
   count: number
+  /** 最近窗口内首次出现时间；无历史样本时为 null（v5.6.0 / FR-v5.6-26） */
+  firstSeenAt?: string | null
+  /** 从最近一轮往前连续出现的轮数；无历史时为 null，最新一轮已消失时为 0 */
+  consecutiveRuns?: number | null
+  /** 出现轮数 / 统计轮数（0~1）；无历史时为 null */
+  reproRate?: number | null
 }
 
+/** 报告速览（FR-3.1-07）：数字由后端从报告详情直接汇总，前端不重算。 */
 export interface ReportSummary {
   conclusion: 'NO_DATA' | 'PASSED' | 'FAILED'
   total: number

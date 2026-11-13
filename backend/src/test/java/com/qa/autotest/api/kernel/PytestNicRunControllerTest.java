@@ -1,20 +1,26 @@
 package com.qa.autotest.api.kernel;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.qa.autotest.api.GlobalExceptionHandler;
+import com.qa.autotest.application.execution.ProcessRegistry;
 import com.qa.autotest.application.iam.AccessControlService;
 import com.qa.autotest.application.kernel.pytest.PytestNicRunService;
+import com.qa.autotest.application.kernel.pytest.PytestReadinessService;
 import com.qa.autotest.application.kernel.pytest.PytestResultNormalizer;
+import com.qa.autotest.application.kernel.pytest.PytestRunProgressRegistry;
 import com.qa.autotest.application.repository.CaseScriptBindingRepository;
+import com.qa.autotest.application.repository.DeviceRepository;
 import com.qa.autotest.application.repository.ProjectSettingRepository;
 import com.qa.autotest.application.repository.RunArtifactRepository;
 import com.qa.autotest.application.repository.RunMetadataRepository;
@@ -22,6 +28,8 @@ import com.qa.autotest.application.repository.RunRepository;
 import com.qa.autotest.application.repository.TestCaseRepository;
 import com.qa.autotest.domain.caseasset.CaseScriptBinding;
 import com.qa.autotest.domain.caseasset.TestCase;
+import com.qa.autotest.domain.execution.RunRecord;
+import com.qa.autotest.domain.execution.RunState;
 import com.qa.autotest.domain.kernel.CaseStatus;
 import com.qa.autotest.domain.kernel.NormalizedCaseResult;
 import com.qa.autotest.domain.kernel.NormalizedRun;
@@ -48,11 +56,25 @@ class PytestNicRunControllerTest {
     private final CaseScriptBindingRepository bindings = mock(CaseScriptBindingRepository.class);
     private final TestCaseRepository cases = mock(TestCaseRepository.class);
 
+    /** 控制器依赖在 v5.6.0 从 8 个涨到 12 个（进度 / 就绪度 / 设备 / 进程表），统一在这里拼。 */
+    private PytestNicRunController controller(PytestNicRunService runs,
+                                              ProjectSettingRepository settings,
+                                              RunRepository runRepo,
+                                              PytestRunProgressRegistry progress) {
+        return new PytestNicRunController(runs, settings, runRepo, artifacts,
+                mock(RunMetadataRepository.class), bindings, cases,
+                progress, mock(PytestReadinessService.class), mock(DeviceRepository.class),
+                mock(ProcessRegistry.class), mock(AccessControlService.class),
+                new com.qa.autotest.application.report.PytestCommandEnricher());
+    }
+
     private MockMvc mvc(PytestNicRunService runs, ProjectSettingRepository settings) {
-        return MockMvcBuilders.standaloneSetup(
-                        new PytestNicRunController(runs, settings, mock(RunRepository.class),
-                                artifacts, mock(com.qa.autotest.application.repository.RunMetadataRepository.class),
-                                bindings, cases, mock(AccessControlService.class)))
+        return mvc(runs, settings, mock(RunRepository.class), new PytestRunProgressRegistry());
+    }
+
+    private MockMvc mvc(PytestNicRunService runs, ProjectSettingRepository settings,
+                        RunRepository runRepo, PytestRunProgressRegistry progress) {
+        return MockMvcBuilders.standaloneSetup(controller(runs, settings, runRepo, progress))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }
@@ -169,12 +191,7 @@ class PytestNicRunControllerTest {
         RunRepository runRepo = mock(RunRepository.class);
         when(runRepo.findByRunId(anyLong(), any()))
                 .thenReturn(Optional.of(mock(com.qa.autotest.domain.execution.RunRecord.class)));
-        MockMvc mvc = MockMvcBuilders.standaloneSetup(new PytestNicRunController(runs, settings,
-                        runRepo, artifacts,
-                        mock(com.qa.autotest.application.repository.RunMetadataRepository.class),
-                        bindings, cases, mock(AccessControlService.class)))
-                .setControllerAdvice(new GlobalExceptionHandler())
-                .build();
+        MockMvc mvc = mvc(runs, settings, runRepo, new PytestRunProgressRegistry());
         mvc.perform(post("/api/projects/95/pytest/runs/fake")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"runId\":\"EHT-DUP-1\"}"))
@@ -240,5 +257,145 @@ class PytestNicRunControllerTest {
                 .andExpect(jsonPath("$.data.passRateDisplay").value("不适用"))
                 .andExpect(jsonPath("$.data.junitConditions['--capture=fd']").value(false));
         verify(runs).execute(any());
+    }
+
+    // ------------------------------------------------------------------
+    // v5.6.0 / FR-v5.6-11~14：异步、进度、取消、预检
+    // ------------------------------------------------------------------
+
+    private static RunRecord finishedRecord(String runId) {
+        Instant at = Instant.parse("2026-11-13T10:00:00Z");
+        return new RunRecord(1L, runId, 95L, null, RunState.FINISHED, 0, 1, 1,
+                59, 57, 2, null, null, null, "/tmp/eht", at, at, at, null, null);
+    }
+
+    @Test
+    @DisplayName("异步端点返 202 + runId，并在后台跑完后进度落终态")
+    void asyncReturnsAcceptedAndFinishes() throws Exception {
+        PytestNicRunService runs = mock(PytestNicRunService.class);
+        when(runs.execute(any(), any())).thenReturn(fakeResult());
+        ProjectSettingRepository settings = mock(ProjectSettingRepository.class);
+        when(settings.findAll(anyLong(), any())).thenReturn(Map.of("repo_path", "/tmp/eht-repo"));
+        RunRepository runRepo = mock(RunRepository.class);
+        when(runRepo.findByRunId(anyLong(), any())).thenReturn(Optional.empty());
+        PytestRunProgressRegistry progress = new PytestRunProgressRegistry();
+        MockMvc mvc = mvc(runs, settings, runRepo, progress);
+
+        mvc.perform(post("/api/projects/95/pytest/runs/async")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"runId\":\"EHT-ASYNC-1\"}"))
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.data.runId").value("EHT-ASYNC-1"));
+
+        // 后台线程：轮询到终态为止（最多 3 秒）。这不是「等一会儿再断言」，
+        // 而是异步接口的判据本身就是「终态会出现」。
+        for (int i = 0; i < 60 && !progress.snapshot("EHT-ASYNC-1")
+                .map(PytestRunProgressRegistry.Snapshot::terminal).orElse(false); i++) {
+            Thread.sleep(50);
+        }
+        PytestRunProgressRegistry.Snapshot snapshot =
+                progress.snapshot("EHT-ASYNC-1").orElseThrow();
+        assertEquals(true, snapshot.terminal(), "异步执行必须自己落终态，否则页面永远转圈");
+        assertEquals("FINISHED", snapshot.stage());
+    }
+
+    @Test
+    @DisplayName("异步端点同样受安全闸约束：real 缺 confirmReal 仍然 400")
+    void asyncStillRequiresConfirmReal() throws Exception {
+        PytestNicRunService runs = mock(PytestNicRunService.class);
+        ProjectSettingRepository settings = mock(ProjectSettingRepository.class);
+        when(settings.findAll(anyLong(), any())).thenReturn(Map.of("repo_path", "/tmp/eht-repo"));
+        mvc(runs, settings).perform(post("/api/projects/95/pytest/runs/async")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"mode\":\"real\"}"))
+                .andExpect(status().isBadRequest());
+        verify(runs, never()).execute(any());
+        verify(runs, never()).execute(any(), any());
+    }
+
+    @Test
+    @DisplayName("取消后进度落 CANCELED，且已完成的批次计数不被清空")
+    void cancelMarksCanceled() throws Exception {
+        PytestNicRunService runs = mock(PytestNicRunService.class);
+        ProjectSettingRepository settings = mock(ProjectSettingRepository.class);
+        RunRepository runRepo = mock(RunRepository.class);
+        when(runRepo.findByRunId(anyLong(), any())).thenReturn(Optional.empty());
+        PytestRunProgressRegistry progress = new PytestRunProgressRegistry();
+        progress.begin("EHT-CANCEL-1", 59);
+        progress.batchDone("EHT-CANCEL-1", 20, 1, 21);
+
+        mvc(runs, settings, runRepo, progress)
+                .perform(post("/api/projects/95/pytest/runs/EHT-CANCEL-1/cancel"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.canceled").value(true));
+
+        PytestRunProgressRegistry.Snapshot snapshot =
+                progress.snapshot("EHT-CANCEL-1").orElseThrow();
+        assertEquals("CANCELED", snapshot.stage());
+        assertEquals(21, snapshot.finished(), "取消不清已完成计数——那不是「没跑过」");
+        assertEquals(20, snapshot.passed());
+    }
+
+    @Test
+    @DisplayName("预检把台架排在第一位，缺项计入 blocking")
+    void precheckPutsBenchFirst() throws Exception {
+        PytestNicRunService runs = mock(PytestNicRunService.class);
+        ProjectSettingRepository settings = mock(ProjectSettingRepository.class);
+        when(settings.findAll(anyLong(), any())).thenReturn(Map.of("repo_path", "/tmp/eht-repo"));
+        DeviceRepository devices = mock(DeviceRepository.class);
+        when(devices.listAll(anyLong())).thenReturn(List.of());
+        PytestReadinessService readiness = mock(PytestReadinessService.class);
+        when(readiness.readiness(anyLong())).thenReturn(new PytestReadinessService.Readiness(
+                false,
+                List.of(new PytestReadinessService.Item("devices", false, 0),
+                        new PytestReadinessService.Item("credentials", false, 0),
+                        new PytestReadinessService.Item("environment", false, 0),
+                        new PytestReadinessService.Item("bindings", true, 61)),
+                List.of("devices", "credentials", "environment")));
+
+        PytestNicRunController controller = new PytestNicRunController(runs, settings,
+                mock(RunRepository.class), artifacts, mock(RunMetadataRepository.class),
+                bindings, cases, new PytestRunProgressRegistry(), readiness, devices,
+                mock(ProcessRegistry.class), mock(AccessControlService.class),
+                new com.qa.autotest.application.report.PytestCommandEnricher());
+        MockMvc mvc = MockMvcBuilders.standaloneSetup(controller)
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .build();
+
+        mvc.perform(get("/api/projects/95/pytest/precheck"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.ready").value(false))
+                .andExpect(jsonPath("$.data.checks[0].key").value("bench"))
+                .andExpect(jsonPath("$.data.checks[0].ok").value(false))
+                .andExpect(jsonPath("$.data.blocking").value(3));
+    }
+
+    @Test
+    @DisplayName("进程重启后内存表为空，进度回退到 run 表读终态而不是 404")
+    void progressFallsBackToDb() throws Exception {
+        PytestNicRunService runs = mock(PytestNicRunService.class);
+        ProjectSettingRepository settings = mock(ProjectSettingRepository.class);
+        RunRepository runRepo = mock(RunRepository.class);
+        when(runRepo.findByRunId(anyLong(), any()))
+                .thenReturn(Optional.of(finishedRecord("EHT-DONE-1")));
+
+        mvc(runs, settings, runRepo, new PytestRunProgressRegistry())
+                .perform(get("/api/projects/95/pytest/runs/EHT-DONE-1/progress"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.stage").value("FINISHED"))
+                .andExpect(jsonPath("$.data.source").value("db"))
+                .andExpect(jsonPath("$.data.total").value(59));
+    }
+
+    @Test
+    @DisplayName("既不在内存表也不在 run 表时给 404，不编造进度")
+    void progressUnknownRunIs404() throws Exception {
+        PytestNicRunService runs = mock(PytestNicRunService.class);
+        ProjectSettingRepository settings = mock(ProjectSettingRepository.class);
+        RunRepository runRepo = mock(RunRepository.class);
+        when(runRepo.findByRunId(anyLong(), any())).thenReturn(Optional.empty());
+        mvc(runs, settings, runRepo, new PytestRunProgressRegistry())
+                .perform(get("/api/projects/95/pytest/runs/NOPE/progress"))
+                .andExpect(status().isNotFound());
     }
 }

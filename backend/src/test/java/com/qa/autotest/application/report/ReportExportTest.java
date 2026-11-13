@@ -119,6 +119,50 @@ class ReportExportTest {
     }
 
     @Test
+    void detailSheetHasFixedFiveColumnsAndOneRowPerCase() throws Exception {
+        byte[] xlsx = service.export("xlsx", view(), Map.of(), java.util.List.of(
+                new ReportExportService.CaseDetailRow("IM-RDM-022", "FAIL", 4820L,
+                        "AssertionError: PFC 使能优先级期望 3 实际 5", "ethtool -k ens17np0"),
+                new ReportExportService.CaseDetailRow("IM-NET-052", "PASS", 1200L, null, null),
+                new ReportExportService.CaseDetailRow("IM-NET-074", "SKIP", null, "", "")));
+        try (XSSFWorkbook workbook = new XSSFWorkbook(new ByteArrayInputStream(xlsx))) {
+            // 判据 1：≥2 个 sheet
+            assertEquals(2, workbook.getNumberOfSheets());
+            Sheet detail = workbook.getSheet(ReportExportService.DETAIL_SHEET);
+            assertEquals("编号", detail.getRow(0).getCell(0).getStringCellValue());
+            assertEquals("下发命令", detail.getRow(0).getCell(4).getStringCellValue());
+            // 判据 2：明细行数 = 用例数
+            assertEquals(3, detail.getLastRowNum());
+            // 判据 3：空值写占位符，不写 null
+            assertEquals(ReportExportService.EMPTY_CELL,
+                    detail.getRow(3).getCell(3).getStringCellValue());
+            assertEquals(ReportExportService.EMPTY_CELL,
+                    detail.getRow(3).getCell(4).getStringCellValue());
+            // 耗时缺失时也是占位符，不能变成 0（0ms 与「没记」是两回事）
+            assertEquals(ReportExportService.EMPTY_CELL,
+                    detail.getRow(3).getCell(2).getStringCellValue());
+            // 耗时是数字列：Excel 侧要能排序
+            assertEquals(CellType.NUMERIC, detail.getRow(2).getCell(2).getCellType());
+            assertEquals(1200.0, detail.getRow(2).getCell(2).getNumericCellValue());
+        }
+    }
+
+    @Test
+    void detailSheetOnlyWhenRowsProvided() throws Exception {
+        byte[] plain = service.export("xlsx", view());
+        try (XSSFWorkbook workbook = new XSSFWorkbook(new ByteArrayInputStream(plain))) {
+            assertEquals(1, workbook.getNumberOfSheets(), "没有明细时不该凭空多一个空 sheet");
+        }
+    }
+
+    @Test
+    void detailCommandIsGuardedBySecretGate() {
+        assertThrows(RuntimeException.class, () -> service.export("xlsx", view(), Map.of(),
+                java.util.List.of(new ReportExportService.CaseDetailRow("C-1", "FAIL", 1L, null,
+                        "sshpass -p RealSecret123 ssh root@10.0.0.1 'ip link'"))));
+    }
+
+    @Test
     void unknownFormatRejectedAndMetadataHelpersAgree() {
         assertThrows(IllegalArgumentException.class, () -> service.export("csv", view()));
         assertEquals("pdf", ReportExportService.extension("PDF"));

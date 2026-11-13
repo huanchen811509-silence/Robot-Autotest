@@ -46,29 +46,87 @@ public class ReportExportService {
     /** XLSX 首行的三列表头：key / 标题 / 值。 */
     static final String[] SHEET_HEADER = {"FIELD_KEY", "TITLE", "VALUE"};
 
+    /**
+     * 明细 sheet 的固定五列（v5.6.0 / FR-v5.6-23）。
+     *
+     * <p>列头写死在代码里而不是跟模板走：明细是「逐条结果」的稳定视图，用户拿到 xlsx
+     * 第一件事是按「结论」筛选失败项，列位置一变筛选宏就废了。
+     */
+    static final String[] DETAIL_HEADER = {"编号", "结论", "耗时(ms)", "失败原因", "下发命令"};
+
+    /** 明细表名。 */
+    static final String DETAIL_SHEET = "用例明细";
+
+    /**
+     * 空值占位。写 {@code null} 会让单元格变成真空，Excel 里与「这一列没这功能」无法区分；
+     * 写 {@code —} 至少表明「查过了，没有」。
+     */
+    public static final String EMPTY_CELL = "—";
+
+    /**
+     * 明细行（v5.6.0 / FR-v5.6-23）。
+     *
+     * @param durationMs 可能为 null（历史行没记耗时），落表时同样写 {@link #EMPTY_CELL}
+     */
+    public record CaseDetailRow(String code, String verdict, Long durationMs,
+                                String failureMsg, String command) {
+    }
+
     public byte[] export(String format, Map<String, Object> view) {
-        return export(format, view, Map.of());
+        return export(format, view, Map.of(), List.of());
     }
 
     /**
      * 导出。
      *
      * @param titles 字段 key → 展示标题；来自**快照内模板**的 titleOverride。
-     *               缺失的 key 回落到 key 本身，绝不因为「没配标题」就少一行。
+     *               缺失的 key 回落到 key 本身，绝不因为「没配标题」就少一行
      */
     public byte[] export(String format, Map<String, Object> view, Map<String, String> titles) {
+        return export(format, view, titles, List.of());
+    }
+
+    /**
+     * 导出（带用例明细）。
+     *
+     * <p>明细只进 xlsx 的第二个 sheet：HTML / DOCX / PDF 已由
+     * {@link DocxExporter} / {@link PdfExportService} 各自渲染逐条结果，
+     * 在这里再塞一份会与那两条链路打架，也会破坏「四格式字段集合一致」的机检锚点。
+     *
+     * @param details 为空时只出一个 sheet，行为与旧签名完全一致
+     */
+    public byte[] export(String format, Map<String, Object> view, Map<String, String> titles,
+                         List<CaseDetailRow> details) {
         // FR-v4.0-01：导出件是最后一个可能把凭据带出去的表面。四格式共用同一道
         // 「命中即阻断」闸门，避免 HTML 过了、DOCX 漏了。已脱敏文本幂等，不会误伤。
         assertNoSecrets(view, titles);
+        assertNoSecretsInDetails(details);
         String kind = format == null ? "html" : format.trim().toLowerCase(Locale.ROOT);
         Map<String, String> headers = titles == null ? Map.of() : titles;
+        List<CaseDetailRow> rows = details == null ? List.of() : details;
         return switch (kind) {
             case "html" -> html(view, headers).getBytes(StandardCharsets.UTF_8);
             case "pdf" -> pdf(view, headers);
             case "docx" -> docx(view, headers);
-            case "xlsx" -> xlsx(view, headers);
+            case "xlsx" -> xlsx(view, headers, rows);
             default -> throw new IllegalArgumentException("不支持的导出格式: " + format);
         };
+    }
+
+    /** 明细行也要过凭据闸门：失败原因与命令都是自由文本，最容易夹带口令。 */
+    static void assertNoSecretsInDetails(List<CaseDetailRow> details) {
+        if (details == null) {
+            return;
+        }
+        for (CaseDetailRow row : details) {
+            if (row == null) {
+                continue;
+            }
+            assertNoSecrets(row.code(), "report-export.detail.code");
+            assertNoSecrets(row.verdict(), "report-export.detail.verdict");
+            assertNoSecrets(row.failureMsg(), "report-export.detail.failureMsg");
+            assertNoSecrets(row.command(), "report-export.detail.command");
+        }
     }
 
     /** 递归扫描视图与标题里的字符串；命中明文凭据即阻断本次导出。 */
@@ -227,13 +285,17 @@ public class ReportExportService {
     }
 
     /**
-     * XLSX：三列（key / 标题 / 值），首行表头冻结。
+     * XLSX：第一个 sheet 三列（key / 标题 / 值），第二个 sheet 为用例明细。
      *
      * <p>刻意不做「标题当列头、一行数据」的宽表：字段数随模板变化，
      * 宽表一旦有 21 列就要横着滚，而 key 列的机读标识也会丢。行式布局既便于
      * Excel 侧筛选，也让 TPLX-03 的字段集合比对有稳定锚点。
+     *
+     * <p>明细 sheet（FR-v5.6-23）与汇总分开而不是拼在下面：汇总行数随 metadata 变化，
+     * 拼在一起会让「明细行数 = 用例数」这条判据没法校验。
      */
-    private static byte[] xlsx(Map<String, Object> view, Map<String, String> titles) {
+    private static byte[] xlsx(Map<String, Object> view, Map<String, String> titles,
+                               List<CaseDetailRow> details) {
         try (XSSFWorkbook workbook = new XSSFWorkbook();
              ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             Sheet sheet = workbook.createSheet("report");
@@ -253,11 +315,52 @@ public class ReportExportService {
             sheet.setColumnWidth(0, 28 * 256);
             sheet.setColumnWidth(1, 28 * 256);
             sheet.setColumnWidth(2, 48 * 256);
+            if (details != null && !details.isEmpty()) {
+                writeDetailSheet(workbook, details);
+            }
             workbook.write(out);
             return out.toByteArray();
         } catch (IOException e) {
             throw new IllegalStateException("XLSX 导出失败", e);
         }
+    }
+
+    /** 明细 sheet：固定五列、首行冻结、空值写 {@link #EMPTY_CELL}。 */
+    private static void writeDetailSheet(XSSFWorkbook workbook, List<CaseDetailRow> details) {
+        Sheet sheet = workbook.createSheet(DETAIL_SHEET);
+        Row head = sheet.createRow(0);
+        for (int i = 0; i < DETAIL_HEADER.length; i++) {
+            Cell cell = head.createCell(i);
+            cell.setCellValue(DETAIL_HEADER[i]);
+        }
+        int rowIndex = 1;
+        for (CaseDetailRow detail : details) {
+            Row row = sheet.createRow(rowIndex++);
+            row.createCell(0).setCellValue(textOf(detail.code()));
+            row.createCell(1).setCellValue(textOf(detail.verdict()));
+            // 耗时是唯一保留数字语义的列：Excel 侧要能排序与求平均
+            if (detail.durationMs() == null) {
+                row.createCell(2).setCellValue(EMPTY_CELL);
+            } else {
+                row.createCell(2).setCellValue(detail.durationMs().doubleValue());
+            }
+            row.createCell(3).setCellValue(textOf(detail.failureMsg()));
+            row.createCell(4).setCellValue(textOf(detail.command()));
+        }
+        sheet.createFreezePane(0, 1);
+        sheet.setColumnWidth(0, 16 * 256);
+        sheet.setColumnWidth(1, 10 * 256);
+        sheet.setColumnWidth(2, 12 * 256);
+        sheet.setColumnWidth(3, 56 * 256);
+        sheet.setColumnWidth(4, 56 * 256);
+    }
+
+    /** 空值/空白的统一落法：写占位符，不写 null。 */
+    private static String textOf(String value) {
+        if (value == null || value.isBlank()) {
+            return EMPTY_CELL;
+        }
+        return value;
     }
 
     /** 数值写数字、布尔写布尔，其余写字符串——数值列被拼成文本是 Excel 侧最常见的坑。 */

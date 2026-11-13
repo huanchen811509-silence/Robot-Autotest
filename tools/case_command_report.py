@@ -30,7 +30,7 @@ DEFAULT_OUT = ROOT / "docs/evidence/v3.9.0/EW39-02/case-command-coverage.json"
 DATABASE = os.environ.get("DB_NAME", "robot_dev")
 
 # 与 CaseCommandExtractor.allowedSources() 同一份口径；门禁会再校验两侧一致。
-ALLOWED_SOURCES = ["RF_KEYWORD", "PYTEST_MARK", "STDOUT_EXTRACT", "NONE"]
+ALLOWED_SOURCES = ["RF_KEYWORD", "PYTEST_MARK", "STDOUT_EXTRACT", "COMMAND_INDEX", "NONE"]
 
 
 def env_value(key: str) -> str | None:

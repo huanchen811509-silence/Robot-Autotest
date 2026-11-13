@@ -240,7 +240,13 @@ describe('SuiteTree 下发命令（FR-v3.9-03）', () => {
     await nextTick()
     const none = cmdRow(root, 'TC-009')!
     const legacy = cmdRow(root, 'TC-003')!
-    expect(none.textContent).toContain(i18n.global.t('reports.command.none'))
+    // v5.6.0 / FR-v5.6-21：NONE 不再裸露，改为「未采集（原因）」
+    expect(none.textContent).toContain(
+      i18n.global.t('reports.command.notCollectedReason', {
+        reason: i18n.global.t('reports.command.reasonNoCommand'),
+      }),
+    )
+    expect(none.textContent).not.toContain('NONE')
     expect(legacy.textContent).toContain(i18n.global.t('reports.command.notCollected'))
     expect(i18n.global.t('reports.command.none')).not.toBe(
       i18n.global.t('reports.command.notCollected'),

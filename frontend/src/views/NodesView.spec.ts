@@ -10,6 +10,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createApp, nextTick, type App } from 'vue'
 import { createPinia, setActivePinia } from 'pinia'
+import { createMemoryHistory, createRouter } from 'vue-router'
 import { i18n } from '@/locales'
 import { nodeApi, type ExecutionNodeView } from '@/api/nodes'
 import NodesView from '@/views/NodesView.vue'
@@ -61,6 +62,15 @@ async function mountView(): Promise<HTMLElement> {
   app = createApp(NodesView)
   app.use(pinia!)
   app.use(i18n)
+  // 空态的「下一步」是 RouterLink（v5.6.0 / FR-v5.6-03），没有 router 会在挂载时崩。
+  // 这里只关心链接渲染成什么，不关心跳转行为，所以给一个只声明目标路径的内存路由。
+  app.use(createRouter({
+    history: createMemoryHistory(),
+    routes: [
+      { path: '/assets', component: { template: '<div />' } },
+      { path: '/:pathMatch(.*)*', component: { template: '<div />' } },
+    ],
+  }))
   app.mount(root)
   await new Promise((resolve) => setTimeout(resolve, 0))
   await nextTick()

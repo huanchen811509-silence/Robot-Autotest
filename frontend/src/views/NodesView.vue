@@ -16,6 +16,7 @@ import { computed, h, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { NButton, NCheckbox, NInput, NInputNumber, NModal, type DataTableColumns } from 'naive-ui'
 import DataTable from '@/components/DataTable.vue'
+import EmptyGuide from '@/components/EmptyGuide.vue'
 import ErrorLineView from '@/components/ErrorLine.vue'
 import { nodeApi, type ExecutionNodeView, type NodeStatus } from '@/api/nodes'
 import { metricsApi, type MetricsView } from '@/api/observability'
@@ -328,7 +329,12 @@ onMounted(() => {
       :empty-description="t('nodesView.emptyHint')"
       empty-icon="boxes"
       :error="Boolean(error)"
-    />
+    >
+      <!-- v5.6.0 / FR-v5.6-03：节点是「远程分发」才需要的对象；先把设备登记好，注册节点才有意义。 -->
+      <template #emptyAction>
+        <EmptyGuide to="/assets?tab=devices" :label="t('emptyGuide.action.assets')" />
+      </template>
+    </DataTable>
 
     <NModal :show="issuedToken !== null" preset="card" :title="t('nodesView.tokenTitle')"
             style="max-width: 520px" @update:show="issuedToken = null">

@@ -27,6 +27,25 @@ export interface PytestHealth {
   hints: string[]
 }
 
+/**
+ * 台架就绪度（v5.6.0 / FR-v5.6-04）。
+ *
+ * 四项各自独立：`ready` 由后端算（有记录即就绪），`count` 只是给页面说清「几条」。
+ * `missing` 由后端点名，页面不自己算差集——两处各算一次，迟早会出现
+ * 「页面说缺凭据、接口说齐全」这种谁也说不清的状态。
+ */
+export interface PytestReadinessItem {
+  key: 'devices' | 'credentials' | 'environment' | 'bindings'
+  ready: boolean
+  count: number
+}
+
+export interface PytestReadiness {
+  ready: boolean
+  items: PytestReadinessItem[]
+  missing: string[]
+}
+
 export interface CaseScriptBinding {
   id: number
   projectId: number
@@ -129,6 +148,10 @@ function base(projectId: number): string {
 export const pytestProjectApi = {
   health(projectId: number, refresh = false): Promise<PytestHealth> {
     return request<PytestHealth>(`${base(projectId)}/health${refresh ? '?refresh=true' : ''}`)
+  },
+  /** 台架就绪度：设备 / 凭据 / 环境 / 绑定。与 health（解释器与契约）分开两件事。 */
+  readiness(projectId: number): Promise<PytestReadiness> {
+    return request<PytestReadiness>(`${base(projectId)}/readiness`)
   },
   bindings(projectId: number): Promise<BindingStats> {
     return request<BindingStats>(`${base(projectId)}/bindings`)

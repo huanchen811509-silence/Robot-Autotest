@@ -52,8 +52,9 @@ public class AiEvidenceService {
         items.add(new AiEvidence.Item("run", runId, "运行 " + runId, "/reports/" + runId,
                 runBody(runId, summary)));
         for (ReportSummaryService.TopFailure top : summary.topFailures()) {
-            items.add(new AiEvidence.Item("failure-cluster", top.name(),
-                    "失败簇 " + shortLabel(top.name()), "/runs/failure-clusters?runId=" + runId,
+            // FR-v5.6-22：证据 id 用簇指纹（稳定、可去重），给人看的标签用可读原文。
+            items.add(new AiEvidence.Item("failure-cluster", top.clusterKey(),
+                    "失败簇 " + shortLabel(top.display()), "/runs/failure-clusters?runId=" + runId,
                     "出现 " + top.count() + " 次"));
         }
         List<FailureResultRepository.FailureRow> rows = failures.failedRows(projectId, runId);

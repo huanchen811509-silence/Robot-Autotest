@@ -523,7 +523,7 @@ export default {
     digest: {
       title: 'Report results',
       window: 'Last {days} days',
-      coverage: 'Case coverage',
+    coverage: 'Case coverage',
       coverageValue: '{covered} / {total} cases have results',
       neverExecuted: 'Never executed',
       coverageHint: 'Matched by case code; script step names (e.g. Bench-1-A) are not counted',
@@ -1103,7 +1103,12 @@ export default {
       sourceRf: 'RF keyword',
       sourceMark: 'pytest mark',
       sourceStdout: 'stdout extract',
+      sourceCommandIndex: 'command index',
       sourceNone: 'none',
+      // v5.6.0 / FR-v5.6-21: never expose raw NONE, always say why it is empty
+      notCollectedReason: 'Not collected ({reason})',
+      reasonNoCommand: 'case library recorded no command line',
+      reasonSourceMismatch: 'extractor matched no command line',
     },
     logTitle: 'Log',
     logEmpty: 'No log yet',
@@ -1126,6 +1131,7 @@ export default {
       exporting: 'Exporting…',
       done: 'Generated {format}: {size}, sha256 {sha256}',
       download: 'Download file',
+      draftHint: 'This export is a DRAFT and should not be delivered externally. Missing: {missing}',
       historyTitle: 'Export history',
       historyEmpty: 'No exports yet',
       historyMode: 'Version',
@@ -1950,6 +1956,47 @@ export default {
     healthFailed: 'Health query failed (the pytest project may not be configured yet)',
   },
 
+  // v5.6.0 / FR-v5.6-11, 12, 14: launch pad copy.
+  pytestLaunch: {
+    title: 'Launch a run',
+    subtitle: 'Check whether it can run before submitting. Progress refreshes by itself.',
+    recheck: 'Re-check',
+    precheckReady: 'Pre-check passed — ready to launch',
+    precheckBlocked: '{count} item(s) missing',
+    precheckLoading: 'Pre-checking…',
+    optional: '(not blocking in this mode)',
+    fix: 'Fix it',
+    mode: 'Mode',
+    runId: 'Run ID (blank = auto)',
+    runIdPlaceholder: 'e.g. EHT-V56-001',
+    onlySelected: 'Run only selected cases ({count} available)',
+    unbound: '(unbound)',
+    confirmReal: 'I confirm this will log in to real devices and run commands',
+    submit: 'Launch',
+    submitting: 'Submitting…',
+    cancel: 'Cancel run',
+    cancelRequested: 'Cancel requested — waiting for the current batch to end',
+    submitted: 'Submitted as {runId}',
+    blockedHint: 'Fix the missing items above to enable the button',
+    counters: 'done {finished}/{total} · passed {passed} · failed {failed}',
+    viewReport: 'Open the report',
+    check: {
+      bench: 'Bench',
+      config: 'Config',
+      devices: 'Devices',
+      safety: 'Safety level',
+    },
+    stage: {
+      PREPARING: 'Preparing',
+      RENDERING: 'Rendering env',
+      LAUNCHING: 'Starting process',
+      RUNNING: 'Running',
+      FINALIZING: 'Normalising',
+      FINISHED: 'Finished',
+      FAILED: 'Failed',
+      CANCELED: 'Canceled',
+    },
+  },
   pytestWorkbench: {
     settingLabels: {
       repo_path: 'Repository path (local to executor)',
@@ -1977,6 +2024,22 @@ export default {
     contractOk: 'satisfied',
     contractMissing: 'missing {items}',
     mode: 'Default mode',
+      // v5.6.0 / FR-v5.6-04: bench readiness.
+    readiness: {
+      title: 'Bench readiness',
+      ready: 'Ready',
+      blocked: '{count} missing',
+      readyHint: 'Devices, credentials, environment and bindings are all in place — you can launch a run.',
+      blockedHint: 'Any missing item blocks execution. Use the links below, then refresh this page.',
+      done: 'Ready',
+      fix: 'Fix it',
+      items: {
+        devices: 'Devices (DUT)',
+        credentials: 'SSH credentials',
+        environment: 'Environment collection',
+        bindings: 'Case bindings',
+      },
+    },
     coverage: 'Coverage',
     coverageDetail: '{bound} / {total} cases bound',
     coverageHint: 'With pending-review {withPending}% / excluding pending-review {withoutPending}% (D12 dual basis)',
@@ -2033,6 +2096,35 @@ export default {
     failed: 'Failed to load',
   },
 
+  // v5.6.0 / FR-v5.6-03: an empty state must answer "why is it empty" and "what can I do".
+  emptyGuide: {
+    action: {
+      assets: 'Register a device',
+      collect: 'Collect once',
+      launch: 'Run now',
+      principles: 'Read the principles',
+    },
+    nodes: {
+      title: 'No execution node yet',
+      reason: 'Execution nodes dispatch cases to remote machines. A pytest-suite project runs in a child process on this host and needs no node.',
+    },
+    topology: {
+      title: 'No environment snapshot yet',
+      reason: 'Topology comes from environment snapshots. Collect once and the real picture of hosts, NICs and links appears here.',
+    },
+    analysis: {
+      title: 'Nothing to analyse yet',
+      reason: 'Collection analysis is built on collection history. Collect at least once before summaries and anomalies can appear.',
+    },
+    records: {
+      title: 'No recovery record yet',
+      reason: 'Recovery records are produced only when an execution is interrupted and recovery is triggered.',
+    },
+    plans: {
+      title: 'No test plan yet',
+      reason: 'Test plans run on a schedule. To run a batch right now, use "Run now" instead.',
+    },
+  },
   nodesView: {
     title: 'Execution nodes',
     subtitle: 'Platform-level execution resources: agents keep nodes alive via heartbeat; offline nodes reject dispatch (no queueing)',
@@ -2415,6 +2507,7 @@ export default {
     skipped: 'Skipped',
     duration: 'Duration {value}',
     topFailures: 'Top failures',
+    repro: '{runs} runs in a row · repro {rate}%',
     failureCount: '{count} times',
     risks: 'Risks',
     generatedAt: 'Generated at {at}',

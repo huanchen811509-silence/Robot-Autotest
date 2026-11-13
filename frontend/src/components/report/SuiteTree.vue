@@ -71,7 +71,14 @@ function toggleCase(caseKey: string): void {
   expanded.value = next
 }
 
-/** 三态归一的命令展示模型：hasCommand=false 时 text 是解释性文案。 */
+/**
+ * 三态归一的命令展示模型：hasCommand=false 时 text 是解释性文案。
+ *
+ * v5.6.0 / FR-v5.6-21：`NONE` 不再直接显示（用户看不懂），一律显示「未采集（原因）」。
+ * 原因按 `commandSource` 区分：来源也是 NONE 说明用例库压根没记命令行（最常见，
+ * 59 条真实执行里 pytest 侧原本全是这一种）；有来源但文本为空说明提取器没命中，
+ * 那是平台侧问题，需要单独排查。
+ */
 function commandOf(test: ReportCaseNode): {
   hasCommand: boolean
   text: string
@@ -82,8 +89,20 @@ function commandOf(test: ReportCaseNode): {
     return { hasCommand: false, text: t('reports.command.notCollected'), foldable: false }
   }
   const trimmed = raw.trim()
-  if (!trimmed || trimmed.toUpperCase() === 'NONE') {
-    return { hasCommand: false, text: t('reports.command.none'), foldable: false }
+  if (!trimmed) {
+    return { hasCommand: false, text: t('reports.command.notCollected'), foldable: false }
+  }
+  if (trimmed.toUpperCase() === 'NONE') {
+    const source = (test.commandSource ?? '').toUpperCase()
+    const reason =
+      !source || source === 'NONE'
+        ? t('reports.command.reasonNoCommand')
+        : t('reports.command.reasonSourceMismatch')
+    return {
+      hasCommand: false,
+      text: t('reports.command.notCollectedReason', { reason }),
+      foldable: false,
+    }
   }
   return { hasCommand: true, text: trimmed, foldable: trimmed.length > FOLD_THRESHOLD }
 }
@@ -128,6 +147,8 @@ function sourceLabel(source: string | null): string {
     case 'STDOUT_EXTRACT':
     case 'STDOUT':
       return t('reports.command.sourceStdout')
+    case 'COMMAND_INDEX':
+      return t('reports.command.sourceCommandIndex')
     case 'NONE':
       return t('reports.command.sourceNone')
     default:

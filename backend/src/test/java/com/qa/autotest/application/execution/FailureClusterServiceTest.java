@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -94,6 +95,37 @@ class FailureClusterServiceTest {
         assertEquals(2, view.total());
         assertEquals(FailureClusterKey.UNCLASSIFIED,
                 view.classes().get(0).clusters().get(0).key());
+    }
+
+    @Test
+    @DisplayName("FR-v5.6-22：展示名取首个样本首行原文，簇指纹保持归一化结果")
+    void 展示名与指纹分离() {
+        results.add(line("TC-1", "AssertionError: PFC 使能优先级期望 3 实际 5\n  at /a/b.py:12"));
+        results.add(line("TC-2", "AssertionError: PFC 使能优先级期望 3 实际 7"));
+        results.add(line("TC-3", "AssertionError: PFC 使能优先级期望 3 实际 9"));
+
+        FailureClusterView.Cluster cluster = service.cluster(PROJECT, RUN_ID)
+                .classes().get(0).clusters().get(0);
+
+        // 指纹抹掉了数字差异，展示名保留第一个样本的原文（含真实片段与行号前的首行）
+        assertEquals(3, cluster.count());
+        assertNotEquals(cluster.display(), cluster.key());
+        assertTrue(cluster.display().contains("PFC 使能优先级"), "展示名丢了真实片段");
+        assertTrue(cluster.display().contains("实际 5"), "展示名没取首个样本");
+        assertFalse(cluster.display().contains("\n"), "展示名不该带多行堆栈");
+        assertFalse(cluster.display().contains("<n>"), "展示名被当成指纹归一了");
+    }
+
+    @Test
+    @DisplayName("FR-v5.6-22：失败消息为空时展示名回落到簇指纹，界面不出现空白标题")
+    void 展示名空值回落() {
+        results.add(line("TC-1", null));
+
+        FailureClusterView.Cluster cluster = service.cluster(PROJECT, RUN_ID)
+                .classes().get(0).clusters().get(0);
+
+        assertEquals(FailureClusterKey.UNCLASSIFIED, cluster.key());
+        assertEquals(cluster.key(), cluster.display());
     }
 
     @Test

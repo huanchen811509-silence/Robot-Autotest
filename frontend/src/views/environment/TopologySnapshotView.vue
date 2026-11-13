@@ -11,6 +11,8 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { NButton, type DataTableColumns } from 'naive-ui'
 import DataTable from '@/components/DataTable.vue'
+import EmptyState from '@/components/EmptyState.vue'
+import EmptyGuide from '@/components/EmptyGuide.vue'
 import { useAuthStore } from '@/stores/auth'
 import { deviceApi, linkApi } from '@/api/asset'
 import { envApi, type EnvProfileSummary, type EnvSnapshot, type SnapshotDiff } from '@/api/environment'
@@ -164,9 +166,18 @@ watch(envName, loadSnapshots)
         </select>
         <span class="muted" data-testid="topology-env-count">{{ profiles.length }} · {{ t('env.common.empty') }}</span>
       </div>
-      <p v-if="profiles.length === 0" class="empty" data-testid="topology-env-empty">
-        {{ t('env.common.empty') }}
-      </p>
+      <EmptyState
+        v-if="profiles.length === 0"
+        data-testid="topology-env-empty"
+        :title="t('emptyGuide.topology.title')"
+        :description="t('emptyGuide.topology.reason')"
+        icon="device"
+        :illustration-width="64"
+      >
+        <template #action>
+          <EmptyGuide to="/environment/collect" :label="t('emptyGuide.action.collect')" />
+        </template>
+      </EmptyState>
     </section>
 
     <section class="panel">
@@ -174,7 +185,17 @@ watch(envName, loadSnapshots)
       <p v-if="loading" class="muted" data-testid="topology-loading">{{ t('env.common.loading') }}</p>
       <DataTable v-else :columns="columns" :data="rows" :row-key="(row: Row) => row.id">
         <template #empty>
-          <p class="empty" data-testid="topology-empty">{{ t('env.common.empty') }}</p>
+          <EmptyState
+            data-testid="topology-empty"
+            :title="t('emptyGuide.topology.title')"
+            :description="t('emptyGuide.topology.reason')"
+            icon="device"
+            :illustration-width="64"
+          >
+            <template #action>
+              <EmptyGuide to="/environment/collect" :label="t('emptyGuide.action.collect')" />
+            </template>
+          </EmptyState>
         </template>
       </DataTable>
     </section>

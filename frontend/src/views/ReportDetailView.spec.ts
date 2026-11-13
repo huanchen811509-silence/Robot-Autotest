@@ -93,7 +93,7 @@ vi.mock('@/api/reports', async (importOriginal) => {
         skipped: 0,
         passRate: 75,
         durationMs: 300000,
-        topFailures: [{ name: '大包吞吐', count: 1 }],
+        topFailures: [{ name: '大包吞吐', display: '大包吞吐', clusterKey: 'k-tp', count: 1 }],
         risks: ['存在失败用例，建议先看大包吞吐'],
         generatedAt: '2026-11-05T07:05:00+08:00',
       })),

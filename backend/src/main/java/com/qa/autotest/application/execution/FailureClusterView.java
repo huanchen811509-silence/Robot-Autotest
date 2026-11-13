@@ -36,11 +36,18 @@ public record FailureClusterView(String runId,
     /**
      * 二级簇。
      *
-     * @param key      归一化簇键（同一输入必得同一键）
+     * <p><b>键与展示名分离（v5.6.0 / FR-v5.6-22）</b>：{@code key} 是归一化指纹，
+     * 长文本会被截成「33 字符前缀 + … + 4 位哈希」，直接给用户看等于让人读乱码；
+     * {@code display} 取该簇首个失败样本的首行原文，不参与聚合、不脱敏、不截断到指纹长度。
+     * 两者必须同时返回：前端列表用 {@code display} 展示，重跑/去重仍用 {@code key}。
+     *
+     * @param key      归一化簇键（同一输入必得同一键）——聚合与重跑用它，不可用于展示
+     * @param display  可读原文（首个样本失败消息首行）；无原文时回落到 {@code key}
      * @param samples  最多 3 条样例用例，供用户判断「这是不是同一回事」
      * @param caseIds  该簇全部用例 id，重跑清单直接用它（不截断）
      */
     public record Cluster(String key,
+                          String display,
                           int count,
                           double ratio,
                           List<Sample> samples,

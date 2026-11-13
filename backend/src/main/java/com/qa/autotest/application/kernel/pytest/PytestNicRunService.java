@@ -20,6 +20,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.springframework.stereotype.Service;
+import javax.xml.parsers.DocumentBuilderFactory;
 
 /**
  * pytest 工程执行编排（FR-v5.1-01/02/07/08 的串接点）。
@@ -63,6 +64,42 @@ public class PytestNicRunService {
         this.clock = clock;
     }
 
+    /**
+     * 执行进度回调（v5.6.0 / FR-v5.6-12、13）。
+     *
+     * <p>接口放在这里而不是让 Service 依赖进度登记表：Service 只负责「跑到哪一步了」这件事
+     * 的事实陈述，要不要记账、记到哪，是调用方（HTTP 层）的选择。单元测试因此不必构造登记表。
+     */
+    public interface ProgressListener {
+
+        /** 什么都不做的监听器：同步执行的旧路径用它，行为与加这个接口之前完全一致。 */
+        ProgressListener NOOP = new ProgressListener() {
+            @Override
+            public void stage(String stage) {
+                // 同步执行不记账
+            }
+
+            @Override
+            public void batchDone(int passed, int failed, int total) {
+                // 同步执行不记账
+            }
+
+            @Override
+            public boolean cancelRequested() {
+                return false;
+            }
+        };
+
+        /** 阶段变化。取值与 {@code PytestRunProgressRegistry.Stage} 对齐，但不强绑枚举。 */
+        void stage(String stage);
+
+        /** 一批结束：本批通过 / 失败 / 总数。 */
+        void batchDone(int passed, int failed, int total);
+
+        /** 调用方是否已请求取消。每批之间检查一次，返回 true 时尽快停下。 */
+        boolean cancelRequested();
+    }
+
     /** 执行请求。 */
     public record ExecuteRequest(long projectId,
                                  String runId,
@@ -94,10 +131,20 @@ public class PytestNicRunService {
      * 执行失败时 stdout/stderr 与 junit（若生成）仍然在盘上，供归因使用。
      */
     public ExecuteResult execute(ExecuteRequest request) {
+        return execute(request, ProgressListener.NOOP);
+    }
+
+    /**
+     * 带进度回调的执行。取消通过监听器的 {@code cancelRequested()} 在批次边界生效：
+     * 进程内部无法安全中断（pytest 会留下半截 junit），所以取消的粒度是「批」。
+     */
+    public ExecuteResult execute(ExecuteRequest request, ProgressListener listener) {
+        ProgressListener progress = listener == null ? ProgressListener.NOOP : listener;
         Instant started = clock.instant();
         Map<String, String> config = PytestProjectSettings.load(settings, request.projectId());
         String pythonBin = PytestProjectSettings.value(config, PytestProjectSettings.PYTHON_BIN);
 
+        progress.stage("RENDERING");
         PytestEnvRenderer.RenderResult render;
         try {
             render = renderer.render(new PytestEnvRenderer.RenderRequest(request.projectId(),
@@ -135,13 +182,30 @@ public class PytestNicRunService {
 
         List<Path> junitFiles = new ArrayList<>();
         int lastExit = -1;
+        boolean canceled = false;
         for (PytestNicKernelCommand.Command plan : plans) {
+            // 取消在批次边界生效：启动前先看一眼，跑完一批再看一眼。
+            // 不在进程内部强杀，是因为 pytest 被 SIGKILL 后 junit 是半截文件，
+            // 归一器读到半个 <testsuite> 会直接把整次运行判成产物损坏（比没跑更糟）。
+            if (progress.cancelRequested()) {
+                canceled = true;
+                break;
+            }
+            progress.stage("RUNNING");
             lastExit = runOne(request, plan, junitFiles);
+            int[] counts = countJunit(plan.junitFile());
+            progress.batchDone(counts[0], counts[1], counts[2]);
             if (lastExit != 0) {
                 break;
             }
         }
+        if (canceled) {
+            emit(request.runDir().resolve("run.log"), "[cancel] 已按请求取消，后续批次未启动");
+            return new ExecuteResult(false, "canceled", null, render, null, plans.size(), -2,
+                    Duration.between(started, clock.instant()), List.copyOf(junitFiles), null);
+        }
 
+        progress.stage("FINALIZING");
         PytestResultNormalizer.NormalizeResult normalized;
         try {
             normalized = normalizer.normalize(request.projectId(), request.runId(), junitFiles,
@@ -225,6 +289,37 @@ public class PytestNicRunService {
             junitFiles.add(plan.junitFile());
         }
         return exitCode;
+    }
+
+    /**
+     * 数一份 junit 的通过 / 失败 / 总数，用于进度记账。
+     *
+     * <p>失败含 {@code failure} 与 {@code error}：对使用者来说「挂了」是同一件事，
+     * 进度条没必要区分它们；真实分类由归一器负责，它读的是完整产物。
+     * 文件还没写出来时返回全 0——进度不该因为「文件暂时不存在」而报错。
+     */
+    private static int[] countJunit(Path file) {
+        if (file == null || !Files.isRegularFile(file)) {
+            return new int[] {0, 0, 0};
+        }
+        try {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            org.w3c.dom.Document doc = factory.newDocumentBuilder().parse(file.toFile());
+            org.w3c.dom.NodeList cases = doc.getElementsByTagName("testcase");
+            int total = cases.getLength();
+            int failed = 0;
+            for (int i = 0; i < total; i++) {
+                org.w3c.dom.Element one = (org.w3c.dom.Element) cases.item(i);
+                if (one.getElementsByTagName("failure").getLength() > 0
+                        || one.getElementsByTagName("error").getLength() > 0) {
+                    failed++;
+                }
+            }
+            return new int[] {total - failed, failed, total};
+        } catch (Exception ex) {
+            return new int[] {0, 0, 0};
+        }
     }
 
     private static ExecuteResult failure(String reason, String message, Instant started) {

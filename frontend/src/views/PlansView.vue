@@ -17,6 +17,7 @@ import { ApiError } from '@/api/http'
 import { caseSetApi, type TestSet } from '@/api/cases'
 import { useAuthStore } from '@/stores/auth'
 import DataTable from '@/components/DataTable.vue'
+import EmptyGuide from '@/components/EmptyGuide.vue'
 import { useListPageSize, type PageSize } from '@/composables/useListPageSize'
 import ErrorLineView from '@/components/ErrorLine.vue'
 import FormField from '@/components/FormField.vue'
@@ -696,10 +697,16 @@ void load()
       :loading="loading"
       :row-key="(row: ExecutionPlan) => row.id"
       :empty-title="t('plans.empty')"
-      :empty-description="projectId ? undefined : t('overview.noProject')"
+      :empty-description="projectId ? t('emptyGuide.plans.reason') : t('overview.noProject')"
       empty-icon="runs"
       :error="Boolean(error)"
-    />
+    >
+      <!-- v5.6.0 / FR-v5.6-03：计划页空着时，用户真正想要的是「现在就跑一批」，
+           把人送到即时发起，而不是让他先学一遍 cron 语义。 -->
+      <template #emptyAction>
+        <EmptyGuide to="/execution-plans" :label="t('emptyGuide.action.launch')" />
+      </template>
+    </DataTable>
 
     <NPagination
       v-if="plans.length > planRowsPerPage"

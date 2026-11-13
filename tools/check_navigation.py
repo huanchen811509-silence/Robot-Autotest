@@ -50,21 +50,12 @@ SETTINGS = ROOT / "frontend" / "src" / "config" / "settingsNav.ts"
 GLOBAL_EXPECTED = 5
 PROJECT_EXPECTED = 7
 GLOBAL_MIN_CHILDREN = 2
-# v5.2.0 / W52-08：pytest 用例库工程视图。四组：工作台 / 用例库 / 执行 / 设置。
-PYTEST_EXPECTED = 4
-# 这棵树里**刻意不出现**的路径前缀（差异化必须是真的差异化，不能只是改个顺序）。
-# 理由见 navigation.ts 的注释：pytest 工程用不到台架资产、环境拓扑、维护恢复、
-# 执行节点与定时计划；留半套入口会让新用户以为「必须先配资产」。
-PYTEST_FORBIDDEN_PREFIXES = (
-    "/assets",
-    "/environment/",
-    "/maintenance/",
-    "/nodes",
-    "/plans",
-    "/sync",
-    "/imports",
-    "/groups",
-)
+# v5.6.0 / FR-v5.6-01、02：全量菜单。pytest 工程与标准工程共用同一套菜单，
+# 唯一差别是一个增量叶子。原「第二棵树 + 禁项前缀」判据已随树一起删除——
+# 保留它等于把已被证伪的「pytest 工程没有台架资产」假设写死在门禁里。
+PYTEST_LEAF_PATH = "/pytest-workbench"
+# 增量叶子的常量名（navigation.ts 里的导出名）。删了它菜单就少一个落地面。
+PYTEST_LEAF_DECL = "export const pytestWorkbenchLeaf: NavLeaf = {"
 
 KEY_RE = re.compile(r"key: '([^']+)',")
 # 注意：**不要求尾逗号**——单行对象写作 `..., path: '/x' },`，`'` 与 `,` 之间还有 ` }`。
@@ -212,38 +203,44 @@ def run(path: Path) -> int:
     if len(project_groups) != PROJECT_EXPECTED:
         problems.append(f"项目一级项应为 {PROJECT_EXPECTED}，实际 {len(project_groups)}")
 
-    pytest_groups = parse(
-        extract_array(text, "export const PYTEST_SUITE_NAVIGATION: NavNode[] = ["), dynamic
-    )
-
     problems += check(global_groups, "全局", GLOBAL_MIN_CHILDREN)
     problems += check(project_groups, "项目", 2)
-    problems += check(pytest_groups, "pytest 工程", 2)
 
-    if len(pytest_groups) != PYTEST_EXPECTED:
-        problems.append(f"pytest 工程一级项应为 {PYTEST_EXPECTED}，实际 {len(pytest_groups)}")
+    # 增量叶子判据（v5.6.0 / FR-v5.6-01）：全量菜单后，工程类型的唯一差别就是这个叶子。
+    if "export const PYTEST_SUITE_NAVIGATION" in text:
+        problems.append(
+            "PYTEST_SUITE_NAVIGATION 仍然存在——第二棵树已按 FR-v5.6-02 删除"
+            "（菜单必须一套，不能按工程类型分树）"
+        )
+    if PYTEST_LEAF_DECL not in text:
+        problems.append(f"找不到增量叶子声明：{PYTEST_LEAF_DECL}")
+    else:
+        # 单对象不是数组，取到声明处的下一个 `}` 结束
+        leaf_block = text[text.find(PYTEST_LEAF_DECL):]
+        leaf_block = leaf_block[: leaf_block.find("\n}") + 2]
+        pm = PATH_RE.search(leaf_block)
+        found = pm.group(1) if pm else None
+        if found != PYTEST_LEAF_PATH:
+            problems.append(
+                f"增量叶子的 path 应为 {PYTEST_LEAF_PATH}，实际 {found}"
+            )
 
-    # 差异化判据：不该出现的路径一个都不许出现
-    pytest_paths = [leaf.path for group in pytest_groups for leaf in group.children if leaf.path]
-    for path in pytest_paths:
-        for prefix in PYTEST_FORBIDDEN_PREFIXES:
-            if path == prefix or path.startswith(prefix.rstrip("/") + "/"):
-                problems.append(f"pytest 工程视图出现了不该有的入口：{path}（前缀 {prefix}）")
-
-    # 防「抄一份改个名」：两棵树的叶子集合不能完全相同
-    project_path_set = {leaf.path for group in project_groups
-                        for leaf in group.children if leaf.path}
-    if set(pytest_paths) == project_path_set:
-        problems.append("pytest 工程视图与标准工程视图的叶子完全相同——等于没有差异化")
+    project_paths = [leaf.path for group in project_groups
+                     for leaf in group.children if leaf.path]
+    if PYTEST_LEAF_PATH in project_paths:
+        problems.append(
+            f"{PYTEST_LEAF_PATH} 出现在标准树里——它必须是 pytest 工程专属增量，"
+            "否则标准工程会多出一个指向 pytest 工作台的入口"
+        )
 
     # 叶子 path 必须存在于路由表（菜单不许指向不存在的页面）
     router = ROOT / "frontend" / "src" / "router" / "index.ts"
     if router.is_file():
         router_text = router.read_text(encoding="utf-8")
         declared = set(re.findall(r"path: '(/[^']*)'", router_text))
-        for path in pytest_paths:
-            if path not in declared:
-                problems.append(f"pytest 工程视图的叶子指向不存在的路由：{path}")
+        for leaf_path in project_paths + [PYTEST_LEAF_PATH]:
+            if leaf_path not in declared:
+                problems.append(f"菜单叶子指向不存在的路由：{leaf_path}")
 
     deep = re.findall(r"^\s{12,}key: '", text, re.M)
     if deep:
@@ -267,9 +264,7 @@ def run(path: Path) -> int:
     print("[PASS] 层级 ≤ 2")
     print(f"[PASS] 全局一级 {len(global_groups)} 组 / {global_leaves} 叶（每组 ≥{GLOBAL_MIN_CHILDREN}）")
     print(f"[PASS] 项目一级 {len(project_groups)} 组 / {project_leaves} 叶")
-    pytest_leaves = sum(len(group.children) for group in pytest_groups)
-    print(f"[PASS] pytest 工程一级 {len(pytest_groups)} 组 / {pytest_leaves} 叶"
-          f"（无资产/环境/维护/节点/计划入口）")
+    print(f"[PASS] 全量菜单：pytest 工程 = 标准树 + 1 个增量叶子（{PYTEST_LEAF_PATH}）")
     print(f"[PASS] 同 path 的叶子 query 两两不同；每个叶子都有 path（派生组：{dynamic_names}）")
     return 0
 
@@ -294,29 +289,26 @@ def self_test() -> int:
             return 1
         print("[PASS] 自检 1 按预期判红")
 
-    # 自证 2（v5.2.0 / W52-08）：往 pytest 工程视图塞一个资产页，
-    # 必须被「差异化」判据拦住。这一条才是新判据真正起作用的证据——
-    # 只证「原有判据还活着」不能说明新判据有效。
+    # 自证 2（v5.6.0 / FR-v5.6-02）：把增量叶子删掉，机检必须判红。
+    # 这条替掉了原来「往 pytest 视图塞 /assets」的注入——那条判据随第二棵树一起删了，
+    # 留着当自检就是拿作废的判据自证。
     with tempfile.TemporaryDirectory() as tmp:
         fake = Path(tmp) / "navigation.ts"
         shutil.copy(NAV, fake)
         text = fake.read_text(encoding="utf-8")
-        anchor = """      {
-        key: 'pytest-execution-reports',"""
-        injected = """      {
-        key: 'pytest-forbidden-assets',
-        labelKey: 'menu.assets',
-        icon: 'assets',
-        path: '/assets',
-      },
-""" + anchor
-        assert text.count(anchor) == 1
-        fake.write_text(text.replace(anchor, injected), encoding="utf-8")
-        print("--- self-test 2：往 pytest 视图塞 /assets 后应判失败 ---")
+        broken = text.replace("export const pytestWorkbenchLeaf: NavLeaf = {",
+                              "const removedLeaf: NavLeaf = {", 1)
+        if broken == text:
+            print("[FAIL] 自检注入点没找到（找到不到 pytestWorkbenchLeaf）")
+            return 2
+        fake.write_text(broken, encoding="utf-8")
+        print("--- self-test 2：删掉 pytest 增量叶子后应判失败 ---")
         if run(fake) == 0:
-            print("[FAIL] 差异化判据没拦住资产入口——pytest 视图等于没做差异化")
+            print("[FAIL] 增量叶子判据没拦住缺叶子——全量菜单少一个落地面也没人知道")
             return 1
         print("[PASS] 自检 2 按预期判红")
+
+    print("check_navigation: SELF-TEST PASS")
     return 0
 
 

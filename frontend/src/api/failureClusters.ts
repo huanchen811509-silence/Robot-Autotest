@@ -14,7 +14,10 @@ export interface ClusterSample {
 }
 
 export interface FailureCluster {
+  /** 归一化簇指纹：聚合与重跑用它，界面上不要直接展示 */
   key: string
+  /** 可读原文（首个样本失败消息首行），清单展示用它（v5.6.0 / FR-v5.6-22） */
+  display: string
   count: number
   ratio: number
   samples: ClusterSample[]

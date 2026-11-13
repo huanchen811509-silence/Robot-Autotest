@@ -72,7 +72,9 @@ class ReportExportControllerTest {
     void export_默认外部版PDF() throws Exception {
         when(exports.export(1L, "RUN-1", "external", "pdf"))
                 .thenReturn(new ExportService.ExportResult(9L, "pdf", "external", 1234L,
-                        "abc", "/api/exports/9/download?projectId=1"));
+                        "abc", "/api/exports/9/download?projectId=1",
+                        new ExportService.QualityGate(true, java.util.List.of(),
+                                ExportService.QualityGate.FINAL)));
 
         mvc.perform(post("/api/reports/{runId}/export", "RUN-1").param("projectId", "1"))
                 .andExpect(status().isOk())
@@ -81,7 +83,9 @@ class ReportExportControllerTest {
                 .andExpect(jsonPath("$.data.mode").value("external"))
                 .andExpect(jsonPath("$.data.bytes").value(1234))
                 .andExpect(jsonPath("$.data.downloadUrl")
-                        .value("/api/exports/9/download?projectId=1"));
+                        .value("/api/exports/9/download?projectId=1"))
+                .andExpect(jsonPath("$.data.qualityGate.passed").value(true))
+                .andExpect(jsonPath("$.data.qualityGate.label").value("FINAL"));
 
         verify(exports).export(1L, "RUN-1", "external", "pdf");
     }
@@ -91,7 +95,9 @@ class ReportExportControllerTest {
     void export_内部版Docx() throws Exception {
         when(exports.export(1L, "RUN-1", "internal", "docx"))
                 .thenReturn(new ExportService.ExportResult(10L, "docx", "internal", 2048L,
-                        "def", "/api/exports/10/download?projectId=1"));
+                        "def", "/api/exports/10/download?projectId=1",
+                        new ExportService.QualityGate(false, java.util.List.of("DUT"),
+                                ExportService.QualityGate.DRAFT)));
 
         mvc.perform(post("/api/reports/{runId}/export", "RUN-1")
                         .param("projectId", "1")

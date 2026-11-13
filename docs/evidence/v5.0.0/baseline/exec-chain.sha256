@@ -11,7 +11,8 @@
 957cf34ae53ae063c202debd27cb6c7a334053dcd38fb706b5b4ee360eb22b4d  backend/src/main/java/com/qa/autotest/application/execution/RunExecutionService.java
 19797dfe19408dffd4daf7f03fd87affca654fd49cf5a2a0fef60e6e5cb2908c  backend/src/main/java/com/qa/autotest/application/execution/RunMetadataService.java
 e400db83c6260a982d325e142998b597c56d407a41a38c40a9774850485ea5cf  backend/src/main/java/com/qa/autotest/application/kernel/PytestRunAdapter.java
-d9b03a84ebe8534015f465818c5c4a7bc21b482458c67b524cfcd98ee2bf05cf  backend/src/main/java/com/qa/autotest/application/report/CaseCommandExtractor.java
+5bec0a75feeecfd5b698f1d8d461a5137f68bf95ac01c350d8cbad49d2511b48  backend/src/main/java/com/qa/autotest/application/report/CaseCommandExtractor.java
+# v5.6.0 记录在案的一次有意扩展：FR-v5.6-21 在本文件追加 SOURCE_COMMAND_INDEX 与 fromCommandIndex（命令索引来源），故 sha 重算；其余执行链文件仍要求零改动。
 631188e7d1cc089eb7b180b5e7f4ecbaa004454a44bc1d2eb878412c8421a1b8  backend/src/main/java/com/qa/autotest/application/report/KernelStatusMapper.java
 ca48156c8063034c921f327aeb42b7d57c7cbcfb41fb3708081c5fb6869340ee  backend/src/main/java/com/qa/autotest/application/repository/RunMetadataRepository.java
 ec163c4dde3ffe64712acf97d41477b821d4bca8d041e25d7d8671dd9fb0ea21  backend/src/main/java/com/qa/autotest/domain/report/MetadataGate.java

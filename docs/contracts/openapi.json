@@ -12060,9 +12060,125 @@
         }
       }
     },
+    "/api/projects/{projectId}/pytest/precheck": {
+      "get": {
+        "operationId": "PytestNicRunController.precheck",
+        "tags": [
+          "kernel"
+        ],
+        "responses": {
+          "200": {
+            "description": "统一信封；业务错误码见 ErrorCode",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        }
+      }
+    },
+    "/api/projects/{projectId}/pytest/readiness": {
+      "get": {
+        "operationId": "PytestProjectController.readiness",
+        "tags": [
+          "kernel"
+        ],
+        "responses": {
+          "200": {
+            "description": "统一信封；业务错误码见 ErrorCode",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        }
+      }
+    },
     "/api/projects/{projectId}/pytest/runs": {
       "post": {
         "operationId": "PytestNicRunController.run",
+        "tags": [
+          "kernel"
+        ],
+        "responses": {
+          "200": {
+            "description": "统一信封；业务错误码见 ErrorCode",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "title": "FakeRunRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{projectId}/pytest/runs/async": {
+      "post": {
+        "operationId": "PytestNicRunController.runAsync",
         "tags": [
           "kernel"
         ],
@@ -12187,6 +12303,41 @@
         }
       }
     },
+    "/api/projects/{projectId}/pytest/runs/{runId}/cancel": {
+      "post": {
+        "operationId": "PytestNicRunController.cancel",
+        "tags": [
+          "kernel"
+        ],
+        "responses": {
+          "200": {
+            "description": "统一信封；业务错误码见 ErrorCode",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        }
+      }
+    },
     "/api/projects/{projectId}/pytest/runs/{runId}/evidence": {
       "get": {
         "operationId": "PytestProjectController.evidence",
@@ -12223,6 +12374,41 @@
       },
       "post": {
         "operationId": "PytestProjectController.extractEvidence",
+        "tags": [
+          "kernel"
+        ],
+        "responses": {
+          "200": {
+            "description": "统一信封；业务错误码见 ErrorCode",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        }
+      }
+    },
+    "/api/projects/{projectId}/pytest/runs/{runId}/progress": {
+      "get": {
+        "operationId": "PytestNicRunController.progress",
         "tags": [
           "kernel"
         ],

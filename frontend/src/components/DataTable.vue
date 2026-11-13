@@ -185,7 +185,14 @@ const skeletonData = computed<T[]>(() =>
             :icon="emptyIcon"
             :illustration="emptyMode"
             :illustration-width="64"
-          />
+          >
+            <!-- v5.6.0 / FR-v5.6-03：空态要能给出「下一步去哪」。EmptyState 本来就有
+                 action 插槽，只是 DataTable 没透传，页面只能各写一份 #empty 覆盖——
+                 覆盖会连带把 error 态一起顶掉，所以这里补透传而不是让调用方绕。 -->
+            <template v-if="$slots.emptyAction" #action>
+              <slot name="emptyAction" />
+            </template>
+          </EmptyState>
         </slot>
       </template>
     </NDataTable>

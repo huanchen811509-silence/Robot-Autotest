@@ -11,6 +11,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createApp, nextTick, type App } from 'vue'
+import { createMemoryHistory, createRouter } from 'vue-router'
 import { i18n } from '@/locales'
 import PytestWorkbenchView from '@/views/PytestWorkbenchView.vue'
 
@@ -22,6 +23,7 @@ const state = vi.hoisted(() => ({
   missing: [] as string[],
   ledger: null as Record<string, unknown> | null,
   admission: null as Record<string, unknown> | null,
+  readiness: null as Record<string, unknown> | null,
 }))
 
 vi.mock('@/stores/auth', () => ({
@@ -31,6 +33,9 @@ vi.mock('@/stores/auth', () => ({
 vi.mock('@/api/pytestProject', () => ({
   pytestProjectApi: {
     health: async () => state.health,
+    // v5.6.0 / FR-v5.6-04：台架就绪度是首屏第一块，必须一起桩掉，
+    // 否则每个用例都会真发一次 HTTP，日志里全是 ECONNREFUSED。
+    readiness: async () => state.readiness,
     bindings: async () => state.bindings,
     settings: async () => state.settings,
     // v5.2.0 / W52-02：保存返回体变成 { settings, missingForExecute, errors, health }
@@ -100,6 +105,12 @@ async function mountView(): Promise<HTMLElement> {
   host = root
   app = createApp(PytestWorkbenchView)
   app.use(i18n)
+  // 就绪度与顶栏都用 RouterLink（v5.6.0 / FR-v5.6-04）：不装路由时链接没有 href，
+  // 「点得去哪里」这件事就测不出来了。
+  app.use(createRouter({
+    history: createMemoryHistory(),
+    routes: [{ path: '/:pathMatch(.*)*', component: { template: '<div />' } }],
+  }))
   app.mount(root)
   await flush()
   return root
@@ -265,5 +276,73 @@ describe('PytestWorkbenchView 覆盖率双口径', () => {
       root.querySelector(`[data-test="${key}"]`)?.textContent?.trim() ?? ''
     expect(pick('window-state')).toContain('不在执行窗口内')
     expect(pick('admission')).toContain('下一次窗口开启')
+  })
+})
+
+/**
+ * 台架就绪度（v5.6.0 / FR-v5.6-04 / W56-06）。
+ *
+ * 判据是「页面不许把未就绪说成就绪」，以及「缺项要能一键跳到配置页」：
+ * 这两件事在 v5.5.0 都做不到——那次是绕过界面调 API 登记的设备，
+ * 界面既不知道缺什么，也没地方点。
+ */
+describe('PytestWorkbenchView 台架就绪度', () => {
+  beforeEach(() => {
+    state.health = health()
+    state.readiness = {
+      ready: false,
+      items: [
+        { key: 'devices', ready: true, count: 4 },
+        { key: 'credentials', ready: false, count: 0 },
+        { key: 'environment', ready: true, count: 3 },
+        { key: 'bindings', ready: true, count: 61 },
+      ],
+      missing: ['credentials'],
+    }
+  })
+
+  afterEach(() => {
+    state.readiness = null
+  })
+
+  it('未就绪时显示「缺 1 项」，并把缺的那项标出来', async () => {
+    const root = await mountView()
+    const section = root.querySelector('[data-test="readiness"]')
+    expect(section).toBeTruthy()
+    expect(section?.getAttribute('class')).toContain('readiness-blocked')
+
+    const badge = root.querySelector('[data-test="readiness-state"]')
+    expect(badge?.textContent).toContain('1')
+
+    const devices = root.querySelector('[data-test="readiness-devices"]')
+    const credentials = root.querySelector('[data-test="readiness-credentials"]')
+    expect(devices?.getAttribute('class')).toContain('ok')
+    expect(credentials?.getAttribute('class')).toContain('missing')
+  })
+
+  it('缺凭据时给出直达「资产-凭证」的入口，而不是只说一句未就绪', async () => {
+    const root = await mountView()
+    const fix = root.querySelector('[data-test="readiness-fix-credentials"]') as HTMLAnchorElement | null
+    expect(fix).toBeTruthy()
+    expect(fix?.getAttribute('href')).toBe('/assets?tab=credentials')
+    // 已就绪的项不该有「去补齐」
+    expect(root.querySelector('[data-test="readiness-fix-devices"]')).toBeNull()
+  })
+
+  it('四项齐全时显示「就绪」，且不再显示任何补齐入口', async () => {
+    state.readiness = {
+      ready: true,
+      items: [
+        { key: 'devices', ready: true, count: 4 },
+        { key: 'credentials', ready: true, count: 1 },
+        { key: 'environment', ready: true, count: 3 },
+        { key: 'bindings', ready: true, count: 61 },
+      ],
+      missing: [],
+    }
+    const root = await mountView()
+    const section = root.querySelector('[data-test="readiness"]')
+    expect(section?.getAttribute('class')).toContain('readiness-ok')
+    expect(root.querySelectorAll('[data-test="readiness-fix-credentials"]')).toHaveLength(0)
   })
 })

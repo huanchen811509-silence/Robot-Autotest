@@ -35,6 +35,12 @@ public final class CaseCommandExtractor {
     public static final String SOURCE_RF_KEYWORD = "RF_KEYWORD";
     public static final String SOURCE_PYTEST_MARK = "PYTEST_MARK";
     public static final String SOURCE_STDOUT = "STDOUT_EXTRACT";
+    /**
+     * 框架命令索引（v5.6.0 / FR-v5.6-21）：pytest 侧
+     * {@code artifacts/<run_id>/cases/<node>/raw/*.commands.jsonl}。
+     * 比 STDOUT 更可信——它是框架自己记的下发事实，不是从回显里认出来的。
+     */
+    public static final String SOURCE_COMMAND_INDEX = "COMMAND_INDEX";
     public static final String SOURCE_NONE = NONE;
 
     /** 命令原文上限：4KB（DEV-PLAN §9）。超长截断并留标记。 */
@@ -198,6 +204,19 @@ public final class CaseCommandExtractor {
         return new Extracted(scrubAndTruncate(command), SOURCE_PYTEST_MARK, null);
     }
 
+    /**
+     * 框架命令索引里取出的命令（v5.6.0 / FR-v5.6-21）。
+     *
+     * <p>与 {@link #fromPytestStdout} 的区别是「不需要认」：索引里 {@code command} 字段
+     * 就是下发原文，不存在认错的可能。退出码由索引的 {@code exit_code} 单独传。
+     */
+    public static Extracted fromCommandIndex(String command) {
+        if (command == null || command.isBlank()) {
+            return Extracted.none();
+        }
+        return new Extracted(scrubAndTruncate(command), SOURCE_COMMAND_INDEX, null);
+    }
+
     /** 在一行里认出「命令行」。认不出返回 null（不抛异常：日志里什么都有）。 */
     static String matchCommand(String line) {
         if (line == null) {
@@ -265,7 +284,8 @@ public final class CaseCommandExtractor {
 
     /** 供测试与调用方判断来源合法性（门禁 28 步同一份清单）。 */
     public static List<String> allowedSources() {
-        return List.of(SOURCE_RF_KEYWORD, SOURCE_PYTEST_MARK, SOURCE_STDOUT, SOURCE_NONE);
+        return List.of(SOURCE_RF_KEYWORD, SOURCE_PYTEST_MARK, SOURCE_STDOUT,
+                SOURCE_COMMAND_INDEX, SOURCE_NONE);
     }
 
     /** 便于诊断：把「哪些关键字识别到/没识别到」暴露出来，用于收敛白名单。 */

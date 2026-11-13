@@ -10,6 +10,8 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { NButton, type DataTableColumns } from 'naive-ui'
 import DataTable from '@/components/DataTable.vue'
+import EmptyState from '@/components/EmptyState.vue'
+import EmptyGuide from '@/components/EmptyGuide.vue'
 import { useAuthStore } from '@/stores/auth'
 import { fetchRecoveryRecords } from '@/api/maintenance'
 import { formatDateTime } from '@/utils/format'
@@ -88,7 +90,17 @@ watch(projectId, load)
       </p>
       <DataTable v-else :columns="columns" :data="rows" :row-key="(row: RecoveryRow) => row.id">
         <template #empty>
-          <p class="empty" data-testid="records-empty">{{ t('maintenance.common.empty') }}</p>
+          <EmptyState
+            data-testid="records-empty"
+            :title="t('emptyGuide.records.title')"
+            :description="t('emptyGuide.records.reason')"
+            icon="refresh"
+            :illustration-width="64"
+          >
+            <template #action>
+              <EmptyGuide to="/maintenance/principles" :label="t('emptyGuide.action.principles')" />
+            </template>
+          </EmptyState>
         </template>
       </DataTable>
     </section>

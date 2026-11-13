@@ -212,10 +212,30 @@ class CaseCommandExtractorTest {
         }
 
         @Test
-        @DisplayName("来源清单与门禁 28 步共用同一份，四个值缺一不可")
+        @DisplayName("来源清单与门禁 28 步共用同一份，五个值缺一不可")
         void allowedSources() {
-            assertEquals(List.of("RF_KEYWORD", "PYTEST_MARK", "STDOUT_EXTRACT", "NONE"),
+            assertEquals(List.of("RF_KEYWORD", "PYTEST_MARK", "STDOUT_EXTRACT",
+                            "COMMAND_INDEX", "NONE"),
                     CaseCommandExtractor.allowedSources());
+        }
+
+        @Test
+        @DisplayName("命令索引来源：原文不需要认，直接落库并标 COMMAND_INDEX")
+        void commandIndex() {
+            CaseCommandExtractor.Extracted found =
+                    CaseCommandExtractor.fromCommandIndex("ethtool -k ens17np0");
+            assertEquals("ethtool -k ens17np0", found.text());
+            assertEquals(CaseCommandExtractor.SOURCE_COMMAND_INDEX, found.source());
+            assertTrue(found.hasCommand());
+        }
+
+        @Test
+        @DisplayName("命令索引为空时不造命令：显式 NONE + 来源 NONE")
+        void commandIndexBlank() {
+            CaseCommandExtractor.Extracted found = CaseCommandExtractor.fromCommandIndex("  ");
+            assertEquals(CaseCommandExtractor.NONE, found.text());
+            assertEquals(CaseCommandExtractor.SOURCE_NONE, found.source());
+            assertFalse(found.hasCommand());
         }
     }
 }

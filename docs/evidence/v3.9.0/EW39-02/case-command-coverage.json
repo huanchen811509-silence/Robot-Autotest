@@ -5,6 +5,7 @@
     "RF_KEYWORD",
     "PYTEST_MARK",
     "STDOUT_EXTRACT",
+    "COMMAND_INDEX",
     "NONE"
   ],
   "runs": [

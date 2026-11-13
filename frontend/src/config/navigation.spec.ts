@@ -5,7 +5,7 @@
  * 或者被路由删掉，界面上点进去就是 404，构建期不会报错。所以这里既测判定逻辑，
  * 也把每个叶子拿去路由表里解析一遍。
  */
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import router from '@/router'
 import {
   NAVIGATION,
@@ -28,7 +28,8 @@ import {
   visibleNavByCapabilities,
   capabilitiesForRole,
   navTreeFor,
-  PYTEST_SUITE_NAVIGATION,
+  pytestWorkbenchLeaf,
+  resetPytestTreeCache,
   type NavGroup,
   type NavLeaf,
   type NavNode,
@@ -517,10 +518,17 @@ describe('v4.11.0 全局菜单两级化', () => {
   })
 })
 
-describe('navTreeFor：按工程类型选树（v5.2.0 / W52-08）', () => {
-  function pytestLeaves(): NavLeaf[] {
-    return PYTEST_SUITE_NAVIGATION.flatMap((node) => (isGroup(node) ? node.children : [node]))
+describe('navTreeFor：全量菜单（v5.6.0 / FR-v5.6-01、02）', () => {
+  /** 树里的叶子（一级组只有一层，展开即可）。 */
+  function leavesOf(tree: NavNode[]): NavLeaf[] {
+    return tree.flatMap((node) => (isGroup(node) ? node.children : [node]))
   }
+
+  function pathsOf(tree: NavNode[]): string[] {
+    return leavesOf(tree).map((leaf) => leaf.path)
+  }
+
+  afterEach(() => resetPytestTreeCache())
 
   it('全局模式一律用全局树，与工程类型无关', () => {
     expect(navTreeFor('global', 'pytest-suite')).toBe(GLOBAL_NAVIGATION)
@@ -528,57 +536,80 @@ describe('navTreeFor：按工程类型选树（v5.2.0 / W52-08）', () => {
     expect(navTreeFor('global', undefined)).toBe(GLOBAL_NAVIGATION)
   })
 
-  it('项目模式下 pytest-suite 用专用树，其余用标准树', () => {
-    expect(navTreeFor('project', 'pytest-suite')).toBe(PYTEST_SUITE_NAVIGATION)
-    expect(navTreeFor('project', 'standard')).toBe(NAVIGATION)
-    // 未知/缺省按标准工程：宁可多显示入口，不要少显示
-    expect(navTreeFor('project', null)).toBe(NAVIGATION)
-    expect(navTreeFor('project', 'whatever')).toBe(NAVIGATION)
+  it('项目模式下只有一套菜单：pytest 工程 = 标准树 + 一个增量叶子', () => {
+    const standard = navTreeFor('project', 'standard')
+    const pytest = navTreeFor('project', 'pytest-suite')
+    expect(standard).toBe(NAVIGATION)
+
+    const standardPaths = new Set(pathsOf(standard))
+    const pytestOnly = pathsOf(pytest).filter((path) => !standardPaths.has(path))
+    expect(pytestOnly, 'pytest 工程相对标准工程多出来的入口只能是 /pytest-workbench')
+      .toEqual(['/pytest-workbench'])
+
+    // 反向也要成立：标准树的每一项在 pytest 工程里都必须存在（全量对齐，不是另一棵子树）
+    const pytestPaths = new Set(pathsOf(pytest))
+    const missing = [...standardPaths].filter((path) => !pytestPaths.has(path))
+    expect(missing, 'pytest 工程缺少的入口：' + missing.join(', ')).toEqual([])
   })
 
-  it('pytest 树不出现资产/环境/维护/节点/计划入口', () => {
-    const paths = pytestLeaves().map((leaf) => leaf.path)
-    const forbidden = ['/assets', '/environment', '/maintenance', '/nodes', '/plans', '/sync']
-    for (const prefix of forbidden) {
+  it('未知/缺省工程类型按标准工程处理，且与标准树引用相等', () => {
+    expect(navTreeFor('project', null)).toBe(NAVIGATION)
+    expect(navTreeFor('project', 'whatever')).toBe(NAVIGATION)
+    expect(navTreeFor('project', undefined)).toBe(NAVIGATION)
+  })
+
+  it('pytest 工程不再被藏掉资产/环境/维护/节点/计划入口（旧断言已反转）', () => {
+    const paths = pathsOf(navTreeFor('project', 'pytest-suite'))
+    // v5.6.0 之前这里是六个 `not.toBe(true)` 的禁止断言；现在反过来要求必须存在。
+    // 依据：pytest 工程同样要先配台架（设备/凭据/环境）才能跑，藏起来等于把前置条件藏起来。
+    const required = ['/assets', '/environment', '/maintenance', '/nodes', '/plans', '/sync']
+    for (const prefix of required) {
       const hit = paths.some((path) => path === prefix || path.startsWith(prefix + '/'))
-      expect(hit, '不该出现 ' + prefix).toBe(false)
+      expect(hit, '全量菜单下应出现 ' + prefix + '（当前叶子：' + paths.join(', ') + '）').toBe(true)
     }
   })
 
-  it('pytest 树的每个叶子都能被路由表解析到真实页面', () => {
-    for (const leaf of pytestLeaves()) {
+  it('增量叶子并入「工作台」组首位，不另立分组', () => {
+    const tree = navTreeFor('project', 'pytest-suite')
+    expect(tree).toHaveLength(NAVIGATION.length)
+    const workbench = tree.find((node) => node.key === 'workbench')
+    expect(workbench && isGroup(workbench)).toBe(true)
+    expect((workbench as NavGroup).children[0].path).toBe('/pytest-workbench')
+    // 组数与标准树一致：这是「统一菜单」最硬的判据
+    expect(tree.map((node) => node.key)).toEqual(NAVIGATION.map((node) => node.key))
+  })
+
+  it('增量叶子是从标准树派生出来的，不是另写一份', () => {
+    const tree = navTreeFor('project', 'pytest-suite')
+    const workbench = tree.find((node) => node.key === 'workbench') as NavGroup
+    expect(workbench.children[0]).toBe(pytestWorkbenchLeaf)
+    // 其余子项必须是标准树里那几个对象本身（浅拷贝组、不深拷贝子项）
+    const standardWorkbench = NAVIGATION.find((node) => node.key === 'workbench') as NavGroup
+    expect(workbench.children.slice(1)).toEqual(standardWorkbench.children)
+  })
+
+  it('memo 化：同一工程类型每次拿到同一棵树', () => {
+    expect(navTreeFor('project', 'pytest-suite')).toBe(navTreeFor('project', 'pytest-suite'))
+    resetPytestTreeCache()
+    const rebuilt = navTreeFor('project', 'pytest-suite')
+    expect(rebuilt).not.toBe(undefined)
+    expect(rebuilt).toHaveLength(NAVIGATION.length)
+  })
+
+  it('pytest 工程的每个叶子都能被路由表解析到真实页面', () => {
+    for (const leaf of leavesOf(navTreeFor('project', 'pytest-suite'))) {
       const resolved = router.resolve(leafTarget(leaf))
       const name = resolved.matched.at(-1)?.name
-      expect(name, 'pytest 叶子 ' + leaf.key + ' 的 ' + leaf.path + ' 没有命中路由').toBeTruthy()
+      expect(name, '叶子 ' + leaf.key + ' 的 ' + leaf.path + ' 没有命中路由').toBeTruthy()
       expect(name).not.toBe('not-found')
     }
   })
 
-  it('pytest 树每个分组至少两个子项', () => {
-    for (const node of PYTEST_SUITE_NAVIGATION) {
+  it('每个一级分组至少两个子项（含增量叶子后的工作台组）', () => {
+    for (const node of navTreeFor('project', 'pytest-suite')) {
       if (isGroup(node)) {
         expect(node.children.length, '分组 ' + node.key + ' 子项过少').toBeGreaterThanOrEqual(2)
       }
     }
-  })
-
-  it('两棵树的叶子集合不相同——差异化不是改个顺序', () => {
-    const projectPaths = new Set(leaves().map((leaf) => leaf.path))
-    const pytestPaths = new Set(pytestLeaves().map((leaf) => leaf.path))
-    expect(pytestPaths.size).toBeGreaterThan(0)
-    expect([...pytestPaths].sort()).not.toEqual([...projectPaths].sort())
-    // 除 pytest 专用页外，其余路径必须来自标准树（不另造页面）
-    const pytestOnly = new Set(['/pytest-workbench'])
-    for (const path of pytestPaths) {
-      if (pytestOnly.has(path)) continue
-      expect(projectPaths.has(path), path + ' 不在标准树里，也未登记为 pytest 专用页').toBe(true)
-    }
-  })
-
-  it('pytest 树里工作台落地页就是工程健康页', () => {
-    const workbench = PYTEST_SUITE_NAVIGATION.find((node) => node.key === 'pytest-workbench')
-    expect(workbench && isGroup(workbench)).toBe(true)
-    const first = (workbench as NavGroup).children[0]
-    expect(first.path).toBe('/pytest-workbench')
   })
 })

@@ -145,7 +145,10 @@ class ExportServiceTest {
 
         assertEquals("internal", result.mode());
         assertEquals("docx", result.format());
-        Path file = artifactDir.resolve("report_" + RUN_ID + "_internal.docx");
+        // FR-v5.6-27：缺项时导出仍允许，但口径降为 DRAFT 且文件名带 _DRAFT。
+        assertEquals(ExportService.QualityGate.DRAFT, result.qualityGate().label());
+        assertTrue(result.qualityGate().missing().contains("DUT"));
+        Path file = artifactDir.resolve("report_" + RUN_ID + "_internal_DRAFT.docx");
         assertTrue(Files.isRegularFile(file));
         String header = zipEntry(Files.readAllBytes(file), "word/header1.xml");
         assertTrue(header.contains(DocxExporter.INTERNAL_HEADER));

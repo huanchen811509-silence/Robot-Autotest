@@ -64,7 +64,9 @@ class FailureClusterControllerTest {
     private static FailureClusterView view(String runId, int total) {
         return new FailureClusterView(runId, total, null, null,
                 List.of(new FailureClusterView.ClassGroup("ASSERT", total, 1.0,
-                        List.of(new FailureClusterView.Cluster("AssertionError: <n> != <n>", total,
-                                1.0, List.of(), List.of(1L, 2L))))));
+                        List.of(new FailureClusterView.Cluster(
+                                "AssertionError: <n> != <n>",
+                                "AssertionError: PFC 使能优先级期望 3 实际 5",
+                                total, 1.0, List.of(), List.of(1L, 2L))))));
     }
 }

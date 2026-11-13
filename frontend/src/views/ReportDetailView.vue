@@ -755,6 +755,13 @@ watch(granularity, () => {
           {{ t('reports.exportSection.download') }}
         </NButton>
       </p>
+      <p
+        v-if="exportResult?.qualityGate && !exportResult.qualityGate.passed"
+        class="text-fail export-hint"
+        data-test="export-draft-hint"
+      >
+        {{ t('reports.exportSection.draftHint', { missing: exportResult.qualityGate.missing.join('；') }) }}
+      </p>
 
       <section class="card wide-card">
         <h2 class="card-title">{{ t('reports.exportSection.historyTitle') }}</h2>
