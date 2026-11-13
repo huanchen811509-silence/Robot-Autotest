@@ -1,0 +1,19 @@
+inventory_file: inventory.yaml
+run_id: w4-env-003800
+resource_pool:
+  hosts:
+  - gpu01@10.202.54.101
+  nics:
+  - gpu01@10.202.54.101/ens17np0
+  - gpu01@10.202.54.101/ens24np0
+  gpus: &id001 [
+    ]
+  cpus: *id001
+  vms: *id001
+  ovss: *id001
+  storages: *id001
+  switches: *id001
+selected_targets:
+- nic:gpu01@10.202.54.101/ens17np0
+- nic:gpu01@10.202.54.101/ens24np0
+mode: fake

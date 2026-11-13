@@ -1,6 +1,9 @@
 package com.qa.autotest.application.kernel.pytest;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.qa.autotest.application.repository.DeviceRepository;
+import com.qa.autotest.application.repository.HostInventoryRepository;
+import com.qa.autotest.domain.host.HostInventoryRecord;
 import com.qa.autotest.domain.asset.Device;
 import com.qa.autotest.domain.asset.DevicePort;
 import com.qa.autotest.application.repository.ProjectSettingRepository;
@@ -17,6 +20,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
@@ -55,10 +59,26 @@ public class PytestEnvRenderer {
 
     private final DeviceRepository devices;
     private final ProjectSettingRepository settings;
+    private final HostInventoryRepository inventories;
+    private final ObjectMapper mapper;
 
-    public PytestEnvRenderer(DeviceRepository devices, ProjectSettingRepository settings) {
+    @Autowired
+    public PytestEnvRenderer(DeviceRepository devices, ProjectSettingRepository settings,
+                             HostInventoryRepository inventories, ObjectMapper mapper) {
         this.devices = devices;
         this.settings = settings;
+        this.inventories = inventories;
+        this.mapper = mapper;
+    }
+
+    /**
+     * 兼容 v5.1.0 的两参写法（不派生 GPU/CPU/存储，渲染出的三类资产为空）。
+     *
+     * <p>两个公开构造器并存时 Spring 无法自行选择，会退化成「找不到默认构造器」，
+     * 应用上下文直接启动失败（实测 crash-loop）。所以主构造器必须显式 {@code @Autowired}。
+     */
+    public PytestEnvRenderer(DeviceRepository devices, ProjectSettingRepository settings) {
+        this(devices, settings, null, null);
     }
 
     /**
@@ -111,10 +131,16 @@ public class PytestEnvRenderer {
                 ? request.mode().trim() : PytestProjectSettings.modeDefault(config);
 
         List<String> warnings = new ArrayList<>();
+        // FR-v5.6-41：GPU/CPU/存储从已采集的主机清单派生。没有任何一次采集时保持为空并写警告——
+        // 空对象会让框架报「资源池里没有可用 GPU」，警告让人知道该先去采，而不是以为机器没卡。
+        Map<Long, PytestHostAssets> assets = loadAssets(request.projectId(), selected, warnings);
+        // 采集只给型号全名，用例库按规格键取规格；这一层映射必须显式做（见类注释）。
+        PytestGpuModelCatalog gpuCatalog = PytestGpuModelCatalog.load(
+                PytestProjectSettings.repoPath(config), warnings);
         Map<String, Object> inventory = buildInventory(request.projectId(), selected,
-                portsByDevice, keyRule, osDefault, schemaVersion, warnings);
+                portsByDevice, assets, gpuCatalog, keyRule, osDefault, schemaVersion, warnings);
         Map<String, Object> runEnv = buildRunEnv(request.runId(), selected, portsByDevice,
-                keyRule, mode, config);
+                assets, keyRule, mode, config);
 
         Path dir = request.outputDir();
         Path inventoryFile = dir.resolve("inventory.yaml");
@@ -129,6 +155,34 @@ public class PytestEnvRenderer {
         } catch (IOException e) {
             throw new IllegalStateException("渲染产物写入失败: " + dir + " — " + e.getMessage(), e);
         }
+    }
+
+    /** 每台设备取最近一次采集；没有任何采集时返回 EMPTY 并记一条警告。 */
+    private Map<Long, PytestHostAssets> loadAssets(long projectId, List<Device> selected,
+                                                   List<String> warnings) {
+        Map<Long, PytestHostAssets> result = new LinkedHashMap<>();
+        if (inventories == null || mapper == null) {
+            return result;
+        }
+        for (Device device : selected) {
+            PytestHostAssets assets = PytestHostAssets.EMPTY;
+            try {
+                // 必须取完整记录：list() 只查摘要列，specJson 恒为 null，
+                // 用它判断「有没有采到 GPU」永远得到「没有」。
+                assets = inventories.latest(projectId, device.id())
+                        .map(record -> PytestHostAssets.from(record.specJson(), mapper))
+                        .orElse(PytestHostAssets.EMPTY);
+            } catch (RuntimeException ex) {
+                warnings.add("设备 " + device.name() + " 的主机清单读取失败：" + ex.getMessage());
+            }
+            if (!assets.any()) {
+                warnings.add("设备 " + device.name()
+                        + " 未采集到 GPU/CPU/存储（devices.gpus/cpu/storage 为空），"
+                        + "请先在「环境采集」里采一次");
+            }
+            result.put(device.id(), assets);
+        }
+        return result;
     }
 
     private List<Device> resolveDevices(RenderRequest request) {
@@ -195,6 +249,8 @@ public class PytestEnvRenderer {
 
     private Map<String, Object> buildInventory(long projectId, List<Device> selected,
                                                Map<Long, List<DevicePort>> portsByDevice,
+                                               Map<Long, PytestHostAssets> assets,
+                                               PytestGpuModelCatalog gpuCatalog,
                                                String keyRule, String osDefault,
                                                String schemaVersion, List<String> warnings) {
         Map<String, Object> hosts = new LinkedHashMap<>();
@@ -202,7 +258,9 @@ public class PytestEnvRenderer {
             String key = device.inventoryKey(keyRule);
             Map<String, Object> node = new LinkedHashMap<>();
             node.put("host", hostBlock(device, osDefault, warnings));
-            node.put("devices", devicesBlock(portsByDevice.getOrDefault(device.id(), List.of())));
+            node.put("devices", devicesBlock(portsByDevice.getOrDefault(device.id(), List.of()),
+                    assets.getOrDefault(device.id(), PytestHostAssets.EMPTY), gpuCatalog,
+                    device.name(), warnings));
             hosts.put(key, node);
         }
         Map<String, Object> root = new LinkedHashMap<>();
@@ -238,7 +296,9 @@ public class PytestEnvRenderer {
         return host;
     }
 
-    private Map<String, Object> devicesBlock(List<DevicePort> ports) {
+    private Map<String, Object> devicesBlock(List<DevicePort> ports, PytestHostAssets assets,
+                                             PytestGpuModelCatalog gpuCatalog, String hostName,
+                                             List<String> warnings) {
         Map<String, Object> nics = new LinkedHashMap<>();
         for (DevicePort port : ports) {
             String netdev = port.netdev();
@@ -249,13 +309,49 @@ public class PytestEnvRenderer {
         }
         Map<String, Object> devices = new LinkedHashMap<>();
         devices.put("nics", nics);
-        // 其余五类资产本版本不从资产表派生，给空对象保证框架不 KeyError。
-        devices.put("gpus", Map.of());
-        devices.put("cpu", Map.of());
+        // FR-v5.6-41：三类从主机清单派生；vms / ovs 仍为空（资产侧没有这两类实体），
+        // 给空对象保证框架读取时不 KeyError。
+        devices.put("gpus", gpuBlock(assets.gpus(), gpuCatalog, hostName, warnings));
+        devices.put("cpu", assets.cpus());
         devices.put("vms", Map.of());
         devices.put("ovs", Map.of());
-        devices.put("storage", Map.of());
+        devices.put("storage", assets.storages());
         return devices;
+    }
+
+    /**
+     * GPU 段：在派生出来的 {@code index/name/memory_total/driver_version} 上补 {@code model}。
+     *
+     * <p>{@code model} 是用例库规格表的键（如 {@code pro-6000}），与采集到的全名
+     * 没有算法关系，只能按 {@code display_name} 反查。取不到时留空并逐卡告警——
+     * 空 model 会让用例在取规格时报「未登记型号 None」，这条告警就是让人知道该补哪里。
+     */
+    private Map<String, Object> gpuBlock(Map<String, Object> derived,
+                                         PytestGpuModelCatalog gpuCatalog, String hostName,
+                                         List<String> warnings) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        for (Map.Entry<String, Object> entry : derived.entrySet()) {
+            if (!(entry.getValue() instanceof Map<?, ?> raw)) {
+                result.put(entry.getKey(), entry.getValue());
+                continue;
+            }
+            Map<String, Object> card = new LinkedHashMap<>();
+            raw.forEach((k, v) -> card.put(String.valueOf(k), v));
+            String name = String.valueOf(card.getOrDefault("name", ""));
+            PytestGpuModelCatalog.Entry spec = gpuCatalog.lookup(name);
+            if (!spec.complete()) {
+                warnings.add("主机 " + hostName + " 的 GPU 型号「" + name
+                        + "」未在用例库 device_specs.yaml 的 gpus 下登记（按 display_name 匹配），"
+                        + "inventory 里 model/vendor 留空：GPU 用例取规格会报「未登记型号」，"
+                        + "取适配器会报「厂商尚未适配」");
+            }
+            // vendor 决定 GPU Adapter：缺它时框架回落 generic，报「厂商尚未适配」，
+            // 与「model 缺失」是两处不同的坑，必须一起写。
+            card.put("model", spec.model());
+            card.put("vendor", spec.vendor());
+            result.put(entry.getKey(), card);
+        }
+        return result;
     }
 
     private Map<String, Object> nicBlock(DevicePort port, String netdev) {
@@ -281,10 +377,14 @@ public class PytestEnvRenderer {
 
     private Map<String, Object> buildRunEnv(String runId, List<Device> selected,
                                             Map<Long, List<DevicePort>> portsByDevice,
+                                            Map<Long, PytestHostAssets> assets,
                                             String keyRule, String mode,
                                             Map<String, String> config) {
         List<String> hosts = new ArrayList<>();
         List<String> nics = new ArrayList<>();
+        List<String> gpus = new ArrayList<>();
+        List<String> cpus = new ArrayList<>();
+        List<String> storages = new ArrayList<>();
         List<String> targets = new ArrayList<>();
         for (Device device : selected) {
             String key = device.inventoryKey(keyRule);
@@ -294,21 +394,40 @@ public class PytestEnvRenderer {
                 if (netdev.isEmpty()) {
                     continue;
                 }
-                String ref = key + "/" + netdev;
-                nics.add(ref);
-                targets.add("nic:" + ref);
+                nics.add(key + "/" + netdev);
+            }
+            PytestHostAssets hostAssets = assets.getOrDefault(device.id(), PytestHostAssets.EMPTY);
+            for (String local : hostAssets.gpuKeys()) {
+                gpus.add(key + "/" + local);
+            }
+            for (String local : hostAssets.cpuKeys()) {
+                cpus.add(key + "/" + local);
+            }
+            for (String local : hostAssets.storageKeys()) {
+                storages.add(key + "/" + local);
             }
         }
         Map<String, Object> pool = new LinkedHashMap<>();
         pool.put("hosts", hosts);
         pool.put("nics", nics);
-        // 其余资源池为空列表：框架约定「空列表 = 不允许该类资源」，比省略字段更明确。
-        pool.put("gpus", List.of());
-        pool.put("cpus", List.of());
+        // 三类资产按 {@code host/key} 限定：框架的 get_resource_config 对带主机的资源
+        // 只认「host-key/device-key」形式，只写裸键会判 PermissionError。
+        pool.put("gpus", gpus);
+        pool.put("cpus", cpus);
         pool.put("vms", List.of());
         pool.put("ovss", List.of());
-        pool.put("storages", List.of());
+        pool.put("storages", storages);
         pool.put("switches", List.of());
+
+        // selected_targets 是「本次授权清单」，不是「本次点名的网口」。
+        // 框架 runtime 的判定顺序是：先在 resource_pool 里找到资源，再看它的 selector
+        // 是否在 selected_targets 里——只把 nic 写进 targets、pool 里却给了 gpus，
+        // 结果就是 GPU 用例在 fixture 里抛 UsageError「不在本次 selected_targets 范围」，
+        // 而资源明明是平台自己放进去的。所以 pool 里有哪几类，targets 就要有哪几类。
+        targets.addAll(kindTargets("nic", nics));
+        targets.addAll(kindTargets("gpu", gpus));
+        targets.addAll(kindTargets("cpu", cpus));
+        targets.addAll(kindTargets("storage", storages));
 
         Map<String, Object> env = new LinkedHashMap<>();
         env.put("inventory_file", "inventory.yaml");
@@ -322,6 +441,15 @@ public class PytestEnvRenderer {
         env.put("selected_targets", targets);
         env.put("mode", mode);
         return env;
+    }
+
+    /** 把 {@code host/local} 资源键批量转成框架认的 {@code kind:host/local} selector。 */
+    private static List<String> kindTargets(String kind, List<String> refs) {
+        List<String> selectors = new ArrayList<>(refs.size());
+        for (String ref : refs) {
+            selectors.add(kind + ":" + ref);
+        }
+        return selectors;
     }
 
     private static List<String> hostKeys(List<Device> selected, String keyRule) {

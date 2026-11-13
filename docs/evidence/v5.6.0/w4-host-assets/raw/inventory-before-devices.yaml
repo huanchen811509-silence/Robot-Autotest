@@ -1,0 +1,54 @@
+    devices:
+      nics:
+        ens17np0:
+          netdev: ens17np0
+          vendor: nvidia
+          manufacturer: NVIDIA
+          product_model: connectx-7
+          form_factor: 1x400G
+          pci_bdf: '0000:45:00.0'
+          vendor_id: '0x15b3'
+          device_id: '0x1021'
+          driver: mlx5_core
+          firmware: 28.44.1036
+          rdma_device: mlx5_0
+          port: 1
+          numa_node: 0
+          role: rx-data
+          capabilities:
+          - roce
+          - rdma_write
+          - rdma_read
+          - checksum
+          - tso
+          - gro
+          counter_patterns: &id001 {
+            }
+        ens24np0:
+          netdev: ens24np0
+          vendor: nvidia
+          manufacturer: NVIDIA
+          product_model: connectx-7
+          form_factor: 1x400G
+          pci_bdf: 0000:ac:00.0
+          vendor_id: '0x15b3'
+          device_id: '0x1021'
+          driver: mlx5_core
+          firmware: 28.44.1036
+          rdma_device: mlx5_3
+          port: 1
+          numa_node: 1
+          role: tx-data
+          capabilities:
+          - roce
+          - rdma_write
+          - rdma_read
+          - checksum
+          - tso
+          - gro
+          counter_patterns: *id001
+      gpus: *id001
+      cpu: *id001
+      vms: *id001
+      ovs: *id001
+      storage: *id001

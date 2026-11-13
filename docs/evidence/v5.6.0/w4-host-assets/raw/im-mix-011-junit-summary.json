@@ -1,0 +1,18 @@
+{
+  "runDir": "/tmp/eht-real-runs/w56-42-real-005612",
+  "suite": {
+    "tests": "1",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0",
+    "time": "2.651"
+  },
+  "cases": [
+    {
+      "name": "test_im_mix_011_gds_platform",
+      "classname": "tests.nic.mixed.test_im_mix_011",
+      "time": "2.055",
+      "status": "PASS"
+    }
+  ]
+}

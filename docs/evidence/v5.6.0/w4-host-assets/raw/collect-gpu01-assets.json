@@ -1,0 +1,193 @@
+{
+  "host": "10.202.54.101",
+  "deviceId": 20,
+  "projectId": 95,
+  "assets": [
+    {
+      "category": "CPU",
+      "collected": true,
+      "reason": "",
+      "value": {
+        "cores": 192,
+        "model": "Intel(R) Xeon(R) Platinum 8468"
+      }
+    },
+    {
+      "category": "DISK",
+      "collected": true,
+      "reason": "",
+      "value": {
+        "root": {
+          "size": "459250800",
+          "used": "363141348",
+          "available": "72707316",
+          "usePercent": "84%"
+        },
+        "disks": [
+          {
+            "name": "loop0",
+            "size": "4K",
+            "type": "SSD"
+          },
+          {
+            "name": "loop1",
+            "size": "74M",
+            "type": "SSD"
+          },
+          {
+            "name": "loop2",
+            "size": "74M",
+            "type": "SSD"
+          },
+          {
+            "name": "loop3",
+            "size": "66.8M",
+            "type": "SSD"
+          },
+          {
+            "name": "loop4",
+            "size": "66.8M",
+            "type": "SSD"
+          },
+          {
+            "name": "loop5",
+            "size": "285M",
+            "type": "SSD"
+          },
+          {
+            "name": "loop6",
+            "size": "262.3M",
+            "type": "SSD"
+          },
+          {
+            "name": "loop7",
+            "size": "16.5M",
+            "type": "SSD"
+          },
+          {
+            "name": "loop8",
+            "size": "12.7M",
+            "type": "SSD"
+          },
+          {
+            "name": "loop9",
+            "size": "531.4M",
+            "type": "SSD"
+          },
+          {
+            "name": "loop10",
+            "size": "615.3M",
+            "type": "SSD"
+          },
+          {
+            "name": "loop11",
+            "size": "531.5M",
+            "type": "SSD"
+          },
+          {
+            "name": "loop12",
+            "size": "616M",
+            "type": "SSD"
+          },
+          {
+            "name": "loop13",
+            "size": "91.7M",
+            "type": "SSD"
+          },
+          {
+            "name": "loop14",
+            "size": "395M",
+            "type": "SSD"
+          },
+          {
+            "name": "loop15",
+            "size": "402M",
+            "type": "SSD"
+          },
+          {
+            "name": "loop16",
+            "size": "12M",
+            "type": "SSD"
+          },
+          {
+            "name": "loop17",
+            "size": "11.6M",
+            "type": "SSD"
+          },
+          {
+            "name": "loop18",
+            "size": "50.3M",
+            "type": "SSD"
+          },
+          {
+            "name": "loop19",
+            "size": "828K",
+            "type": "SSD"
+          },
+          {
+            "name": "loop20",
+            "size": "44.7M",
+            "type": "SSD"
+          },
+          {
+            "name": "loop21",
+            "size": "828K",
+            "type": "SSD"
+          },
+          {
+            "name": "loop22",
+            "size": "222.1M",
+            "type": "SSD"
+          },
+          {
+            "name": "loop23",
+            "size": "222.9M",
+            "type": "SSD"
+          },
+          {
+            "name": "sda",
+            "size": "447.1G",
+            "type": "SSD"
+          },
+          {
+            "name": "nvme0n1",
+            "size": "3.5T",
+            "type": "SSD"
+          },
+          {
+            "name": "nvme3n1",
+            "size": "3.5T",
+            "type": "SSD"
+          },
+          {
+            "name": "nvme1n1",
+            "size": "3.5T",
+            "type": "SSD"
+          },
+          {
+            "name": "nvme2n1",
+            "size": "3.5T",
+            "type": "SSD"
+          }
+        ]
+      }
+    },
+    {
+      "category": "GPU",
+      "collected": true,
+      "reason": "",
+      "value": [
+        {
+          "name": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+          "memoryTotal": "97887 MiB",
+          "driverVersion": "595.71.05"
+        },
+        {
+          "name": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+          "memoryTotal": "97887 MiB",
+          "driverVersion": "595.71.05"
+        }
+      ]
+    }
+  ]
+}

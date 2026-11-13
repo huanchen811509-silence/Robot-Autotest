@@ -1,0 +1,37 @@
+inventory_file: inventory.yaml
+run_id: w56-42-real-005612
+resource_pool:
+  hosts:
+  - gpu01@10.202.54.101
+  nics:
+  - gpu01@10.202.54.101/ens17np0
+  - gpu01@10.202.54.101/ens24np0
+  gpus:
+  - gpu01@10.202.54.101/gpu0
+  - gpu01@10.202.54.101/gpu1
+  cpus:
+  - gpu01@10.202.54.101/cpu0
+  vms: &id001 [
+    ]
+  ovss: *id001
+  storages:
+  - gpu01@10.202.54.101/sda
+  - gpu01@10.202.54.101/nvme0n1
+  - gpu01@10.202.54.101/nvme3n1
+  - gpu01@10.202.54.101/nvme1n1
+  - gpu01@10.202.54.101/nvme2n1
+  - gpu01@10.202.54.101/rootfs
+  switches: *id001
+selected_targets:
+- nic:gpu01@10.202.54.101/ens17np0
+- nic:gpu01@10.202.54.101/ens24np0
+- gpu:gpu01@10.202.54.101/gpu0
+- gpu:gpu01@10.202.54.101/gpu1
+- cpu:gpu01@10.202.54.101/cpu0
+- storage:gpu01@10.202.54.101/sda
+- storage:gpu01@10.202.54.101/nvme0n1
+- storage:gpu01@10.202.54.101/nvme3n1
+- storage:gpu01@10.202.54.101/nvme1n1
+- storage:gpu01@10.202.54.101/nvme2n1
+- storage:gpu01@10.202.54.101/rootfs
+mode: real

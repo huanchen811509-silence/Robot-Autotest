@@ -1,0 +1,18 @@
+{
+  "run_id" : "w56-42-real-005612",
+  "kernel" : "pytest",
+  "metadata" : {
+    "CASE_ID" : "IM-MIX-011",
+    "RUN_ID" : "w56-42-real-005612",
+    "QA_PROJECT" : "EHT-PYTEST-LIB",
+    "DUT" : "gpu01",
+    "LINK" : "nvme-of",
+    "SW_BUILD" : "v5.6.0",
+    "BASELINE" : "dev",
+    "OPERATOR" : "qa-e2e-admin",
+    "CASE_KIND" : "pytest",
+    "STARTED_AT" : "2026-11-14T00:56:12+08:00"
+  },
+  "required" : [ "CASE_ID", "RUN_ID", "QA_PROJECT", "DUT", "LINK", "SW_BUILD", "BASELINE", "OPERATOR", "STARTED_AT", "CASE_KIND" ],
+  "missing" : [ ]
+}

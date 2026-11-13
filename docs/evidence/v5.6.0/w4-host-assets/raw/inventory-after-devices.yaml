@@ -1,0 +1,97 @@
+    devices:
+      nics:
+        ens17np0:
+          netdev: ens17np0
+          vendor: nvidia
+          manufacturer: NVIDIA
+          product_model: connectx-7
+          form_factor: 1x400G
+          pci_bdf: '0000:45:00.0'
+          vendor_id: '0x15b3'
+          device_id: '0x1021'
+          driver: mlx5_core
+          firmware: 28.44.1036
+          rdma_device: mlx5_0
+          port: 1
+          numa_node: 0
+          role: rx-data
+          capabilities:
+          - roce
+          - rdma_write
+          - rdma_read
+          - checksum
+          - tso
+          - gro
+          counter_patterns: &id001 {
+            }
+        ens24np0:
+          netdev: ens24np0
+          vendor: nvidia
+          manufacturer: NVIDIA
+          product_model: connectx-7
+          form_factor: 1x400G
+          pci_bdf: 0000:ac:00.0
+          vendor_id: '0x15b3'
+          device_id: '0x1021'
+          driver: mlx5_core
+          firmware: 28.44.1036
+          rdma_device: mlx5_3
+          port: 1
+          numa_node: 1
+          role: tx-data
+          capabilities:
+          - roce
+          - rdma_write
+          - rdma_read
+          - checksum
+          - tso
+          - gro
+          counter_patterns: *id001
+      gpus:
+        gpu0:
+          index: 0
+          name: NVIDIA RTX PRO 6000 Blackwell Server Edition
+          memory_total: 97887 MiB
+          driver_version: 595.71.05
+          model: pro-6000
+          vendor: nvidia
+        gpu1:
+          index: 1
+          name: NVIDIA RTX PRO 6000 Blackwell Server Edition
+          memory_total: 97887 MiB
+          driver_version: 595.71.05
+          model: pro-6000
+          vendor: nvidia
+      cpu:
+        cpu0:
+          cores: 192
+          model: Intel(R) Xeon(R) Platinum 8468
+      vms: *id001
+      ovs: *id001
+      storage:
+        sda:
+          device: sda
+          size: 447.1G
+          type: SSD
+        nvme0n1:
+          device: nvme0n1
+          size: 3.5T
+          type: SSD
+        nvme3n1:
+          device: nvme3n1
+          size: 3.5T
+          type: SSD
+        nvme1n1:
+          device: nvme1n1
+          size: 3.5T
+          type: SSD
+        nvme2n1:
+          device: nvme2n1
+          size: 3.5T
+          type: SSD
+        rootfs:
+          device: rootfs
+          size: '459250800'
+          used: '363141348'
+          available: '72707316'
+          mount: /

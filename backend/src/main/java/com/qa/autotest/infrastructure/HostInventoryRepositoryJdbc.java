@@ -104,6 +104,20 @@ public class HostInventoryRepositoryJdbc implements HostInventoryRepository {
     }
 
     @Override
+    public Optional<HostInventoryRecord> latest(long projectId, Long deviceId) {
+        if (deviceId == null) {
+            String sql = "SELECT " + FULL_COLUMNS + " FROM device_host_spec WHERE project_id = ?"
+                    + " ORDER BY collected_at DESC, id DESC LIMIT 1";
+            TenantGuard.requireProjectScope(sql, "device_host_spec");
+            return jdbc.query(sql, FULL, projectId).stream().findFirst();
+        }
+        String sql = "SELECT " + FULL_COLUMNS + " FROM device_host_spec WHERE project_id = ?"
+                + " AND device_id = ? ORDER BY collected_at DESC, id DESC LIMIT 1";
+        TenantGuard.requireProjectScope(sql, "device_host_spec");
+        return jdbc.query(sql, FULL, projectId, deviceId).stream().findFirst();
+    }
+
+    @Override
     public List<HostInventoryRecord> list(long projectId, Long deviceId, int limit) {
         String base = "SELECT " + SUMMARY_COLUMNS + " FROM device_host_spec WHERE project_id = ?";
         int safeLimit = limit <= 0 ? 20 : Math.min(limit, 200);
