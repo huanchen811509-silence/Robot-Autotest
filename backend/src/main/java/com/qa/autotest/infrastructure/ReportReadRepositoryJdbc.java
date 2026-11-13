@@ -39,7 +39,8 @@ public class ReportReadRepositoryJdbc implements ReportReadRepository {
     // v3.9.0：多带命令三列（FR-v3.9-02）；老库未迁移时列不存在，故读取侧对 null 宽容。
     private static final String CASE_ROWS = """
             SELECT t.case_key, t.verdict, COALESCE(t.duration_ms, 0) AS duration_ms, t.failure_msg,
-                   t.command_text, t.command_source, t.command_exit_code
+                   t.command_text, t.command_source, t.command_exit_code,
+                   COALESCE(t.retry_count, 0) AS retry_count, COALESCE(t.flaky, 0) AS flaky
               FROM test_result t
               JOIN `run` r ON r.id = t.run_id
              WHERE r.project_id = ? AND r.run_id = ?
@@ -134,7 +135,8 @@ public class ReportReadRepositoryJdbc implements ReportReadRepository {
                 rs.getString("case_key"), rs.getString("verdict"),
                 rs.getLong("duration_ms"), rs.getString("failure_msg"),
                 rs.getString("command_text"), rs.getString("command_source"),
-                nullableInt(rs.getObject("command_exit_code"))),
+                nullableInt(rs.getObject("command_exit_code")),
+                rs.getInt("retry_count"), rs.getInt("flaky") != 0),
                 projectId, runId);
     }
 

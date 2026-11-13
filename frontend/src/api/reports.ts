@@ -74,6 +74,10 @@ export interface ReportCaseNode {
   commandSource: string | null
   /** 退出码，未知为 null。 */
   commandExitCode: number | null
+  /** 复测轮数（v5.6.0 / FR-v5.6-24）：最终结论之前又跑了几轮，0 表示未复测。 */
+  retryCount: number
+  /** 抖动：首轮失败、复测通过。界面标「抖动」，不计入失败数。 */
+  flaky: boolean
   keywords: ReportKeywordNode[]
 }
 
@@ -290,6 +294,8 @@ export interface ReportSummary {
   topFailures: ReportSummaryTopFailure[]
   risks: string[]
   generatedAt: string
+  /** 抖动用例条数（首轮失败、复测通过），单列统计，不计入 failed。 */
+  flaky: number
 }
 
 export const reportsApi = {

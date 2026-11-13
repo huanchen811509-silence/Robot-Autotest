@@ -32,6 +32,7 @@ class ReportSummaryServiceTest {
     private ReportRepository reports;
     private FailureClusterService clusters;
     private com.qa.autotest.application.repository.RunRepository runs;
+    private com.qa.autotest.application.repository.ReportReadRepository read;
     private ReportSummaryService service;
 
     @BeforeEach
@@ -39,13 +40,16 @@ class ReportSummaryServiceTest {
         reports = mock(ReportRepository.class);
         clusters = mock(FailureClusterService.class);
         runs = mock(com.qa.autotest.application.repository.RunRepository.class);
+        read = mock(com.qa.autotest.application.repository.ReportReadRepository.class);
+        org.mockito.Mockito.when(read.listCases(anyLong(), org.mockito.ArgumentMatchers.anyString()))
+                .thenReturn(List.of());
         AccessControlService access = mock(AccessControlService.class);
         doNothing().when(access).bindProject(anyLong());
         // 默认「只有本轮」：复现率三项为 null，正是无历史时的正确口径
         when(runs.page(PROJECT, null, 1, 10)).thenReturn(
                 new com.qa.autotest.domain.common.PageResult<>(
                         List.of(run("RUN-1", "2026-11-08T10:00:00Z")), 1, 1, 10));
-        service = new ReportSummaryService(reports, clusters, access, runs);
+        service = new ReportSummaryService(reports, clusters, access, runs, read);
     }
 
     @Test

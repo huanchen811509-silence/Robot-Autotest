@@ -26,6 +26,7 @@ function base(overrides: Partial<ReportSummary>): ReportSummary {
     topFailures: [],
     risks: [],
     generatedAt: '2026-11-08T10:00:00+08:00',
+    flaky: 0,
     ...overrides,
   }
 }
@@ -90,6 +91,23 @@ describe('报告速览结论', () => {
     expect(conclusion?.textContent?.trim()).toBe('全部通过（其中 2 条跳过）')
     expect(root.querySelector('.report-summary__jump')).toBeNull()
     expect(root.querySelectorAll('.report-summary__failure')).toHaveLength(0)
+  })
+
+  it('抖动条数单列，0 条不显示（FR-v5.6-24）', async () => {
+    const root = await mount(
+      base({ conclusion: 'PASSED', total: 12, passed: 12, skipped: 0, flaky: 2 }),
+    )
+    const line = root.querySelector('[data-test="summary-flaky"]')
+    expect(line).not.toBeNull()
+    expect(line?.textContent).toContain('2')
+    // 抖动不计入失败：结论仍是全部通过
+    expect(root.querySelector('[data-test="report-summary-conclusion"]')?.textContent?.trim())
+      .toBe('全部通过')
+  })
+
+  it('没有抖动时不占位显示「抖动 0 条」', async () => {
+    const root = await mount(base({ conclusion: 'PASSED', total: 5, passed: 5 }))
+    expect(root.querySelector('[data-test="summary-flaky"]')).toBeNull()
   })
 
   it('空数据给出「暂无可统计结果」，不伪装成 0% 通过', async () => {

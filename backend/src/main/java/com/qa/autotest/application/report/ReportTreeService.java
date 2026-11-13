@@ -49,12 +49,22 @@ public class ReportTreeService {
      */
     public record TreeCase(String caseKey, String name, String verdict, long durationMs,
                            String failureMsg, String commandText, String commandSource,
-                           Integer commandExitCode, List<TreeKeyword> keywords) {
+                           Integer commandExitCode, List<TreeKeyword> keywords,
+                           int retryCount, boolean flaky) {
 
         /** 兼容 v3.9.0 之前的六参写法（命令三列按「历史未采集」留 null）。 */
         public TreeCase(String caseKey, String name, String verdict, long durationMs,
                         String failureMsg, List<TreeKeyword> keywords) {
-            this(caseKey, name, verdict, durationMs, failureMsg, null, null, null, keywords);
+            this(caseKey, name, verdict, durationMs, failureMsg, null, null, null, keywords,
+                    0, false);
+        }
+
+        /** 兼容 v3.9.0 的九参写法（未复测）。 */
+        public TreeCase(String caseKey, String name, String verdict, long durationMs,
+                        String failureMsg, String commandText, String commandSource,
+                        Integer commandExitCode, List<TreeKeyword> keywords) {
+            this(caseKey, name, verdict, durationMs, failureMsg, commandText, commandSource,
+                    commandExitCode, keywords, 0, false);
         }
     }
 
@@ -109,7 +119,8 @@ public class ReportTreeService {
             }
             node.cases.add(new TreeCase(caseKey, caseName, row.verdict(), row.durationMs(),
                     row.failureMsg(), row.commandText(), row.commandSource(),
-                    row.commandExitCode(), keywordTree(keywordsByCase.get(caseKey))));
+                    row.commandExitCode(), keywordTree(keywordsByCase.get(caseKey)),
+                    row.retryCount(), row.flaky()));
         }
         return root.build();
     }

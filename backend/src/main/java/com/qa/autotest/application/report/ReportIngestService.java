@@ -195,11 +195,14 @@ public class ReportIngestService {
                     ? item.message() == null ? "pytest: " + item.status() : item.message()
                     : null;
             // v3.9.0 / FR-v3.9-02：命令三列随用例一起入库，报告页才有「下发了什么」可看。
+            // v5.6.0 / FR-v5.6-24：重试两列同样入库——报告的失败数、抖动统计都从
+            // test_result 读，不落库就只能在执行页看到「复测过了」，报告里看不到。
             cases.add(new com.qa.autotest.domain.report.CaseNode(
                     displayName(item.nodeId(), item.name(), codeIndex), status,
                     Math.round(item.durationSeconds() * 1000.0), message,
                     java.util.List.of(), spans.offsetOf(item.nodeId()), spans.spanOf(item.nodeId()),
-                    item.commandText(), item.commandSource(), item.commandExitCode()));
+                    item.commandText(), item.commandSource(), item.commandExitCode(),
+                    item.retryCount(), item.flaky()));
         }
         String rootStatus = fail > 0 ? "FAIL" : pass + skip == cases.size() ? "PASS" : "UNKNOWN";
         com.qa.autotest.domain.report.SuiteNode root =

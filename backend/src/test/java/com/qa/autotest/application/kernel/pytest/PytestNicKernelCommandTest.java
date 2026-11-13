@@ -181,6 +181,53 @@ class PytestNicKernelCommandTest {
         assertThat(plan.workDir()).isEqualTo(repo);
     }
 
+    /**
+     * FR-v5.6-24：复测产物必须换文件名。
+     *
+     * <p>判据不是「有 junit-retry」这么粗——还要断言参数与首轮**逐字相同**：
+     * 换参数跑出来的通过不能证明首轮是抖动。
+     */
+    @Test
+    void 复测产物换名且参数与首轮一致(@TempDir Path dir) throws Exception {
+        Path repo = Files.createDirectories(dir.resolve("repo"));
+        PytestNicKernelCommand command = new PytestNicKernelCommand(new FakeSettings(Map.of(
+                "repo_path", repo.toString(),
+                "python_bin", "/usr/bin/python3",
+                "env_config", "env.yaml")));
+        Path runDir = dir.resolve("run");
+        List<String> nodeIds = List.of("tests/nic/base/test_im_fun_020.py::test_im_fun_020");
+
+        PytestNicKernelCommand.Command first = command.build(PROJECT, "RUN-1", nodeIds,
+                "real", runDir, PytestNicKernelCommand.Contract.minimal()).get(0);
+        PytestNicKernelCommand.Command retry = command.buildRetry(PROJECT, "RUN-1", nodeIds,
+                "real", runDir, PytestNicKernelCommand.Contract.minimal(), null, 1).get(0);
+
+        assertThat(retry.junitFile().getFileName().toString()).isEqualTo("junit-retry-1.xml");
+        assertThat(first.junitFile().getFileName().toString())
+                .isNotEqualTo(retry.junitFile().getFileName().toString());
+        assertThat(retry.argv()).anyMatch(arg -> arg.equals("--junitxml=" + retry.junitFile()));
+        assertThat(retry.outputDir()).isNotEqualTo(first.outputDir());
+        // 参数逐字比对（除产物路径外）：环境、模式、用例集合都不能变
+        assertThat(retry.argv().stream().filter(arg -> !arg.startsWith("--junitxml=")).toList())
+                .isEqualTo(first.argv().stream().filter(arg -> !arg.startsWith("--junitxml="))
+                        .toList());
+    }
+
+    @Test
+    void 复测轮次必须从1开始(@TempDir Path dir) throws Exception {
+        Path repo = Files.createDirectories(dir.resolve("repo"));
+        PytestNicKernelCommand command = new PytestNicKernelCommand(new FakeSettings(Map.of(
+                "repo_path", repo.toString(),
+                "python_bin", "/usr/bin/python3",
+                "env_config", "env.yaml")));
+        assertThatThrownBy(() -> command.buildRetry(PROJECT, "RUN-1",
+                List.of("t.py::a"), "fake", dir.resolve("run"),
+                PytestNicKernelCommand.Contract.minimal(), null, 0))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThat(command.buildRetry(PROJECT, "RUN-1", List.of(), "fake", dir.resolve("run"),
+                PytestNicKernelCommand.Contract.minimal(), null, 1)).isEmpty();
+    }
+
     private record FakeSettings(Map<String, String> values) implements ProjectSettingRepository {
 
         @Override

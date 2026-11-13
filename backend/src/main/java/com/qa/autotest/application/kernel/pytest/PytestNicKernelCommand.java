@@ -169,6 +169,50 @@ public class PytestNicKernelCommand {
     }
 
     /**
+     * 构造复测命令（v5.6.0 / FR-v5.6-24）。
+     *
+     * <p><b>为什么不给 {@link #build} 加个 retry 参数</b>：首轮与复测的产物必须分开落盘，
+     * 否则复测会直接覆盖 {@code junit.xml}——首轮那份「到底失败在哪」的证据当场消失，
+     * 而抖动的判定恰恰要靠两份产物对照。文件名带轮次是最小代价的隔离方式。
+     *
+     * <p>参数与首轮逐字相同（只换 {@code --junitxml} / {@code --json-report-file}），
+     * 因为复测必须复现同一环境：换参数跑出来的通过，不能证明首轮那次是抖动。
+     *
+     * @param round 复测轮次，从 1 开始（0 留给首轮）
+     */
+    public List<Command> buildRetry(long projectId, String runId, List<String> nodeIds,
+                                    String mode, Path runDir, Contract contract,
+                                    Path envConfigPath, int round) {
+        if (nodeIds == null || nodeIds.isEmpty()) {
+            return List.of();
+        }
+        if (round < 1) {
+            throw new IllegalArgumentException("复测轮次必须从 1 开始: " + round);
+        }
+        List<Command> base = build(projectId, runId, nodeIds, mode, runDir, contract, envConfigPath);
+        List<Command> retries = new ArrayList<>();
+        for (Command one : base) {
+            String suffix = base.size() == 1 ? "" : "-" + one.batchNo();
+            Path junit = runDir.resolve("junit-retry-" + round + suffix + ".xml");
+            Path report = runDir.resolve("pytest-report-retry-" + round + suffix + ".json");
+            List<String> argv = new ArrayList<>();
+            for (String arg : one.argv()) {
+                if (arg.startsWith("--junitxml=")) {
+                    argv.add("--junitxml=" + junit);
+                } else if (arg.startsWith("--json-report-file=")) {
+                    argv.add("--json-report-file=" + report);
+                } else {
+                    argv.add(arg);
+                }
+            }
+            retries.add(new Command(List.copyOf(argv), one.environment(), one.workDir(),
+                    runDir.resolve("pytest-retry-" + round + suffix), junit, one.batchNo(),
+                    one.nodeIds()));
+        }
+        return List.copyOf(retries);
+    }
+
+    /**
      * 框架证据根：{@code <repo>/artifacts/<run_id>}。
      *
      * <p>这不是可配项。框架 {@code Runtime} 的 {@code artifact_root} 参数固定为字符串

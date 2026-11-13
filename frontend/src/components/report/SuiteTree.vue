@@ -179,6 +179,16 @@ function sourceLabel(source: string | null): string {
             <span class="caret">{{ expanded.has(test.caseKey) ? '▾' : '▸' }}</span>
             <span class="case-name">{{ test.name }}</span>
             <StatusTag :label="test.verdict" :tone="verdictTone(test.verdict)" />
+            <!-- v5.6.0 / FR-v5.6-24：抖动是「通过但不稳定」，必须和干净通过区分开。
+                 只标 FLAKY 不写轮次，人看不出到底重跑了几次。 -->
+            <span
+              v-if="test.flaky"
+              class="case-flaky"
+              data-test="case-flaky"
+              :title="t('reports.flaky.hint', { rounds: test.retryCount })"
+            >
+              {{ t('reports.flaky.label') }} · {{ test.retryCount }}
+            </span>
             <span class="muted">{{ test.durationMs }} ms</span>
           </button>
           <button class="link-btn" type="button" @click="emit('open-logs', test.caseKey)">
@@ -325,6 +335,17 @@ function sourceLabel(source: string | null): string {
 
 .case-name {
   font-size: 13px;
+}
+
+/* v5.6.0 / FR-v5.6-24：抖动徽标用 warn 色相——它是「需要注意」而不是「失败」 */
+.case-flaky {
+  padding: 0 6px;
+  border-radius: var(--radius-sm);
+  background: var(--warn-soft);
+  color: var(--warn);
+  font-size: 11px;
+  line-height: 16px;
+  white-space: nowrap;
 }
 
 .case-failure {

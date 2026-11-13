@@ -95,7 +95,7 @@ class DocxExporterTest {
 
         assertTrue(xml.contains(RUN_ID), "document.xml 必须带 RUN_ID");
         assertTrue(xml.contains("自动化测试运行报告"));
-        assertTrue(xml.contains("二、套件树"));
+        assertTrue(xml.contains("二、用例明细"));
         assertTrue(xml.contains("断言失败"));
     }
 
@@ -146,6 +146,69 @@ class DocxExporterTest {
         String text = DocxExporter.commandText(command, null);
         assertTrue(text.startsWith("x".repeat(DocxExporter.COMMAND_MAX_CHARS)));
         assertTrue(text.contains("已截断，原长度 " + command.length() + " 字符"));
+    }
+
+    /**
+     * FR-v5.6-25：多层套件必须摊平成一张表，不能再一个套件一个标题。
+     *
+     * <p>判据是三条，都可机检：只有一张表、没有 `▸` 套件标题、路径并进用例列。
+     */
+    @Test
+    @DisplayName("多层套件摊平成一张表，路径并入用例列")
+    void flattensSuitesIntoOneTable() throws IOException {
+        ReportTreeService.TreeCase one = new ReportTreeService.TreeCase(
+                "suites/a.robot.c1", "用例1", "PASS", 10L, null,
+                "NONE", "NONE", null, List.of());
+        ReportTreeService.TreeCase two = new ReportTreeService.TreeCase(
+                "suites/b.robot.c2", "用例2", "FAIL", 20L, "boom",
+                "NONE", "NONE", null, List.of());
+        ReportTreeService.TreeSuite moduleA = new ReportTreeService.TreeSuite(
+                "模块A", "PASS", List.of(), List.of(one));
+        ReportTreeService.TreeSuite moduleB = new ReportTreeService.TreeSuite(
+                "模块B", "FAIL", List.of(), List.of(two));
+        ReportTreeService.TreeSuite root = new ReportTreeService.TreeSuite(
+                "run-" + RUN_ID, "FAIL", List.of(moduleA, moduleB), List.of());
+        ReportRecord report = new ReportRecord(7L, RUN_ID, "finished", true, List.of(),
+                fullMetadata(), 1, 1, 0, NOW.minusSeconds(60), NOW);
+
+        String xml = zipEntry(exporter.render(
+                new ExportDocument(report, root, ExportMode.EXTERNAL, NOW, "tester")),
+                "word/document.xml");
+
+        // 两张表：metadata 一张 + 用例一张。原先每个套件一张表，59 条用例就是几十张表
+        assertEquals(2, countOf(xml, "<w:tbl>"), "用例只能占一张表（metadata 表另算）");
+        assertFalse(xml.contains("▸"), "不能再出现「每个套件一个标题」");
+        assertTrue(xml.contains("模块A / 用例1"));
+        assertTrue(xml.contains("模块B / 用例2"));
+        // 根套件名带 run id，若并进路径，跨报告比对就永远不相等
+        assertFalse(xml.contains("run-" + RUN_ID + " / 用例1"));
+    }
+
+    @Test
+    @DisplayName("抖动结论写进导出件：PASS 与「PASS（抖动·复测 2 轮）」必须能分开")
+    void flakyVerdictIsWritten() {
+        ReportTreeService.TreeCase flaky = new ReportTreeService.TreeCase(
+                "suites/a.robot.c9", "抖动用例", "PASS", 900L, null, "NONE", "NONE", null,
+                List.of(), 2, true);
+        assertEquals("PASS（抖动·复测 2 轮）", DocxExporter.verdictText(flaky));
+
+        ReportTreeService.TreeCase clean = new ReportTreeService.TreeCase(
+                "suites/a.robot.c10", "稳定通过", "PASS", 800L, null, "NONE", "NONE", null,
+                List.of());
+        assertEquals("PASS", DocxExporter.verdictText(clean));
+    }
+
+    private static int countOf(String text, String token) {
+        int count = 0;
+        int from = 0;
+        while (true) {
+            int at = text.indexOf(token, from);
+            if (at < 0) {
+                return count;
+            }
+            count++;
+            from = at + token.length();
+        }
     }
 
     private static ExportDocument document(Map<String, String> metadata, ExportMode mode,

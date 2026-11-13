@@ -111,6 +111,11 @@ function formatPassRate(rate: number): string {
         </div>
       </dl>
 
+      <!-- v5.6.0 / FR-v5.6-24：抖动单列。不显示 0，避免每张卡都挂一行「抖动 0 条」。 -->
+      <p v-if="summary.flaky > 0" class="report-summary__flaky" data-test="summary-flaky">
+        {{ t('reportSummary.flaky', { count: summary.flaky }) }}
+      </p>
+
       <div v-if="topFailures.length" class="report-summary__block">
         <h3 class="report-summary__block-title">{{ t('reportSummary.topFailures') }}</h3>
         <ol class="report-summary__failures">
@@ -247,6 +252,15 @@ function formatPassRate(rate: number): string {
   padding-left: var(--space-4);
   display: grid;
   gap: var(--space-1);
+}
+
+.report-summary__flaky {
+  margin: var(--space-2) 0 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--warn-soft);
+  color: var(--warn);
+  font-size: var(--font-size-sm);
 }
 
 .report-summary__failure {

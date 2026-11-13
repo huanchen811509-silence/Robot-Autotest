@@ -5,6 +5,7 @@ import com.qa.autotest.application.execution.PlanActualGap;
 import com.qa.autotest.application.execution.ProcessLauncher;
 import com.qa.autotest.application.execution.ProcessRegistry;
 import com.qa.autotest.application.repository.ProjectSettingRepository;
+import com.qa.autotest.domain.kernel.NormalizedCaseResult;
 import com.qa.autotest.domain.kernel.NormalizedRun;
 import java.io.IOException;
 import java.io.InputStream;
@@ -100,7 +101,12 @@ public class PytestNicRunService {
         boolean cancelRequested();
     }
 
-    /** 执行请求。 */
+    /**
+     * 执行请求。
+     *
+     * @param retry 复测轮数上限（v5.6.0 / FR-v5.6-24）。0 表示不复测；
+     *              只有首轮失败且能反查到真实 nodeid 的用例才进复测
+     */
     public record ExecuteRequest(long projectId,
                                  String runId,
                                  List<String> nodeIds,
@@ -108,7 +114,15 @@ public class PytestNicRunService {
                                  String mode,
                                  Path runDir,
                                  Duration timeout,
-                                 Map<String, String> runMetadata) {
+                                 Map<String, String> runMetadata,
+                                 int retry) {
+
+        /** 兼容 v5.5.0 的八参写法：不复测，与加这个字段之前完全一致。 */
+        public ExecuteRequest(long projectId, String runId, List<String> nodeIds,
+                              List<String> hostKeys, String mode, Path runDir,
+                              Duration timeout, Map<String, String> runMetadata) {
+            this(projectId, runId, nodeIds, hostKeys, mode, runDir, timeout, runMetadata, 0);
+        }
     }
 
     /** 执行结果。 */
@@ -180,7 +194,10 @@ public class PytestNicRunService {
                     null, 0, -1, Duration.between(started, clock.instant()), List.of(), null);
         }
 
-        List<Path> junitFiles = new ArrayList<>();
+        List<List<Path>> rounds = new ArrayList<>();
+        List<Path> firstRound = new ArrayList<>();
+        rounds.add(firstRound);
+        int batches = 0;
         int lastExit = -1;
         boolean canceled = false;
         for (PytestNicKernelCommand.Command plan : plans) {
@@ -192,7 +209,8 @@ public class PytestNicRunService {
                 break;
             }
             progress.stage("RUNNING");
-            lastExit = runOne(request, plan, junitFiles);
+            lastExit = runOne(request, plan, firstRound);
+            batches++;
             int[] counts = countJunit(plan.junitFile());
             progress.batchDone(counts[0], counts[1], counts[2]);
             if (lastExit != 0) {
@@ -201,19 +219,82 @@ public class PytestNicRunService {
         }
         if (canceled) {
             emit(request.runDir().resolve("run.log"), "[cancel] 已按请求取消，后续批次未启动");
-            return new ExecuteResult(false, "canceled", null, render, null, plans.size(), -2,
-                    Duration.between(started, clock.instant()), List.copyOf(junitFiles), null);
+            return new ExecuteResult(false, "canceled", null, render, null, batches, -2,
+                    Duration.between(started, clock.instant()), List.copyOf(firstRound), null);
         }
 
         progress.stage("FINALIZING");
         PytestResultNormalizer.NormalizeResult normalized;
         try {
-            normalized = normalizer.normalize(request.projectId(), request.runId(), junitFiles,
+            normalized = normalizer.normalizeRounds(request.projectId(), request.runId(), rounds,
                     request.runMetadata(), request.runDir());
         } catch (RuntimeException ex) {
             return new ExecuteResult(false, "pytest_artifact_invalid: " + ex.getMessage(), null,
-                    render, null, plans.size(), lastExit,
-                    Duration.between(started, clock.instant()), List.copyOf(junitFiles), null);
+                    render, null, batches, lastExit,
+                    Duration.between(started, clock.instant()), List.copyOf(firstRound), null);
+        }
+
+        // FR-v5.6-24：首轮失败 → 只把失败的那几条按原参数再跑一遍，最多 retry 轮。
+        // 复测产物落 junit-retry-N.xml，绝不覆盖首轮 junit：抖动判定靠两份对照，
+        // 覆盖掉首轮就等于把「当时失败在哪」这条证据删了。
+        int retryLimit = Math.max(0, request.retry());
+        int retriesRun = 0;
+        for (int round = 1; round <= retryLimit; round++) {
+            List<String> retryTargets = retryTargets(normalized, request.runDir());
+            if (retryTargets.isEmpty()) {
+                break;
+            }
+            if (progress.cancelRequested()) {
+                canceled = true;
+                emit(request.runDir().resolve("run.log"),
+                        "[cancel] 复测第 " + round + " 轮前收到取消，已停止");
+                break;
+            }
+            List<PytestNicKernelCommand.Command> retryPlans;
+            try {
+                retryPlans = commands.buildRetry(request.projectId(), request.runId(),
+                        retryTargets, request.mode(), request.runDir(), contract.contract(),
+                        render.runEnvFile(), round);
+            } catch (RuntimeException ex) {
+                emit(request.runDir().resolve("run.log"),
+                        "[retry] 第 " + round + " 轮命令构建失败，放弃复测: " + ex.getMessage());
+                break;
+            }
+            List<Path> retryFiles = new ArrayList<>();
+            progress.stage("RUNNING");
+            for (PytestNicKernelCommand.Command plan : retryPlans) {
+                lastExit = runOne(request, plan, retryFiles);
+                batches++;
+            }
+            if (retryFiles.isEmpty()) {
+                emit(request.runDir().resolve("run.log"),
+                        "[retry] 第 " + round + " 轮没有产出 junit，放弃后续复测");
+                break;
+            }
+            rounds.add(retryFiles);
+            retriesRun = round;
+            try {
+                normalized = normalizer.normalizeRounds(request.projectId(), request.runId(), rounds,
+                        request.runMetadata(), request.runDir());
+            } catch (RuntimeException ex) {
+                emit(request.runDir().resolve("run.log"),
+                        "[retry] 第 " + round + " 轮归一失败: " + ex.getMessage());
+                break;
+            }
+            emit(request.runDir().resolve("run.log"), "[retry] 第 " + round + " 轮复测完成：提交 "
+                    + retryTargets.size() + " 条，剩余失败 "
+                    + failures(normalized.run()).size() + " 条");
+        }
+        if (canceled) {
+            return new ExecuteResult(false, "canceled", normalized.run(), render, normalized,
+                    batches, -2, Duration.between(started, clock.instant()),
+                    allJunit(rounds), null);
+        }
+        if (retriesRun > 0) {
+            // 进度条分母是「计划条数」，复测不该把它翻倍：只把最终真实结论推一次。
+            progress.batchDone((int) normalized.run().cases().stream()
+                            .filter(one -> !one.status().isFailure()).count(),
+                    failures(normalized.run()).size(), normalized.run().total());
         }
 
         // 计划 vs 实际（W54-07）：参数化用例缺参数时不会报错、只会少几条结果，
@@ -223,10 +304,71 @@ public class PytestNicRunService {
             emit(request.runDir().resolve("run.log"), "[plan-gap] " + gap.notice());
         }
 
+        // 复测把失败跑成了通过：对外的结论按最终结论算，退出码同理归 0——
+        // 对外说「这次运行失败」却拿不出失败用例，比说「通过（含抖动）」更误导。
         String reason = lastExit == 0 ? "ok" : "pytest_exit_" + lastExit;
-        return new ExecuteResult(lastExit == 0, reason, normalized.run(), render, normalized,
-                plans.size(), lastExit, Duration.between(started, clock.instant()),
-                List.copyOf(junitFiles), gap);
+        boolean success = lastExit == 0;
+        if (!success && retriesRun > 0 && failures(normalized.run()).isEmpty()) {
+            success = true;
+            reason = "ok_after_retry";
+            lastExit = 0;
+        }
+        return new ExecuteResult(success, reason, normalized.run(), render, normalized,
+                batches, lastExit, Duration.between(started, clock.instant()),
+                allJunit(rounds), gap);
+    }
+
+    /**
+     * 复测目标：本轮仍失败、且能反查到真实 pytest nodeid 的用例。
+     *
+     * <p>反查不到就不复测（绑定缺失），并把这条事实写进 run.log——静默跳过会让
+     * 「复测过了还是失败」和「根本没复测」看起来完全一样。
+     */
+    private List<String> retryTargets(PytestResultNormalizer.NormalizeResult normalized,
+                                      Path runDir) {
+        if (normalized == null || normalized.run() == null) {
+            return List.of();
+        }
+        Map<String, String> junitToRetry = new LinkedHashMap<>();
+        for (PytestResultNormalizer.CaseMapping mapping : normalized.mappings()) {
+            if (mapping.retryNodeId() != null) {
+                junitToRetry.put(mapping.nodeId(), mapping.retryNodeId());
+            }
+        }
+        List<String> targets = new ArrayList<>();
+        for (NormalizedCaseResult one : failures(normalized.run())) {
+            String retryId = junitToRetry.get(one.nodeId());
+            if (retryId == null) {
+                emit(runDir.resolve("run.log"), "[retry] 跳过无绑定的用例（无法构造真实 nodeid）："
+                        + one.nodeId());
+                continue;
+            }
+            targets.add(retryId);
+        }
+        return List.copyOf(targets);
+    }
+
+    /** 判定为失败的用例（FAIL / ERROR / XPASS），顺序沿用归一顺序。 */
+    private static List<NormalizedCaseResult> failures(NormalizedRun run) {
+        if (run == null) {
+            return List.of();
+        }
+        List<NormalizedCaseResult> failed = new ArrayList<>();
+        for (NormalizedCaseResult one : run.cases()) {
+            if (one.status().isFailure()) {
+                failed.add(one);
+            }
+        }
+        return List.copyOf(failed);
+    }
+
+    /** 全部轮次的 junit 文件，按轮次顺序摊平（首轮在前）。 */
+    private static List<Path> allJunit(List<List<Path>> rounds) {
+        List<Path> files = new ArrayList<>();
+        for (List<Path> round : rounds) {
+            files.addAll(round);
+        }
+        return List.copyOf(files);
     }
 
     /** 归一后实际产出结果的用例键（含未绑定脚本的结果：没绑定也是「跑了」）。 */

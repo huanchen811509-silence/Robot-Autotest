@@ -177,4 +177,43 @@ class PytestKernelTest {
         assertEquals("NONE", run.cases().get(1).commandSource());
         assertNull(run.cases().get(1).commandExitCode());
     }
+
+    /**
+     * FR-v5.6-24：报告入库是**重新解析产物**的独立链路。这里不认复测产物，
+     * 就会出现「执行页通过（含抖动）、报告页失败」的撕裂。
+     */
+    @Test
+    void retryJunitIsMergedIntoFlakyResult(@TempDir Path dir) throws Exception {
+        Files.writeString(dir.resolve("junit.xml"), """
+                <testsuites><testsuite name="pytest" tests="2">
+                  <testcase classname="tests.tar" name="test_a" time="1.0">
+                    <failure message="PFC 使能优先级不对">trace-a</failure>
+                  </testcase>
+                  <testcase classname="tests.tar" name="test_b" time="0.5"/>
+                </testsuite></testsuites>
+                """);
+        Files.writeString(dir.resolve("junit-retry-1.xml"), """
+                <testsuites><testsuite name="pytest" tests="1">
+                  <testcase classname="tests.tar" name="test_a" time="0.9"/>
+                </testsuite></testsuites>
+                """);
+
+        NormalizedRun run = kernel.normalize(dir, "RUN-RETRY-1");
+
+        assertEquals(2, run.total(), "复测不能把用例数翻倍");
+        assertEquals(CaseStatus.PASS, run.cases().get(0).status());
+        assertTrue(run.cases().get(0).flaky(), "首轮失败复测通过必须标抖动");
+        assertEquals(1, run.cases().get(0).retryCount());
+        assertEquals(CaseStatus.PASS, run.cases().get(1).status());
+        assertTrue(!run.cases().get(1).flaky(), "首轮就通过的不是抖动");
+        assertEquals(0, run.failures(), "抖动不计入对外失败数");
+    }
+
+    @Test
+    void retryFileNameRoundParsing() {
+        assertEquals(1, PytestKernel.retryRoundOf("junit-retry-1.xml"));
+        assertEquals(2, PytestKernel.retryRoundOf("junit-retry-2-0.xml"));
+        assertEquals(-1, PytestKernel.retryRoundOf("junit.xml"));
+        assertEquals(-1, PytestKernel.retryRoundOf("junit-retry-x.xml"));
+    }
 }

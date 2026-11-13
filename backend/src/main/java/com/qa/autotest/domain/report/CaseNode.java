@@ -16,6 +16,8 @@ import java.util.List;
  * @param keywords       顶层关键字
  * @param logOffset      首条消息序号（无消息为 -1）
  * @param logSpan        日志序号区间 {@code 'start:end'}，无消息为 null
+ * @param retryCount     复测轮数（v5.6.0 / FR-v5.6-24）：最终结论之前实际又跑了几轮，0 表示未复测
+ * @param flaky          抖动标记（首轮失败、复测通过）；为 true 时不进失败数，单列统计
  */
 public record CaseNode(String name,
                        String status,
@@ -26,7 +28,9 @@ public record CaseNode(String name,
                        String logSpan,
                        String commandText,
                        String commandSource,
-                       Integer commandExitCode) {
+                       Integer commandExitCode,
+                       int retryCount,
+                       boolean flaky) {
 
     /** 无命令时的显式取值：报告页据此显示「本用例未下发外部命令」。 */
     public static final String NO_COMMAND = "NONE";
@@ -43,13 +47,21 @@ public record CaseNode(String name,
     public CaseNode(String name, String status, long durationMs,
                     String failureMessage, List<KeywordNode> keywords) {
         this(name, status, durationMs, failureMessage, keywords, -1L, null,
-                NO_COMMAND, NO_COMMAND, null);
+                NO_COMMAND, NO_COMMAND, null, 0, false);
     }
 
     /** 兼容 RPT-02 的七参写法（v3.9.0 之前没有命令三列）。 */
     public CaseNode(String name, String status, long durationMs, String failureMessage,
                     List<KeywordNode> keywords, long logOffset, String logSpan) {
         this(name, status, durationMs, failureMessage, keywords, logOffset, logSpan,
-                NO_COMMAND, NO_COMMAND, null);
+                NO_COMMAND, NO_COMMAND, null, 0, false);
+    }
+
+    /** 兼容 v3.9.0 的十参写法（未复测）。 */
+    public CaseNode(String name, String status, long durationMs, String failureMessage,
+                    List<KeywordNode> keywords, long logOffset, String logSpan,
+                    String commandText, String commandSource, Integer commandExitCode) {
+        this(name, status, durationMs, failureMessage, keywords, logOffset, logSpan,
+                commandText, commandSource, commandExitCode, 0, false);
     }
 }

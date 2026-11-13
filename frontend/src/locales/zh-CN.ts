@@ -1121,6 +1121,11 @@ export default {
       reasonNoCommand: '用例库未记录命令行',
       reasonSourceMismatch: '提取器未命中命令行',
     },
+    // v5.6.0 / FR-v5.6-24：抖动与稳定失败必须能一眼分开
+    flaky: {
+      label: '抖动',
+      hint: '首轮失败、复测第 {rounds} 轮通过；不计入失败数',
+    },
     logTitle: '日志',
     logEmpty: '暂无日志',
     logTotal: '共 {total} 行，已加载 {loaded} 行',
@@ -1974,6 +1979,9 @@ export default {
     optional: '（本模式不拦）',
     fix: '去补齐',
     mode: '模式',
+    // v5.6.0 / FR-v5.6-24
+    retry: '失败复测',
+    retryNone: '不复测',
     runId: '运行号（留空自动生成）',
     runIdPlaceholder: '如 EHT-V56-001',
     onlySelected: '只跑勾选的用例（当前可选 {count} 条）',
@@ -2518,6 +2526,7 @@ export default {
     // v5.6.0 / FR-v5.6-26：复现信息
     repro: '连续 {runs} 轮 · 复现率 {rate}%',
     failureCount: '{count} 次',
+    flaky: '抖动 {count} 条（首轮失败、复测通过，不计入失败数）',
     risks: '风险提示',
     generatedAt: '生成于 {at}',
     showFailures: '查看失败明细',

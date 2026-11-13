@@ -34,6 +34,8 @@ const TREE: ReportSuiteNode = {
           commandText: 'NONE',
           commandSource: 'NONE',
           commandExitCode: null,
+          retryCount: 0,
+          flaky: false,
           keywords: [],
         },
       ],
@@ -49,6 +51,8 @@ const TREE: ReportSuiteNode = {
       commandText: 'ipmitool raw 0x30 0x93 0xdb 0x07 0x00 0x00',
       commandSource: 'RF_KEYWORD',
       commandExitCode: 0,
+      retryCount: 0,
+      flaky: false,
       keywords: [
         {
           name: 'Setup',
@@ -67,6 +71,8 @@ const TREE: ReportSuiteNode = {
       commandText: `iperf3 -c 192.0.2.10 -t 30 -P 8 --json --logfile /tmp/iperf-${'x'.repeat(60)}.json`,
       commandSource: 'STDOUT',
       commandExitCode: 1,
+      retryCount: 0,
+      flaky: false,
       keywords: [],
     },
     {
@@ -78,6 +84,8 @@ const TREE: ReportSuiteNode = {
       commandText: null,
       commandSource: null,
       commandExitCode: null,
+      retryCount: 0,
+      flaky: false,
       keywords: [],
     },
   ],
@@ -296,6 +304,63 @@ describe('SuiteTree 下发命令（FR-v3.9-03）', () => {
     await nextTick()
     expect(writeText).toHaveBeenCalledWith('ipmitool raw 0x30 0x93 0xdb 0x07 0x00 0x00')
     expect(row.textContent).toContain(i18n.global.t('reports.command.copied'))
+  })
+
+  it('抖动用例带徽标与轮次，干净通过的不带（FR-v5.6-24）', async () => {
+    // 单独造树而不是改 TREE：模块级夹具被多个用例共享，改一处会影响别人的断言
+    const tree: ReportSuiteNode = {
+      name: 'Roce',
+      status: 'PASS',
+      suites: [],
+      cases: [
+        {
+          caseKey: 'FLAKY-1',
+          name: '抖动用例',
+          verdict: 'PASS',
+          durationMs: 900,
+          failureMsg: null,
+          commandText: 'NONE',
+          commandSource: 'NONE',
+          commandExitCode: null,
+          retryCount: 2,
+          flaky: true,
+          keywords: [],
+        },
+        {
+          caseKey: 'CLEAN-1',
+          name: '稳定通过',
+          verdict: 'PASS',
+          durationMs: 800,
+          failureMsg: null,
+          commandText: 'NONE',
+          commandSource: 'NONE',
+          commandExitCode: null,
+          retryCount: 0,
+          flaky: false,
+          keywords: [],
+        },
+      ],
+    }
+    const root = document.createElement('div')
+    document.body.appendChild(root)
+    host = root
+    const Wrapper = defineComponent({
+      setup() {
+        return () => h(SuiteTree, { node: tree, depth: 0 })
+      },
+    })
+    app = createApp(Wrapper)
+    app.use(i18n)
+    app.mount(root)
+    await nextTick()
+
+    const chips = root.querySelectorAll('[data-test=case-flaky]')
+    expect(chips).toHaveLength(1)
+    const chip = chips[0] as HTMLElement
+    expect(chip.textContent).toContain(i18n.global.t('reports.flaky.label'))
+    // 轮次要出现在徽标里：只说「抖动」看不出重跑了几次
+    expect(chip.textContent).toContain('2')
+    expect(chip.getAttribute('title')).toContain('2')
   })
 
   it('复制失败时给出可见提示，不静默吞掉', async () => {

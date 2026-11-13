@@ -92,15 +92,75 @@ public class PytestKernel implements ExecutionKernel {
     @Override
     public NormalizedRun normalize(Path artifactDir, String runId) {
         Path json = artifactDir.resolve("pytest-report.json");
-        if (Files.isRegularFile(json)) {
-            return fromJson(json, runId);
-        }
         Path junit = artifactDir.resolve("junit.xml");
-        if (Files.isRegularFile(junit)) {
-            return fromJunit(junit, runId);
+        NormalizedRun base;
+        if (Files.isRegularFile(json)) {
+            base = fromJson(json, runId);
+        } else if (Files.isRegularFile(junit)) {
+            base = fromJunit(junit, runId);
+        } else {
+            throw new IllegalArgumentException("pytest 产物缺少 pytest-report.json / junit.xml: "
+                    + artifactDir);
         }
-        throw new IllegalArgumentException("pytest 产物缺少 pytest-report.json / junit.xml: "
-                + artifactDir);
+        return withRetries(base, artifactDir, runId);
+    }
+
+    /**
+     * 把复测轮次合进首轮结论（v5.6.0 / FR-v5.6-24）。
+     *
+     * <p>报告入库是**重新解析产物**的独立链路，不读执行时的内存结果。若这里不认
+     * {@code junit-retry-*.xml}，就会出现「执行页显示通过（含抖动）、报告页显示失败」——
+     * 同一批产物两个结论，比不做复测更糟。
+     *
+     * <p>合并规则复用 {@link com.qa.autotest.domain.kernel.RetryMerge}，不在这里重写一遍。
+     */
+    private NormalizedRun withRetries(NormalizedRun base, Path dir, String runId) {
+        java.util.TreeMap<Integer, List<Path>> byRound = new java.util.TreeMap<>();
+        try (var stream = Files.newDirectoryStream(dir, "junit-retry-*.xml")) {
+            for (Path file : stream) {
+                int round = retryRoundOf(file.getFileName().toString());
+                if (round > 0) {
+                    byRound.computeIfAbsent(round, key -> new ArrayList<>()).add(file);
+                }
+            }
+        } catch (java.io.IOException ex) {
+            return base;
+        }
+        if (byRound.isEmpty()) {
+            return base;
+        }
+        List<NormalizedRun> rounds = new ArrayList<>();
+        rounds.add(base);
+        for (Map.Entry<Integer, List<Path>> entry : byRound.entrySet()) {
+            List<Path> files = new ArrayList<>(entry.getValue());
+            files.sort(java.util.Comparator.comparing(Path::toString));
+            List<NormalizedCaseResult> cases = new ArrayList<>();
+            for (Path file : files) {
+                cases.addAll(junitCases(file));
+            }
+            rounds.add(new NormalizedRun(NAME, runId, cases, base.metadata()));
+        }
+        return com.qa.autotest.domain.kernel.RetryMerge.merge(rounds);
+    }
+
+    /** {@code junit-retry-2.xml} / {@code junit-retry-2-0.xml} → 2；取不到返回 -1。 */
+    static int retryRoundOf(String fileName) {
+        String prefix = "junit-retry-";
+        if (fileName == null || !fileName.startsWith(prefix)) {
+            return -1;
+        }
+        int end = prefix.length();
+        while (end < fileName.length() && Character.isDigit(fileName.charAt(end))) {
+            end++;
+        }
+        if (end == prefix.length()) {
+            return -1;
+        }
+        try {
+            return Integer.parseInt(fileName.substring(prefix.length(), end));
+        } catch (NumberFormatException ex) {
+            return -1;
+        }
     }
 
     private NormalizedRun fromJson(Path path, String runId) {
@@ -159,34 +219,52 @@ public class PytestKernel implements ExecutionKernel {
 
     private NormalizedRun fromJunit(Path path, String runId) {
         try (InputStream in = Files.newInputStream(path)) {
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-            factory.setXIncludeAware(false);
-            factory.setExpandEntityReferences(false);
-            Document doc = factory.newDocumentBuilder().parse(in);
-            NodeList nodes = doc.getElementsByTagName("testcase");
-            List<NormalizedCaseResult> cases = new ArrayList<>();
-            for (int i = 0; i < nodes.getLength(); i++) {
-                Element node = (Element) nodes.item(i);
-                String name = node.getAttribute("name");
-                String classname = node.getAttribute("classname");
-                String nodeId = classname.isEmpty() ? name : classname + "::" + name;
-                CaseStatus status = CaseStatus.PASS;
-                if (node.getElementsByTagName("failure").getLength() > 0) {
-                    status = CaseStatus.FAIL;
-                } else if (node.getElementsByTagName("error").getLength() > 0) {
-                    status = CaseStatus.ERROR;
-                } else if (node.getElementsByTagName("skipped").getLength() > 0) {
-                    status = CaseStatus.SKIP;
-                }
-                cases.add(new NormalizedCaseResult(nodeId, name, status,
-                        parseDouble(node.getAttribute("time")), failureMessage(node, status)));
-            }
-            Map<String, String> metadata = canonicalMetadata(doc);
-            return new NormalizedRun(NAME, runId, cases, withRunId(metadata, runId));
+            // 一个流只能读一次：用例与 metadata 必须从同一份 DOM 取，重开流会读到半个文档。
+            Document doc = parse(in);
+            return new NormalizedRun(NAME, runId, casesOf(doc),
+                    withRunId(canonicalMetadata(doc), runId));
         } catch (Exception e) {
             throw new IllegalStateException("junit.xml 解析失败: " + path, e);
         }
+    }
+
+    /** 复测轮次只有用例、没有自己的 metadata：metadata 一律取首轮那份。 */
+    private static List<NormalizedCaseResult> junitCases(Path file) {
+        try (InputStream in = Files.newInputStream(file)) {
+            return casesOf(parse(in));
+        } catch (Exception e) {
+            throw new IllegalStateException("junit.xml 解析失败: " + file, e);
+        }
+    }
+
+    private static Document parse(InputStream in) throws Exception {
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        factory.setXIncludeAware(false);
+        factory.setExpandEntityReferences(false);
+        return factory.newDocumentBuilder().parse(in);
+    }
+
+    private static List<NormalizedCaseResult> casesOf(Document doc) {
+        NodeList nodes = doc.getElementsByTagName("testcase");
+        List<NormalizedCaseResult> cases = new ArrayList<>();
+        for (int i = 0; i < nodes.getLength(); i++) {
+            Element node = (Element) nodes.item(i);
+            String name = node.getAttribute("name");
+            String classname = node.getAttribute("classname");
+            String nodeId = classname.isEmpty() ? name : classname + "::" + name;
+            CaseStatus status = CaseStatus.PASS;
+            if (node.getElementsByTagName("failure").getLength() > 0) {
+                status = CaseStatus.FAIL;
+            } else if (node.getElementsByTagName("error").getLength() > 0) {
+                status = CaseStatus.ERROR;
+            } else if (node.getElementsByTagName("skipped").getLength() > 0) {
+                status = CaseStatus.SKIP;
+            }
+            cases.add(new NormalizedCaseResult(nodeId, name, status,
+                    parseDouble(node.getAttribute("time")), failureMessage(node, status)));
+        }
+        return cases;
     }
 
     /**

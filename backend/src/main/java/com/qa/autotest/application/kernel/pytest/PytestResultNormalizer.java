@@ -58,8 +58,25 @@ public class PytestResultNormalizer {
         this.mapper = mapper;
     }
 
-    /** 单条用例的映射情况。 */
-    public record CaseMapping(String nodeId, String caseCode, String scriptPath, boolean matched) {
+    /**
+     * 单条用例的映射情况。
+     *
+     * @param nodeId      结果侧标识（junit 的 {@code classname::name}，点分）
+     * @param caseCode    用例库编号，未绑定为 null
+     * @param scriptPath  绑定脚本路径，未绑定为 null
+     * @param matched     是否命中绑定
+     * @param retryNodeId 复测可用的**真实 pytest nodeid**（{@code 路径::函数[参数]}）。
+     *                    由绑定表的 nodeId 拼出而不是把点分 classname 反推成路径——
+     *                    反推要猜「哪些点是斜杠、.py 在哪」，参数化一出现就错。
+     *                    未绑定时为 null：没有真源就不猜，这条用例放弃复测
+     */
+    public record CaseMapping(String nodeId, String caseCode, String scriptPath, boolean matched,
+                              String retryNodeId) {
+
+        /** 兼容 v5.1.0 的四参写法（无复测能力）。 */
+        public CaseMapping(String nodeId, String caseCode, String scriptPath, boolean matched) {
+            this(nodeId, caseCode, scriptPath, matched, null);
+        }
     }
 
     /** 归一结果。 */
@@ -76,54 +93,83 @@ public class PytestResultNormalizer {
     }
 
     /**
-     * 归一。
+     * 归一（单轮）。
      *
      * @param junitFiles  一个或多个 junit 文件（分批执行时是 junit-0.xml、junit-1.xml ...）
      * @param runMetadata run 级 metadata（RUN_ID / QA_PROJECT / DUT / LINK / SW_BUILD 等）
      */
     public NormalizeResult normalize(long projectId, String runId, List<Path> junitFiles,
                                      Map<String, String> runMetadata, Path runDir) {
-        if (junitFiles == null || junitFiles.isEmpty()) {
+        return normalizeRounds(projectId, runId, List.of(junitFiles), runMetadata, runDir);
+    }
+
+    /**
+     * 归一（多轮，v5.6.0 / FR-v5.6-24）。
+     *
+     * <p>{@code rounds.get(0)} 是首轮，其后每元素是一轮复测的产物。合并规则全部交给
+     * {@link com.qa.autotest.domain.kernel.RetryMerge}——执行侧、报告入库、导出三条链路
+     * 必须用同一份判定，否则同一批产物会得出两个失败数。
+     *
+     * <p>映射与未绑定计数只按首轮算：复测跑的是同一批用例，重复统计只会把
+     * 「未绑定 3 条」变成「未绑定 9 条」，那是假的。
+     */
+    public NormalizeResult normalizeRounds(long projectId, String runId, List<List<Path>> rounds,
+                                           Map<String, String> runMetadata, Path runDir) {
+        if (rounds == null || rounds.isEmpty() || rounds.get(0) == null
+                || rounds.get(0).isEmpty()) {
             throw new IllegalArgumentException("pytest 归一缺少 junit 文件");
         }
         Map<String, CaseScriptBinding> index = bindingIndex(projectId);
         Map<Long, String> codeById = this.cases.idToCode(projectId);
-        List<NormalizedCaseResult> cases = new ArrayList<>();
         List<CaseMapping> mappings = new ArrayList<>();
         int unbound = 0;
-        int skipped = 0;
-        for (Path file : junitFiles) {
-            if (!Files.isRegularFile(file)) {
-                throw new IllegalArgumentException("junit 文件不存在: " + file);
+        List<List<NormalizedCaseResult>> perRound = new ArrayList<>();
+        for (int round = 0; round < rounds.size(); round++) {
+            List<NormalizedCaseResult> cases = new ArrayList<>();
+            for (Path file : rounds.get(round)) {
+                if (!Files.isRegularFile(file)) {
+                    throw new IllegalArgumentException("junit 文件不存在: " + file);
+                }
+                for (JunitCase item : parseJunit(file)) {
+                    String matchKey = fileStem(item.classname()) + "::" + baseName(item.name());
+                    CaseScriptBinding binding = index.get(matchKey);
+                    String nodeId = item.classname().isEmpty() ? item.name()
+                            : item.classname() + "::" + item.name();
+                    if (binding == null) {
+                        if (round == 0) {
+                            unbound++;
+                            mappings.add(new CaseMapping(nodeId, null, null, false, null));
+                        }
+                        cases.add(new NormalizedCaseResult(nodeId, nodeId, item.status(),
+                                item.seconds(), item.message()));
+                    } else {
+                        String code = codeById.get(binding.caseId());
+                        String display = code == null || code.isBlank()
+                                ? nodeId : code;
+                        if (round == 0) {
+                            mappings.add(new CaseMapping(nodeId, code, binding.scriptPath(), true,
+                                    retryNodeId(binding, item.name())));
+                        }
+                        // name 放用例库编号：报告页显示 IM-NET-131 而不是 test_im_net_131[param]。
+                        cases.add(new NormalizedCaseResult(nodeId, display, item.status(),
+                                item.seconds(), item.message()));
+                    }
+                }
             }
-            for (JunitCase item : parseJunit(file)) {
-                String matchKey = fileStem(item.classname()) + "::" + baseName(item.name());
-                CaseScriptBinding binding = index.get(matchKey);
-                String nodeId = item.classname().isEmpty() ? item.name()
-                        : item.classname() + "::" + item.name();
-                if (binding == null) {
-                    unbound++;
-                    mappings.add(new CaseMapping(nodeId, null, null, false));
-                    cases.add(new NormalizedCaseResult(nodeId, nodeId, item.status(),
-                            item.seconds(), item.message()));
-                } else {
-                    String code = codeById.get(binding.caseId());
-                    String display = code == null || code.isBlank()
-                            ? nodeId : code;
-                    mappings.add(new CaseMapping(nodeId, code, binding.scriptPath(), true));
-                    // name 放用例库编号：报告页显示 IM-NET-131 而不是 test_im_net_131[param]。
-                    cases.add(new NormalizedCaseResult(nodeId, display, item.status(),
-                            item.seconds(), item.message()));
-                }
-                if (item.status() == CaseStatus.SKIP || item.status() == CaseStatus.XFAIL) {
-                    skipped++;
-                }
+            perRound.add(cases);
+        }
+        List<NormalizedCaseResult> merged =
+                com.qa.autotest.domain.kernel.RetryMerge.mergeCases(perRound);
+        int skipped = 0;
+        for (NormalizedCaseResult one : merged) {
+            if (one.status() == CaseStatus.SKIP || one.status() == CaseStatus.XFAIL) {
+                skipped++;
             }
         }
         Map<String, String> metadata = canonical(runMetadata, runId);
         Path sidecar = writeSidecar(runDir, runId, metadata);
-        NormalizedRun run = new NormalizedRun("pytest", runId, cases, metadata);
-        return new NormalizeResult(run, mappings, unbound, skipped == cases.size() && !cases.isEmpty(),
+        NormalizedRun run = new NormalizedRun("pytest", runId, merged, metadata);
+        return new NormalizeResult(run, mappings, unbound, skipped == merged.size() && !merged.isEmpty(),
                 sidecar);
     }
 
@@ -156,6 +202,28 @@ public class PytestResultNormalizer {
      */
     public static String matchKey(String classname, String testName) {
         return fileStem(classname) + "::" + baseName(testName);
+    }
+
+    /**
+     * 复测用的真实 nodeid（v5.6.0 / FR-v5.6-24）。
+     *
+     * <p>取绑定 nodeId 的**路径部分**（保证是仓库里的真实路径），拼上 junit 里的**完整函数名**
+     * （含 {@code [参数]} 后缀，保证复测的是同一个参数实例）。
+     *
+     * <p>两个都必须是真值：路径猜错会跑到别的用例上，参数丢了会跑成整条函数的另一个实例——
+     * 两种错都会让「复测通过」变成假结论。任一取不到就返回 null，宁可不复测。
+     */
+    static String retryNodeId(CaseScriptBinding binding, String junitName) {
+        if (binding == null || junitName == null || junitName.isBlank()) {
+            return null;
+        }
+        String base = binding.nodeId();
+        String path = base != null && base.contains("::")
+                ? base.substring(0, base.lastIndexOf("::")) : binding.scriptPath();
+        if (path == null || path.isBlank()) {
+            return null;
+        }
+        return path + "::" + junitName;
     }
 
     /**

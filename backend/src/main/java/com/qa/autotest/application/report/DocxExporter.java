@@ -7,6 +7,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.apache.poi.wp.usermodel.HeaderFooterType;
@@ -139,10 +140,18 @@ public class DocxExporter {
         applyFont(run);
     }
 
+    /**
+     * 用例明细（v5.6.0 / FR-v5.6-25）。
+     *
+     * <p><b>为什么改成「一张表」而不是「每个套件一个标题」</b>：原先一个套件节点占一个
+     * 加粗标题，RF 的报告里每个用例自带一层套件，59 条用例就是 59 个标题——正文被标题
+     * 切成碎片，人翻不到重点。现在套件路径并进「用例」列（{@code 路径 / 用例名}），
+     * 信息一条不少，标题只剩固定章节。
+     */
     private static void writeTree(XWPFDocument document, ReportTreeService.TreeSuite root) {
         XWPFParagraph heading = paragraph(document);
         XWPFRun headingRun = heading.createRun();
-        headingRun.setText("二、套件树");
+        headingRun.setText("二、用例明细");
         headingRun.setBold(true);
         headingRun.setFontSize(14);
         applyFont(headingRun);
@@ -151,34 +160,37 @@ public class DocxExporter {
             paragraphText(document, "（无套件树数据）", null);
             return;
         }
-        writeCasesTable(document, root.cases(), 0);
-        for (ReportTreeService.TreeSuite suite : root.suites()) {
-            writeSuite(document, suite, 1);
-        }
+        List<CaseRow> rows = new ArrayList<>();
+        flatten(root, "", rows);
+        writeCasesTable(document, rows);
     }
 
-    private static void writeSuite(XWPFDocument document,
-                                   ReportTreeService.TreeSuite suite, int depth) {
-        XWPFParagraph heading = paragraph(document);
-        heading.setIndentationLeft((depth - 1) * 240);
-        XWPFRun run = heading.createRun();
-        run.setText("▸ " + suite.name() + "　[" + suite.status() + "]");
-        run.setBold(true);
-        run.setFontSize(12);
-        applyFont(run);
+    /** 摊平后的一行：套件路径 + 用例。 */
+    private record CaseRow(String path, ReportTreeService.TreeCase test) {
+    }
 
-        writeCasesTable(document, suite.cases(), depth);
+    private static void flatten(ReportTreeService.TreeSuite suite, String prefix,
+                                List<CaseRow> out) {
+        String here = prefix;
+        String name = suite.name();
+        // 根套件名是 run-<runId>，与 case_key 口径一致地不进路径：
+        // 否则每条用例的「路径」里都带着本次运行的随机后缀，跨报告无法比对。
+        if (name != null && !name.isBlank() && !name.startsWith("run-")) {
+            here = prefix.isEmpty() ? name : prefix + " / " + name;
+        }
+        for (ReportTreeService.TreeCase test : suite.cases()) {
+            out.add(new CaseRow(here, test));
+        }
         for (ReportTreeService.TreeSuite child : suite.suites()) {
-            writeSuite(document, child, depth + 1);
+            flatten(child, here, out);
         }
     }
 
-    private static void writeCasesTable(XWPFDocument document,
-                                        List<ReportTreeService.TreeCase> cases, int depth) {
-        if (cases == null || cases.isEmpty()) {
+    private static void writeCasesTable(XWPFDocument document, List<CaseRow> rows) {
+        if (rows == null || rows.isEmpty()) {
             return;
         }
-        XWPFTable table = document.createTable(cases.size() + 1, 5);
+        XWPFTable table = document.createTable(rows.size() + 1, 5);
         XWPFTableRow header = table.getRow(0);
         fillCell(header.getCell(0), "用例", true, null);
         fillCell(header.getCell(1), "结论", true, null);
@@ -186,11 +198,13 @@ public class DocxExporter {
         fillCell(header.getCell(3), "下发命令", true, null);
         fillCell(header.getCell(4), "失败消息", true, null);
 
-        for (int i = 0; i < cases.size(); i++) {
-            ReportTreeService.TreeCase test = cases.get(i);
+        for (int i = 0; i < rows.size(); i++) {
+            CaseRow item = rows.get(i);
+            ReportTreeService.TreeCase test = item.test();
             XWPFTableRow row = table.getRow(i + 1);
-            fillCell(row.getCell(0), test.name(), false, null);
-            fillCell(row.getCell(1), test.verdict(), false,
+            String label = item.path().isEmpty() ? test.name() : item.path() + " / " + test.name();
+            fillCell(row.getCell(0), label, false, null);
+            fillCell(row.getCell(1), verdictText(test), false,
                     "FAIL".equalsIgnoreCase(test.verdict()) ? "FF0000" : null);
             fillCell(row.getCell(2), Long.toString(test.durationMs()), false, null);
             fillCell(row.getCell(3), commandText(test.commandText(), test.commandExitCode()),
@@ -199,6 +213,20 @@ public class DocxExporter {
             fillCell(row.getCell(4), failure, false,
                     "FAIL".equalsIgnoreCase(test.verdict()) ? "FF0000" : null);
         }
+    }
+
+    /**
+     * 结论列文案：抖动用例带上复测轮次（v5.6.0 / FR-v5.6-24）。
+     *
+     * <p>只写 {@code PASS} 会把「第一次失败、重跑才过」与「一次就过」看成一回事；
+     * 对外报告里这两者的可信度差得很远，必须写清。
+     */
+    public static String verdictText(ReportTreeService.TreeCase test) {
+        String verdict = test.verdict() == null ? "" : test.verdict();
+        if (!test.flaky()) {
+            return verdict;
+        }
+        return verdict + "（抖动·复测 " + test.retryCount() + " 轮）";
     }
 
     /**

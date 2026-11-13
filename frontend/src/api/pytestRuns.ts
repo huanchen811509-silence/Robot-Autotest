@@ -50,6 +50,8 @@ export interface RunRequest {
   timeoutSeconds?: number
   metadata?: Record<string, string>
   confirmReal?: boolean
+  /** 失败复测轮数上限（FR-v5.6-24）：只重跑失败用例，0 表示不复测。 */
+  retry?: number
 }
 
 function base(projectId: number): string {

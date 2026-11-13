@@ -42,9 +42,23 @@ public class ReportSummaryService {
                              Instant firstSeenAt, Integer consecutiveRuns, Double reproRate) {
     }
 
+    /**
+     * 速览。
+     *
+     * @param flaky 抖动用例条数（首轮失败、复测通过）。**不计入 failed**：它是「结果不稳定」
+     *              而不是「功能不达标」，混进失败数会让结论比实际更差，单独列出来才看得清
+     */
     public record Summary(String conclusion, int total, int passed, int failed, int skipped,
                           double passRate, long durationMs, List<TopFailure> topFailures,
-                          List<String> risks, Instant generatedAt) {
+                          List<String> risks, Instant generatedAt, int flaky) {
+
+        /** 兼容 v5.6.0 之前的十参写法（无抖动统计）。 */
+        public Summary(String conclusion, int total, int passed, int failed, int skipped,
+                       double passRate, long durationMs, List<TopFailure> topFailures,
+                       List<String> risks, Instant generatedAt) {
+            this(conclusion, total, passed, failed, skipped, passRate, durationMs, topFailures,
+                    risks, generatedAt, 0);
+        }
     }
 
     private static final int TOP_LIMIT = 5;
@@ -59,14 +73,17 @@ public class ReportSummaryService {
     private final FailureClusterService clusters;
     private final AccessControlService access;
     private final com.qa.autotest.application.repository.RunRepository runs;
+    private final com.qa.autotest.application.repository.ReportReadRepository read;
 
     public ReportSummaryService(ReportRepository reports, FailureClusterService clusters,
                                 AccessControlService access,
-                                com.qa.autotest.application.repository.RunRepository runs) {
+                                com.qa.autotest.application.repository.RunRepository runs,
+                                com.qa.autotest.application.repository.ReportReadRepository read) {
         this.reports = reports;
         this.clusters = clusters;
         this.access = access;
         this.runs = runs;
+        this.read = read;
     }
 
     public Summary summarize(long projectId, String runId) {
@@ -98,7 +115,7 @@ public class ReportSummaryService {
         List<String> risks = risks(report, clusterView, total);
         return new Summary(conclusion, total, report.passCount(), report.failCount(),
                 report.skipCount(), passRate, durationMs(report), topFailures, risks,
-                Instant.now());
+                Instant.now(), flakyCount(projectId, runId));
     }
 
     /**
@@ -201,6 +218,26 @@ public class ReportSummaryService {
         private Instant finishedAt(int index) {
             com.qa.autotest.domain.execution.RunRecord run = runs.get(index);
             return run.finishedAt() != null ? run.finishedAt() : run.startedAt();
+        }
+    }
+
+    /**
+     * 抖动条数：从逐条结果里数 {@code flaky}，不从失败簇推断。
+     *
+     * <p>读失败只跳过（返回 0）而不抛：摘要是个「看一眼」的接口，
+     * 不值得因为统计抖动而整体 500——抖动的信息量远小于结论本身。
+     */
+    private int flakyCount(long projectId, String runId) {
+        try {
+            int count = 0;
+            for (com.qa.autotest.domain.report.RunCaseRow row : read.listCases(projectId, runId)) {
+                if (row.flaky()) {
+                    count++;
+                }
+            }
+            return count;
+        } catch (RuntimeException ex) {
+            return 0;
         }
     }
 

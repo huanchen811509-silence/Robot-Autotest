@@ -70,8 +70,9 @@ public class ReportRepositoryJdbc implements ReportRepository {
     private static final String INSERT_TEST_RESULT = """
             INSERT INTO test_result (run_id, case_id, case_key, round_no, verdict,
                                      duration_ms, failure_msg, log_offset, log_span, failure_kind,
-                                     command_text, command_source, command_exit_code)
-            VALUES (?, NULL, ?, 1, ?, ?, ?, ?, ?, NULL, ?, ?, ?)
+                                     command_text, command_source, command_exit_code,
+                                     retry_count, flaky)
+            VALUES (?, NULL, ?, 1, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?)
             """;
 
     private static final String INSERT_KEYWORD_RESULT = """
@@ -194,6 +195,10 @@ public class ReportRepositoryJdbc implements ReportRepository {
             ps.setString(8, fit(test.commandText(), CaseCommandExtractor.MAX_COMMAND_LENGTH + 32));
             ps.setString(9, fit(test.commandSource(), 24));
             ps.setObject(10, test.commandExitCode(), Types.INTEGER);
+            // v5.6.0 / FR-v5.6-24：round_no 保持 1（它表达的是「报告取第几轮结论」，
+            // 与 RF 的三遍执行同一语义）；复测轮数单独记，两者混用会让 RF 侧统计失真。
+            ps.setInt(11, Math.max(0, test.retryCount()));
+            ps.setBoolean(12, test.flaky());
             return ps;
         }, keyHolder);
         Long testResultId = keyHolder.getKey() == null ? null : keyHolder.getKey().longValue();

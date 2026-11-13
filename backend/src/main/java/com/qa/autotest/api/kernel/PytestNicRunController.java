@@ -138,16 +138,28 @@ public class PytestNicRunController {
         worker.shutdownNow();
     }
 
-    /** 执行请求；nodeIds 为空表示整库全量收集。{@code confirmReal} 是 real 模式的显式授权位。 */
+    /**
+     * 执行请求；nodeIds 为空表示整库全量收集。{@code confirmReal} 是 real 模式的显式授权位。
+     *
+     * @param retry 失败复测轮数上限（v5.6.0 / FR-v5.6-24）：只重跑失败的那几条，最多 N 轮。
+     *              0（缺省）＝不复测，与本版之前完全一致
+     */
     public record FakeRunRequest(String runId, String mode, List<String> nodeIds,
                                  List<String> hostKeys, Integer timeoutSeconds,
-                                 Map<String, String> metadata, Boolean confirmReal) {
+                                 Map<String, String> metadata, Boolean confirmReal, Integer retry) {
 
         /** 老调用方 6 参形态（只跑 fake），保持源码兼容。 */
         public FakeRunRequest(String runId, String mode, List<String> nodeIds,
                               List<String> hostKeys, Integer timeoutSeconds,
                               Map<String, String> metadata) {
-            this(runId, mode, nodeIds, hostKeys, timeoutSeconds, metadata, null);
+            this(runId, mode, nodeIds, hostKeys, timeoutSeconds, metadata, null, null);
+        }
+
+        /** v5.5.0 的 7 参形态（带 confirmReal），保持源码兼容。 */
+        public FakeRunRequest(String runId, String mode, List<String> nodeIds,
+                              List<String> hostKeys, Integer timeoutSeconds,
+                              Map<String, String> metadata, Boolean confirmReal) {
+            this(runId, mode, nodeIds, hostKeys, timeoutSeconds, metadata, confirmReal, null);
         }
     }
 
@@ -155,7 +167,7 @@ public class PytestNicRunController {
     private record Prepared(long projectId, String runId, String mode, List<String> nodeIds,
                             List<String> hostKeys, Integer timeoutSeconds,
                             Map<String, String> metadata, Path runDir, int seconds,
-                            Instant started, Path commandRoot) {
+                            Instant started, Path commandRoot, int retry) {
     }
 
     /**
@@ -488,10 +500,13 @@ public class PytestNicRunController {
         // 与 junit 不同源。这里一次算好塞进 Prepared，避免执行后再查一遍配置。
         Path commandRoot = com.qa.autotest.application.kernel.pytest.PytestNicKernelCommand
                 .artifactRoot(PytestProjectSettings.repoPath(config), runId);
+        // 复测轮数上限：夹在 0..3。3 轮以上对「抖动」已经没有额外信息量，
+        // 却会把一次执行的时间放大数倍（失败的用例往往是最慢的那批）。
+        int retry = req.retry() == null ? 0 : Math.min(3, Math.max(0, req.retry()));
         return new Prepared(projectId, runId, mode, nodeIds,
                 req.hostKeys() == null ? List.of() : req.hostKeys(),
                 req.timeoutSeconds(), req.metadata() == null ? Map.of() : req.metadata(),
-                runDir, seconds, started, commandRoot);
+                runDir, seconds, started, commandRoot, retry);
     }
 
     /** 跑一次已准备好的执行，并落状态、metadata、产物。 */
@@ -503,7 +518,8 @@ public class PytestNicRunController {
 
         PytestNicRunService.ExecuteRequest request = new PytestNicRunService.ExecuteRequest(
                 prepared.projectId(), runId, prepared.nodeIds(), prepared.hostKeys(), mode,
-                runDir, Duration.ofSeconds(prepared.seconds()), prepared.metadata());
+                runDir, Duration.ofSeconds(prepared.seconds()), prepared.metadata(),
+                prepared.retry());
         // 同步路径走单参重载：旧调用方（含单测）的桩只需实现一个方法，不会被新接口带崩。
         PytestNicRunService.ExecuteResult result =
                 bridge == null ? runs.execute(request) : runs.execute(request, bridge);

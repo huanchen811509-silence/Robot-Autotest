@@ -29,6 +29,9 @@ const precheckLoading = ref(false)
 const bindings = ref<CaseScriptBinding[]>([])
 const mode = ref<'fake' | 'real'>('fake')
 const confirmReal = ref(false)
+// 失败复测轮数（FR-v5.6-24）。默认 0：复测会把失败用例再跑几遍，让用户显式选，
+// 不替他决定「这次运行要不要变慢」。
+const retry = ref(0)
 const onlySelected = ref(false)
 const selected = ref<string[]>([])
 const runIdInput = ref('')
@@ -130,6 +133,7 @@ async function submit(): Promise<void> {
       mode: mode.value,
       nodeIds: targetNodes.value,
       confirmReal: mode.value === 'real' ? confirmReal.value : false,
+      retry: retry.value,
     })
     runId.value = accepted.runId
     progress.value = {
@@ -233,6 +237,15 @@ onBeforeUnmount(stopPolling)
       <label class="field">
         <span>{{ t('pytestLaunch.runId') }}</span>
         <NInput v-model:value="runIdInput" :placeholder="t('pytestLaunch.runIdPlaceholder')" />
+      </label>
+      <label class="field">
+        <span>{{ t('pytestLaunch.retry') }}</span>
+        <select v-model.number="retry" data-test="retry" class="pick">
+          <option :value="0">{{ t('pytestLaunch.retryNone') }}</option>
+          <option :value="1">1</option>
+          <option :value="2">2</option>
+          <option :value="3">3</option>
+        </select>
       </label>
     </div>
 
