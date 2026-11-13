@@ -1,0 +1,36 @@
+{
+  "captured_at": "2026-11-13 19:33:20",
+  "timezone": "GMT+8",
+  "purpose": "EHT-07 契约探测修复后复验（真实 HTTP + 真实解释器）",
+  "python_bin": "/home/evergreen/venvs/nic-fake/bin/python",
+  "status": 200,
+  "data": {
+    "healthy": true,
+    "pythonBin": "/home/evergreen/venvs/nic-fake/bin/python",
+    "pythonVersion": "3.12.3",
+    "minPythonVersion": "3.11",
+    "pythonVersionProblem": null,
+    "pytestVersion": null,
+    "foundOptions": [
+      "--env_config",
+      "--mode",
+      "--junit-xml"
+    ],
+    "contractMissing": [],
+    "contractFailure": null,
+    "repoConfigured": true,
+    "repoReachable": true,
+    "repoPath": "/mnt/e/workspace/自动化测试/pytest-cases",
+    "modeDefault": "fake",
+    "totalCases": 0,
+    "bound": 0,
+    "unbound": 0,
+    "pendingCases": 0,
+    "totalExcludingPending": 0,
+    "boundExcludingPending": 0,
+    "coveragePercent": 0.0,
+    "coverageExcludingPendingPercent": 0.0,
+    "hints": []
+  },
+  "verdict": "healthy"
+}

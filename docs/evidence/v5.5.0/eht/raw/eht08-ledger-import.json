@@ -1,0 +1,23 @@
+{
+  "captured_at": "2026-11-13 19:34:42",
+  "timezone": "GMT+8",
+  "project_id": 95,
+  "source": "docs/evidence/v5.1.0/pytest/case-index.json",
+  "source_totals": {
+    "cases": 469,
+    "scripts": 62,
+    "scripts_with_declared_code": 61
+  },
+  "source_priority_counts": {
+    "T0": 231,
+    "T2": 33,
+    "T1": 27,
+    "待评审": 178
+  },
+  "rows_before": 0,
+  "rows_after": 469,
+  "priority_distribution": "T0\t231\nT1\t27\nT2\t33\n待评审\t178",
+  "sql_file": "docs/evidence/v5.5.0/eht/raw/eht08-case-import.sql",
+  "rollback_file": "docs/evidence/v5.5.0/eht/raw/eht08-case-rollback.sql",
+  "note": "走 SQL 而非 POST /cases：TestCaseService 的 Priority.from 只认 P0~P3，真源为 T0/T1/T2/待评审，走接口会改写 178 条待评审口径（D12 双口径分母）。"
+}

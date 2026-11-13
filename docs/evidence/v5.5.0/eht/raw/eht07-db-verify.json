@@ -1,0 +1,9 @@
+{
+  "captured_at": "2026-11-13 19:28:17",
+  "project_row": "95\tEHT-PYTEST-LIB\tEHT pytest 用例库工程\tpytest-suite\tpytest",
+  "pytest_settings": "pytest.env_config\tconfig/environments/run_env_lab.yaml\npytest.inventory_path\tconfig/inventory/inventory_lab.yaml\npytest.mode_default\tfake\npytest.python_bin\t/home/evergreen/venvs/deepseek-harness/bin/python\npytest.repo_path\t/mnt/e/workspace/自动化测试/pytest-cases",
+  "kernel_default": "kernel.default\tpytest",
+  "probe_row_gone": "0",
+  "illegal_row_absent": "0",
+  "flyway_latest": "11.55"
+}

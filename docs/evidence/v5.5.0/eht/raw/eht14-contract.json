@@ -1,0 +1,7 @@
+{
+  "elapsed_ms" : 0,
+  "failure_reason" : "",
+  "python_bin" : "/home/evergreen/venvs/nic-fake/bin/python",
+  "found_options" : [ "--env_config", "--mode", "--junit-xml" ],
+  "healthy" : true
+}

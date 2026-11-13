@@ -1,0 +1,98 @@
+{
+  "captured_at": "2026-11-13 20:25:57",
+  "timezone": "GMT+8",
+  "purpose": "EHT-14 / TC-v5.5-07 Fake 70 tests 真实链路验收",
+  "project_id": 95,
+  "endpoint": "POST /api/projects/95/pytest/runs/fake",
+  "request": {
+    "runId": "EHT-FAKE-20261113-202557",
+    "mode": "fake"
+  },
+  "metadata": {
+    "CASE_ID": "EHT-FAKE-70",
+    "RUN_ID": "EHT-FAKE-20261113-202557",
+    "QA_PROJECT": "EHT-PYTEST-LIB",
+    "DUT": "NIC-FAKE-01",
+    "LINK": "lab-fake-link",
+    "SW_BUILD": "5.0.0-55b16ff",
+    "BASELINE": "915c2ca",
+    "OPERATOR": "qa-e2e-admin",
+    "STARTED_AT": "2026-11-13T20:25:57+08:00",
+    "CASE_KIND": "pytest-fake"
+  },
+  "health": {
+    "status": 200,
+    "healthy": true
+  },
+  "repo_before": {
+    "head": "915c2ca366757ed51bb0f8492f253fa477b833c5",
+    "diff_ignore_cr_at_eol": "",
+    "status_lines": 162,
+    "status_sha256": "1c3f08d68e8e2f67def3f3eeb34254d142a3ddbc5a22d2ba93daa15e7addee91"
+  },
+  "repo_after": {
+    "head": "915c2ca366757ed51bb0f8492f253fa477b833c5",
+    "diff_ignore_cr_at_eol": "",
+    "status_lines": 162,
+    "status_sha256": "1c3f08d68e8e2f67def3f3eeb34254d142a3ddbc5a22d2ba93daa15e7addee91"
+  },
+  "response_status": 200,
+  "response_data": {
+    "runId": "EHT-FAKE-20261113-202557",
+    "mode": "fake",
+    "success": false,
+    "reason": "env_render_failed: 未选中任何设备：pytest 工程至少要一台可 SSH 的主机",
+    "batches": 0,
+    "exitCode": -1,
+    "elapsedMs": 4,
+    "runDir": "/tmp/eht-fake-runs/EHT-FAKE-20261113-202557",
+    "junitFiles": [],
+    "totalCases": 0,
+    "metadata": {},
+    "statusCounts": {},
+    "boundMatched": 0,
+    "unboundResults": 0,
+    "passRateApplicable": false,
+    "passRateDisplay": "不适用",
+    "gap": "",
+    "command": "",
+    "junitConditions": {
+      "--capture=fd": false,
+      "junit_logging=out-err": false,
+      "junit_family=xunit2": false
+    }
+  },
+  "run_dir_files": [],
+  "archived_files": [],
+  "junit_independent_parse": {},
+  "checks": {
+    "http_200": true,
+    "health_true": true,
+    "success_true": false,
+    "total_cases_70": false,
+    "junit_testcases_70": false,
+    "junit_three_conditions": false,
+    "command_has_fake_mode": false,
+    "pass_rate_not_applicable": true,
+    "all_cases_skipped": false,
+    "metadata_six_present": false,
+    "repo_head_unchanged": true,
+    "repo_diff_clean": true,
+    "repo_status_unchanged": true
+  },
+  "failed_checks": [
+    "success_true",
+    "total_cases_70",
+    "junit_testcases_70",
+    "junit_three_conditions",
+    "command_has_fake_mode",
+    "all_cases_skipped",
+    "metadata_six_present"
+  ],
+  "verdict": "PARTIAL",
+  "notes": [
+    "口令只从环境变量读取，证据里不含凭据",
+    "用例库 artifacts/ 在 .gitignore 内，框架运行产物不改变 git 追踪内容",
+    "junit 由独立 XML 解析统计，不采信接口自报的 totalCases"
+  ]
+}

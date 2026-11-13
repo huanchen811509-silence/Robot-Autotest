@@ -1,0 +1,21 @@
+{
+  "captured_at": "2026-11-13 19:28:17",
+  "probes": {
+    "illegal_kind": {
+      "status": 400,
+      "body": {
+        "code": 40001,
+        "codeName": "INVALID_ARGUMENT",
+        "message": "未知的工程类型: pytest-eht（可选值: standard / platform / pytest-suite）",
+        "data": null,
+        "success": false
+      }
+    },
+    "no_kind": {
+      "status": 200,
+      "id": 94,
+      "row": "94\tEHT-KIND-PROBE-DEL\tstandard\trobot",
+      "delete_status": 200
+    }
+  }
+}

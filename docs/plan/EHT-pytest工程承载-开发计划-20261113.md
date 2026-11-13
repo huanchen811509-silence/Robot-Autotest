@@ -128,7 +128,17 @@
 | EHT-02 | `FR-EHT-xx` | 改为 `FR-v5.5-01`~`18` | `check_release_docs.py` 的 `detect_prefix` 只认 `FR-v[\d.]+-\d+`；已在 PRD §2.2 留对照与修订记录 | 同上 |
 | EHT-03 | `TC-EHT-01`~`12` | 改为 `TC-v5.5-01`~`18` | 同上；且 18 条 FR 需一一覆盖 | 同上 |
 | EHT-06 | 条件包（D-A=B 才启） | 标记「不适用」，未执行 | D-A 定为 A，kind 不改名 | 同上 |
-| EHT-04 ~ 05 / 07 ~ 16 | 待实施 | 未启 | — | 实施期逐包填 |
+| EHT-04 | 旧文档三处口径订正 | 旧评估 §4.1、旧 PRD R3 / §13.1 已订正并留 v2.1 修订记录 | 与计划一致；`diff_check` 曾因 v2.1 行尾空格判红，已精确修剪 1 行 | 旧文档 diff；门禁 10 PASS |
+| EHT-05 | `kind` 创建入口 + 机检 49 | `CreateProjectRequest` 加 `kind`、6 参 create 补 `@Audited`、4 例单测、`check_project_kind_create.py` | 与计划一致；单测覆盖 `pytest-eht` 不得作 kind | `tools/check_project_kind_create.py`；门禁 49 PASS |
+| EHT-06 | 条件包（D-A=B 才启） | 不适用，未执行 | D-A 定为 A，kind 不改名 | PRD §2.1 |
+| EHT-07 | 建承载工程 + 四项配置 | 项目 95 `EHT-PYTEST-LIB` / `kind=pytest-suite` / `test_kernel=pytest`；四项 `pytest.*` 落库；health `healthy=True` | 契约探测必须在仓库根 cwd 且兼容 `--junit-xml`（pytest 9.x）；解释器改 `nic-fake` venv（含 yaml/paramiko） | `eht07-*.json` |
+| EHT-08 | 469 用例台账 + 绑定同步 | 可回滚 SQL 导入 469 条；sync `bound=61 / unbound=408 / orphan=0 / duplicate=0 / scriptsScanned=61`；机检 50 | `TestCaseService.Priority` 只认 P0–P3，真源是 T0/T1/T2/待评审，走接口会改写 178 条口径，故改走 SQL 并留回滚脚本 | `eht08-*.json/sql` |
+| EHT-09 | 解耦五条注入演练 | E1–E5 + F4 全 pass；真源 `git status` 前后一致；RF 项目 1 / 29 仍 200 | 六页端点首探 3 个 500：`TenantGuard` 未登记 3 张表，已补登记；剩余 36 张历史未登记表留证 | `eht09-decoupling-drills.json`、`eht-tenant-guard-gap.json` |
+| EHT-10 ~ 12 | 八页 + 便捷操作 | 八页真端点 + 双语 + 路由 + spec；工作台加导航不改菜单叶子；机检 51 / 52 | `npm run test:unit` 不存在改 `npm test`；硬编码中文优先级改 `/cases` 动态字典；字体子集补「雷」 | `frontend/src/views/eht/`、`eht-endpoint-probe.json` |
+| EHT-13 | 门禁 49–52 + 全量回归 | 52 步；49–52 真注入 → 判红 → 还原 → 判绿；最终 `GATES_RESULT FAILS=2`（13 / 29 外部遗留） | 首轮 `FAILS=3`：10 行尾空格、39 `kernel_decoupling` 未登记新接入点 `PytestNicRunController`，均已修并复跑 | `docs/evidence/v5.5.0/eht/gates-final2.log` |
+| EHT-14 | Fake 70 tests 真实链路 | 链路层 15 项全 PASS；用例层 60 SKIP / 4 FAIL / 1 ERROR / 5 PASS，判降级 | 原假设「全 PLANNED」被真源推翻；新增 `POST .../pytest/runs/fake`，修契约探测 cwd、全量 rootdir、`RunRecord` 生命周期、孤儿清扫误杀、`PortCommand` NIC 画像 15 项 | `eht14-fake-run-report.json`、`eht14-junit-analysis.json` |
+| EHT-15 | 四份文档回写 | 本文 v1.1 + 四份修订记录 + 遗留清单 + 流程规范 §7 + 项目记忆 | 实施台账并入 §7，未单开文件（减少漂移）；**不升格** `docs/release/v5.5.0/`（六份产物不齐、VERSION 仍 5.0.0） | 四份文档修订记录 |
+| EHT-16 | 提交与四处同步 | 双远程 push + E 盘同步（收口证据 `eht16-sync-verify.json`） | 与计划一致；提交号由最终 `git log` / `ls-remote` 回填，不在文档写死 | `eht16-sync-verify.json` |
 
 **已登记的已知偏差（非本轮）**：旧 PRD `FR-v5.2-01` R3 与代码不符、`PRD §13.1` 状态标「达成」依据不足 —— D-C 已授权，归 EHT-04 订正。
 
@@ -175,6 +185,8 @@
 | 项目记忆 | `.workbuddy/memory/YYYY-MM-DD.md` 追加；`MEMORY.md` 更新当前提交与项目数真值 |
 | 流程规范 | `docs/process/版本开发流程.md` §7 回写记录表记一行 |
 
+**P6 实际回写（2026-11-13）**：四份 EHT 文档均已加修订记录并逐项回写；实施台账并入 §7（未单开文件，偏差原因见该表 EHT-15 行）；项目记忆 `.workbuddy/memory/2026-11-13.md` 追加；`docs/process/版本开发流程.md` §7 回写记录表加一行。本轮**不升格** `docs/release/v5.5.0/`：VERSION 仍 5.0.0、G 门未判、六份 release 产物不齐，避免制造「已发版」假象；TC 结果回填落在 TEST-PLAN §3.1 而非 `05-TEST-REPORT.md`（`check_release_docs.py` 只扫 `docs/release/<version>/`）。
+
 Markdown 写完统一跑 `check_md_tables.py`；文档补丁**按内容匹配**，绝不用行号。P6 若按流程规范升格 `docs/release/v5.5.0/`，需落齐六份产物并复跑 `python3 tools/check_release_docs.py`（FR/TC 前缀已按该脚本正则统一，见 PRD §2.2）。
 
 ---
@@ -183,4 +195,5 @@ Markdown 写完统一跑 `check_md_tables.py`；文档补丁**按内容匹配**�
 
 | 版本 | 日期 | 内容 |
 |---|---|---|
+| **v1.1** | 2026-11-13 | EHT-15 流程 7 回写：§7 偏差记录逐包填实际完成与证据路径（含 EHT-14 降级、EHT-13 门禁 `FAILS=2`、EHT-06 不适用）；§10 追加 P6 实际回写说明与不升格 release 的理由；实施台账并入 §7 |
 | v1.0 | 2026-11-13 | 首版：由《工作规划 v1.0》升格；EHT-01~16 WBS 含验收命令与自主度、依赖图与并行纪律、门禁 49–52、降级预案、偏差记录、授权闸门、文档回写清单；EHT-06 标不适用；FR/TC 编号按机检正则修订 |

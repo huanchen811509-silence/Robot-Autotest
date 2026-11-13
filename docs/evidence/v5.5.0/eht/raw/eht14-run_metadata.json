@@ -1,0 +1,18 @@
+{
+  "run_id" : "EHT-FAKE-20261113-205815",
+  "kernel" : "pytest",
+  "metadata" : {
+    "CASE_ID" : "EHT-FAKE-70",
+    "RUN_ID" : "EHT-FAKE-20261113-205815",
+    "QA_PROJECT" : "EHT-PYTEST-LIB",
+    "DUT" : "NIC-FAKE-01",
+    "LINK" : "lab-fake-link",
+    "SW_BUILD" : "5.0.0-55b16ff",
+    "BASELINE" : "915c2ca",
+    "OPERATOR" : "qa-e2e-admin",
+    "STARTED_AT" : "2026-11-13T20:58:15+08:00",
+    "CASE_KIND" : "pytest-fake"
+  },
+  "required" : [ "CASE_ID", "RUN_ID", "QA_PROJECT", "DUT", "LINK", "SW_BUILD", "BASELINE", "OPERATOR", "STARTED_AT", "CASE_KIND" ],
+  "missing" : [ ]
+}

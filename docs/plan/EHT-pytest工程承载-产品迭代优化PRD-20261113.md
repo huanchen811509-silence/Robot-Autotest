@@ -110,24 +110,24 @@
 
 | FR | 用户动作 | 验收判据（可观察／可复核） | WBS | TC | 优先级 | 状态 |
 |---|---|---|---|---|---|---|
-| FR-v5.5-01 | 在软件里打开一个承载 `pytest-cases` 的工程 | `robot_dev.project` 恰有 1 行 `code=EHT-PYTEST-LIB` 且 `kind=pytest-suite`、`test_kernel=pytest`；`GET /api/projects/{id}/pytest/health` 返回 200 且结论为「可跑」 | EHT-07 | TC-v5.5-01 | P0 | 未实施（待测） |
-| FR-v5.5-02 | 通过接口／界面新建一个 pytest 工程 | `POST /api/projects` 带 `kind=pytest-suite` → 200 且落库 kind 正确；不带 kind → 仍 `standard`（向后兼容）；非法 kind → **400 且不静默回落**；`mvn -o -B -Dtest=ProjectKindTest,ProjectControllerTest test` 绿 | EHT-05 | TC-v5.5-01 | P0 | 未实施（待测） |
-| FR-v5.5-03 | 在界面识别该工程属于 EHT | 工程列表／详情显示 `code=EHT-PYTEST-LIB` 与名称「EHT pytest 用例库工程」；库中 `kind` 值仍为 `pytest-suite`；**全仓无 `pytest-eht` 作为 kind 值**；`flyway_schema_history` 无 `V11_56` | EHT-07 | TC-v5.5-01 / TC-v5.5-02 | P1 | 未实施（待测） |
-| FR-v5.5-04 | 查看默认内核说明时不被误导 | `ProjectService.normalizeKernel()` 与三份文档口径一致（只认 `robot`／`pytest`）；旧 `FR-v5.2-01` R3 已按代码真值改写并在 `PRD §13.1` 标「降级达成（授权人：大师）」；两处均有修订记录行 | EHT-04 | TC-v5.5-02 | P1 | 未实施（待测） |
-| FR-v5.5-05 | 配置工程运行参数 | `pytest.repo_path` / `python_bin` / `env_config` / `inventory_path` 四项落 `project_setting`；`GET/PUT /api/projects/{id}/pytest/settings` 可用；`settings/validate` **只校验不落库**；缺任一项时 `PytestPrecheckService` 拒跑并返回缺项名 | EHT-07 | TC-v5.5-03 | P0 | 未实施（待测） |
-| FR-v5.5-06 | 查看用例库真源版本 | 绑定快照证据含 `git -C <repo> rev-parse HEAD` 值（基线 `915c2ca`）与同步时间；快照**不含工作树哈希**；`pytest-cases` 工作树零批量改写（`git diff --ignore-cr-at-eol --stat` 仍为空） | EHT-08 | TC-v5.5-04 | P1 | 未实施（待测） |
-| FR-v5.5-07 | 一键同步用例与脚本绑定 | `POST .../pytest/bindings/sync` 后四类计数（bound／unbound／orphan／pending）与 `case-index.json` 的 469／62 自洽；`GET .../bindings` 非空；无重复归一 `nodeid`（`<文件末段>::<函数名>`）；脚本重命名演练后绑定跟到新路径且不计 orphan | EHT-08 | TC-v5.5-05 / TC-v5.5-06 | P0 | 未实施（待测） |
-| FR-v5.5-08 | 从平台发起一次用例执行并看结果 | Fake 模式全量 **70 tests** 经平台通道执行 → junit 归一 → 结果入库，verdict 全 `PLANNED`，通过率显示「不适用」；命令同时含 `--capture=fd`、`-o junit_logging=out-err`、`-o junit_family=xunit2` 三条件 | EHT-14 | TC-v5.5-07 | P0 | 未实施（待测） |
-| FR-v5.5-09 | 用例库临时不可用时仍能打开软件 | E1 git 真源且平台无脚本副本；E2 执行前后用例库 `git status` 一致（除行尾）；E3 `bash scripts/secret-scan.sh` PASS；E4 路径／解释器／inventory／run_env 全在 `project_setting` 无硬编码；E5 `repo_path` 不可达时 `health` 报「仓库不可达」+ 修复提示、**不抛 500**、不阻断 RF 项目 | EHT-09 | TC-v5.5-08 | P0 | 未实施（待测） |
-| FR-v5.5-10 | 既有 RF 功能照常使用 | RK-1~RK-5 五条回归红线全部不回退：RF 执行／拆单／报告／看板／菜单；RF 项目 1、29 在解耦演练期间可正常执行 | EHT-14 | TC-v5.5-09 | P0 | 未实施（待测） |
-| FR-v5.5-11 | 在用例管理页查、筛、选、看绑定 | 列表分母 469 可查；按大类／优先级／评审态筛选返回正确子集；可看单条绑定与脚本路径；批量选例可用；重命名跟随结果可见；响应为真实端点数据 | EHT-10 | TC-v5.5-10 | P1 | 未实施（待测） |
-| FR-v5.5-12 | 编辑非自动化用例 | `ManualExecutionService` + `V11_55` 对应页面有可用编辑入口，保存后回读一致，且不影响自动化用例 | EHT-10 | TC-v5.5-11 | P1 | 未实施（待测） |
-| FR-v5.5-13 | 打开六张可视化页 | 时长基线／处置闭环／环境雷达／双内核统一视图／手工执行／分离统计 **六页各有菜单入口**，且每页数据源为**真实端点响应**（非 mock），逐页留有端点响应证据；每页双语 i18n 键与 spec 齐 | EHT-11 | TC-v5.5-12 | P1 | 未实施（待测） |
-| FR-v5.5-14 | 看执行进度与失败原因 | 进度可视化读 `ExecutionMonitor` 真实通道；失败归因分布读 `FailureBreakdown`；每条失败有**原因码 + 人话摘要 + 修复提示**；四类分布（产品／环境／跳过／未归类）分母口径与 `§12.2` 一致 | EHT-11 | TC-v5.5-13 | P1 | 未实施（待测） |
-| FR-v5.5-15 | 用一键操作完成常用动作 | 一键同步绑定／一键 Fake 自证／一键发起执行（**预检通过才提交**）／命令集合一键复制，四条链路各跑通一次并留调用日志；预检不过时提交按钮不可用且展示原因 | EHT-12 | TC-v5.5-14 | P1 | 未实施（待测） |
-| FR-v5.5-16 | 跑门禁时新增检查能真判红 | 门禁在 **48 步原样保留**基础上只增 **49–52** 四步；每步 `--self-test` 真注入 → 判红 → 还原 → 判绿；`scripts/gates.sh` 的 `check_structure` 登记 41–52 | EHT-13 | TC-v5.5-15 / TC-v5.5-17 | P0 | 未实施（待测） |
-| FR-v5.5-17 | 结构不改坏 | `bash scripts/db-audit.sh` PASS 且业务表仍 105（新表才允许同步改 `expectedTables`）；openapi 重生成后端点数**不减少**；`npx vue-tsc --noEmit` 无输出；`npm run test:unit` 全绿；`check_md_tables.py` 对四份文档 PASS | EHT-13 / EHT-15 | TC-v5.5-16 | P0 | 未实施（待测） |
-| FR-v5.5-18 | 版本收口时可追溯 | `docs/evidence/v5.5.0/` 证据齐；每条 `output.xml` 带 metadata 六项必填；评估报告／本 PRD／DEV-PLAN／TEST-PLAN 四份均有实测回写与修订记录；提交号 + 三处 sha 一致；**未测或未过不称交付** | EHT-14 / EHT-15 / EHT-16 | TC-v5.5-18 | P0 | 未实施（待测） |
+| FR-v5.5-01 | 在软件里打开一个承载 `pytest-cases` 的工程 | `robot_dev.project` 恰有 1 行 `code=EHT-PYTEST-LIB` 且 `kind=pytest-suite`、`test_kernel=pytest`；`GET /api/projects/{id}/pytest/health` 返回 200 且结论为「可跑」 | EHT-07 | TC-v5.5-01 | P0 | 达成 |
+| FR-v5.5-02 | 通过接口／界面新建一个 pytest 工程 | `POST /api/projects` 带 `kind=pytest-suite` → 200 且落库 kind 正确；不带 kind → 仍 `standard`（向后兼容）；非法 kind → **400 且不静默回落**；`mvn -o -B -Dtest=ProjectKindTest,ProjectControllerTest test` 绿 | EHT-05 | TC-v5.5-01 | P0 | 达成 |
+| FR-v5.5-03 | 在界面识别该工程属于 EHT | 工程列表／详情显示 `code=EHT-PYTEST-LIB` 与名称「EHT pytest 用例库工程」；库中 `kind` 值仍为 `pytest-suite`；**全仓无 `pytest-eht` 作为 kind 值**；`flyway_schema_history` 无 `V11_56` | EHT-07 | TC-v5.5-01 / TC-v5.5-02 | P1 | 达成 |
+| FR-v5.5-04 | 查看默认内核说明时不被误导 | `ProjectService.normalizeKernel()` 与三份文档口径一致（只认 `robot`／`pytest`）；旧 `FR-v5.2-01` R3 已按代码真值改写并在 `PRD §13.1` 标「降级达成（授权人：大师）」；两处均有修订记录行 | EHT-04 | TC-v5.5-02 | P1 | 达成 |
+| FR-v5.5-05 | 配置工程运行参数 | `pytest.repo_path` / `python_bin` / `env_config` / `inventory_path` 四项落 `project_setting`；`GET/PUT /api/projects/{id}/pytest/settings` 可用；`settings/validate` **只校验不落库**；缺任一项时 `PytestPrecheckService` 拒跑并返回缺项名 | EHT-07 | TC-v5.5-03 | P0 | 降级达成 |
+| FR-v5.5-06 | 查看用例库真源版本 | 绑定快照证据含 `git -C <repo> rev-parse HEAD` 值（基线 `915c2ca`）与同步时间；快照**不含工作树哈希**；`pytest-cases` 工作树零批量改写（`git diff --ignore-cr-at-eol --stat` 仍为空） | EHT-08 | TC-v5.5-04 | P1 | 达成 |
+| FR-v5.5-07 | 一键同步用例与脚本绑定 | `POST .../pytest/bindings/sync` 后四类计数（bound／unbound／orphan／pending）与 `case-index.json` 的 469／62 自洽；`GET .../bindings` 非空；无重复归一 `nodeid`（`<文件末段>::<函数名>`）；脚本重命名演练后绑定跟到新路径且不计 orphan | EHT-08 | TC-v5.5-05 / TC-v5.5-06 | P0 | 达成 |
+| FR-v5.5-08 | 从平台发起一次用例执行并看结果 | Fake 模式全量 **70 tests** 经平台通道执行 → junit 归一 → 结果入库，verdict 全 `PLANNED`，通过率显示「不适用」；命令同时含 `--capture=fd`、`-o junit_logging=out-err`、`-o junit_family=xunit2` 三条件 | EHT-14 | TC-v5.5-07 | P0 | 降级达成 |
+| FR-v5.5-09 | 用例库临时不可用时仍能打开软件 | E1 git 真源且平台无脚本副本；E2 执行前后用例库 `git status` 一致（除行尾）；E3 `bash scripts/secret-scan.sh` PASS；E4 路径／解释器／inventory／run_env 全在 `project_setting` 无硬编码；E5 `repo_path` 不可达时 `health` 报「仓库不可达」+ 修复提示、**不抛 500**、不阻断 RF 项目 | EHT-09 | TC-v5.5-08 | P0 | 达成 |
+| FR-v5.5-10 | 既有 RF 功能照常使用 | RK-1~RK-5 五条回归红线全部不回退：RF 执行／拆单／报告／看板／菜单；RF 项目 1、29 在解耦演练期间可正常执行 | EHT-14 | TC-v5.5-09 | P0 | 降级达成 |
+| FR-v5.5-11 | 在用例管理页查、筛、选、看绑定 | 列表分母 469 可查；按大类／优先级／评审态筛选返回正确子集；可看单条绑定与脚本路径；批量选例可用；重命名跟随结果可见；响应为真实端点数据 | EHT-10 | TC-v5.5-10 | P1 | 降级达成 |
+| FR-v5.5-12 | 编辑非自动化用例 | `ManualExecutionService` + `V11_55` 对应页面有可用编辑入口，保存后回读一致，且不影响自动化用例 | EHT-10 | TC-v5.5-11 | P1 | 降级达成 |
+| FR-v5.5-13 | 打开六张可视化页 | 时长基线／处置闭环／环境雷达／双内核统一视图／手工执行／分离统计 **六页各有菜单入口**，且每页数据源为**真实端点响应**（非 mock），逐页留有端点响应证据；每页双语 i18n 键与 spec 齐 | EHT-11 | TC-v5.5-12 | P1 | 达成 |
+| FR-v5.5-14 | 看执行进度与失败原因 | 进度可视化读 `ExecutionMonitor` 真实通道；失败归因分布读 `FailureBreakdown`；每条失败有**原因码 + 人话摘要 + 修复提示**；四类分布（产品／环境／跳过／未归类）分母口径与 `§12.2` 一致 | EHT-11 | TC-v5.5-13 | P1 | 降级达成 |
+| FR-v5.5-15 | 用一键操作完成常用动作 | 一键同步绑定／一键 Fake 自证／一键发起执行（**预检通过才提交**）／命令集合一键复制，四条链路各跑通一次并留调用日志；预检不过时提交按钮不可用且展示原因 | EHT-12 | TC-v5.5-14 | P1 | 降级达成 |
+| FR-v5.5-16 | 跑门禁时新增检查能真判红 | 门禁在 **48 步原样保留**基础上只增 **49–52** 四步；每步 `--self-test` 真注入 → 判红 → 还原 → 判绿；`scripts/gates.sh` 的 `check_structure` 登记 41–52 | EHT-13 | TC-v5.5-15 / TC-v5.5-17 | P0 | 达成 |
+| FR-v5.5-17 | 结构不改坏 | `bash scripts/db-audit.sh` PASS 且业务表仍 105（新表才允许同步改 `expectedTables`）；openapi 重生成后端点数**不减少**；`npx vue-tsc --noEmit` 无输出；`npm run test:unit` 全绿；`check_md_tables.py` 对四份文档 PASS | EHT-13 / EHT-15 | TC-v5.5-16 | P0 | 达成 |
+| FR-v5.5-18 | 版本收口时可追溯 | `docs/evidence/v5.5.0/` 证据齐；每条 `output.xml` 带 metadata 六项必填；评估报告／本 PRD／DEV-PLAN／TEST-PLAN 四份均有实测回写与修订记录；提交号 + 三处 sha 一致；**未测或未过不称交付** | EHT-14 / EHT-15 / EHT-16 | TC-v5.5-18 | P0 | 达成 |
 
 ### 4.1 关键判据细化
 
@@ -197,6 +197,23 @@
 
 **回写纪律**：降级必须写「理由 + 授权人」；未完成的 FR 不许从表里删掉；被实测推翻的假设保留原文并留「原值／实测值／影响」，**不悄悄改数字**。
 
+### 8.1 P6 实测状态回写（2026-11-13，流程 7）
+
+> 状态只用「达成／降级达成／未达成／不适用」；**降级不是达成**。初始登记两行保留不动，实测结果另立此表。
+> 全部降级项均由大师 2026-11-13「均按你的建议来推进，我都会批准」授权；复核人为学徒（独立裁判脚本 + 门禁读数）。
+
+| 状态 | FR 范围 | 判定依据 | 授权人 | 复核人 |
+|---|---|---|---|---|
+| 达成（11 条） | FR-v5.5-01 / 02 / 03 / 04 / 06 / 07 / 09 / 13 / 16 / 17 / 18 | 建工程与 `kind` 入口、口径订正、469 分母与绑定、真源零写入、解耦 E1–E5、六页真端点、门禁 49–52 真注入、结构一致、证据与回写齐；逐条见 TEST-PLAN §3.1 | — | 学徒 |
+| 降级达成（FR-v5.5-05） | 四项 `pytest.*` 设置 | 四项落库、health 可跑、E4 配置分离已证；「逐一清空任一项 → validate 报错」未单独归档独立日志 | 大师 | 学徒 |
+| 降级达成（FR-v5.5-08） | Fake 70 tests 全链路 | 平台链路 15 项判据全 PASS（70 条 junit、三条件、metadata 六/十项、RunRecord 回读、真源零写入）；**用例层「全 PLANNED」未达成**，实测 60 SKIP / 4 FAIL / 1 ERROR / 5 PASS；逐条结果尚未写 `test_result`。理由：真源 `test_config_and_plan.py` 10 条框架自检用例非 SKIP，平台按解耦红线不得改真源凑数 | 大师 | 学徒 |
+| 降级达成（FR-v5.5-10） | RK-1~5 RF 回归 | 解耦演练期间 RF 项目 1 / 29 端点仍 200；「真实 RF 执行／拆单／报告／看板／菜单前后对比」未做完整端到端对比 | 大师 | 学徒 |
+| 降级达成（FR-v5.5-11 / 12） | 用例管理页、非自动化编辑 | 页面分母 469、筛选／编辑入口、真端点、双语与 spec 齐（机检 51）；独立 SQL 一致性、批量选例、保存→回读一致未做 UI 端到端复核 | 大师 | 学徒 |
+| 降级达成（FR-v5.5-14 / 15） | 进度／错误原因、一键操作 | 真实端点与归因服务在门禁 45 / 48 通过、四条入口在便捷操作页（机检 51/52）；逐条失败「原因码＋人话＋修复提示」抽验、四条链路调用日志与剪贴板比对未留证 | 大师 | 学徒 |
+| 不适用（决策取消） | 原 `EHT-06` 命名包 | D-A=A，kind 不改名，无 `V11_56` | 大师 | — |
+
+**偏差订正**：`FR-v5.5-17` 写的 `npm run test:unit` 在本仓不存在，实际全量单测命令是 `npm test`（`vitest run`），门禁 02 已绿；本轮未改判据，仅登记命令口径偏差。
+
 ---
 
 ## 9. 风险与降级预案
@@ -218,4 +235,5 @@
 
 | 版本 | 日期 | 内容 |
 |---|---|---|
+| **v1.1** | 2026-11-13 | EHT-15 流程 7 回写：§4 十八条 FR 状态逐行落定（11 达成 / 7 降级）；新增 §8.1 实测状态表，每条降级写明理由与授权人；订正 `npm run test:unit` → `npm test` 命令口径；初始登记两行保留不删 |
 | v1.0 | 2026-11-13 | 首版：D-A~D-G 决策记录、18 条 `FR-v5.5-xx` 与可判定判据、NFR 7 项、数据与接口影响、退出标准 E1–E8、状态初始登记、编号口径修订说明 |

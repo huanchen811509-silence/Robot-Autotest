@@ -90,7 +90,7 @@ def check_precheck_boundary() -> list[str]:
 
 
 def check_removable() -> list[str]:
-    """没有任何非适配包引用适配包的内部类型（除已知的三个接入点）。"""
+    """没有任何非适配包引用适配包的内部类型（除已登记的接口层接入点）。"""
     allowed = {
         "RunExecutionService.java",      # 预检分派
         "ReportIngestService.java",      # 编号回填
@@ -100,6 +100,9 @@ def check_removable() -> list[str]:
         # 登记在这里的前提是：它只读型号字典，不碰命令构造与结果归一——
         # RF 分支零 pytest 字样由本脚本前两条断言独立守住。
         "NicModelDictController.java",
+        # EHT-14：Fake 执行入口也在接口层，只做「请求校验 → 调编排 → 落 RunRecord」，
+        # 不碰 RF 命令构造与预检 robot 分支；那两条红线由本脚本前三条断言独立守。
+        "PytestNicRunController.java",
     }
     pattern = re.compile(r"application\.kernel\.pytest\.")
     problems = []

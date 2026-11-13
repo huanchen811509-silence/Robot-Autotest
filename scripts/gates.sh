@@ -12,7 +12,7 @@
 #   19 证据完整性（v2.2 CLOS-02：output.xml metadata 六必填 + 三处单测基线只增不减
 #      + AI 契约机检（AI-06：零 prompt 文件开关 / 零硬编码凭据 / 零 L4-L5 自动提交））
 #
-# 本脚本共 48 步（01–36 判据不动，41–48 为 v5.1–v5.4 新增，只增不删）：01–17 为 run 步，
+# 本脚本共 52 步（01–36 判据不动，41–48 为 v5.1–v5.4 新增，49–52 为 EHT P2 新增，只增不删）：01–17 为 run 步，
 # 18 为末尾 structure_selfcheck 内联块，19 为证据完整性 run 步，
 # 20–23 为 v3.2.0 的契约 / 包体 / 性能预算 / 版本一致性门禁。
 # 24–27 为 v3.3.0+v3.4.0 的 AI 评测 / 安全扫描 / 容量+备份演练 / i18n+对比度门禁。
@@ -90,6 +90,11 @@ check_structure() {
   grep -qE '^run 46 manual_split ' "$file" || { echo "STRUCT_FAIL 缺少步骤 46 manual_split"; bad=1; }
   grep -qE '^run 47 dual_kernel_view ' "$file" || { echo "STRUCT_FAIL 缺少步骤 47 dual_kernel_view"; bad=1; }
   grep -qE '^run 48 failure_breakdown ' "$file" || { echo "STRUCT_FAIL 缺少步骤 48 failure_breakdown"; bad=1; }
+  # 49–52 为 EHT P2 新增（只增不删）。
+  grep -qE '^run 49 project_kind_create ' "$file" || { echo "STRUCT_FAIL 缺少步骤 49 project_kind_create"; bad=1; }
+  grep -qE '^run 50 eht_binding_evidence ' "$file" || { echo "STRUCT_FAIL 缺少步骤 50 eht_binding_evidence"; bad=1; }
+  grep -qE '^run 51 eht_case_ui ' "$file" || { echo "STRUCT_FAIL 缺少步骤 51 eht_case_ui"; bad=1; }
+  grep -qE '^run 52 eht_pages_live ' "$file" || { echo "STRUCT_FAIL 缺少步骤 52 eht_pages_live"; bad=1; }
   return "$bad"
 
 }
@@ -421,6 +426,26 @@ run 47 dual_kernel_view "python3 tools/check_dual_kernel_view.py"
 #    + 无失败时第 4 章标 NO_DATA（不许跳过）+ 页面与报告同一份计算。
 #    自证方式是把环境失败并进分母（一行改动、编译与单测都不会红），必须判红。
 run 48 failure_breakdown "python3 tools/check_failure_breakdown.py"
+
+# 49 项目创建入口（EHT-05 / FR-v5.5-02）：CreateProjectRequest 必须带 kind、
+#    HTTP 必须接 6 参 create 且 6 参保留 @Audited（否则建工程丢审计）。
+#    自证方式是真注入删掉 record 的 kind 组件 / 把 kind 改成硬编码，必须判红。
+run 49 project_kind_create "python3 tools/check_project_kind_create.py"
+
+# 50 绑定证据与真源快照（EHT-08 / FR-v5.5-06,07）：四类计数自洽、分母 469、
+#    快照只记 rev-parse HEAD、用例库工作树零写入、无重复 nodeid。
+#    自证方式是真注入把证据 scripts 改 0 / 破坏计数恒等式，必须判红。
+run 50 eht_binding_evidence "python3 tools/check_eht_binding_evidence.py"
+
+# 51 用例管理页与八页 i18n（EHT-10 / FR-v5.5-11）：八页 .vue + spec 齐、
+#    页面引用的每个 eht.* 键双语齐、用例页走分页/健康/优先级三个真端点、
+#    且无静态中文属性值。自证方式是真注入删掉一整页 i18n 键 / 去掉真端点汇总，必须判红。
+run 51 eht_case_ui "python3 tools/check_eht_case_ui.py"
+
+# 52 八页真实端点（EHT-11,12 / FR-v5.5-12,13）：每页都调 ehtViewsApi、
+#    API 每个方法体都走 request/casesPage、路由与双语八节齐、端点证据 12 个全 200。
+#    自证方式是真注入把端点封装或页面改成本地 mock，必须判红。
+run 52 eht_pages_live "python3 tools/check_eht_pages_live.py"
 
 printf '\nGATES_RESULT FAILS=%s\n' "$FAILS"
 

@@ -27,8 +27,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/projects")
 public class ProjectController {
 
+    /** 建项目入参。{@code kind} 可选：空值由 {@code ProjectKind.of} 回落 standard，非法值抛 400（不静默回落）。 */
     public record CreateProjectRequest(String code, String name, String description,
-                                       String visibility, String testKernel) {
+                                       String visibility, String testKernel, String kind) {
     }
 
     public record UpdateProjectRequest(String name, String description, Boolean enabled,
@@ -89,7 +90,8 @@ public class ProjectController {
     @PostMapping
     public ApiResponse<Project> create(@RequestBody CreateProjectRequest request) {
         return ApiResponse.ok(projects.create(request.code(), request.name(),
-                request.description(), request.visibility(), request.testKernel()));
+                request.description(), request.visibility(), request.testKernel(),
+                request.kind()));
     }
 
     /** 从模板建项目（OPT-06 / FR-49-22）：独立入参，不影响既有 POST /api/projects。 */

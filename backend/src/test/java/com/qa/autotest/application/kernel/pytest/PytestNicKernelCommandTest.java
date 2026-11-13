@@ -163,6 +163,24 @@ class PytestNicKernelCommandTest {
         assertThat(argv).containsSequence("-o", "junit_logging=out-err");
     }
 
+    @Test
+    void 全量执行必须带仓库根避免rootdir漂到runDir(@TempDir Path dir) throws Exception {
+        Path repo = Files.createDirectories(dir.resolve("repo"));
+        PytestNicKernelCommand command = new PytestNicKernelCommand(new FakeSettings(Map.of(
+                "repo_path", repo.toString(),
+                "python_bin", "/usr/bin/python3",
+                "env_config", "env.yaml")));
+
+        PytestNicKernelCommand.Command plan = command.build(PROJECT, "RUN-1", List.of(),
+                "fake", dir.resolve("run"), PytestNicKernelCommand.Contract.minimal()).get(0);
+
+        // EHT-14 实测：nodeIds 为空时若不带仓库路径，pytest 把 rootdir 推到 runDir，
+        // 仓库根 pyproject.toml 的 addopts 加载不到，--mode / --env_config 直接 usage error。
+        assertThat(plan.argv()).endsWith(repo.toString());
+        assertThat(plan.nodeIds()).isEmpty();
+        assertThat(plan.workDir()).isEqualTo(repo);
+    }
+
     private record FakeSettings(Map<String, String> values) implements ProjectSettingRepository {
 
         @Override

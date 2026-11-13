@@ -1,0 +1,79 @@
+{
+  "source": "eht14-junit.xml",
+  "testcases": 70,
+  "status_tally": {
+    "SKIP": 60,
+    "ERROR": 1,
+    "FAIL": 4,
+    "PASS": 5
+  },
+  "non_skipped_count": 10,
+  "non_skipped_causes": {
+    "平台资产台账无 GPU 实体（渲染器 gpus 恒空）": 1,
+    "真源用例仍写死设备名（gpu04/gpu05/switch）": 4,
+    "真源用例在 Plan-only 下自身 PASS（不依赖设备，非 SKIP）": 5
+  },
+  "non_skipped_cases": [
+    {
+      "nodeid": "tests.nic.mixed.test_im_mix_011::test_im_mix_011_gds_platform",
+      "status": "ERROR",
+      "message": "failed on setup with \"pytest.UsageError: 资源池中没有可用的 GPU；请在 run_env 的 resource_pool.gpus 中登记\"",
+      "cause": "平台资产台账无 GPU 实体（渲染器 gpus 恒空）"
+    },
+    {
+      "nodeid": "tests.test_config_and_plan::test_inventory_and_run_env_load",
+      "status": "FAIL",
+      "message": "AssertionError: assert 'gpu04@172.30.1.4' in {'gpu01@10.202.54.101': {'host': {'hostname': 'gpu01', 'management_ip': '10.202.54.101', 'username': 'inspur', 'passwo... 'cpu': {'cpu0': {'vendor': 'Intel', 'model': 'Xeon', 'core_id_mask': '0-63', 'numa_nodes': [0, 1]}}, 'vms': {}, ...}}}",
+      "cause": "真源用例仍写死设备名（gpu04/gpu05/switch）"
+    },
+    {
+      "nodeid": "tests.test_config_and_plan::test_plan_recorder_records_invoked_commands_and_alternative_branches",
+      "status": "PASS",
+      "message": "",
+      "cause": "真源用例在 Plan-only 下自身 PASS（不依赖设备，非 SKIP）"
+    },
+    {
+      "nodeid": "tests.test_config_and_plan::test_factory_builds_two_independent_ssh_host_and_nic_objects",
+      "status": "FAIL",
+      "message": "KeyError: '资源定位不唯一或不存在：switch:gpu04@172.30.1.4；Host 内资源请使用 host-key/device-key'",
+      "cause": "真源用例仍写死设备名（gpu04/gpu05/switch）"
+    },
+    {
+      "nodeid": "tests.test_config_and_plan::test_os_adapter_registry_has_ubuntu_and_centos",
+      "status": "PASS",
+      "message": "",
+      "cause": "真源用例在 Plan-only 下自身 PASS（不依赖设备，非 SKIP）"
+    },
+    {
+      "nodeid": "tests.test_config_and_plan::test_resource_pool_denies_unlisted_device",
+      "status": "FAIL",
+      "message": "KeyError: '资源定位不唯一或不存在：nic:gpu05@172.30.1.5/ens17np0；Host 内资源请使用 host-key/device-key'",
+      "cause": "真源用例仍写死设备名（gpu04/gpu05/switch）"
+    },
+    {
+      "nodeid": "tests.test_config_and_plan::test_same_vendor_different_models_resolve_separately",
+      "status": "PASS",
+      "message": "",
+      "cause": "真源用例在 Plan-only 下自身 PASS（不依赖设备，非 SKIP）"
+    },
+    {
+      "nodeid": "tests.test_config_and_plan::test_host_os_adapter_generates_os_specific_package_command",
+      "status": "FAIL",
+      "message": "PermissionError: Host 不在本次 run_env 资源池: gpu04@172.30.1.4",
+      "cause": "真源用例仍写死设备名（gpu04/gpu05/switch）"
+    },
+    {
+      "nodeid": "tests.test_config_and_plan::test_ethtool_s_counter_filter_reuses_one_statistics_payload",
+      "status": "PASS",
+      "message": "",
+      "cause": "真源用例在 Plan-only 下自身 PASS（不依赖设备，非 SKIP）"
+    },
+    {
+      "nodeid": "tests.test_config_and_plan::test_step_logging_goes_to_framework_log",
+      "status": "PASS",
+      "message": "",
+      "cause": "真源用例在 Plan-only 下自身 PASS（不依赖设备，非 SKIP）"
+    }
+  ],
+  "conclusion": "链路层 junit 完整产出 70 条；用例层未达「全 PLANNED」，根因分为真源硬编码设备名、平台资产台账无 GPU 实体、真源 Plan-only 下自身 PASS 三类，平台不得改写真源凑全 SKIP。"
+}

@@ -1,0 +1,219 @@
+{
+  "captured_at": "2026-11-13 20:58:15",
+  "timezone": "GMT+8",
+  "purpose": "EHT-14 / TC-v5.5-07 Fake 70 tests 真实链路验收",
+  "project_id": 95,
+  "endpoint": "POST /api/projects/95/pytest/runs/fake",
+  "request": {
+    "runId": "EHT-FAKE-20261113-205815",
+    "mode": "fake"
+  },
+  "metadata": {
+    "CASE_ID": "EHT-FAKE-70",
+    "RUN_ID": "EHT-FAKE-20261113-205815",
+    "QA_PROJECT": "EHT-PYTEST-LIB",
+    "DUT": "NIC-FAKE-01",
+    "LINK": "lab-fake-link",
+    "SW_BUILD": "5.0.0-55b16ff",
+    "BASELINE": "915c2ca",
+    "OPERATOR": "qa-e2e-admin",
+    "STARTED_AT": "2026-11-13T20:58:15+08:00",
+    "CASE_KIND": "pytest-fake"
+  },
+  "health": {
+    "status": 200,
+    "healthy": true
+  },
+  "device_setup": {
+    "action": "existing",
+    "status": 200,
+    "existing_ids": [
+      19,
+      18
+    ],
+    "created": []
+  },
+  "port_setup": {
+    "devices_checked": 2,
+    "created": [],
+    "updated": [],
+    "verified": [
+      {
+        "netdev": "ens17np0",
+        "nicModel": "connectx-7"
+      },
+      {
+        "netdev": "ens17np1",
+        "nicModel": "connectx-7"
+      },
+      {
+        "netdev": "ens17np0",
+        "nicModel": "connectx-7"
+      },
+      {
+        "netdev": "ens17np1",
+        "nicModel": "connectx-7"
+      }
+    ],
+    "note": "plan-only 示例资产；型号 connectx-7 取自用例库 device_specs.yaml 已登记项"
+  },
+  "repo_before": {
+    "head": "915c2ca366757ed51bb0f8492f253fa477b833c5",
+    "diff_ignore_cr_at_eol": "",
+    "status_lines": 162,
+    "status_sha256": "1c3f08d68e8e2f67def3f3eeb34254d142a3ddbc5a22d2ba93daa15e7addee91"
+  },
+  "repo_after": {
+    "head": "915c2ca366757ed51bb0f8492f253fa477b833c5",
+    "diff_ignore_cr_at_eol": "",
+    "status_lines": 162,
+    "status_sha256": "1c3f08d68e8e2f67def3f3eeb34254d142a3ddbc5a22d2ba93daa15e7addee91"
+  },
+  "response_status": 200,
+  "response_data": {
+    "runId": "EHT-FAKE-20261113-205815",
+    "mode": "fake",
+    "success": false,
+    "reason": "pytest_exit_1",
+    "batches": 1,
+    "exitCode": 1,
+    "elapsedMs": 54461,
+    "runDir": "/tmp/eht-fake-runs/EHT-FAKE-20261113-205815",
+    "junitFiles": [
+      "/tmp/eht-fake-runs/EHT-FAKE-20261113-205815/junit.xml"
+    ],
+    "totalCases": 70,
+    "metadata": {
+      "OPERATOR": "qa-e2e-admin",
+      "QA_PROJECT": "EHT-PYTEST-LIB",
+      "DUT": "NIC-FAKE-01",
+      "CASE_ID": "EHT-FAKE-70",
+      "STARTED_AT": "2026-11-13T20:58:15+08:00",
+      "SW_BUILD": "5.0.0-55b16ff",
+      "LINK": "lab-fake-link",
+      "CASE_KIND": "pytest-fake",
+      "BASELINE": "915c2ca",
+      "RUN_ID": "EHT-FAKE-20261113-205815"
+    },
+    "statusCounts": {
+      "SKIP": 60,
+      "ERROR": 1,
+      "FAIL": 4,
+      "PASS": 5
+    },
+    "boundMatched": 61,
+    "unboundResults": 9,
+    "planOnly": true,
+    "nonSkippedCases": 10,
+    "passRateApplicable": false,
+    "passRateDisplay": "不适用",
+    "gap": "",
+    "command": "/home/evergreen/venvs/nic-fake/bin/python -m pytest --env_config /tmp/eht-fake-runs/EHT-FAKE-20261113-205815/run_env.yaml --mode fake --junitxml=/tmp/eht-fake-runs/EHT-FAKE-20261113-205815/junit.xml -o junit_family=xunit2 -o junit_logging=out-err --capture=fd -q /mnt/e/workspace/自动化测试/pytest-cases",
+    "junitConditions": {
+      "--capture=fd": true,
+      "junit_logging=out-err": true,
+      "junit_family=xunit2": true
+    }
+  },
+  "run_record": {
+    "status": 200,
+    "row": {
+      "id": 16999,
+      "runId": "EHT-FAKE-20261113-205815",
+      "projectId": 95,
+      "testSetId": null,
+      "state": "FAILED",
+      "priority": 0,
+      "concurrency": 1,
+      "attemptNo": 0,
+      "totalTests": 70,
+      "passedTests": 0,
+      "failedTests": 5,
+      "failureClass": "PYTEST_EXIT",
+      "failureReason": "pytest_exit_1",
+      "failureMessage": null,
+      "artifactsDir": "/tmp/eht-fake-runs/EHT-FAKE-20261113-205815",
+      "enqueuedAt": "2026-11-13T12:58:15.461Z",
+      "startedAt": "2026-11-13T12:58:15.461Z",
+      "finishedAt": "2026-11-13T12:59:09.947Z",
+      "deviceScope": null,
+      "runRequestId": null
+    }
+  },
+  "run_dir_files": [
+    "contract.json",
+    "inventory.yaml",
+    "junit.xml",
+    "pytest-batch-0",
+    "run.log",
+    "run_env.yaml",
+    "run_metadata.json",
+    "stderr-batch-0.log",
+    "stdout-batch-0.log"
+  ],
+  "archived_files": [
+    "eht14-junit.xml",
+    "eht14-run.log",
+    "eht14-contract.json",
+    "eht14-run_metadata.json"
+  ],
+  "junit_independent_parse": {
+    "testcases": 70,
+    "tally": {
+      "skipped": 60,
+      "failure": 4,
+      "error": 1,
+      "passed": 5
+    }
+  },
+  "checks": {
+    "http_200": true,
+    "health_true": true,
+    "port_profile_written": true,
+    "no_orphan_kill": true,
+    "junit_generated": true,
+    "junit_testcases_70": true,
+    "normalized_total_70": true,
+    "run_record_persisted": true,
+    "junit_three_conditions": true,
+    "command_has_fake_mode": true,
+    "pass_rate_not_applicable": true,
+    "metadata_six_present": true,
+    "repo_head_unchanged": true,
+    "repo_diff_clean": true,
+    "repo_status_unchanged": true
+  },
+  "check_scope": "platform_chain",
+  "case_layer": {
+    "all_cases_skipped": false,
+    "non_skipped_cases": 10,
+    "reported_non_skipped": 10,
+    "status_counts": {
+      "SKIP": 60,
+      "ERROR": 1,
+      "FAIL": 4,
+      "PASS": 5
+    },
+    "junit_tally": {
+      "skipped": 60,
+      "failure": 4,
+      "error": 1,
+      "passed": 5
+    },
+    "pytest_exit_code": 1,
+    "pytest_success": false,
+    "verdict": "FAIL",
+    "note": "用例层结论取决于 pytest-cases 真源与资产台账完整度；平台不得改写真源凑全 SKIP"
+  },
+  "failed_checks": [],
+  "verdict": "PASS",
+  "case_layer_verdict": "FAIL",
+  "degraded": true,
+  "notes": [
+    "口令只从环境变量读取，证据里不含凭据",
+    "用例库 artifacts/ 在 .gitignore 内，框架运行产物不改变 git 追踪内容",
+    "junit 由独立 XML 解析统计，不采信接口自报的 totalCases",
+    "verdict 只判平台链路；case_layer_verdict 单独判真源用例层，两层不得混算",
+    "response.success 是 pytest 退出码，非平台链路成功标志；原值保留在 response_data"
+  ]
+}

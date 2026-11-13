@@ -76,6 +76,32 @@
 | TC-v5.5-17 | FR-v5.5-16 / 18 | L7 | 全量门禁跑完 | `bash scripts/gates.sh` 只读尾部 `GATES_RESULT FAILS=N`；48 步段与新增 4 步段**分别登记**，不相加成「全绿」；已知 2 项 FAIL 如实保留且写明与本轮无关；四份已跟踪副产物 `git restore --` 后 `git status --short` 干净 | 用 `grep FAIL` 历史日志当本轮读数；改证据凑源码；副产物漂移被提交 | 门禁尾部输出 + `git status` + 两段登记表 |
 | TC-v5.5-18 | FR-v5.5-18 | L7 | EHT-14、EHT-15 完成 | `docs/evidence/v5.5.0/eht/` 证据齐；每条 `output.xml` metadata 六项必填且无凭据；四份文档状态与实测一致、均有修订记录；无「CHANGELOG 写已完成但代码没有」；提交号 + 三处 sha 一致 | metadata 缺项或含凭据；FR 状态未落定；回写合并成一句「已更新」 | 文档 diff + metadata 抽样 + `git ls-remote` 输出 |
 
+### 3.1 P6 实测结果回填（2026-11-13，流程 7）
+
+> 结果只用 `PASS` / `降级达成` / `未达成` / `BLOCKED`；**降级达成不是 PASS**。证据根目录 `docs/evidence/v5.5.0/eht/`，本表 `raw/` 与 `gates-final2.log` 均相对该根。
+> 本轮**未升格** `docs/release/v5.5.0/`，所以结果回填落在本文 §3.1 而不是 `05-TEST-REPORT.md`；`check_release_docs.py` 只扫 `docs/release/<version>/`，不受影响。未测项一律不写成 PASS。
+
+| TC | 结果 | 实测要点 | 证据路径 | 偏差／遗留 |
+|---|---|---|---|---|
+| TC-v5.5-01 | PASS | `kind` 三种入参、项目 95 三字段落库、health `healthy=True`、机检 49 | `raw/eht07-create-response.json`、`eht07-db-verify.json`、`eht07-health-final.json` | — |
+| TC-v5.5-02 | PASS | `normalizeKernel()` 只认 robot/pytest；三处旧文档订正；无 `V11_56`、业务表仍 105 | 旧文档 v2.1 diff；门禁 12 `db_audit` PASS | — |
+| TC-v5.5-03 | 降级达成 | 四项设置落库、health 可跑、E4 配置分离已证；「逐一清空任一项」未单独归档独立日志 | `raw/eht07-settings-response.json`、`eht09-decoupling-drills.json` | L-55-05 |
+| TC-v5.5-04 | PASS | 快照只记 `rev-parse HEAD`（`915c2ca`），`git diff --ignore-cr-at-eol` 空；EHT-14 执行前后 `status_sha256` 一致 | `raw/eht08-repo-head.json`、`eht14-fake-run-report.json` | — |
+| TC-v5.5-05 | PASS | 469 分母；`bound 61 + unbound 408 = 469`；`scriptsScanned=61`；`duplicateBindings=0`；机检 50 | `raw/eht08-sync-report.json`、`eht08-bindings-readback.json` | — |
+| TC-v5.5-06 | PASS | `/tmp` 最小副本改名 → 绑定跟到新路径、不计 orphan、真源 `git status` 无新增改动 | `raw/eht09-decoupling-drills.json`（F4） | — |
+| TC-v5.5-07 | **降级达成** | 平台链路 15 项判据全 PASS（70 条 junit、三条件、metadata 六/十项、RunRecord 回读 `totalTests=70`、真源零写入、通过率「不适用」）；用例层 60 SKIP / 4 FAIL / 1 ERROR / 5 PASS，「全 PLANNED」未达成；逐条结果未写 `test_result` | `raw/eht14-fake-run-report.json`、`eht14-junit.xml`、`eht14-junit-analysis.json` | L-55-01 / L-55-02 / L-55-03；授权人：大师 |
+| TC-v5.5-08 | PASS | E1–E5 全 pass：无脚本副本、真源零写入、`secret-scan` PASS、四项配置无硬编码、`repo_path` 不可达时 health 不抛 500 且 RF 1/29 仍 200 | `raw/eht09-decoupling-drills.json` | — |
+| TC-v5.5-09 | 降级达成 | 解耦演练期间 RF 项目 1 / 29 端点 200；真实 RF 执行／拆单／报告／看板／菜单前后对比未做完整端到端复核 | `raw/eht09-decoupling-drills.json`（E5） | L-55-05；授权人：大师 |
+| TC-v5.5-10 | 降级达成 | 用例管理页分母 469、筛选与绑定入口、真端点、双语、spec 齐（机检 51）；独立 SQL 一致性、批量选例未做端到端复核 | `raw/eht-endpoint-probe.json`；`frontend/src/views/eht/EhtCaseLibraryView.vue` | L-55-05；授权人：大师 |
+| TC-v5.5-11 | 降级达成 | 非自动化用例编辑入口与真端点齐；保存 → 回读一致的 UI 端到端复核未做 | `frontend/src/views/eht/EhtManualExecutionView.vue`；机检 51 | L-55-05；授权人：大师 |
+| TC-v5.5-12 | PASS | 12 个端点全 200；六页双语键与 spec 齐；`check_eht_pages_live.py` PASS（门禁 52） | `raw/eht-endpoint-probe.json` | — |
+| TC-v5.5-13 | 降级达成 | 进度真实通道与归因服务在门禁 45 / 48 通过；逐条失败「原因码＋人话摘要＋修复提示」未抽验 | 门禁 45 / 48 日志 | L-55-05；授权人：大师 |
+| TC-v5.5-14 | 降级达成 | 一键同步／预检／执行／复制四入口在便捷操作页（机检 51/52）；四条调用链日志与剪贴板比对未留证 | `frontend/src/views/eht/EhtQuickActionsView.vue` | L-55-05；授权人：大师 |
+| TC-v5.5-15 | PASS | 49–52 四步各跑 `--self-test`：真注入 → 判红 → 还原 → 判绿；`check_structure` 登记 41–52；原 48 步未删改 | `scripts/gates.sh`；门禁 49–52 全 PASS | — |
+| TC-v5.5-16 | PASS | 门禁 02/03/05/09/12/20 全 PASS；`db-audit` 105 表、openapi 404/335 不减、`vue-tsc` 无输出、四份文档 `check_md_tables.py` PASS | `docs/evidence/v5.5.0/eht/gates-final2.log` | L-55-06（命令名口径） |
+| TC-v5.5-17 | PASS | 最终 `GATES_RESULT FAILS=2`（13 / 29 如实保留）；48 步段与 49–52 段分别登记；四份已跟踪副产物 `git restore --` | 同上 | — |
+| TC-v5.5-18 | PASS | 证据目录齐；metadata 六项必填齐且无凭据；四份文档均有修订记录；提交号与三处 sha 一致由收口证据复核 | `raw/eht16-sync-verify.json`；四份文档 diff | 本轮不升格 release 目录，见 §11 说明 |
+
 ---
 
 ## 4. FR → TC 覆盖矩阵（逐行核对，无孤儿 FR）
@@ -183,7 +209,7 @@
 |---|---|
 | 1 | 只认尾部 `GATES_RESULT FAILS=N`；`docs/evidence/gates/logs/*.log` 是历史累积，`grep FAIL` 会把旧失败当本轮 |
 | 2 | 原 48 步段与新增 49–52 段**分别登记 PASS/FAIL，不得相加成「全绿」** |
-| 3 | 已知 `FAILS=2`：13 CDP（大师已取消，如实 FAIL）、29 host_inventory（证据漂移，需现场重采）；**不许改证据凑源码** |
+| 3 | **最终读数 `GATES_RESULT FAILS=2`**（2026-11-13 全量 52 步，日志 `docs/evidence/v5.5.0/eht/gates-final2.log`）：13 CDP（大师已取消，如实 FAIL）、29 host_inventory（证据漂移，需现场重采）；首轮曾 `FAILS=3`（10 行尾空格、39 未登记新接入点，均已修后复跑）；**不许改证据凑源码** |
 | 4 | `check_colors` 失败会挡住其后 `check_tokens`，修完一项要重跑整条 `scripts/lint.sh` |
 | 5 | 全量门禁会重写 4 份已跟踪副产物，收口前 `git restore --` `ai-eval.json`／`capacity-report.json`／`security-scan.json`／`dora-trend.json` |
 | 6 | 新增机检只增不删，`--self-test` 必须真注入 → 判红 → 还原 → 判绿 |
@@ -206,13 +232,20 @@
 
 | # | 欠账 | 状态 | 解除条件 |
 |---|---|---|---|
-| L-EHT-01 | 18 条 TC 全部未执行 | **未执行（本轮只交计划）** | EHT-04~13 完成后的 EHT-14 |
+| L-EHT-01 | 18 条 TC 全部未执行 | **已关闭**：EHT-14 已执行，18 条结果见 §3.1 | — |
 | L-EHT-02 | 效果类指标（Top8 成功率／SUS／fps／createP95／真实端点一致性） | 未测量（沿用上游欠账） | 大师安排现场测量 |
 | L-54-01 | 六张前端页未落地 | **本轮 D-G 定为全做** → 转 FR-v5.5-13，EHT-11 后关闭 | 六页真端点验收 |
 | L-54-02 | G-1 AI 真实端点 | **未达成（D-F 未授权），不写入本轮验收** | 大师授权 |
 | L-54-03 | 报告幂等键降级 | 并列保留，不被本轮覆盖 | 单独排期 |
 | L-54-04 | host_inventory 证据漂移 | 门禁 29 步如实 FAIL，需现场重采 | 现场重采 |
 | L-54-05 | CDP 已取消 | 门禁 13 步如实 FAIL | 大师决定是否重启 |
+| L-55-01 | `FR-v5.5-08`「Fake 70 tests 全 PLANNED」未达成 | **降级达成**（授权人：大师；理由：真源 10 条框架自检用例非 SKIP，平台按解耦红线不得改真源凑数） | 真源去掉硬编码设备名、框架自检用例改 plan-only 语义后复测 |
+| L-55-02 | 逐条用例结果未写入 `test_result` | 未达成（本轮只落 run 级 `RunRecord` + junit / `run_metadata.json` 归档） | 补「junit → 报告域」适配并接 `ReportIngestService` |
+| L-55-03 | 平台资产台账无 GPU 实体，渲染器 `resource_pool.gpus` 恒空 | 未达成（1 条 GPU 用例 ERROR） | 补 GPU 资产实体与渲染分支 |
+| L-55-04 | `TenantGuard` 剩余 36 张历史未登记表 | 并列保留（本轮只补六页实际触发的 3 张） | 逐表登记租户策略，见 `eht-tenant-guard-gap.json` |
+| L-55-05 | UI 端到端交互复核（TC-03 / 09 / 10 / 11 / 13 / 14 部分判据） | 降级达成，逐条见 §3.1 | 人工／浏览器逐页复核，不接受 API 调用冒充 UI 验收 |
+| L-55-06 | `npm run test:unit` 命令不存在 | 订正：实际命令 `npm test`（`vitest run`），门禁 02 已绿；判据未改 | 后续计划文档统一写 `npm test` |
+| L-55-07 | metadata 六项 vs 后端 `MetadataGate.REQUIRED` 十项 | 口径差异已登记：本轮取证传十项，六项必填全含且无凭据 | 对外报告统一口径 |
 | 历史项 | 75／76 历史删除授权偏差是否恢复 | 仍待大师确认，本轮不动 | 大师拍板 |
 
 ---
@@ -236,4 +269,5 @@ Markdown 写完统一跑 `check_md_tables.py`；文档补丁**按内容匹配**�
 
 | 版本 | 日期 | 内容 |
 |---|---|---|
+| **v1.1** | 2026-11-13 | EHT-15 流程 7 回写：新增 §3.1 十八条 TC 实测结果（11 PASS / 7 降级达成，逐条带证据路径）；§10 门禁最终读数改 `FAILS=2` 并记首轮 `FAILS=3` 修复；§12 关闭 L-EHT-01、追加 L-55-01~07；说明本轮不升格 release 目录、结果不写 `05-TEST-REPORT.md` 的理由 |
 | v1.0 | 2026-11-13 | 首版：L1–L7 分层、18 条 `TC-v5.5-xx`、FR→TC 覆盖矩阵、10 项反例、J1–J6 独立裁判、F1–F6 故障注入（含 `/tmp` 副本隔离口径纠正）、metadata 六项、RK-1~5、门禁读数纪律、欠账与文档回写清单 |

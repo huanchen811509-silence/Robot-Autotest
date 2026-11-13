@@ -2827,4 +2827,32 @@ export default {
     empty: 'No scenarios',
     categorySection: 'Filter by category and batch add to a case set',
   },
+  eht: {
+    common: {
+      refresh: 'Refresh', loading: 'Loading…', empty: 'No data', loadFailed: 'Real endpoint read failed',
+      key: 'Field', value: 'Value', source: 'Data source',
+    },
+    caseLibrary: {
+      title: 'EHT Case Library', code: 'Case code', titleCol: 'Title', priority: 'Priority',
+      review: 'Review', total: 'Denominator (incl. pending)', coverageAll: 'Coverage (incl. pending)',
+      coverageExPending: 'Coverage (excl. pending)', bound: 'Bound',
+      keyword: 'Search code/title', allPriorities: 'All priorities', pending: 'Pending review',
+      filter: 'Filter', selected: '{count} selected', manualEntry: 'Edit manual cases',
+    },
+    quickActions: {
+      title: 'EHT Quick Actions', sync: 'Sync bindings', precheck: 'Run precheck',
+      copy: 'Copy command set', launch: 'Launch run (after precheck)', progress: 'Progress & admission',
+      failureReason: 'Failure reason & fix hint', admission: 'Admission', window: 'Window',
+      bound: 'Bound scripts', syncDone: 'Sync done, {count} bound', syncFailed: 'Sync failed, check project health',
+      admissionOk: 'Precheck passed, ready to launch', admissionDenied: 'Precheck denied: {reason}',
+      copied: 'Command set copied', copyFailed: 'Copy failed, select the command below',
+    },
+    durationBaseline: { title: 'Case Duration Baseline' },
+    disposition: { title: 'Failure Disposition' },
+    environmentRadar: { title: 'Environment Failure Radar' },
+    kernelUnified: { title: 'Unified Dual-Kernel View' },
+    manualExecution: { title: 'Manual Case Execution' },
+    resultSplit: { title: 'Manual/Auto Result Split' },
+  },
+
 }

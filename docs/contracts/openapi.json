@@ -12060,6 +12060,52 @@
         }
       }
     },
+    "/api/projects/{projectId}/pytest/runs/fake": {
+      "post": {
+        "operationId": "PytestNicRunController.fake",
+        "tags": [
+          "kernel"
+        ],
+        "responses": {
+          "200": {
+            "description": "统一信封；业务错误码见 ErrorCode",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "title": "FakeRunRequest"
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/projects/{projectId}/pytest/runs/{runId}/attribution": {
       "get": {
         "operationId": "PytestProjectController.attribution",

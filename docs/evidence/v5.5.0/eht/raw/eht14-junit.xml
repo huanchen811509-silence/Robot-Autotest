@@ -1,0 +1,1420 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="1" failures="4" skipped="60" tests="70" time="48.670" timestamp="2026-11-13T20:58:19.724942+08:00" hostname="Thinkbook14G5"><testcase classname="tests.nic.base.test_im_fun_020" name="test_im_fun_020_pci_device_info" time="0.089"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:00 INFO     [nic_platform.EHT-FAKE-20261113-205815] 资源池选定: host=eht-fake-host@127.0.0.1 nic=eht-fake-host@127.0.0.1/ens17np0
+2026-11-13 20:59:00 INFO     [nic_platform.EHT-FAKE-20261113-205815] 资源池选定: host=eht-fake-host-2@127.0.0.2 nic=eht-fake-host-2@127.0.0.2/ens17np0
+2026-11-13 20:59:00 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:00 INFO     [root] ===============步骤1. 读取目标网卡的PCI设备地址与身份信息。===============
+2026-11-13 20:59:00 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:00 INFO     [root] ===============步骤2. 检查PCIe链路能力LnkCap及Vendor/Device ID。===============
+2026-11-13 20:59:00 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:00 INFO     [root] ===============步骤3. 读取LnkSta的实际速率及链路宽度。===============
+2026-11-13 20:59:00 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:00 INFO     [nic_platform.EHT-FAKE-20261113-205815] 资源池选定: host=eht-fake-host@127.0.0.1 nic=eht-fake-host@127.0.0.1/ens17np0
+2026-11-13 20:59:00 INFO     [nic_platform.EHT-FAKE-20261113-205815] 资源池选定: host=eht-fake-host-2@127.0.0.2 nic=eht-fake-host-2@127.0.0.2/ens17np0
+2026-11-13 20:59:00 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:00 INFO     [root] ===============步骤1. 读取目标网卡的PCI设备地址与身份信息。===============
+2026-11-13 20:59:00 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:00 INFO     [root] ===============步骤2. 检查PCIe链路能力LnkCap及Vendor/Device ID。===============
+2026-11-13 20:59:00 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:00 INFO     [root] ===============步骤3. 读取LnkSta的实际速率及链路宽度。===============
+2026-11-13 20:59:00 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.base.test_im_fun_055" name="test_im_fun_055_driver_firmware_compatibility" time="0.026"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:01 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:01 INFO     [root] ===============步骤1. 查询网卡驱动版本。===============
+2026-11-13 20:59:01 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:01 INFO     [root] ===============步骤2. 查询网卡固件版本。===============
+2026-11-13 20:59:01 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:01 INFO     [root] ===============步骤3. 核对驱动版本与固件版本是否配套，并记录结果。===============
+2026-11-13 20:59:01 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:01 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:01 INFO     [root] ===============步骤1. 查询网卡驱动版本。===============
+2026-11-13 20:59:01 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:01 INFO     [root] ===============步骤2. 查询网卡固件版本。===============
+2026-11-13 20:59:01 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:01 INFO     [root] ===============步骤3. 核对驱动版本与固件版本是否配套，并记录结果。===============
+2026-11-13 20:59:01 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.ethernet.test_im_net_002" name="test_im_net_002_module_ddm" time="0.022"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:01 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:01 INFO     [root] ===============步骤1. 读取光模块数字诊断信息，检查模块温度、电压、发送及接收光功率等实际支持的指标。===============
+2026-11-13 20:59:01 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:01 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:01 INFO     [root] ===============步骤1. 读取光模块数字诊断信息，检查模块温度、电压、发送及接收光功率等实际支持的指标。===============
+2026-11-13 20:59:01 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.ethernet.test_im_net_007" name="test_im_net_007_link_autoneg" time="0.024"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:01 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:01 INFO     [root] [准备] 网卡型号=connectx-7；网口=ens17np0
+2026-11-13 20:59:01 INFO     [root] ===============步骤1. 读取目标网卡的链路状态与协商信息。===============
+2026-11-13 20:59:01 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:01 INFO     [root] ===============步骤2. 检查Link detected、Speed及Duplex字段。===============
+2026-11-13 20:59:01 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:01 INFO     [root] ===============步骤3. 本次仅核验当前链路，不扩展其他速率档位。===============
+2026-11-13 20:59:01 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:01 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:01 INFO     [root] [准备] 网卡型号=connectx-7；网口=ens17np0
+2026-11-13 20:59:01 INFO     [root] ===============步骤1. 读取目标网卡的链路状态与协商信息。===============
+2026-11-13 20:59:01 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:01 INFO     [root] ===============步骤2. 检查Link detected、Speed及Duplex字段。===============
+2026-11-13 20:59:01 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:01 INFO     [root] ===============步骤3. 本次仅核验当前链路，不扩展其他速率档位。===============
+2026-11-13 20:59:01 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.ethernet.test_im_net_116" name="test_im_net_116_ptp_timestamping" time="0.023"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:01 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:01 INFO     [root] ===============步骤1. 读取硬件时间戳类型、接收过滤能力和PHC索引。===============
+2026-11-13 20:59:01 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:01 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:01 INFO     [root] ===============步骤1. 读取硬件时间戳类型、接收过滤能力和PHC索引。===============
+2026-11-13 20:59:01 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.ethernet.test_im_net_131" name="test_im_net_131_rx_checksum_offload" time="0.228"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:01 INFO     [root] [准备] 打流方向=反向（资源池第2台 → 第1台）；RX=eht-fake-host/ens17np0、TX=eht-fake-host-2/ens17np0；绑核 CPU8 UDP/TCP 端口=9999/5201
+2026-11-13 20:59:01 INFO     [root] ===============步骤1. 记录目标口RX checksum相关硬件/驱动计数。===============
+2026-11-13 20:59:01 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:01 INFO     [root] ===============步骤2. 从对端发送有效流量及批准的校验样本。===============
+2026-11-13 20:59:01 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:01 INFO     [root] ===============步骤3. 核对接收计数、交付与校验错误表现。===============
+2026-11-13 20:59:01 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:01 INFO     [root] [准备] 打流方向=反向（资源池第2台 → 第1台）；RX=eht-fake-host/ens17np0、TX=eht-fake-host-2/ens17np0；绑核 CPU8 UDP/TCP 端口=9999/5201
+2026-11-13 20:59:01 INFO     [root] ===============步骤1. 记录目标口RX checksum相关硬件/驱动计数。===============
+2026-11-13 20:59:01 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:01 INFO     [root] ===============步骤2. 从对端发送有效流量及批准的校验样本。===============
+2026-11-13 20:59:01 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:01 INFO     [root] ===============步骤3. 核对接收计数、交付与校验错误表现。===============
+2026-11-13 20:59:01 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.hardware.test_im_cer_008" name="test_im_cer_008_idle_power" time="0.022"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:01 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:01 INFO     [root] ===============步骤1. 空闲稳定后，连续采集3次整机功率。===============
+2026-11-13 20:59:01 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:01 INFO     [root] ===============步骤2. 记录平均/变化范围，并按预定整机Idle功耗基线判断。===============
+2026-11-13 20:59:01 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:01 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:01 INFO     [root] ===============步骤1. 空闲稳定后，连续采集3次整机功率。===============
+2026-11-13 20:59:01 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:01 INFO     [root] ===============步骤2. 记录平均/变化范围，并按预定整机Idle功耗基线判断。===============
+2026-11-13 20:59:01 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.mixed.test_im_mix_011" name="test_im_mix_011_gds_platform" time="0.000"><error message="failed on setup with &quot;pytest.UsageError: 资源池中没有可用的 GPU；请在 run_env 的 resource_pool.gpus 中登记&quot;">runtime = &lt;nic_platform.core.runtime.Runtime object at 0x7f935aedd7c0&gt;
+
+    @pytest.fixture(scope="session")
+    def case_gpus(runtime):
+        """按 GPU 资源池顺序返回本次可用的 GPU；GPU 平台类用例从这里取设备。
+    
+        与 case_hosts 同理：GPU 键来自 run_env 的 resource_pool.gpus，不写进用例。
+        """
+        selected = []
+        for entry in runtime.allowed.get("gpus", []):
+            try:
+                _, item = runtime.get_resource_config("gpu", entry)
+            except (KeyError, PermissionError) as exc:
+                raise pytest.UsageError(f"GPU {entry} 不可用: {exc}") from exc
+            host_key = item.get("host_key")
+            if host_key and host_key in runtime.selected_hosts:
+                selected.append(SelectedGpu(host_key, entry))
+        if not selected:
+&gt;           raise pytest.UsageError("资源池中没有可用的 GPU；请在 run_env 的 resource_pool.gpus 中登记")
+E           pytest.UsageError: 资源池中没有可用的 GPU；请在 run_env 的 resource_pool.gpus 中登记
+
+tests/conftest.py:251: UsageError</error><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_fun_014" name="test_im_fun_014_nic_info" time="0.025"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:06 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:06 INFO     [root] ===============步骤1. 查询网卡的PCI设备及驱动绑定信息。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:06 INFO     [root] ===============步骤2. 查询网口的驱动、固件及总线地址。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:06 INFO     [root] ===============步骤3. 检查网口MAC、IP、链路状态与协商速率。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:06 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:06 INFO     [root] ===============步骤1. 查询网卡的PCI设备及驱动绑定信息。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:06 INFO     [root] ===============步骤2. 查询网口的驱动、固件及总线地址。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:06 INFO     [root] ===============步骤3. 检查网口MAC、IP、链路状态与协商速率。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_fun_018" name="test_im_fun_018_iommu_state" time="0.054"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:06 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:06 INFO     [root] ===============步骤1. 读取本次启动的IOMMU内核日志。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:06 INFO     [root] ===============步骤2. 查询网卡的IOMMU Group归属。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:06 INFO     [root] ===============步骤3. 读取IOMMU默认Domain类型，核实地址转换状态。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:06 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:06 INFO     [root] ===============步骤1. 读取本次启动的IOMMU内核日志。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:06 INFO     [root] ===============步骤2. 查询网卡的IOMMU Group归属。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:06 INFO     [root] ===============步骤3. 读取IOMMU默认Domain类型，核实地址转换状态。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_fun_021" name="test_im_fun_021_counter_integrity" time="0.024"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:06 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:06 INFO     [root] ===============步骤1. 查询网口的扩展硬件计数器。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:06 INFO     [root] ===============步骤2. 查询网口RX/TX收发及丢弃统计。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:06 INFO     [root] ===============步骤3. 读取目标RDMA设备的统计及支持范围。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:06 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:06 INFO     [root] ===============步骤1. 查询网口的扩展硬件计数器。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:06 INFO     [root] ===============步骤2. 查询网口RX/TX收发及丢弃统计。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:06 INFO     [root] ===============步骤3. 读取目标RDMA设备的统计及支持范围。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_fun_035" name="test_im_fun_035_system_nic_info" time="0.023"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:06 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:06 INFO     [root] ===============步骤1. 核对网卡的PCI地址及内核驱动绑定。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:06 INFO     [root] ===============步骤2. 读取网口的驱动和固件版本。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:06 INFO     [root] ===============步骤3. 查询固件标识与版本信息。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:06 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:06 INFO     [root] ===============步骤1. 核对网卡的PCI地址及内核驱动绑定。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:06 INFO     [root] ===============步骤2. 读取网口的驱动和固件版本。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:06 INFO     [root] ===============步骤3. 查询固件标识与版本信息。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_fun_036" name="test_im_fun_036_nic_log_export" time="0.022"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:06 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:06 INFO     [root] ===============步骤1. 导出目标设备的devlink健康信息。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:06 INFO     [root] ===============步骤2. 导出本次启动的网卡驱动/固件内核事件。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:06 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:06 INFO     [root] ===============步骤1. 导出目标设备的devlink健康信息。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:06 INFO     [root] ===============步骤2. 导出本次启动的网卡驱动/固件内核事件。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_fun_037" name="test_im_fun_037_guid_uniqueness" time="0.021"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:06 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:06 INFO     [root] ===============步骤1. 读取目标RDMA设备的Node GUID并检查重复。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:06 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:06 INFO     [root] ===============步骤1. 读取目标RDMA设备的Node GUID并检查重复。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_fun_040" name="test_im_fun_040_max_payload_size" time="0.021"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:06 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:06 INFO     [root] ===============步骤1. 读取DevCap的MaxPayload支持上限。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:06 INFO     [root] ===============步骤2. 读取DevCtl当前的MaxPayload与MaxReadReq。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:06 INFO     [root] ===============步骤3. 比较当前值是否不超过设备上限。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:06 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:06 INFO     [root] ===============步骤1. 读取DevCap的MaxPayload支持上限。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:06 INFO     [root] ===============步骤2. 读取DevCtl当前的MaxPayload与MaxReadReq。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:06 INFO     [root] ===============步骤3. 比较当前值是否不超过设备上限。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_fun_041" name="test_im_fun_041_max_read_request" time="0.023"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:06 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:06 INFO     [root] ===============步骤1. 读取DevCtl中的MaxReadReq并核对档位。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:06 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:06 INFO     [root] ===============步骤1. 读取DevCtl中的MaxReadReq并核对档位。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_fun_042" name="test_im_fun_042_numa_affinity" time="0.024"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:06 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:06 INFO     [root] ===============步骤1. 读取PCI设备所属NUMA节点及该节点CPU分布。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:06 INFO     [root] ===============步骤2. 核对网口与PCI设备的NUMA归属一致。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:06 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:06 INFO     [root] ===============步骤1. 读取PCI设备所属NUMA节点及该节点CPU分布。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:06 INFO     [root] ===============步骤2. 核对网口与PCI设备的NUMA归属一致。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_fun_043" name="test_im_fun_043_root_complex_topology" time="0.019"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:06 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:06 INFO     [root] ===============步骤1. 查看网卡的PCIe上游拓扑与NUMA节点。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:06 INFO     [root] ===============步骤2. 核对拓扑链路上的网卡与Socket对应关系。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:06 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:06 INFO     [root] ===============步骤1. 查看网卡的PCIe上游拓扑与NUMA节点。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:06 INFO     [root] ===============步骤2. 核对拓扑链路上的网卡与Socket对应关系。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_fun_044" name="test_im_fun_044_msix_vectors_and_irq" time="0.048"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:06 INFO     [root] [准备] 打流方向=正向（资源池第1台 → 第2台）；被测端=eht-fake-host/ens17np0、对端=eht-fake-host-2/ens17np0
+2026-11-13 20:59:06 INFO     [root] ===============步骤1. 记录目标设备的MSI-X使能状态与向量数。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:06 INFO     [root] ===============步骤2. 逐向量记录IRQ号与中断计数作为基线。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:06 INFO     [root] ===============步骤3. 向对端发送50个ping（间隔0.02s）。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:06 INFO     [root] ===============步骤4. 复采中断计数，比较增长向量及其CPU分布。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤4：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:06 INFO     [root] [准备] 打流方向=正向（资源池第1台 → 第2台）；被测端=eht-fake-host/ens17np0、对端=eht-fake-host-2/ens17np0
+2026-11-13 20:59:06 INFO     [root] ===============步骤1. 记录目标设备的MSI-X使能状态与向量数。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:06 INFO     [root] ===============步骤2. 逐向量记录IRQ号与中断计数作为基线。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:06 INFO     [root] ===============步骤3. 向对端发送50个ping（间隔0.02s）。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:06 INFO     [root] ===============步骤4. 复采中断计数，比较增长向量及其CPU分布。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤4：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_fun_045" name="test_im_fun_045_pcie_aer_monitor" time="0.045"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:06 INFO     [root] [准备] 打流方向=正向（资源池第1台 → 第2台）；被测端=eht-fake-host/ens17np0、对端=eht-fake-host-2/ens17np0
+2026-11-13 20:59:06 INFO     [root] ===============步骤1. 读取AER三类错误计数作为基线。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:06 INFO     [root] ===============步骤2. 发送ping流量后复查AER计数。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:06 INFO     [root] ===============步骤3. 核对内核AER日志与平台_OSC上报情况。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:06 INFO     [root] [准备] 打流方向=正向（资源池第1台 → 第2台）；被测端=eht-fake-host/ens17np0、对端=eht-fake-host-2/ens17np0
+2026-11-13 20:59:06 INFO     [root] ===============步骤1. 读取AER三类错误计数作为基线。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:06 INFO     [root] ===============步骤2. 发送ping流量后复查AER计数。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:06 INFO     [root] ===============步骤3. 核对内核AER日志与平台_OSC上报情况。===============
+2026-11-13 20:59:06 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_fun_048" name="test_im_fun_048_secure_boot_capability" time="0.028"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:06 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 查询网卡固件的Security Attributes与生命周期。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 记录主机UEFI的Secure Boot状态（与卡级分开）。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:06 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 查询网卡固件的Security Attributes与生命周期。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 记录主机UEFI的Secure Boot状态（与卡级分开）。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_fun_052" name="test_im_fun_052_config_snapshot_diff" time="0.033"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 采集配置快照A作为基线。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 临时把MTU改为1500并采集快照B。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤3. 恢复MTU=后采集快照C，确认差异消失。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 采集配置快照A作为基线。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 临时把MTU改为1500并采集快照B。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤3. 恢复MTU=后采集快照C，确认差异消失。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_fun_058" name="test_im_fun_058_pn_sn_psid_ec" time="0.030"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 查询目标PCI设备的PN、PSID与EC版本。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 用devlink序列号核对四项属于同一张卡。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 查询目标PCI设备的PN、PSID与EC版本。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 用devlink序列号核对四项属于同一张卡。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_fun_059" name="test_im_fun_059_dual_port_mac_unique" time="0.028"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0：eht-fake-host@127.0.0.1/ens17np0 与 eht-fake-host@127.0.0.1/ens17np1
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 读取两个物理口的永久MAC地址。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 记录MAC与各自PCI设备的对应关系。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0：eht-fake-host@127.0.0.1/ens17np0 与 eht-fake-host@127.0.0.1/ens17np1
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 读取两个物理口的永久MAC地址。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 记录MAC与各自PCI设备的对应关系。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_fun_060" name="test_im_fun_060_dual_port_rdma_mapping" time="0.024"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0：eht-fake-host@127.0.0.1/ens17np0 与 eht-fake-host@127.0.0.1/ens17np1
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 为两个物理口分别定位RDMA设备。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 核对每条RDMA Link的netdev与端口状态。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0：eht-fake-host@127.0.0.1/ens17np0 与 eht-fake-host@127.0.0.1/ens17np1
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 为两个物理口分别定位RDMA设备。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 核对每条RDMA Link的netdev与端口状态。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_fun_064" name="test_im_fun_064_inbox_driver_source" time="0.026"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 查询目标口当前绑定的驱动与内核版本。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 核对mlx5_core模块路径是否属于内核原生目录。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 查询目标口当前绑定的驱动与内核版本。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 核对mlx5_core模块路径是否属于内核原生目录。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_fun_071" name="test_im_fun_071_ethtool_counter_dictionary" time="0.025"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 完整导出网卡扩展计数器名称与值。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 按RX/TX、错误、Drop、Queue、Pause归档。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤3. 注明每类计数语义与统计单位。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 完整导出网卡扩展计数器名称与值。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 按RX/TX、错误、Drop、Queue、Pause归档。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤3. 注明每类计数语义与统计单位。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_fun_072" name="test_im_fun_072_rdma_resource_observability" time="0.037"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 采集测试前的RDMA资源与端口计数快照。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 观察窗口内资源与计数变化。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤3. 核对设备的QP/CQ理论上限（能力基线）。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 采集测试前的RDMA资源与端口计数快照。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 观察窗口内资源与计数变化。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤3. 核对设备的QP/CQ理论上限（能力基线）。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_fun_073" name="test_im_fun_073_devlink_topology" time="0.023"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 查询目标devlink PCI设备与端口信息。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 读取Reporter状态与错误计数。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤3. 建立端口与实际网卡BDF的映射关系。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 查询目标devlink PCI设备与端口信息。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 读取Reporter状态与错误计数。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤3. 建立端口与实际网卡BDF的映射关系。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_fun_075" name="test_im_fun_075_firmware_log_and_health" time="0.023"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 采集目标设备本次启动的固件事件日志。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 读取devlink健康诊断报告与Reporter。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤3. 核对诊断字段与时间戳是否可定位。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 采集目标设备本次启动的固件事件日志。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 读取devlink健康诊断报告与Reporter。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤3. 核对诊断字段与时间戳是否可定位。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_net_004" name="test_im_net_004_optics_identity" time="0.022"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 读取模块EEPROM的厂商、料号、序列号与类型。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 记录模块类型与DDM读数供实物核对。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 读取模块EEPROM的厂商、料号、序列号与类型。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 记录模块类型与DDM读数供实物核对。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_net_008" name="test_im_net_008_ipv6_connectivity" time="0.040"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 打流方向=正向（资源池第1台 → 第2台）；被测端=eht-fake-host/ens17np0、对端=eht-fake-host-2/ens17np0
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 确认测试地址未配置，并在双端添加。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤3. 从ens17np0 Ping 对端IPv6地址fd00:30:11::2。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤4. 删除双端测试地址并确认已回收。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤4：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 打流方向=正向（资源池第1台 → 第2台）；被测端=eht-fake-host/ens17np0、对端=eht-fake-host-2/ens17np0
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 确认测试地址未配置，并在双端添加。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤3. 从ens17np0 Ping 对端IPv6地址fd00:30:11::2。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤4. 删除双端测试地址并确认已回收。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤4：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_net_015" name="test_im_net_015_advertised_link_modes" time="0.023"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 读取网口链路信息与协商结果。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 查找并记录Advertised link modes。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤3. 记录通告模式与速率的对应关系。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 读取网口链路信息与协商结果。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 查找并记录Advertised link modes。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤3. 记录通告模式与速率的对应关系。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_net_016" name="test_im_net_016_media_type" time="0.024"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 读取网卡的Port与Supported ports信息。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 读取介质EEPROM的Identifier与Connector。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤3. 核对介质类型与Port字段的一致性。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 读取网卡的Port与Supported ports信息。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 读取介质EEPROM的Identifier与Connector。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤3. 核对介质类型与Port字段的一致性。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_net_022" name="test_im_net_022_gro_off" time="0.028"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 读取generic-receive-offload当前状态作为基线。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 反向切换、设目标状态、恢复基线并逐次回读。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 读取generic-receive-offload当前状态作为基线。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 反向切换、设目标状态、恢复基线并逐次回读。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_net_023" name="test_im_net_023_gro_on" time="0.027"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 读取generic-receive-offload当前状态作为基线。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 反向切换、设目标状态、恢复基线并逐次回读。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 读取generic-receive-offload当前状态作为基线。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 反向切换、设目标状态、恢复基线并逐次回读。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_net_028" name="test_im_net_028_lro_off" time="0.035"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 读取large-receive-offload当前状态作为基线。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 反向切换、设目标状态、恢复基线并逐次回读。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 读取large-receive-offload当前状态作为基线。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 反向切换、设目标状态、恢复基线并逐次回读。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_net_034" name="test_im_net_034_tso_off" time="0.023"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 读取tcp-segmentation-offload当前状态作为基线。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 反向切换、设目标状态、恢复基线并逐次回读。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 读取tcp-segmentation-offload当前状态作为基线。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 反向切换、设目标状态、恢复基线并逐次回读。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_net_040" name="test_im_net_040_gso_off" time="0.031"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 读取generic-segmentation-offload当前状态作为基线。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 反向切换、设目标状态、恢复基线并逐次回读。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 读取generic-segmentation-offload当前状态作为基线。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 反向切换、设目标状态、恢复基线并逐次回读。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_net_052" name="test_im_net_052_tx_checksum_off" time="0.029"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 读取tx-checksumming当前状态作为基线。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 反向切换、设目标状态、恢复基线并逐次回读。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 读取tx-checksumming当前状态作为基线。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 反向切换、设目标状态、恢复基线并逐次回读。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_net_054" name="test_im_net_054_rx_checksum_off" time="0.026"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 读取rx-checksumming当前状态作为基线。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 反向切换、设目标状态、恢复基线并逐次回读。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 读取rx-checksumming当前状态作为基线。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 反向切换、设目标状态、恢复基线并逐次回读。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_net_057" name="test_im_net_057_tx_single_queue" time="0.039"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 打流方向=正向（资源池第1台 → 第2台）；被测端=eht-fake-host/ens17np0、对端=eht-fake-host-2/ens17np0
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 读取当前Combined与sysfs队列数。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 切换为单队列（Combined=1）并回读。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤3. 切换到8队列并回读，核对多队列可用。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤4. 恢复原Combined=并核验连通性。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤4：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 打流方向=正向（资源池第1台 → 第2台）；被测端=eht-fake-host/ens17np0、对端=eht-fake-host-2/ens17np0
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 读取当前Combined与sysfs队列数。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 切换为单队列（Combined=1）并回读。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤3. 切换到8队列并回读，核对多队列可用。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤4. 恢复原Combined=并核验连通性。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤4：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_net_067" name="test_im_net_067_multi_queue_config" time="0.033"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 读取当前Combined、队列数与RSS间接表。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 配置32队列并回读队列数与间接表。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤3. 配置为实测最大值0并回读。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤4. 恢复原Combined=并确认。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤4：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 读取当前Combined、队列数与RSS间接表。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 配置32队列并回读队列数与间接表。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤3. 配置为实测最大值0并回读。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤4. 恢复原Combined=并确认。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤4：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_net_074" name="test_im_net_074_tx_ring_capacity" time="0.023"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 读取当前TX Ring与最大TX Ring。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 设置TX Ring=4096并回读。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤3. 设置TX Ring为最大值8192并回读。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤4. 恢复TX Ring=None并确认。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤4：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 读取当前TX Ring与最大TX Ring。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 设置TX Ring=4096并回读。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤3. 设置TX Ring为最大值8192并回读。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤4. 恢复TX Ring=None并确认。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤4：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_net_075" name="test_im_net_075_tx_ring_over_limit" time="0.028"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 读取当前TX Ring与最大TX Ring。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 设置TX Ring=8192+1，要求命令拒绝且配置不变。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤3. 设置TX Ring=0（低于合法下限），同样要求拒绝。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤4. 确认整条用例未对TX Ring造成任何变更。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤4：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 读取当前TX Ring与最大TX Ring。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 设置TX Ring=8192+1，要求命令拒绝且配置不变。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤3. 设置TX Ring=0（低于合法下限），同样要求拒绝。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤4. 确认整条用例未对TX Ring造成任何变更。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤4：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_net_077" name="test_im_net_077_rx_ring_max" time="0.028"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 读取当前RX Ring与最大RX Ring。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 设置RX Ring=4096并回读。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤3. 设置RX Ring为最大值8192并回读。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤4. 恢复RX Ring=None并确认TX未受影响。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤4：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:07 INFO     [root] ===============步骤1. 读取当前RX Ring与最大RX Ring。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤2. 设置RX Ring=4096并回读。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤3. 设置RX Ring为最大值8192并回读。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:07 INFO     [root] ===============步骤4. 恢复RX Ring=None并确认TX未受影响。===============
+2026-11-13 20:59:07 INFO     [root] [明细] 步骤4：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_net_080" name="test_im_net_080_link_down_up" time="0.051"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 打流方向=正向（资源池第1台 → 第2台）；被测端=eht-fake-host/ens17np0、对端=eht-fake-host-2/ens17np0
+2026-11-13 20:59:08 INFO     [root] ===============步骤1. 记录Up状态下的链路与协商速率。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤2. 将网口Down并回读管理标志。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤3. 将网口Up，等待链路在30秒内恢复。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤4. 业务恢复复验：Ping对端3次。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤4：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:07 INFO     [root] [准备] 打流方向=正向（资源池第1台 → 第2台）；被测端=eht-fake-host/ens17np0、对端=eht-fake-host-2/ens17np0
+2026-11-13 20:59:08 INFO     [root] ===============步骤1. 记录Up状态下的链路与协商速率。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤2. 将网口Down并回读管理标志。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤3. 将网口Up，等待链路在30秒内恢复。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤4. 业务恢复复验：Ping对端3次。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤4：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_net_088" name="test_im_net_088_mtu_1500" time="0.049"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:08 INFO     [root] [准备] 打流方向=正向（资源池第1台 → 第2台）；被测端=eht-fake-host/ens17np0、对端=eht-fake-host-2/ens17np0
+2026-11-13 20:59:08 INFO     [root] ===============步骤1. 记录双端原始MTU。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤2. 双端设置MTU=1500并回读。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤3. 用payload=1472的DF Ping验证可通过。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤4. 用payload=1473验证被MTU拒绝。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤4：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤5. 恢复双端原始MTU并回读。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤5：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:08 INFO     [root] [准备] 打流方向=正向（资源池第1台 → 第2台）；被测端=eht-fake-host/ens17np0、对端=eht-fake-host-2/ens17np0
+2026-11-13 20:59:08 INFO     [root] ===============步骤1. 记录双端原始MTU。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤2. 双端设置MTU=1500并回读。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤3. 用payload=1472的DF Ping验证可通过。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤4. 用payload=1473验证被MTU拒绝。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤4：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤5. 恢复双端原始MTU并回读。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤5：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_net_113" name="test_im_net_113_fec_switch" time="0.054"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:08 INFO     [root] [准备] 打流方向=正向（资源池第1台 → 第2台）；被测端=eht-fake-host/ens17np0、对端=eht-fake-host-2/ens17np0
+2026-11-13 20:59:08 INFO     [root] ===============步骤1. 记录当前FEC配置与生效编码。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤2. 设置FEC=rs，等待30秒后回读。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤3. 恢复FEC=auto，等待30秒后确认Active=RS。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤4. 确认FEC回到用例执行前的配置。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤4：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:08 INFO     [root] [准备] 打流方向=正向（资源池第1台 → 第2台）；被测端=eht-fake-host/ens17np0、对端=eht-fake-host-2/ens17np0
+2026-11-13 20:59:08 INFO     [root] ===============步骤1. 记录当前FEC配置与生效编码。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤2. 设置FEC=rs，等待30秒后回读。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤3. 恢复FEC=auto，等待30秒后确认Active=RS。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤4. 确认FEC回到用例执行前的配置。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤4：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_net_132" name="test_im_net_132_rss_hash_and_table" time="0.027"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:08 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:08 INFO     [root] ===============步骤1. 读取RX Hash状态、哈希函数与Key。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤2. 查询RSS重定向表与RX Ring数，核对映射有效性。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤3. 记录当前可用队列映射与关键字段。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:08 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:08 INFO     [root] ===============步骤1. 读取RX Hash状态、哈希函数与Key。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤2. 查询RSS重定向表与RX Ring数，核对映射有效性。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤3. 记录当前可用队列映射与关键字段。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_per_002" name="test_im_per_002_tcp_single_port_throughput" time="0.047"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:08 INFO     [root] [准备] 打流方向=正向（资源池第1台 → 第2台）；发送端=eht-fake-host/ens17np0、接收端=eht-fake-host-2/ens17np0；并发=32 流、20s
+2026-11-13 20:59:08 INFO     [root] ===============步骤1. 核对双端链路速率与业务IP。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤2. 启动32并发TCP流，持续20秒。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤3. 读取接收吞吐、重传与错误计数并判定。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:08 INFO     [root] [准备] 打流方向=正向（资源池第1台 → 第2台）；发送端=eht-fake-host/ens17np0、接收端=eht-fake-host-2/ens17np0；并发=32 流、20s
+2026-11-13 20:59:08 INFO     [root] ===============步骤1. 核对双端链路速率与业务IP。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤2. 启动32并发TCP流，持续20秒。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤3. 读取接收吞吐、重传与错误计数并判定。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_per_060" name="test_im_per_060_tcp_cpu_efficiency" time="0.049"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:08 INFO     [root] [准备] 打流方向=正向（资源池第1台 → 第2台）；发送端=eht-fake-host/ens17np0、接收端=eht-fake-host-2/ens17np0；单流 20s、绑核 CPU8
+2026-11-13 20:59:08 INFO     [root] ===============步骤1. 固定打流与绑核条件并记录基线。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤2. 同一窗口内采集吞吐与CPU占用。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤3. 计算每Gb/s的CPU核数并记录口径。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:08 INFO     [root] [准备] 打流方向=正向（资源池第1台 → 第2台）；发送端=eht-fake-host/ens17np0、接收端=eht-fake-host-2/ens17np0；单流 20s、绑核 CPU8
+2026-11-13 20:59:08 INFO     [root] ===============步骤1. 固定打流与绑核条件并记录基线。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤2. 同一窗口内采集吞吐与CPU占用。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤3. 计算每Gb/s的CPU核数并记录口径。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_per_062" name="test_im_per_062_gpu_nic_affinity" time="0.033"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:08 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0：eht-fake-host@127.0.0.1/ens17np0 与 eht-fake-host@127.0.0.1/ens17np1；要求至少 2 张 GPU
+2026-11-13 20:59:08 INFO     [root] ===============步骤1. 核对目标GPU与NIC的PCI BDF及NUMA编号。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤2. 使用nvidia-smi topo及lspci确认路径。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤3. 列出两GPU到两NIC的亲和关系。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:08 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0：eht-fake-host@127.0.0.1/ens17np0 与 eht-fake-host@127.0.0.1/ens17np1；要求至少 2 张 GPU
+2026-11-13 20:59:08 INFO     [root] ===============步骤1. 核对目标GPU与NIC的PCI BDF及NUMA编号。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤2. 使用nvidia-smi topo及lspci确认路径。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤3. 列出两GPU到两NIC的亲和关系。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_rdm_001" name="test_im_rdm_001_rocev2_deploy" time="0.029"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:08 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:08 INFO     [root] ===============步骤1. 核对端口状态、链路层与业务IPv4。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤2. 读取GID类型表，定位RoCEv2索引与绑定网口。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤3. 解码GID的IPv4尾部并与业务IP对应。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:08 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:08 INFO     [root] ===============步骤1. 核对端口状态、链路层与业务IPv4。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤2. 读取GID类型表，定位RoCEv2索引与绑定网口。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤3. 解码GID的IPv4尾部并与业务IP对应。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_rdm_021" name="test_im_rdm_021_single_up_pfc" time="0.037"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:08 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:08 INFO     [root] ===============步骤1. 记录PFC位图与Pause相关计数基线。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤2. 仅启用UP4的PFC，其余优先级保持不变。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤3. 关闭UP4的PFC，确认位图回到基线。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤4. 确认最终PFC配置与用例执行前一致。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤4：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:08 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:08 INFO     [root] ===============步骤1. 记录PFC位图与Pause相关计数基线。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤2. 仅启用UP4的PFC，其余优先级保持不变。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤3. 关闭UP4的PFC，确认位图回到基线。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤4. 确认最终PFC配置与用例执行前一致。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤4：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_rdm_022" name="test_im_rdm_022_dual_up_pfc_counters" time="0.029"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:08 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:08 INFO     [root] ===============步骤1. 记录当前PFC位图作为基线。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤2. 同时使能UP3与UP6并回读。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤3. 核对每个UP都有可独立读取的PFC/Pause计数。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤4. 恢复PFC位图并确认。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤4：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:08 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:08 INFO     [root] ===============步骤1. 记录当前PFC位图作为基线。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤2. 同时使能UP3与UP6并回读。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤3. 核对每个UP都有可独立读取的PFC/Pause计数。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤4. 恢复PFC位图并确认。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤4：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_vir_001" name="test_im_vir_001_sriov_vf_create" time="0.043"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:08 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np1（eht-fake-host@127.0.0.1/ens17np1）
+2026-11-13 20:59:08 INFO     [root] ===============步骤1. 读取PF的TotalVFs与NumVFs，确认无VF在用。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤2. 创建2个VF并核对virtfn与PCI识别。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤3. 复验PF原有对端通信未受影响。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤4. 回收VF并确认为0。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤4：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:08 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np1（eht-fake-host@127.0.0.1/ens17np1）
+2026-11-13 20:59:08 INFO     [root] ===============步骤1. 读取PF的TotalVFs与NumVFs，确认无VF在用。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤2. 创建2个VF并核对virtfn与PCI识别。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤3. 复验PF原有对端通信未受影响。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤4. 回收VF并确认为0。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤4：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.new_scripts.test_im_vir_002" name="test_im_vir_002_sriov_vf_limit" time="0.029"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:08 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np1（eht-fake-host@127.0.0.1/ens17np1）
+2026-11-13 20:59:08 INFO     [root] ===============步骤1. 读取PF的TotalVFs与当前NumVFs。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤2. 按TotalVFs=0建满VF并核对virtfn枚举。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤3. 回收全部VF并确认恢复为0。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:08 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np1（eht-fake-host@127.0.0.1/ens17np1）
+2026-11-13 20:59:08 INFO     [root] ===============步骤1. 读取PF的TotalVFs与当前NumVFs。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤2. 按TotalVFs=0建满VF并核对virtfn枚举。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤3. 回收全部VF并确认恢复为0。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.performance.test_im_per_057" name="test_im_per_057_tcp_single_stream_baseline" time="0.039"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:08 INFO     [root] [准备] 打流方向=反向（资源池第2台 → 第1台）；发送端=eht-fake-host-2/ens17np0、接收端=eht-fake-host/ens17np0；绑核 CPU8 端口=42532
+2026-11-13 20:59:08 INFO     [root] ===============步骤1. 对目标单口启动一条TCP流，持续30秒。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤2. 保存发送端和接收端吞吐及重传统计。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:08 INFO     [root] [准备] 打流方向=反向（资源池第2台 → 第1台）；发送端=eht-fake-host-2/ens17np0、接收端=eht-fake-host/ens17np0；绑核 CPU8 端口=42532
+2026-11-13 20:59:08 INFO     [root] ===============步骤1. 对目标单口启动一条TCP流，持续30秒。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤2. 保存发送端和接收端吞吐及重传统计。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.rdma.test_im_rdm_020" name="test_im_rdm_020_rdma_device_enumeration" time="0.024"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:08 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:08 INFO     [root] ===============步骤1. 逐张读取GPU01目标RDMA设备的Provider信息。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤2. 查询每个RDMA设备的node_type并核对实际枚举数。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:08 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:08 INFO     [root] ===============步骤1. 逐张读取GPU01目标RDMA设备的Provider信息。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤2. 查询每个RDMA设备的node_type并核对实际枚举数。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.nic.rdma.test_im_rdm_027" name="test_im_rdm_027_gid_table" time="0.022"><skipped type="pytest.skip" message="Plan-only：AW 未真实执行，跳过功能断言">/mnt/e/workspace/自动化测试/pytest-cases/tests/conftest.py:420: Plan-only：AW 未真实执行，跳过功能断言</skipped><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:08 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:08 INFO     [root] ===============步骤1. 逐条读取目标RDMA端口的GID值及类型。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤2. 识别与目标IPv4绑定的RoCEv1/v2条目。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤3. 核对网络接口和IPv4编码结果。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:08 INFO     [root] [准备] 被测端=eht-fake-host@127.0.0.1/ens17np0（资源池第1项）
+2026-11-13 20:59:08 INFO     [root] ===============步骤1. 逐条读取目标RDMA端口的GID值及类型。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤2. 识别与目标IPv4绑定的RoCEv1/v2条目。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤2：Plan-only 无真实回显，本步骤取值打印与判定跳过
+2026-11-13 20:59:08 INFO     [root] ===============步骤3. 核对网络接口和IPv4编码结果。===============
+2026-11-13 20:59:08 INFO     [root] [明细] 步骤3：Plan-only 无真实回显，本步骤取值打印与判定跳过
+
+</system-err></testcase><testcase classname="tests.test_config_and_plan" name="test_inventory_and_run_env_load" time="0.031"><failure message="AssertionError: assert 'gpu04@172.30.1.4' in {'gpu01@10.202.54.101': {'host': {'hostname': 'gpu01', 'management_ip': '10.202.54.101', 'username': 'inspur', 'passwo... 'cpu': {'cpu0': {'vendor': 'Intel', 'model': 'Xeon', 'core_id_mask': '0-63', 'numa_nodes': [0, 1]}}, 'vms': {}, ...}}}">def test_inventory_and_run_env_load():
+        env = load_run_env("config/environments/run_env_lab.yaml")
+        inv = load_inventory("config/environments/" + env["inventory_file"])
+&gt;       assert "gpu04@172.30.1.4" in inv["hosts"]
+E       AssertionError: assert 'gpu04@172.30.1.4' in {'gpu01@10.202.54.101': {'host': {'hostname': 'gpu01', 'management_ip': '10.202.54.101', 'username': 'inspur', 'passwo... 'cpu': {'cpu0': {'vendor': 'Intel', 'model': 'Xeon', 'core_id_mask': '0-63', 'numa_nodes': [0, 1]}}, 'vms': {}, ...}}}
+
+tests/test_config_and_plan.py:11: AssertionError</failure><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+
+</system-err></testcase><testcase classname="tests.test_config_and_plan" name="test_plan_recorder_records_invoked_commands_and_alternative_branches" time="0.127"><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+
+</system-err></testcase><testcase classname="tests.test_config_and_plan" name="test_factory_builds_two_independent_ssh_host_and_nic_objects" time="0.131"><failure message="KeyError: '资源定位不唯一或不存在：switch:gpu04@172.30.1.4；Host 内资源请使用 host-key/device-key'">def test_factory_builds_two_independent_ssh_host_and_nic_objects():
+        runtime = Runtime("config/environments/run_env_lab.yaml", mode="fake", artifact_root="/tmp/nic-platform-v12-test")
+        try:
+            runtime.begin_case("multi-object-test")
+            lab = ResourceFactory(runtime)
+            ctx = ActionContext(runtime, "multi-object-test")
+            host1_key = "gpu04@172.30.1.4"
+            host2_key = "gpu05@172.30.1.5"
+&gt;           ssh1 = lab.ssh(host1_key, name="ssh-gpu04")
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_config_and_plan.py:44: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/nic_platform/core/runtime.py:211: in ssh
+    _, item = self.runtime.get_resource_config("switch", host_key)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;nic_platform.core.runtime.Runtime object at 0x7f935ae47110&gt;
+kind = 'switch', key = 'gpu04@172.30.1.4'
+
+    def get_resource_config(self, kind: str, key: str):
+        host_key, local_key = (key.split("/", 1) if "/" in key else (None, key))
+        matches = [(token, item) for token, item in self.resources.items()
+                   if token[0] == kind and token[2] == local_key
+                   and (host_key is None or token[1] == host_key)]
+        if len(matches) != 1:
+&gt;           raise KeyError(f"资源定位不唯一或不存在：{kind}:{key}；Host 内资源请使用 host-key/device-key")
+E           KeyError: '资源定位不唯一或不存在：switch:gpu04@172.30.1.4；Host 内资源请使用 host-key/device-key'
+
+src/nic_platform/core/runtime.py:121: KeyError</failure><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+
+</system-err></testcase><testcase classname="tests.test_config_and_plan" name="test_os_adapter_registry_has_ubuntu_and_centos" time="0.000"><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+
+</system-err></testcase><testcase classname="tests.test_config_and_plan" name="test_resource_pool_denies_unlisted_device" time="0.110"><failure message="KeyError: '资源定位不唯一或不存在：nic:gpu05@172.30.1.5/ens17np0；Host 内资源请使用 host-key/device-key'">def test_resource_pool_denies_unlisted_device():
+        runtime = Runtime("config/environments/run_env_default.yaml", mode="fake", artifact_root="/tmp/nic-platform-v12-test")
+        try:
+            runtime.begin_case("resource-pool-test")
+            # gpu05 NIC is present in inventory, but default environment's resource pool excludes it.
+            runtime.allowed["nics"] = ["gpu04@172.30.1.4/ens17np0"]
+            try:
+&gt;               runtime.get_resource_config("nic", "gpu05@172.30.1.5/ens17np0")
+
+tests/test_config_and_plan.py:80: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;nic_platform.core.runtime.Runtime object at 0x7f935ae14290&gt;
+kind = 'nic', key = 'gpu05@172.30.1.5/ens17np0'
+
+    def get_resource_config(self, kind: str, key: str):
+        host_key, local_key = (key.split("/", 1) if "/" in key else (None, key))
+        matches = [(token, item) for token, item in self.resources.items()
+                   if token[0] == kind and token[2] == local_key
+                   and (host_key is None or token[1] == host_key)]
+        if len(matches) != 1:
+&gt;           raise KeyError(f"资源定位不唯一或不存在：{kind}:{key}；Host 内资源请使用 host-key/device-key")
+E           KeyError: '资源定位不唯一或不存在：nic:gpu05@172.30.1.5/ens17np0；Host 内资源请使用 host-key/device-key'
+
+src/nic_platform/core/runtime.py:121: KeyError</failure><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+
+</system-err></testcase><testcase classname="tests.test_config_and_plan" name="test_same_vendor_different_models_resolve_separately" time="0.000"><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+
+</system-err></testcase><testcase classname="tests.test_config_and_plan" name="test_host_os_adapter_generates_os_specific_package_command" time="0.117"><failure message="PermissionError: Host 不在本次 run_env 资源池: gpu04@172.30.1.4">def test_host_os_adapter_generates_os_specific_package_command():
+        runtime = Runtime("config/environments/run_env_lab.yaml", mode="fake", artifact_root="/tmp/nic-platform-v12-test")
+        try:
+            runtime.begin_case("os-compatibility-test")
+            lab = ResourceFactory(runtime)
+            ctx = ActionContext(runtime, "os-compatibility-test")
+&gt;           ubuntu = lab.host("gpu04@172.30.1.4")
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_config_and_plan.py:106: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/nic_platform/core/runtime.py:242: in host
+    return self.runtime.new_host(host_key, ssh=ssh)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;nic_platform.core.runtime.Runtime object at 0x7f935ae9de50&gt;
+host_key = 'gpu04@172.30.1.4', ssh = None
+
+    def new_host(self, host_key: str, ssh: SSHConnection | None = None) -&gt; Host:
+        if host_key not in self.selected_hosts:
+&gt;           raise PermissionError(f"Host 不在本次 run_env 资源池: {host_key}")
+E           PermissionError: Host 不在本次 run_env 资源池: gpu04@172.30.1.4
+
+src/nic_platform/core/runtime.py:147: PermissionError</failure><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+
+</system-err></testcase><testcase classname="tests.test_config_and_plan" name="test_ethtool_s_counter_filter_reuses_one_statistics_payload" time="0.000"><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+
+</system-err></testcase><testcase classname="tests.test_config_and_plan" name="test_step_logging_goes_to_framework_log" time="0.128"><system-out>--------------------------------- Captured Out ---------------------------------
+
+</system-out><system-err>--------------------------------- Captured Err ---------------------------------
+2026-11-13 20:59:09 INFO     [root] 步骤9. 验证测试步骤写入 Framework Log
+2026-11-13 20:59:09 INFO     [root] 步骤9. 验证测试步骤写入 Framework Log
+
+</system-err></testcase></testsuite></testsuites>

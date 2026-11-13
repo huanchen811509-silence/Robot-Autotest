@@ -52,9 +52,31 @@ public class DeviceService {
      * 端口写入表单（v4.3.0 / FR-v4.3-03 增 {@code nicName}/{@code nicIndex}，均可空）。
      * 既有调用方不传时行为不变。
      */
+    /**
+     * 端口入参。前 10 项是 v4.3.0 的基础字段；后 15 项是 v5.1.0 / FR-v5.1-02
+     * 为自研框架 inventory 新增的 NIC 画像。{@code DeviceRepositoryJdbc} 早已写这 15 列，
+     * 但 HTTP 入口一直只暴露 10 参，{@code nicModel} 永远是 null —— 渲染出的
+     * inventory 里 {@code product_model: null}，框架查 device_specs.yaml 直接
+     * KeyError（EHT-14 实测 32 条用例因此 FAIL）。这里把入口补齐，
+     * 保留 10 参兼容构造器，既有调用方零改动。
+     */
     public record PortCommand(String portName, String portType, String protocol, String macAddress,
                               Integer speedGbps, Integer mtu, String ipAddress, String portStatus,
-                              String nicName, Integer nicIndex) {
+                              String nicName, Integer nicIndex,
+                              String nicVendor, String nicManufacturer, String nicModel,
+                              String nicFormFactor, String pciBdf, String vendorId,
+                              String pciDeviceId, String driver, String firmware,
+                              String rdmaDevice, Integer nicPort, Integer numaNode,
+                              String nicRole, String capabilitiesJson, String counterPatternsJson) {
+
+        /** v5.5.0 以前的 10 参形态，保持源码兼容。 */
+        public PortCommand(String portName, String portType, String protocol, String macAddress,
+                           Integer speedGbps, Integer mtu, String ipAddress, String portStatus,
+                           String nicName, Integer nicIndex) {
+            this(portName, portType, protocol, macAddress, speedGbps, mtu, ipAddress,
+                    portStatus, nicName, nicIndex, null, null, null, null, null, null,
+                    null, null, null, null, null, null, null, null, null);
+        }
     }
 
     private final DeviceRepository devices;
@@ -270,7 +292,10 @@ public class DeviceService {
     private static DevicePort toPort(Long id, long deviceId, PortCommand c) {
         return new DevicePort(id, deviceId, c.portName(), c.portType(), c.protocol(),
                 c.macAddress(), c.speedGbps(), c.mtu(), c.ipAddress(), c.portStatus(),
-                c.nicName(), c.nicIndex());
+                c.nicName(), c.nicIndex(), c.nicVendor(), c.nicManufacturer(), c.nicModel(),
+                c.nicFormFactor(), c.pciBdf(), c.vendorId(), c.pciDeviceId(), c.driver(),
+                c.firmware(), c.rdmaDevice(), c.nicPort(), c.numaNode(), c.nicRole(),
+                c.capabilitiesJson(), c.counterPatternsJson());
     }
 
     private static void requireName(String name) {

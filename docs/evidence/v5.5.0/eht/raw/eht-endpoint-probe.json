@@ -1,0 +1,207 @@
+{
+  "captured_at": "2026-11-13 19:45:08",
+  "timezone": "GMT+8",
+  "project_id": 95,
+  "endpoints": {
+    "durationBaselines": {
+      "path": "/projects/95/duration-baselines",
+      "status": 200,
+      "shape": {
+        "type": "list",
+        "len": 0,
+        "first_keys": []
+      },
+      "sample": "[]"
+    },
+    "dispositionLedger": {
+      "path": "/projects/95/dispositions/ledger",
+      "status": 200,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "assigned",
+          "closed",
+          "decided",
+          "exempted",
+          "open"
+        ]
+      },
+      "sample": "{\"open\": 0, \"assigned\": 0, \"decided\": 0, \"closed\": 0, \"exempted\": 0}"
+    },
+    "environmentRadar": {
+      "path": "/projects/95/environment-radar?days=7",
+      "status": 200,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "byCategory",
+          "endpointCoverage",
+          "envFailures",
+          "envRatioPercent",
+          "topEndpoints",
+          "totalFailures",
+          "trend",
+          "truncated",
+          "windowDays"
+        ]
+      },
+      "sample": "{\"windowDays\": 7, \"totalFailures\": 0, \"envFailures\": 0, \"envRatioPercent\": 0.0, \"byCategory\": [], \"topEndpoints\": [], \"endpointCoverage\": 0.0, \"trend\": [], \"truncated\": false}"
+    },
+    "kernelView": {
+      "path": "/projects/95/kernel-view?days=7",
+      "status": 200,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "bothKernels",
+          "lanes",
+          "note",
+          "windowDays"
+        ]
+      },
+      "sample": "{\"windowDays\": 7, \"lanes\": [], \"bothKernels\": false, \"note\": \"近 7 天没有执行记录\"}"
+    },
+    "manualExecutions": {
+      "path": "/projects/95/manual-executions?runId=0",
+      "status": 200,
+      "shape": {
+        "type": "list",
+        "len": 0,
+        "first_keys": []
+      },
+      "sample": "[]"
+    },
+    "resultSplit": {
+      "path": "/projects/95/result-split?days=30",
+      "status": 200,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "auto",
+          "consistent",
+          "manual",
+          "manualNote",
+          "total",
+          "unknownModes"
+        ]
+      },
+      "sample": "{\"auto\": {\"execMode\": \"auto\", \"total\": 0, \"passed\": 0, \"failed\": 0, \"passRatePercent\": 0.0}, \"manual\": {\"execMode\": \"manual\", \"total\": 0, \"passed\": 0, \"failed\": 0, \"passRatePercent\": 0.0}, \"total\": {\"execMode\": \"total\", \"total\": 0, \"passed\": 0, \"failed\": 0, \"passRatePercent\": 0.0}, \"manualNote\": \"合计全部为自动结果\", \"consistent\": true, \"unknownModes\": []}"
+    },
+    "failureChapter": {
+      "path": "/projects/95/runs/0/failure-breakdown/chapter",
+      "status": 200,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "dataSource",
+          "items",
+          "missing",
+          "no",
+          "status",
+          "summary",
+          "title"
+        ]
+      },
+      "sample": "{\"no\": 4, \"title\": \"失败分析\", \"status\": \"NO_DATA\", \"dataSource\": \"test_result + FailureAttributor 归因\", \"summary\": \"无数据\", \"missing\": \"无失败（本次执行没有 FAIL/ERROR 用例）\", \"items\": []}"
+    },
+    "cases": {
+      "path": "/projects/95/cases?page=1&size=3",
+      "status": 200,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "items",
+          "page",
+          "size",
+          "total"
+        ]
+      },
+      "sample": "{\"items\": [{\"id\": 2370, \"projectId\": 95, \"caseCode\": \"XCCL-RELI-003\", \"title\": \"CCL可靠性\", \"category\": null, \"priority\": \"T2\", \"precondition\": null, \"expected\": null, \"domainTag\": null, \"reviewStatus\": \"draft\", \"source\": \"import\", \"capability\": null, \"description\": null, \"safetyLevel\": \"LX\"}, {\"id\": 2369, \"projectId\": 95, \"caseCode\": \"XCCL-COMP-007\", \"title\": \"CCL兼容性\", \"category\": null, \"priority\": \"T0\", \"precondition\""
+    },
+    "admission": {
+      "path": "/projects/95/execution-coordination/admission",
+      "status": 200,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "allowed",
+          "estimatedSeconds",
+          "exclusive",
+          "hint",
+          "longRun",
+          "reason",
+          "windowDescription"
+        ]
+      },
+      "sample": "{\"allowed\": true, \"windowDescription\": \"不限时间\", \"exclusive\": false, \"reason\": null, \"hint\": null, \"estimatedSeconds\": 0, \"longRun\": false}"
+    },
+    "bindings": {
+      "path": "/projects/95/pytest/bindings",
+      "status": 200,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "bound",
+          "boundExcludingPending",
+          "coverageExcludingPendingPercent",
+          "coveragePercent",
+          "duplicateRisk",
+          "items",
+          "orphanScripts",
+          "pendingCases",
+          "totalCases",
+          "totalExcludingPending",
+          "unbound"
+        ]
+      },
+      "sample": "{\"totalCases\": 469, \"bound\": 61, \"unbound\": 408, \"pendingCases\": 178, \"totalExcludingPending\": 291, \"boundExcludingPending\": 30, \"orphanScripts\": 0, \"duplicateRisk\": 0, \"coveragePercent\": 13.0, \"coverageExcludingPendingPercent\": 10.3, \"items\": [{\"id\": 67, \"projectId\": 95, \"caseId\": 1921, \"kernel\": \"pytest\", \"scriptPath\": \"tests/nic/base/test_im_fun_020.py\", \"nodeId\": \"tests/nic/base/test_im_fun_020.py::test_im_fun_02"
+    },
+    "health": {
+      "path": "/projects/95/pytest/health",
+      "status": 200,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "bound",
+          "boundExcludingPending",
+          "contractFailure",
+          "contractMissing",
+          "coverageExcludingPendingPercent",
+          "coveragePercent",
+          "foundOptions",
+          "healthy",
+          "hints",
+          "minPythonVersion",
+          "modeDefault",
+          "pendingCases",
+          "pytestVersion",
+          "pythonBin",
+          "pythonVersion",
+          "pythonVersionProblem",
+          "repoConfigured",
+          "repoPath",
+          "repoReachable",
+          "totalCases",
+          "totalExcludingPending",
+          "unbound"
+        ]
+      },
+      "sample": "{\"healthy\": true, \"pythonBin\": \"/home/evergreen/venvs/nic-fake/bin/python\", \"pythonVersion\": \"3.12.3\", \"minPythonVersion\": \"3.11\", \"pythonVersionProblem\": null, \"pytestVersion\": null, \"foundOptions\": [\"--env_config\", \"--mode\", \"--junit-xml\"], \"contractMissing\": [], \"contractFailure\": null, \"repoConfigured\": true, \"repoReachable\": true, \"repoPath\": \"/mnt/e/workspace/自动化测试/pytest-cases\", \"modeDefault\": \"fake\", \"totalCa"
+    },
+    "settings": {
+      "path": "/projects/95/pytest/settings",
+      "status": 200,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "env_config",
+          "inventory_path",
+          "mode_default",
+          "python_bin",
+          "repo_path"
+        ]
+      },
+      "sample": "{\"env_config\": \"config/environments/run_env_lab.yaml\", \"inventory_path\": \"config/inventory/inventory_lab.yaml\", \"mode_default\": \"fake\", \"python_bin\": \"/home/evergreen/venvs/nic-fake/bin/python\", \"repo_path\": \"/mnt/e/workspace/自动化测试/pytest-cases\"}"
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "captured_at": "2026-11-13 19:28:15",
+  "status": 200,
+  "request": {
+    "code": "EHT-PYTEST-LIB",
+    "name": "EHT pytest 用例库工程",
+    "testKernel": "pytest",
+    "kind": "pytest-suite",
+    "visibility": "private"
+  },
+  "response_data": {
+    "id": 95,
+    "code": "EHT-PYTEST-LIB",
+    "name": "EHT pytest 用例库工程",
+    "description": "承载 E:\\workspace\\自动化测试\\pytest-cases 的 pytest 用例库工程（D-A=A / kind=pytest-suite）",
+    "enabled": true,
+    "ownerId": 17,
+    "visibility": "private",
+    "testKernel": "pytest",
+    "kind": "pytest-suite",
+    "codeChangedAt": null
+  }
+}

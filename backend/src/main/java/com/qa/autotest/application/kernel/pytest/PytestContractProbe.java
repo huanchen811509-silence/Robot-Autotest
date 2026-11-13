@@ -86,6 +86,16 @@ public class PytestContractProbe {
      * 并带上原因，**不回退到乐观默认值**——乐观默认会让预检放过一个根本跑不起来的工程。
      */
     public ProbeResult probe(String pythonBin, boolean refresh) {
+        return probe(pythonBin, refresh, null);
+    }
+
+    /**
+     * 带工作目录的探测（EHT-07 实测修复）：用例库的 {@code --mode} / {@code --env_config}
+     * 由 {@code pyproject.toml} 的 {@code addopts = -p nic_platform.pytest_plugin} 注册，
+     * 只有把 cwd 放到仓库根才会出现在 {@code --help} 里。在临时空目录探测会永远判
+     * 「契约不满足」，而这不是用例库的问题——是探测跑错了地方。
+     */
+    public ProbeResult probe(String pythonBin, boolean refresh, Path workDir) {
         if (pythonBin == null || pythonBin.isBlank()) {
             return new ProbeResult(PytestNicKernelCommand.Contract.minimal(), null, null, List.of(), 0,
                     "未配置 python_bin");
@@ -102,7 +112,7 @@ public class PytestContractProbe {
         String pythonVersion = runPythonVersion(pythonBin);
         String help;
         try {
-            help = runHelp(pythonBin);
+            help = runHelp(pythonBin, workDir);
         } catch (Exception e) {
             return new ProbeResult(PytestNicKernelCommand.Contract.minimal(), null, pythonVersion,
                     List.of(), (System.nanoTime() - started) / 1_000_000, e.getMessage());
@@ -114,15 +124,18 @@ public class PytestContractProbe {
         }
         List<String> found = new java.util.ArrayList<>();
         for (String option : List.of("--json-report", "--metadata", "--numprocesses",
-                "--env_config", "--mode", "--junitxml")) {
+                "--env_config", "--mode", "--junitxml", "--junit-xml")) {
             if (help.contains(option)) {
                 found.add(option);
             }
         }
+        // pytest 9.x 把选项改名为 --junit-xml（旧名 --junitxml 仍是别名）。
+        // 只认旧名会把一个完全可用的用例库判成「契约不满足」。
+        boolean junitXml = found.contains("--junitxml") || found.contains("--junit-xml");
         PytestNicKernelCommand.Contract contract = new PytestNicKernelCommand.Contract(
                 found.contains("--mode"),
                 found.contains("--env_config"),
-                found.contains("--junitxml"),
+                junitXml,
                 found.contains("--json-report"),
                 found.contains("--metadata"),
                 found.contains("--numprocesses"));
@@ -216,8 +229,10 @@ public class PytestContractProbe {
      * 用 {@code --help} 而不是 {@code --version}：前者能列出插件注册的参数，
      * 后者只能证明解释器活着（项目记忆里的坑：{@code --version} 通过 ≠ 能推理）。
      */
-    private static String runHelp(String pythonBin) throws IOException, InterruptedException {
-        Path work = Files.createTempDirectory("pytest-probe-");
+    private static String runHelp(String pythonBin, Path workDir)
+            throws IOException, InterruptedException {
+        boolean borrowed = workDir != null && Files.isDirectory(workDir);
+        Path work = borrowed ? workDir : Files.createTempDirectory("pytest-probe-");
         ProcessBuilder builder = new ProcessBuilder(pythonBin, "-m", "pytest", "--help");
         builder.directory(work.toFile());
         builder.redirectErrorStream(true);
@@ -229,10 +244,13 @@ public class PytestContractProbe {
             return null;
         }
         String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-        try {
-            Files.deleteIfExists(work);
-        } catch (IOException ignored) {
-            // 临时目录清理失败不影响探测结论
+        // 借来的仓库目录绝不能删；只清自己建的临时目录。
+        if (!borrowed) {
+            try {
+                Files.deleteIfExists(work);
+            } catch (IOException ignored) {
+                // 临时目录清理失败不影响探测结论
+            }
         }
         if (process.exitValue() != 0) {
             throw new IOException("pytest --help 退出码 " + process.exitValue() + "："

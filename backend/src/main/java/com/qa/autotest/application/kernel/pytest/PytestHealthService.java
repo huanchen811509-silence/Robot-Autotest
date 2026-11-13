@@ -92,7 +92,10 @@ public class PytestHealthService {
             contractMissing.addAll(List.of("--mode", "--env_config", "--junitxml"));
             failure = "未配置 pytest.python_bin";
         } else {
-            PytestContractProbe.ProbeResult result = probe.probe(pythonBin, refreshProbe);
+            // 探测必须在仓库根跑：--mode / --env_config 由用例库 pyproject.toml
+            // 的 addopts 插件注册，临时空目录里永远看不到（EHT-07 实测修复）。
+            PytestContractProbe.ProbeResult result =
+                    probe.probe(pythonBin, refreshProbe, repoPath);
             pytestVersion = result.pytestVersion();
             pythonVersion = result.pythonVersion();
             versionProblem = result.versionProblem();

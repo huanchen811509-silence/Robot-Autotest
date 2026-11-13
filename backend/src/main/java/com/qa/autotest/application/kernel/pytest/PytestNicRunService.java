@@ -107,7 +107,11 @@ public class PytestNicRunService {
             return failure("env_render_failed", ex.getMessage(), started);
         }
 
-        PytestContractProbe.ProbeResult contract = probe.probe(pythonBin, false);
+        // EHT-14：探测 cwd 必须是用例库仓库根。插件的 --mode / --env_config 由
+        // pyproject.toml 的 addopts 注册，2 参重载在空临时目录里跑 help 会假阴性，
+        // 直接把整条执行链判成「契约不健康」。与 PytestHealthService 保持同一口径。
+        PytestContractProbe.ProbeResult contract =
+                probe.probe(pythonBin, false, PytestProjectSettings.repoPath(config));
         writeJson(request.runDir(), "contract.json", Map.of(
                 "python_bin", pythonBin == null ? "" : pythonBin,
                 "healthy", contract.healthy(),

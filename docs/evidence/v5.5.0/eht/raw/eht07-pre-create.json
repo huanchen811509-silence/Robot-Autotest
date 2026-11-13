@@ -1,0 +1,22 @@
+{
+  "captured_at": "2026-11-13 19:28:13",
+  "timezone": "GMT+8",
+  "purpose": "EHT-07 建工程前取证（只读）",
+  "projects": "1\tdemo\tstandard\trobot\n29\tqa-e2e-fixture\tstandard\trobot\n77\tED202-COMMON\tstandard\trobot\n80\tdemo-pytest\tstandard\tpytest\n88\tPLATFORM-LIB\tplatform\trobot\n92\tPRJ-RF-202611-001\tstandard\trobot\n93\tPRJ-RF-202611-002\tstandard\trobot",
+  "suite_projects": "0",
+  "pytest_settings": "0",
+  "case_bindings": "0",
+  "test_cases_total": "1838",
+  "repo_head": "915c2ca366757ed51bb0f8492f253fa477b833c5",
+  "case_index_totals": {
+    "cases": 469,
+    "scripts": 62,
+    "scripts_with_declared_code": 61
+  },
+  "case_index_priority_counts": {
+    "T0": 231,
+    "T2": 33,
+    "T1": 27,
+    "待评审": 178
+  }
+}

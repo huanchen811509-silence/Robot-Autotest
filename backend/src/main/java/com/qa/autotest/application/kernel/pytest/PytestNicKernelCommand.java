@@ -111,7 +111,14 @@ public class PytestNicKernelCommand {
             Path junit = batches.size() == 1
                     ? runDir.resolve("junit.xml")
                     : runDir.resolve("junit-" + i + ".xml");
-            commands.add(new Command(argv(pythonBin, envConfig, effectiveMode, junit, batches.get(i),
+            // EHT-14：全量执行（nodeIds 为空）必须显式把仓库根作为收集目标。
+            // 否则 pytest 只看到 /tmp 侧的 --env_config / --junitxml，会把 rootdir
+            // 推断成 runDir、inifile=None，仓库根 pyproject.toml 的 addopts
+            //（-p nic_platform.pytest_plugin）加载不到，--mode / --env_config
+            // 随即变成 unrecognized arguments（退出码 4，junit 一个字都不写）。
+            List<String> targets = batches.get(i).isEmpty()
+                    ? List.of(repoPath.toString()) : batches.get(i);
+            commands.add(new Command(argv(pythonBin, envConfig, effectiveMode, junit, targets,
                     runDir, effective), environment(pythonBin, runDir), repoPath, outputDir, junit,
                     i, List.copyOf(batches.get(i))));
         }

@@ -58,7 +58,11 @@ public final class TenantGuard {
             "device_host_spec",
             // v4.1.0：工作区导出/导入任务（任务即项目锁，ADR-4X-12..15）；
             // project_member 进快照的成员清单，按项目隔离
-            "workspace_job", "project_member");
+            "workspace_job", "project_member",
+            // EHT-11 修复（2026-11-13）：v5.3–v5.4 建表时漏登记的租户业务表。
+            // 三张表都有 project_id；未登记时 requireProjectScope 直接抛 500
+            // 「未配置租户策略」，六页读真实端点全部失败（实测 3/12 端点 500）。
+            "case_duration_baseline", "case_failure_disposition", "manual_execution");
 
     private TenantGuard() {
     }

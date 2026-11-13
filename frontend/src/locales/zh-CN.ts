@@ -2831,4 +2831,32 @@ export default {
     empty: '暂无场景',
     categorySection: '按分类筛选并批量加入用例集',
   },
+  eht: {
+    common: {
+      refresh: '刷新', loading: '加载中…', empty: '暂无数据', loadFailed: '真实端点读取失败',
+      key: '字段', value: '值', source: '数据源',
+    },
+    caseLibrary: {
+      title: 'EHT 用例库管理', code: '用例编号', titleCol: '用例标题', priority: '优先级',
+      review: '评审态', total: '分母（含待评审）', coverageAll: '覆盖率（含待评审）',
+      coverageExPending: '覆盖率（排除待评审）', bound: '已绑定',
+      keyword: '按编号/标题搜索', allPriorities: '全部优先级', pending: '待评审',
+      filter: '筛选', selected: '已选 {count} 条', manualEntry: '非自动化用例编辑',
+    },
+    quickActions: {
+      title: 'EHT 便捷操作', sync: '一键同步绑定', precheck: '一键执行预检',
+      copy: '复制命令集合', launch: '发起执行（预检通过后）', progress: '执行进度与准入',
+      failureReason: '错误原因与修复提示', admission: '准入', window: '执行窗口',
+      bound: '已绑定脚本数', syncDone: '同步完成，绑定 {count} 条', syncFailed: '同步失败，请查看工程健康',
+      admissionOk: '预检通过，可发起执行', admissionDenied: '预检未通过：{reason}',
+      copied: '命令集合已复制', copyFailed: '复制失败，请手工选择下方命令',
+    },
+    durationBaseline: { title: '用例时长基线' },
+    disposition: { title: '失败处置闭环' },
+    environmentRadar: { title: '环境失败雷达' },
+    kernelUnified: { title: '双内核统一视图' },
+    manualExecution: { title: '非自动化用例执行' },
+    resultSplit: { title: '手工/自动分离统计' },
+  },
+
 }

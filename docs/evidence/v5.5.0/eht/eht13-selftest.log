@@ -1,0 +1,111 @@
+EHT-13 / TC-v5.5-15 门禁 49-52 真注入自证
+2026-11-13 21:12:44 +0800
+=== 49 project_kind_create ===
+  FAIL   CreateProjectRequest 缺 String kind 组件
+  OK     create 调 6 参重载
+  OK     kind 来自请求入参，未被硬编码
+  OK     6 参 create 保留 @Audited
+  OK     gates.sh 登记步骤 49
+  OK     删掉 kind 组件 -> 判红（1 项）
+  OK     CreateProjectRequest 含 String kind
+  OK     create 调 6 参重载
+  FAIL   create 最后一项不是 request.kind()（kind 被硬编码或丢弃）
+  OK     6 参 create 保留 @Audited
+  OK     gates.sh 登记步骤 49
+  OK     把 kind 改成硬编码 -> 判红（1 项）
+--- 还原后应判绿 ---
+  OK     CreateProjectRequest 含 String kind
+  OK     create 调 6 参重载
+  OK     kind 来自请求入参，未被硬编码
+  OK     6 参 create 保留 @Audited
+  OK     gates.sh 登记步骤 49
+check_project_kind_create: SELF-TEST PASS
+=== 50 eht_binding_evidence ===
+  OK     分母 469（case-index 真源）
+  OK     bound + unbound == totalCases
+  FAIL   case-index 的 scripts 不是 62（证据被改或真源漂移）
+  OK     scriptsScanned = 61（62 - 1 个无编号框架自测）
+  OK     repo_head = 40 位 rev-parse HEAD
+  OK     用例库工作树零写入
+  OK     绑定无重复 nodeid
+  OK     gates.sh 登记步骤 50
+  OK     把 scripts 改成 0 -> 判红（1 项）
+  OK     分母 469（case-index 真源）
+  FAIL   bound + unbound != totalCases（四类计数不自洽）
+  OK     case-index scripts = 62
+  OK     scriptsScanned = 61（62 - 1 个无编号框架自测）
+  OK     repo_head = 40 位 rev-parse HEAD
+  OK     用例库工作树零写入
+  OK     绑定无重复 nodeid
+  OK     gates.sh 登记步骤 50
+  OK     破坏四类计数恒等式 -> 判红（1 项）
+--- 还原后应判绿 ---
+  OK     分母 469（case-index 真源）
+  OK     bound + unbound == totalCases
+  OK     case-index scripts = 62
+  OK     scriptsScanned = 61（62 - 1 个无编号框架自测）
+  OK     repo_head = 40 位 rev-parse HEAD
+  OK     用例库工作树零写入
+  OK     绑定无重复 nodeid
+  OK     gates.sh 登记步骤 50
+check_eht_binding_evidence: SELF-TEST PASS
+=== 51 eht_case_ui ===
+  OK     八张 EHT 页面 .vue / .spec.ts 齐备
+  OK     语言包 eht 键：zh 43 / en 44
+  FAIL   eht 键集中英不一致：zh 独有 [] / en 独有 ['eht.durationBaseline.title']
+  FAIL   i18n 缺整页：eht.durationBaseline（zh 0 键 / en 1 键）
+  OK     八页 i18n 节逐节非空
+  FAIL   页面引用了不存在的 eht 键：['eht.durationBaseline.title']
+  OK     用例管理页四类真端点/入口契约齐备
+  OK     用例管理页零静态中文属性值
+  OK     gates.sh 登记步骤 51
+  OK     删掉一整页 i18n 键（durationBaseline） -> 判红（3 项）
+  OK     八张 EHT 页面 .vue / .spec.ts 齐备
+  OK     语言包 eht 键：zh 44 / en 44
+  OK     eht 键集中英一致
+  OK     八页 i18n 节逐节非空
+  OK     页面引用的 42 个 eht 键双语齐备
+  FAIL   用例管理页缺契约：['优先级字典由真实 /cases 数据汇总']
+  OK     用例管理页零静态中文属性值
+  OK     gates.sh 登记步骤 51
+  OK     用例页去掉优先级真端点汇总 -> 判红（1 项）
+--- 还原后应判绿 ---
+  OK     八张 EHT 页面 .vue / .spec.ts 齐备
+  OK     语言包 eht 键：zh 44 / en 44
+  OK     eht 键集中英一致
+  OK     八页 i18n 节逐节非空
+  OK     页面引用的 42 个 eht 键双语齐备
+  OK     用例管理页四类真端点/入口契约齐备
+  OK     用例管理页零静态中文属性值
+  OK     gates.sh 登记步骤 51
+check_eht_case_ui: SELF-TEST PASS
+=== 52 eht_pages_live ===
+  OK     八页逐页检查 .vue / .spec.ts / 真端点调用 / 无本地 mock
+  OK     ehtViews.ts 端点前缀为 /projects/{id}
+  FAIL   ehtViewsApi.durationBaselines 方法体没有 request/casesPage（改成本地 mock）
+  FAIL   ehtViewsApi.durationBaselines 返回本地常量（mock）
+  OK     ehtViewsApi 10 个方法全部走 request/casesPage
+  OK     八条 /eht/* 路由登记齐备
+  OK     双语包八节齐备
+  OK     端点证据 12 个全部 200（project_id=95）
+  OK     gates.sh 登记步骤 52
+  OK     把 durationBaselines 端点封装改成本地 mock -> 判红（2 项）
+  FAIL   EhtDurationBaselineView 未调用 ehtViewsApi（页面没接真端点）
+  FAIL   EhtDurationBaselineView 出现本地兜底/mock：Promise.resolve(
+  OK     八页逐页检查 .vue / .spec.ts / 真端点调用 / 无本地 mock
+  OK     ehtViews.ts 端点前缀为 /projects/{id}
+  OK     ehtViewsApi 10 个方法全部走 request/casesPage
+  OK     八条 /eht/* 路由登记齐备
+  OK     双语包八节齐备
+  OK     端点证据 12 个全部 200（project_id=95）
+  OK     gates.sh 登记步骤 52
+  OK     把时长基线页改成本地 mock -> 判红（2 项）
+--- 还原后应判绿 ---
+  OK     八页逐页检查 .vue / .spec.ts / 真端点调用 / 无本地 mock
+  OK     ehtViews.ts 端点前缀为 /projects/{id}
+  OK     ehtViewsApi 10 个方法全部走 request/casesPage
+  OK     八条 /eht/* 路由登记齐备
+  OK     双语包八节齐备
+  OK     端点证据 12 个全部 200（project_id=95）
+  OK     gates.sh 登记步骤 52
+check_eht_pages_live: SELF-TEST PASS

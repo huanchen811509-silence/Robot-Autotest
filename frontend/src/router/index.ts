@@ -289,6 +289,48 @@ const router = createRouter({
       name: 'pytest-workbench',
       component: () => import('@/views/PytestWorkbenchView.vue'),
     },
+
+    // EHT-10~12：工程视图页内入口（不新增一级/二级菜单叶子，4 组 11 叶基线不变）。
+    {
+      path: '/eht/cases',
+      name: 'eht-case-library',
+      component: () => import('@/views/eht/EhtCaseLibraryView.vue'),
+    },
+    {
+      path: '/eht/quick-actions',
+      name: 'eht-quick-actions',
+      component: () => import('@/views/eht/EhtQuickActionsView.vue'),
+    },
+    {
+      path: '/eht/duration-baseline',
+      name: 'eht-duration-baseline',
+      component: () => import('@/views/eht/EhtDurationBaselineView.vue'),
+    },
+    {
+      path: '/eht/disposition',
+      name: 'eht-disposition',
+      component: () => import('@/views/eht/EhtDispositionView.vue'),
+    },
+    {
+      path: '/eht/environment-radar',
+      name: 'eht-environment-radar',
+      component: () => import('@/views/eht/EhtEnvironmentRadarView.vue'),
+    },
+    {
+      path: '/eht/kernel-unified',
+      name: 'eht-kernel-unified',
+      component: () => import('@/views/eht/EhtKernelUnifiedView.vue'),
+    },
+    {
+      path: '/eht/manual-execution',
+      name: 'eht-manual-execution',
+      component: () => import('@/views/eht/EhtManualExecutionView.vue'),
+    },
+    {
+      path: '/eht/result-split',
+      name: 'eht-result-split',
+      component: () => import('@/views/eht/EhtResultSplitView.vue'),
+    },
     // ===== v2.2 / M2 只读页与看板（MENU-02 / MENU-03 / MENU-04 / MENU-05）=====
     {
       // MENU-03：测试总表看板，挂在「用例」组下。

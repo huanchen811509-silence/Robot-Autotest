@@ -305,6 +305,17 @@ onMounted(load)
 </script>
 
 <template>
+  <nav class="eht-nav" aria-label="EHT workspace">
+    <RouterLink to="/eht/cases">{{ t('eht.caseLibrary.title') }}</RouterLink>
+    <RouterLink to="/eht/quick-actions">{{ t('eht.quickActions.title') }}</RouterLink>
+    <RouterLink to="/eht/duration-baseline">{{ t('eht.durationBaseline.title') }}</RouterLink>
+    <RouterLink to="/eht/disposition">{{ t('eht.disposition.title') }}</RouterLink>
+    <RouterLink to="/eht/environment-radar">{{ t('eht.environmentRadar.title') }}</RouterLink>
+    <RouterLink to="/eht/kernel-unified">{{ t('eht.kernelUnified.title') }}</RouterLink>
+    <RouterLink to="/eht/manual-execution">{{ t('eht.manualExecution.title') }}</RouterLink>
+    <RouterLink to="/eht/result-split">{{ t('eht.resultSplit.title') }}</RouterLink>
+  </nav>
+
   <div class="page">
     <header class="page-head">
       <h1>{{ t('pytestWorkbench.title') }}</h1>
@@ -550,6 +561,10 @@ onMounted(load)
 </template>
 
 <style scoped>
+
+.eht-nav { display: flex; flex-wrap: wrap; gap: 10px; padding: 10px 28px; border-bottom: 1px solid var(--border); font-size: 13px; }
+.eht-nav a { color: var(--text-muted); text-decoration: none; }
+
 .page { padding: 24px 28px; display: grid; gap: 18px; }
 .page-head h1 { margin: 0 0 6px; font-size: 22px; }
 .muted { color: var(--text-muted); font-size: 13px; margin: 0; }

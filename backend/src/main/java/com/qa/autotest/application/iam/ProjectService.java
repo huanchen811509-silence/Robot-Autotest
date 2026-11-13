@@ -101,6 +101,9 @@ public class ProjectService {
         return create(code, name, description, visibility, testKernel, "standard");
     }
 
+    // HTTP 层自 EHT-05 起直达 6 参重载；@Audited 必须同时挂在这里，
+    // 否则 POST /api/projects 会丢掉 project:create 审计（同类自调用不经过代理）。
+    @Audited(action = "project:create", resource = "project")
     @Transactional
     public Project create(String code, String name, String description, String visibility,
                           String testKernel, String kind) {
