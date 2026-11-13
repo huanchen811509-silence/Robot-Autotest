@@ -1,0 +1,38 @@
+{
+  "checked_at": "2026-11-13 17:57:44",
+  "cards_status": 200,
+  "cards_count": 6,
+  "cards_ids": [
+    1,
+    29,
+    77,
+    80,
+    92,
+    93
+  ],
+  "cards_codes": [
+    "PRJ-RF-202611-002",
+    "PRJ-RF-202611-001",
+    "demo-pytest",
+    "ED202-COMMON",
+    "qa-e2e-fixture",
+    "demo"
+  ],
+  "targets_absent": true,
+  "get_89_status": 404,
+  "get_90_status": 404,
+  "get_89_body": {
+    "code": 40400,
+    "codeName": "NOT_FOUND",
+    "message": "项目不存在",
+    "data": null,
+    "success": false
+  },
+  "get_90_body": {
+    "code": 40400,
+    "codeName": "NOT_FOUND",
+    "message": "项目不存在",
+    "data": null,
+    "success": false
+  }
+}

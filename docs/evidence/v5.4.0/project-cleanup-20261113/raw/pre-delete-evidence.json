@@ -1,0 +1,83 @@
+{
+  "captured_at": "2026-11-13 17:56:32",
+  "db": "robot_dev",
+  "reference_doc": "docs/plan/夹具项目盘点与删除评估-20261108.md §6.5",
+  "method": "DELETE /api/projects/{id} with admin token; no physical SQL delete",
+  "project_ids_before": [
+    1,
+    29,
+    77,
+    80,
+    88,
+    89,
+    90,
+    92,
+    93
+  ],
+  "targets": {
+    "89": {
+      "project": {
+        "id": "89",
+        "code": "PRJ-PYT-202611-001",
+        "name": "__opt_ft_1794382552",
+        "description": "from-template:4",
+        "status": "1",
+        "created_at": "2026-11-11 15:35:52.275",
+        "created_by": "NULL",
+        "updated_at": "2026-11-11 15:35:52.275",
+        "updated_by": "NULL",
+        "owner_id": "17",
+        "visibility": "private",
+        "code_changed_at": "NULL",
+        "test_kernel": "pytest",
+        "kind": "standard"
+      },
+      "busy_rows": {},
+      "child_rows": {
+        "project_setting": 1,
+        "project_label": 0,
+        "project_member": 1,
+        "project_member_role": 1
+      },
+      "kept_rows": {
+        "audit_log": 0,
+        "slo_daily": 0
+      },
+      "run": 0,
+      "test_result": 0,
+      "test_report": 0
+    },
+    "90": {
+      "project": {
+        "id": "90",
+        "code": "PRJ-PYT-202611-002",
+        "name": "__opt_ft_1794382577",
+        "description": "from-template:4",
+        "status": "1",
+        "created_at": "2026-11-11 15:36:17.168",
+        "created_by": "NULL",
+        "updated_at": "2026-11-11 15:36:17.168",
+        "updated_by": "NULL",
+        "owner_id": "17",
+        "visibility": "private",
+        "code_changed_at": "NULL",
+        "test_kernel": "pytest",
+        "kind": "standard"
+      },
+      "busy_rows": {},
+      "child_rows": {
+        "project_setting": 1,
+        "project_label": 0,
+        "project_member": 1,
+        "project_member_role": 1
+      },
+      "kept_rows": {
+        "audit_log": 0,
+        "slo_daily": 2
+      },
+      "run": 0,
+      "test_result": 0,
+      "test_report": 0
+    }
+  }
+}

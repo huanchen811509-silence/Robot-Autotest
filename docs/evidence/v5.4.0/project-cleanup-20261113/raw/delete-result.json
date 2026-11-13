@@ -1,0 +1,27 @@
+{
+  "executed_at": "2026-11-13 17:56:41",
+  "operator": "qa-e2e-admin",
+  "endpoint": "DELETE /api/projects/{id}",
+  "results": {
+    "89": {
+      "status": 200,
+      "body": {
+        "code": 0,
+        "codeName": "OK",
+        "message": "OK",
+        "data": null,
+        "success": true
+      }
+    },
+    "90": {
+      "status": 200,
+      "body": {
+        "code": 0,
+        "codeName": "OK",
+        "message": "OK",
+        "data": null,
+        "success": true
+      }
+    }
+  }
+}

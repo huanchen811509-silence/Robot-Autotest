@@ -1,0 +1,128 @@
+{
+  "verified_at": "2026-11-13 17:57:09",
+  "delete_result_source": {
+    "executed_at": "2026-11-13 17:56:41",
+    "operator": "qa-e2e-admin",
+    "endpoint": "DELETE /api/projects/{id}",
+    "results": {
+      "89": {
+        "status": 200,
+        "body": {
+          "code": 0,
+          "codeName": "OK",
+          "message": "OK",
+          "data": null,
+          "success": true
+        }
+      },
+      "90": {
+        "status": 200,
+        "body": {
+          "code": 0,
+          "codeName": "OK",
+          "message": "OK",
+          "data": null,
+          "success": true
+        }
+      }
+    }
+  },
+  "project_ids_before": [
+    1,
+    29,
+    77,
+    80,
+    88,
+    89,
+    90,
+    92,
+    93
+  ],
+  "project_ids_after": [
+    1,
+    29,
+    77,
+    80,
+    88,
+    92,
+    93
+  ],
+  "removed_exactly": [
+    89,
+    90
+  ],
+  "targets_removed": true,
+  "expected_remaining": [
+    1,
+    29,
+    77,
+    80,
+    88,
+    92,
+    93
+  ],
+  "remaining_intact": true,
+  "residual_rows_by_table": {
+    "project_setting": 0,
+    "project_label": 0,
+    "project_member": 0,
+    "project_member_role": 0,
+    "audit_log": 2,
+    "slo_daily": 2
+  },
+  "child_tables_clean": true,
+  "kept_tables_note": "audit_log / slo_daily are INSERT-only compliance data, retained by design",
+  "audit_log_columns": [
+    "id",
+    "project_id",
+    "actor_id",
+    "operator",
+    "action",
+    "resource_type",
+    "resource_id",
+    "detail",
+    "summary",
+    "ip",
+    "occurred_at",
+    "created_at",
+    "created_by",
+    "updated_at",
+    "updated_by"
+  ],
+  "delete_audit_rows": [
+    {
+      "id": "1711632",
+      "project_id": "90",
+      "actor_id": "17",
+      "operator": "qa-e2e-admin",
+      "action": "project:delete",
+      "resource_type": "project",
+      "resource_id": "90",
+      "detail": "NULL",
+      "summary": "before={code=PRJ-PYT-202611-002; name=__opt_ft_1794382577}; deleted=true",
+      "ip": "127.0.0.1",
+      "occurred_at": "2026-11-13 17:56:41.831",
+      "created_at": "2026-11-13 17:56:41.834",
+      "created_by": "NULL",
+      "updated_at": "2026-11-13 17:56:41.834",
+      "updated_by": "NULL"
+    },
+    {
+      "id": "1711631",
+      "project_id": "89",
+      "actor_id": "17",
+      "operator": "qa-e2e-admin",
+      "action": "project:delete",
+      "resource_type": "project",
+      "resource_id": "89",
+      "detail": "NULL",
+      "summary": "before={code=PRJ-PYT-202611-001; name=__opt_ft_1794382552}; deleted=true",
+      "ip": "127.0.0.1",
+      "occurred_at": "2026-11-13 17:56:41.646",
+      "created_at": "2026-11-13 17:56:41.662",
+      "created_by": "NULL",
+      "updated_at": "2026-11-13 17:56:41.662",
+      "updated_by": "NULL"
+    }
+  ]
+}
