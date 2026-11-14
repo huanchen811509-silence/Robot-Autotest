@@ -1,0 +1,11 @@
+{
+  "generatedAt": "2026-11-14T15:09:41.794753+00:00",
+  "source": "docs/evidence/v5.8.0/perf/longlist-raw.json",
+  "longList": {
+    "rows": 100,
+    "datasetRows": 10000,
+    "fps": 60.1,
+    "rounds": 5,
+    "scope": "dataset=10000 rows / 每页 100 行（产品 PageQuery.MAX_SIZE 上限）"
+  }
+}

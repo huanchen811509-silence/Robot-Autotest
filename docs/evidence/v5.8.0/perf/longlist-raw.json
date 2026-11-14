@@ -1,0 +1,150 @@
+{
+  "capturedAt": "2026-11-14T15:08:57.912Z",
+  "app": "http://localhost:8001",
+  "project": 124,
+  "scenario": {
+    "pageSize": 100,
+    "datasetRows": 10000,
+    "seconds": 3,
+    "rounds": 5
+  },
+  "environment": {
+    "machine": "Linux 5.15.167.4-microsoft-standard-WSL2 x86_64",
+    "cdp": "http://127.0.0.1:9222",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/159.0.0.0 Safari/537.36"
+  },
+  "product": {
+    "rows": 100,
+    "rounds": [
+      {
+        "round": 1,
+        "rows": 100,
+        "scrollable": true,
+        "scrolledPx": 67520,
+        "frames": 181,
+        "fps": 60.1,
+        "worstFrameMs": 16.8,
+        "p95FrameMs": 16.7,
+        "elapsedMs": 3010
+      },
+      {
+        "round": 2,
+        "rows": 100,
+        "scrollable": true,
+        "scrolledPx": 67720,
+        "frames": 182,
+        "fps": 60.5,
+        "worstFrameMs": 16.8,
+        "p95FrameMs": 16.8,
+        "elapsedMs": 3008
+      },
+      {
+        "round": 3,
+        "rows": 100,
+        "scrollable": true,
+        "scrolledPx": 67720,
+        "frames": 182,
+        "fps": 60.3,
+        "worstFrameMs": 16.8,
+        "p95FrameMs": 16.8,
+        "elapsedMs": 3016
+      },
+      {
+        "round": 4,
+        "rows": 100,
+        "scrollable": true,
+        "scrolledPx": 67720,
+        "frames": 182,
+        "fps": 60.4,
+        "worstFrameMs": 16.8,
+        "p95FrameMs": 16.7,
+        "elapsedMs": 3013
+      },
+      {
+        "round": 5,
+        "rows": 100,
+        "scrollable": true,
+        "scrolledPx": 67720,
+        "frames": 182,
+        "fps": 60.5,
+        "worstFrameMs": 16.8,
+        "p95FrameMs": 16.7,
+        "elapsedMs": 3008
+      }
+    ],
+    "validRounds": 5,
+    "minFps": 60.1,
+    "maxFps": 60.5,
+    "renderedRowsPerPage": 100,
+    "datasetRows": 10000,
+    "datasetSignature": "PERF-C######",
+    "project": 124,
+    "scope": "dataset=10000 rows / 每页 100 行（产品 PageQuery.MAX_SIZE 上限）"
+  },
+  "harness": {
+    "rows": 10000,
+    "rounds": [
+      {
+        "round": 1,
+        "rows": 10000,
+        "scrollable": true,
+        "scrolledPx": 14800,
+        "frames": 74,
+        "fps": 24.4,
+        "worstFrameMs": 316.7,
+        "p95FrameMs": 50,
+        "elapsedMs": 3031
+      },
+      {
+        "round": 2,
+        "rows": 10000,
+        "scrollable": true,
+        "scrolledPx": 15000,
+        "frames": 75,
+        "fps": 24.8,
+        "worstFrameMs": 83.4,
+        "p95FrameMs": 66.6,
+        "elapsedMs": 3023
+      },
+      {
+        "round": 3,
+        "rows": 10000,
+        "scrollable": true,
+        "scrolledPx": 12400,
+        "frames": 62,
+        "fps": 20.4,
+        "worstFrameMs": 366.7,
+        "p95FrameMs": 66.8,
+        "elapsedMs": 3043
+      },
+      {
+        "round": 4,
+        "rows": 10000,
+        "scrollable": true,
+        "scrolledPx": 14800,
+        "frames": 74,
+        "fps": 24.3,
+        "worstFrameMs": 66.8,
+        "p95FrameMs": 50.1,
+        "elapsedMs": 3051
+      },
+      {
+        "round": 5,
+        "rows": 10000,
+        "scrollable": true,
+        "scrolledPx": 13600,
+        "frames": 68,
+        "fps": 22.5,
+        "worstFrameMs": 66.7,
+        "p95FrameMs": 50.1,
+        "elapsedMs": 3020
+      }
+    ],
+    "validRounds": 5,
+    "minFps": 20.4,
+    "maxFps": 24.8,
+    "url": "http://localhost:46340/perf-longlist.html",
+    "scope": "10000 行一次性 HTML，非产品页面（产品分页上限 100）"
+  },
+  "result": "PASS"
+}

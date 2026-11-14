@@ -1,0 +1,58 @@
+{
+  "generatedAt": "2026-11-14T15:08:48.400548+00:00",
+  "db": "robot_dev",
+  "dataset": {
+    "dir": "/tmp/perf-ds",
+    "scale": "standard",
+    "seed": 20261108,
+    "contentHash": "59824208438adcd769ca17b368062bd684a81825e356fb1454dd7cbf1f5cbdc7",
+    "casesRows": 10000,
+    "casesSha256": "272bdb09a2d646e68737f93eb2b3390fe76c3781858cd89a7e88d54302028cb9",
+    "casesBytes": 906433
+  },
+  "project": {
+    "id": 124,
+    "code": "PERF-LONGLIST",
+    "name": "PERF · 10000 行长列表压测",
+    "created": true
+  },
+  "before": {
+    "projectsTotal": 13,
+    "projectsNonPerf": 13,
+    "perfProjects": 0,
+    "casesTotal": 2491,
+    "casesNonPerf": 2491,
+    "casesInPerf": 0
+  },
+  "after": {
+    "projectsTotal": 14,
+    "projectsNonPerf": 13,
+    "perfProjects": 1,
+    "casesTotal": 12491,
+    "casesNonPerf": 2491,
+    "casesInPerf": 10000
+  },
+  "checks": [
+    {
+      "name": "既有工程数不变",
+      "ok": true,
+      "detail": "13 → 13"
+    },
+    {
+      "name": "既有用例数不变",
+      "ok": true,
+      "detail": "2491 → 2491"
+    },
+    {
+      "name": "压测工程用例数等于数据集行数",
+      "ok": true,
+      "detail": "10000 vs 10000"
+    },
+    {
+      "name": "压测工程 code 带 PERF- 前缀",
+      "ok": true,
+      "detail": "PERF-LONGLIST"
+    }
+  ],
+  "result": "PASS"
+}

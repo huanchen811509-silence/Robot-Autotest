@@ -325,7 +325,9 @@ run 21 bundle_budget "python3 tools/check_bundle_budget.py"
 
 # 22 性能预算：API p95/p99、长列表 fps、运行链时延/吞吐对账 tools/perf-budget.json。
 #    --require：报告缺失直接失败，避免「忘了采样」被当成通过（EW32-01 报告已入库）。
-run 22 perf_budget "python3 tools/check_perf_budget.py --report docs/evidence/v3.2.0/EW32-01/perf/perf-report.json --require"
+#    v5.8.0 / W58-10 起长列表 fps 有真实读数（产品口径每页 100 行 + 独立 10000 行基线），
+#    单独一份报告；两份都要过——v3.2.0 那份只覆盖 API，不包含长列表。
+run 22 perf_budget "python3 tools/check_perf_budget.py --report docs/evidence/v3.2.0/EW32-01/perf/perf-report.json --require && python3 tools/check_perf_budget.py --report docs/evidence/v5.8.0/perf/perf-report.json --require"
 
 # 23 版本一致性：VERSION / 后端构建产物 / CHANGELOG 两份副本 / openapi 快照 / 运行期关于页 /
 #    入口托管的 /CHANGELOG.md 必须同版本。v3.2.0 真实发生过「VERSION 升了、关于页仍报 3.0.1」，

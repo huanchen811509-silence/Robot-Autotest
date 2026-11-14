@@ -225,10 +225,21 @@ docs/evidence/v5.8.0/
 | TC | 方式 | 结果 | 证据 |
 |---|---|---|---|
 | FR-v5.8-11 的 3 条（spike / 标注 / 界面可见） | MANUAL + UT | **PASS** | `docs/evidence/v5.8.0/rf-criteria-spike/README.md`；`ReportDetailView.spec.ts` 14 例；界面标注 `data-testid="report-conclusion-scope"` |
+| TC-v5.8-21（≥3 轮采样 + 每轮 fps + 机器信息） | `MECH` | **PASS**（5 轮 × 3 秒，产品口径 60.1/60.5/60.3/60.4/60.5） | `docs/evidence/v5.8.0/perf/longlist-raw.json`、`perf_longlist.json` |
+| TC-v5.8-22（判 PASS/FAIL，`min_fps ≥ 50`） | `MECH` | **PASS**（`min_fps 60.1`；`check_perf_budget --require` `PERF_RESULT PASS`） | `python3 tools/check_perf_budget.py --report docs/evidence/v5.8.0/perf/perf-report.json --require` |
+| TC-v5.8-23（数据集 manifest 行数 + sha256） | `MECH` | **PASS**（standard：10000 用例 / `contentHash 59824208438adcd7…`，两次生成一致） | `docs/evidence/v5.8.0/perf/dataset-manifest.json` |
+| TC-v5.8-24（`--selfcheck` 判红 0 轮冒充） | `MECH` | **PASS**（4 类反例全判红；期间抓出「2 轮 60fps 判 PASS」漏洞并修） | `python3 tools/perf_longlist.py --selfcheck` |
+| TC-v5.8-25（数据隔离：导入前后项目数/用例数不变） | `DB` | **PASS**（既有工程 13→13、既有用例 2491→2491；压测数据全在 `PERF-LONGLIST`） | `docs/evidence/v5.8.0/perf/seed-report.json` |
 
 **W58-11/12 的执行说明**：spike 用仓库内 10 份历史 `output.xml`（pabot 冒烟/故障注入、v1.0 报告链、
 v2.0 内核分片与 dryrun、v2.1 样例集），**不是**新跑的执行——判据载体是框架产物属性，与跑哪一版无关。
 这一点如实写明，避免被读成「用新执行证明的」。
+
+**W58-09/10 的执行说明**：量测对象是**产品真实页面**（`/cases`，`PERF-LONGLIST` 10000 条数据集，
+每页 100 行 = 产品上限），不是造一个页面糊一个数字。同批另测「10000 行同屏」的一次性 HTML（harness 口径，
+`minFps 20.4`），它是补充基线、**不参与 `status`**——理由见 PRD FR-v5.8-06 实测结论与 DEV-PLAN D-58-08/09。
+浏览器是 Windows 侧的 HeadlessChrome 159（经 localhost 转发），帧率受 vsync 封顶 ~60fps，读数只用于判
+「有没有掉到 50 以下」，不用于横向比较机器。
 
 ---
 
@@ -237,6 +248,7 @@ v2.0 内核分片与 dryrun、v2.1 样例集），**不是**新跑的执行—�
 | # | 遗留 | 影响 | 处置 |
 |---|---|---|---|
 | L-58-05 | RF 无框架级判据载体，本版只做界面标注 | RF 报告的结论恒为 `UNDETERMINED`，用户可能误以为「系统判不了」而不是「RF 不参与」 | 界面已标注；下一版评估「载体协议」（用例侧 `CRITERIA:` 前缀 / 断言侧统一写法 / 执行侧注入），选定后实现提取 |
+| L-58-06 | 10000 行同屏渲染只有 20.4~28.5fps（一次性 HTML 口径，低于预算 50） | 当前**不影响用户**：产品每页 100 行，该场景在产品形态下不可达 | 不改产品；登记为「将来取消分页或上虚拟滚动」的前置输入。若真要做，先解决 10000 个 `<tr>` 的渲染（虚拟滚动）再谈 fps |
 
 ---
 
@@ -245,3 +257,4 @@ v2.0 内核分片与 dryrun、v2.1 样例集），**不是**新跑的执行—�
 | 日期 | 修订 | 依据 |
 |---|---|---|
 | 2026-11-14 | 首版：46 条 TC 覆盖 12 FR；定 7 类执行方式与放行口径 | `PRD.md` / `DEV-PLAN.md` |
+| 2026-11-14 | 追加 §8 的 W58-11/12 与 W58-09/10 执行结果（TC-v5.8-21~25），§9 增 L-58-06 | 实测证据 `docs/evidence/v5.8.0/perf/` |

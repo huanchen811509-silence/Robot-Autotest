@@ -124,7 +124,7 @@ W6 最后，且开始前 W1 ~ W5 出口判据全部满足。
 | 目标 | 10000 行数据集可复现，且不污染既有项目统计 |
 | 改动面 | 用 `tools/perf_dataset.py` 生成 + 导入独立压测 project + 前后 DB 读数对比 |
 | 出口判据 | ① manifest 含行数/sha256；② 导入前后 `robot_dev` 项目数与既有用例数不变（对比输出）；③ 压测 project 命名带 `PERF-` 前缀可识别 |
-| 验证命令 | `python3 tools/perf_dataset.py --scale standard --out /tmp/perf-ds && cat /tmp/perf-ds/manifest.json` |
+| 验证命令 | `python3 tools/perf_dataset.py --scale standard --out /tmp/perf-ds && cat /tmp/perf-ds/manifest.json && python3 tools/perf_seed.py --dataset /tmp/perf-ds` |
 | 依赖 | W58-05（列表筛选稳定，避免量测受筛选 bug 干扰） |
 
 ### W58-10 10000 行 fps 量测与证据
@@ -132,9 +132,9 @@ W6 最后，且开始前 W1 ~ W5 出口判据全部满足。
 | 项 | 内容 |
 |---|---|
 | 目标 | `perf_longlist.json` 的 `status` 为 PASS 或 FAIL，`sample_size ≥ 3` |
-| 改动面 | `tools/perf_longlist.py`（改为读真实测量结果，不再写「未测量」）+ 量测脚本 + 证据 |
+| 改动面 | `scripts/perf-longlist.mjs`（CDP + rAF 采数，双口径）+ `tools/perf_longlist.py`（改为读真实测量结果，不再写「未测量」）+ 证据 |
 | 出口判据 | ① ≥3 轮、每轮 fps 与机器信息；② `check_perf_budget` 判 PASS/FAIL 且理由可读；③ `--selfcheck` 仍判红「0 轮冒充」 |
-| 验证命令 | `python3 tools/perf_longlist.py && python3 tools/check_perf_budget.py --report docs/evidence/v3.2.0/EW32-01/perf/perf-report.json --require` |
+| 验证命令 | `node scripts/perf-longlist.mjs --rounds 5 --seconds 3 --out docs/evidence/v5.8.0/perf/longlist-raw.json && python3 tools/perf_longlist.py && python3 tools/check_perf_budget.py --report docs/evidence/v5.8.0/perf/perf-report.json --require` |
 | 依赖 | W58-09 |
 
 ---
@@ -278,6 +278,8 @@ W6 最后，且开始前 W1 ~ W5 出口判据全部满足。
 | W58-05 | 完成（3 页反向实证待补） | ① 三页数据下反向实证待补 ② spec 用 URL 复现证明筛选可复制 ③ DOM 断言「共 N 条」取 `total` ④ 3 例覆盖筛选变化与翻页保留 | `CaseSetsView.spec` 15 例；`TestSetControllerTest` 5 例 |
 | W58-06 | 完成（回放待补） | ① `ExportServiceTest` 11 例（新增 2：read 回来逐字节一致 + 通道故障不影响导出）② 大文件不整读内存：证据写入传**磁盘路径**，`EvidencePaths.sha256Of`/`Files.copy` 均流式 ③ `9fda073` 回放待补 | `ExportService` + `EvidenceBundleService` |
 | W58-07 | 完成（回放待补） | ① `EditorSaveServiceTest` 12 例（新增 3）② 同上，传临时文件路径 ③ 额外断言：同一 docId 两次保存 = 2 个版本、证据指针只留最近一次 | `EditorSaveService` |
+| W58-09 | 完成 | ① manifest 含行数/sha256（`dataset-manifest.json` 随证据归档）② 导入前后既有工程 13→13、既有用例 2491→2491（`seed-report.json` 对比输出）③ 压测工程 `PERF-LONGLIST` 带 `PERF-` 前缀、`--purge` 可一键清 | `tools/perf_seed.py`；`docs/evidence/v5.8.0/perf/seed-report.json` |
+| W58-10 | 完成（双口径，见 D-58-08） | ① 5 轮 × 3 秒，每轮 fps / 帧数 / 最差帧 / 累计滚动像素齐全 ② `check_perf_budget --require` 判 PASS（产品口径 `minFps 60.1 ≥ 50`）③ `--selfcheck` 4 类反例全判红（其中「2 轮 60fps」当场抓出自检漏洞并修掉） | `scripts/perf-longlist.mjs` + `tools/perf_longlist.py`；`docs/evidence/v5.8.0/perf/` |
 | W58-11 | 完成 | ① 10 份逐份「有/无载体」+ 片段（`README.md` 表 + `scan.json`）② 结论明确：无框架级载体（`<doc>` 2/10、断言 3/10、结构化失败消息 4/10，均不构成稳定协议） | `docs/evidence/v5.8.0/rf-criteria-spike/`（样本清单 + 扫描脚本 + 原始读数） |
 | W58-12 | 完成（走标注分支） | ① 未实现提取（无载体）② 界面标注 `report-conclusion-scope`，spec 断言含 `pytest` 与 `Robot Framework` ③ 选择依据写在 spike `README.md` §4 与 PRD FR-11「实测结论」 | `ReportDetailView.spec.ts` 14 例 |
 | W58-08 | 完成（截图待补） | ① 台账 42 行逐条有结论，缺口 7 → 6 ② `ReportsView` 行为对齐 `TestReportsView`（编辑/软删），截图待补 ③ 前端全量 130 文件 1030 例（只增不减） | `docs/evidence/v5.8.0/list-crud-matrix.md`；`ReportsView.spec.ts` 3 例 |
@@ -293,6 +295,9 @@ W6 最后，且开始前 W1 ~ W5 出口判据全部满足。
 | D-58-05 | W58-08 四页里只有 `ReportsView` 判定为「接」，其余三页不接 | `GlobalAssetsView` 无通用 `PUT`（资产由采集回写）；`GlobalTemplatesView` 只缺外壳、接它无行为变化；`RunsView` 缺口本就是「无」。判定依据写在台账 §本轮判定 | 台账逐页留结论与证据，不把「不接」写成「已完成」；FR-04 按 P2 登记（允许未达成） |
 | D-58-06 | **计划外修正**：`tools/check_list_crud.py` 把台账路径写死成 `docs/evidence/v5.7.0/` | 新台账放在 `v5.8.0/` 时机检会继续对着旧台账判绿——台账没人看、机检还是 PASS，属最难发现的假绿（与门禁 29 的 `host_inventory` 证据目录同型） | 改为按目录版本序取最新台账；`--self-test` 真注入判红→还原判绿，PASS=113 |
 | D-58-04 | **计划外修正**：`tools/gen_api_contract.py` 长期解析不出任何注解参数（438 个操作里只有 6 个带参数，且都出自 `MultipartFile` 分支） | `request_param()` 要求「注解」与「类型+参数名」分属两个逗号段，而 Java 把两者写在同一段；结果 `@PathVariable` / `@RequestParam` 一律返回 `None`，契约快照**从来没有覆盖过 query/path 参数**——本版 FR-02/FR-03 的请求形状变化原本无法被 NFR-02 兜住 | 已修：剥掉前缀注解后再解析类型与参数名；重生成后带参数的操作 6 → 359，`--check` PASS，`endpoints=438 / paths=360` 不变（依赖方只用路径与 `info.version`，已逐个核对） |
+| D-58-08 | **口径偏差（大师 2026-11-14 拍板「双口径都测」）**：预算场景「10000 行滚动 ≥50fps」在产品里不可达 | 产品把每页硬顶在 100 行（`PageQuery.MAX_SIZE = 100`，前端档位 10/20/50/100，全站没有任何列表取数超 100）。硬报一个 `rows=10000` 的产品读数就是伪造 | 分两个口径且各说清量的是什么：**product**（10000 条数据集 + 每页 100 行，真页面，决定 `status`）+ **harness**（一次性 HTML 10000 行，标注「非产品页面」，只作补充基线）。门禁 22 步改为同时判两份报告（v3.2.0 那份只覆盖 API，不含长列表） |
+| D-58-09 | **发现（非偏差）**：harness 口径 10000 行同屏只有 20.4~28.5fps，低于预算 50 | 纯静态表格一次铺 10000 个 `<tr>`，滚动时整表重排；三次独立量测 23.8 / 24.2 / 20.4 一致偏低，不是抖动 | 不改产品（当前形态下该场景不可达，也没有必要）；作为「将来若取消分页或上虚拟滚动」的前置输入登记遗留 **L-58-06** |
+| D-58-10 | **计划外修正**：`tools/perf_seed.py` 首版只写 `seed-report.json`，未归档数据集 manifest | PRD FR-v5.8-06 判据③要求 manifest 随证据归档；数据集本体在 `/tmp`，不归档等于「行数与 sha256 可复现」这句话没人能验 | 导入时自动 `cp` 成 `docs/evidence/v5.8.0/perf/dataset-manifest.json`；另：purge 后重新导入会让工程 id 变化（123 → 124），README 给的是「按 code 查 id」的命令而不是写死 id |
 
 ### 12.2 本轮验证读数（2026-11-14）
 
@@ -301,3 +306,8 @@ W6 最后，且开始前 W1 ~ W5 出口判据全部满足。
 | 后端全量 | `Tests run: 1934, Failures: 0, Errors: 0, Skipped: 4`，BUILD SUCCESS（v5.7.0 为 1917，本版 +17） |
 | 前端全量 | 129 文件 / 1027 例全过（本版新增 6 例） |
 | 类型检查 | `npx vue-tsc --noEmit` 无输出 |
+| 长列表 fps（产品口径） | 5 轮 × 3 秒：60.1 / 60.5 / 60.3 / 60.4 / 60.5，`minFps 60.1`（预算 50）→ PASS；每轮 `scrolledPx ≈ 67720`（真滚，非空转） |
+| 长列表 fps（10000 行同屏） | 同批 harness 口径 24.4 / 24.8 / 20.4 / 24.3 / 22.5，`minFps 20.4` → 不达标（D-58-09，不参与判定） |
+| 数据集可复现 | `--scale standard` 两次独立生成 `contentHash` 相同（`59824208438adcd7…`），且与 v3.2.0 历史数据集逐字节一致 |
+| 数据隔离 | `robot_dev`：既有工程 13→13、既有用例 2491→2491；压测工程 1 个（`PERF-LONGLIST` id=124，10000 条），数据集 `cases.csv` sha256 `272bdb09…` |
+| 性能门禁 | `check_perf_budget --require` 两份报告均 PASS（v3.2.0 API 段 + v5.8.0 长列表段） |
