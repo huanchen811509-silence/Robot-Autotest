@@ -1,17 +1,18 @@
 {
-  "generatedAt": "2026-11-11T15:51:16.405059+00:00",
+  "generatedAt": "2026-11-14T11:12:46.191913+00:00",
   "database": "robot_dev",
   "counts": {
-    "testCase": 1838,
-    "testResult": 570,
+    "testCase": 2307,
+    "testResult": 645,
     "keywordResult": 142,
-    "run": 490,
-    "auditLog": 7515
+    "run": 535,
+    "auditLog": 8252
   },
-  "currentSizeMb": 10.7,
+  "currentSizeMb": 10.9,
   "indexes": [
     "PRIMARY",
     "fk_run_test_set",
+    "idx_run_deleted",
     "idx_run_node",
     "idx_run_plan",
     "idx_run_project_created",
@@ -26,14 +27,14 @@
   ],
   "archiveQuery": {
     "type": "NULL",
-    "key": "uk_run_project_request,uk_run_idempotency,idx_run_project_started,idx_run_plan,idx_run_round,idx_run_project_enq,idx_run_project_status_enq,idx_run_project_id,idx_run_project_created",
+    "key": "uk_run_project_request,uk_run_idempotency,idx_run_project_started,idx_run_plan,idx_run_round,idx_run_project_enq,idx_run_project_status_enq,idx_run_project_id,idx_run_project_created,idx_run_deleted",
     "fullScan": false
   },
   "targets": {
     "cases": 50000,
     "results": 1000000
   },
-  "projectedSizeMb": 484.7,
+  "projectedSizeMb": 448.1,
   "budgetMb": 2048.0,
   "verdict": "PASS"
 }

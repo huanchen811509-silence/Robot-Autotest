@@ -5,7 +5,7 @@
   "note": "DORA 2025：只做自身趋势线，取消 Elite/High/Medium/Low 分级，不设考核",
   "metrics": {
     "deployment_frequency": {
-      "value": 23,
+      "value": 26,
       "unit": "versions_in_changelog",
       "approx": true
     },
@@ -29,8 +29,8 @@
     }
   },
   "sample": {
-    "commits": 186,
-    "span_days": 9,
+    "commits": 200,
+    "span_days": 10,
     "gate_fails": 1
   }
 }
