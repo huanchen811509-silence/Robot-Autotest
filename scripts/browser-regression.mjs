@@ -38,6 +38,16 @@ const REPORT_RUN = process.env.REGRESS_REPORT_RUN ?? ''
 /** 该 run 所属项目：报告接口一律按 projectId 取数，必须显式绑定，不能沿用 profile 残留值。 */
 const REPORT_PROJECT = process.env.REGRESS_REPORT_PROJECT ?? ''
 const SHOT_DIR = process.env.REGRESS_SHOT_DIR ?? ''
+/* ---------------------------------------------------------------- W57-44 体验机检（只加断言） */
+/** 两档视口连高度一起钉死：只改宽度不改高度会漏掉 800 高度下的表格挤压。 */
+const UI_VIEWPORTS = [
+  { width: 1440, height: 900 },
+  { width: 1280, height: 800 },
+]
+/** 浅 / 深两主题各跑一轮；主题真源是 localStorage.theme + <html data-theme>（useTheme.ts）。 */
+const UI_THEMES = ['light', 'dark']
+/** 基线截图落盘路径（v5.7.0 证据目录）；可用环境变量覆盖。 */
+const UI_SHOT_DIR = process.env.REGRESS_UI_SHOT_DIR ?? 'docs/evidence/v5.7.0/ui'
 
 function envValue(key) {
   if (process.env[key]) return process.env[key]
@@ -231,6 +241,103 @@ async function reportDeepCheck(session, exceptions) {
     exceptions.length ? exceptions[0].slice(0, 80) : '0 exception')
 }
 
+/**
+ * W57-44 体验机检的 DOM 断言表达式（v5.7.0 新增，既有 measureExpr/断言一律不动）。
+ *
+ * 四类判据：
+ *  ① 无横滚：documentElement.scrollWidth <= clientWidth（比既有 viewport 口径更严，
+ *     clientWidth 已扣掉滚动条，viewport 是含滚动条的窗口宽）；
+ *  ② 标题容器 ≤2 行：按 scrollHeight / lineHeight 估行数，line-clamp 生效时按 2 行封顶；
+ *  ③ 语义色只用 token：带 data-check-semantic 的容器里不允许内联硬编码颜色
+ *     （CSS 里只允许 var(--token) 的严格判定由 tools/check_ui_contrast.py 静态完成）；
+ *  ④ 状态三重编码：.status-tag 必须「颜色 + 文字 + 图标」齐全；页面没有该组件时不适用。
+ */
+const uiMeasureExpr = `(() => {
+  const de = document.documentElement
+  const noHscroll = de.scrollWidth <= de.clientWidth + 1
+  const titleSelectors = '.list-scaffold__title, .report-list-title, .page-title'
+  let maxTitleLines = 0
+  let titleOverflow = false
+  for (const el of document.querySelectorAll(titleSelectors)) {
+    const cs = getComputedStyle(el)
+    if (cs.display === 'none' || cs.visibility === 'hidden') continue
+    const lh = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.2
+    if (!(lh > 0)) continue
+    const clamped = cs.webkitLineClamp && cs.webkitLineClamp !== 'none'
+    const rawLines = Math.ceil(el.scrollHeight / lh)
+    const lines = clamped ? Math.min(2, rawLines) : rawLines
+    maxTitleLines = Math.max(maxTitleLines, lines)
+    if (lines > 2) titleOverflow = true
+  }
+  const colorLiteral = /#[0-9a-fA-F]{3,8}\\b|\\brgba?\\(|\\bhsla?\\(/
+  let semanticViolations = 0
+  for (const el of document.querySelectorAll('[data-check-semantic]')) {
+    if (colorLiteral.test(el.getAttribute('style') || '')) semanticViolations += 1
+    for (const child of el.querySelectorAll('[style]')) {
+      if (colorLiteral.test(child.getAttribute('style') || '')) semanticViolations += 1
+    }
+  }
+  let statusTags = 0, statusTagsWithText = 0, statusTagsWithIcon = 0
+  for (const el of document.querySelectorAll('.status-tag')) {
+    statusTags += 1
+    if ((el.textContent || '').trim().length > 0) statusTagsWithText += 1
+    if (el.querySelector('svg, img, [class*="icon"]')) statusTagsWithIcon += 1
+  }
+  return {
+    noHscroll, maxTitleLines, titleOverflow, semanticViolations,
+    statusTags, statusTagsWithText, statusTagsWithIcon,
+    scrollWidth: de.scrollWidth, clientWidth: de.clientWidth,
+    theme: de.getAttribute('data-theme') || '',
+  }
+})()`
+
+/** 浅/深主题各一轮：CSS 只认 <html data-theme>，强制写属性即可，无需页面内切换动作。 */
+async function applyTheme(session, theme) {
+  await session.evaluate(`(() => {
+    try { localStorage.setItem('theme', ${JSON.stringify(theme)}) } catch {}
+    const de = document.documentElement
+    de.setAttribute('data-theme', ${JSON.stringify(theme)})
+    de.style.colorScheme = ${JSON.stringify(theme)}
+  })()`)
+}
+
+async function uiChecks(session, exceptions) {
+  console.log(`\n[ui] 体验机检：${UI_THEMES.length} 主题 × ${UI_VIEWPORTS.length} 视口 × ${ROUTES.length} 路由`)
+  mkdirSync(UI_SHOT_DIR, { recursive: true })
+  for (const theme of UI_THEMES) {
+    for (const vp of UI_VIEWPORTS) {
+      for (const route of ROUTES) {
+        exceptions.length = 0
+        await goto(session, `${APP}${route}`, vp.width, vp.height)
+        await applyTheme(session, theme)
+        await sleep(150)
+        const ui = await session.evaluate(uiMeasureExpr)
+        const id = `${route}@${vp.width}x${vp.height}@${theme}`
+        check(`${id}-ui-no-hscroll`, ui.noHscroll,
+          `scrollWidth=${ui.scrollWidth} clientWidth=${ui.clientWidth}`)
+        check(`${id}-ui-title-lines`, ui.maxTitleLines <= 2 && !ui.titleOverflow,
+          `maxTitleLines=${ui.maxTitleLines} overflow=${ui.titleOverflow}`)
+        check(`${id}-ui-semantic-token`, ui.semanticViolations === 0,
+          `inlineColorLiterals=${ui.semanticViolations}`)
+        check(`${id}-ui-state-triple`,
+          ui.statusTags === 0 ||
+            (ui.statusTagsWithText === ui.statusTags && ui.statusTagsWithIcon === ui.statusTags),
+          `statusTags=${ui.statusTags} text=${ui.statusTagsWithText} icon=${ui.statusTagsWithIcon}`)
+        check(`${id}-ui-theme`, ui.theme === theme, `data-theme=${ui.theme}`)
+        check(`${id}-ui-no-js-error`, exceptions.length === 0,
+          exceptions.length ? exceptions[0].slice(0, 80) : '0 exception')
+        // 基线截图：每个 (路由 × 主题) 在 1440x900 留一张。
+        if (vp.height === 900) {
+          const shot = await session.send('Page.captureScreenshot', { format: 'png' })
+          const slug = route === '/' ? 'root' : route.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '')
+          const file = `${UI_SHOT_DIR}/ui-${slug}-${theme}-${vp.width}.png`
+          writeFileSync(file, Buffer.from(shot.data, 'base64'))
+        }
+      }
+    }
+  }
+}
+
 async function main() {
   const version = await (await fetch(`${CDP}/json/version`)).json()
   console.log(`[cdp] ${version.Browser}`)
@@ -294,6 +401,9 @@ async function main() {
   } else {
     console.log('\n[report] 跳过对比/趋势深检（未设置 REGRESS_REPORT_RUN）')
   }
+
+  // W57-44：浅/深两主题 × 两档视口的体验机检，排在既有断言之后，只加不删。
+  await uiChecks(session, exceptions)
 
   const fails = checks.filter((c) => !c.ok)
   console.log(`\nBROWSER_REGRESSION checks=${checks.length} fails=${fails.length}`)

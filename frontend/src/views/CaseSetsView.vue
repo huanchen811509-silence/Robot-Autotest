@@ -8,7 +8,10 @@
  */
 import { computed, h, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NButton, NInput, NSelect, type DataTableColumns } from 'naive-ui'
+import { NButton, NCheckbox, NInput, NSelect, type DataTableColumns } from 'naive-ui'
+import ColumnFilter from '@/components/ColumnFilter.vue'
+import { useTableFilters, type TableFilterColumn } from '@/composables/useTableFilters'
+import { useServerSelection } from '@/composables/useServerSelection'
 import { caseApi, caseSetApi, assetVersionApi, platformCaseSetApi,
          type TestCase, type TestSet, type AssetVersionView, type AssetDiffRow,
          type PlatformCaseSetRow, type SyncStrategy } from '@/api/cases'
@@ -79,7 +82,113 @@ const canSubmit = computed(
     !saving.value,
 )
 
+/* ---------------------------------------------------------------- W57-15/16/17 列表三件套 */
+
+/**
+ * 成员表筛选：URL 化（prefix `member_`），与集合表筛选互不覆盖。
+ * 成员是 `<ul>` 顺序列表（上移/下移要按完整顺序提交），所以这里只做「显示层过滤」，
+ * 排序动作仍按 `items.value` 的原始下标执行 —— 见下方 `move(item, delta)`。
+ */
+const memberFilters = useTableFilters({
+  prefix: 'member_',
+  columns: ['caseCode', 'priority'],
+})
+const memberFacets = memberFilters.facets
+const memberTexts = memberFilters.texts
+const memberFilterColumns: TableFilterColumn[] = [
+  { key: 'caseCode', title: t('w57.caseSets.colCaseCode'), mode: 'text' },
+  {
+    key: 'priority',
+    title: t('w57.caseSets.colPriority'),
+    mode: 'multi',
+    options: [
+      { label: t('w57.caseSets.priorityHigh'), value: 'HIGH' },
+      { label: t('w57.caseSets.priorityMedium'), value: 'MEDIUM' },
+      { label: t('w57.caseSets.priorityLow'), value: 'LOW' },
+    ],
+  },
+]
+
+function onMemberSelected(key: string, values: string[]): void {
+  if (memberFilterColumns.find((col) => col.key === key)?.mode === 'text') return
+  memberFilters.setFacet(key, values)
+}
+function onMemberText(key: string, value: string): void {
+  if (memberFilterColumns.find((col) => col.key === key)?.mode !== 'text') return
+  memberFilters.setText(key, value)
+}
+
+const visibleItems = computed<TestCase[]>(() => {
+  const q = memberFilters.q.value.trim().toLowerCase()
+  const byCode = (memberTexts.value.caseCode ?? '').toLowerCase()
+  const priorities = memberFacets.value.priority ?? []
+  return items.value.filter((item) => {
+    if (priorities.length > 0 && !priorities.includes(item.priority)) return false
+    if (byCode && !item.caseCode.toLowerCase().includes(byCode)) return false
+    if (q && !`${item.caseCode} ${item.title}`.toLowerCase().includes(q)) return false
+    return true
+  })
+})
+
+/** 集合表筛选：走 DataTable 的可选 filterable 弹层，状态仍落在 URL（prefix `sets_`）。 */
+const setsFilters = useTableFilters({ prefix: 'sets_', columns: ['setCode', 'name'] })
+const setsFilterColumns: TableFilterColumn[] = [
+  { key: 'setCode', title: t('w57.caseSets.colSetCode'), mode: 'text' },
+  { key: 'name', title: t('w57.caseSets.colName'), mode: 'text' },
+]
+const setsFilterValues = computed<Record<string, string[]>>(() => {
+  const out: Record<string, string[]> = {}
+  for (const [key, value] of Object.entries(setsFilters.texts.value)) out[key] = [value]
+  return out
+})
+const memberIsFiltered = memberFilters.isFiltered
+const visibleSets = computed<TestSet[]>(() => {
+  const byCode = (setsFilters.texts.value.setCode ?? '').toLowerCase()
+  const byName = (setsFilters.texts.value.name ?? '').toLowerCase()
+  const q = setsFilters.q.value.trim().toLowerCase()
+  return sets.value.filter((set) => {
+    if (byCode && !set.setCode.toLowerCase().includes(byCode)) return false
+    if (byName && !set.name.toLowerCase().includes(byName)) return false
+    if (q && !`${set.setCode} ${set.name}`.toLowerCase().includes(q)) return false
+    return true
+  })
+})
+function onSetsFilterChange(next: Record<string, string[]>): void {
+  for (const column of setsFilterColumns) {
+    setsFilters.setText(column.key, next[column.key]?.[0] ?? '')
+  }
+}
+
+/** 服务端选择：全选用筛选条件表达，跨页生效；>10000 需二次确认。 */
+const pageIds = computed<number[]>(() => sets.value.map((set) => set.id))
+const selection = useServerSelection(pageIds)
+const selectionCount = selection.count
+const awaitingSelectAllConfirm = selection.awaitingConfirm
+
+function selectAllMatching(): void {
+  selection.requestSelectAllMatching(setsFilters.queryParams.value, sets.value.length)
+}
+function clearSelection(): void {
+  selection.clear()
+}
+
+watch(setsFilters.revision, () => {
+  // 筛选条件一变，旧的「按条件全选」必须作废（W57-16）
+  selection.resetForFilters(setsFilters.queryParams.value)
+})
+
 const columns = computed<DataTableColumns<TestSet>>(() => [
+  {
+    title: t('w57.caseSets.colSelect'),
+    key: '__select',
+    width: 64,
+    render: (row) =>
+      h(NCheckbox, {
+        checked: selection.isSelected(row.id),
+        'onUpdate:checked': () => selection.toggle(row.id),
+        'aria-label': t('w57.caseSets.selectRow', { name: row.name }),
+      }),
+  },
   { title: t('caseSets.setCode'), key: 'setCode', width: 160 },
   { title: t('caseSets.name'), key: 'name', minWidth: 200 },
   {
@@ -302,8 +411,14 @@ async function removeItem(item: TestCase): Promise<void> {
   }
 }
 
-async function move(index: number, delta: number): Promise<void> {
+/**
+ * 上移/下移按「成员对象」定位原始下标：成员列表被筛选显示成子集时，
+ * 显示层的 index 不能直接拿去 splice 完整列表，否则会移动错一条。
+ */
+async function move(item: TestCase, delta: number): Promise<void> {
   if (!activeSet.value) return
+  const index = items.value.findIndex((row) => row.id === item.id)
+  if (index < 0) return
   const target = index + delta
   if (target < 0 || target >= items.value.length) return
   const next = [...items.value]
@@ -529,21 +644,70 @@ void load()
       </div>
     </form>
 
+    <!-- W57-16：全选用筛选条件表达；>10000 命中先二次确认，不静默选中上万条。 -->
+    <div class="batch-bar" data-testid="case-sets-batch">
+      <template v-if="awaitingSelectAllConfirm">
+        <span class="muted">
+          {{ t('w57.caseSets.confirmAllHint', { count: selection.confirmThreshold }) }}
+        </span>
+        <NButton size="small" type="primary" @click="selection.confirmSelectAllMatching()">
+          {{ t('w57.caseSets.confirmAll') }}
+        </NButton>
+        <NButton size="small" quaternary @click="selection.cancelSelectAllMatching()">{{ t('w57.caseSets.cancel') }}</NButton>
+      </template>
+      <template v-else>
+        <span v-if="selectionCount > 0" class="muted">{{ t('w57.caseSets.selectedCount', { count: selectionCount }) }}</span>
+        <NButton size="small" quaternary @click="selectAllMatching">{{ t('w57.caseSets.selectAllMatching') }}</NButton>
+        <NButton v-if="selectionCount > 0" size="small" quaternary @click="clearSelection">
+          {{ t('w57.caseSets.clear') }}
+        </NButton>
+      </template>
+    </div>
+
     <DataTable
       :columns="columns"
-      :data="sets"
+      :data="visibleSets"
       :loading="loading"
       :row-key="(row: TestSet) => row.id"
       :empty-title="t('caseSets.empty')"
       :empty-description="projectId ? t('caseSets.emptyHint') : t('overview.noProject')"
       empty-icon="cases"
       :error="Boolean(error)"
+      filterable
+      :filter-columns="setsFilterColumns"
+      :filters="setsFilterValues"
+      @update:filters="onSetsFilterChange"
     />
 
     <div v-if="activeSet" class="card items-card">
       <div class="items-head">
         <h2 class="card-title">{{ t('caseSets.itemsTitle', { name: activeSet.name }) }}</h2>
         <span class="muted small">{{ t('caseSets.itemsCount', { count: items.length }) }}</span>
+      </div>
+
+      <!-- W57-15/17：成员表筛选（URL 化，prefix member_），与集合表筛选隔离。 -->
+      <div class="member-filters" data-check-semantic data-testid="member-filters">
+        <ColumnFilter
+          v-for="col in memberFilterColumns"
+          :key="col.key"
+          :column-key="col.key"
+          :title="col.title"
+          :mode="col.mode"
+          :options="col.options ?? []"
+          :selected="memberFacets[col.key] ?? []"
+          :text="memberTexts[col.key] ?? ''"
+          @update:selected="(v: string[]) => onMemberSelected(col.key, v)"
+          @update:text="(v: string) => onMemberText(col.key, v)"
+          @clear="memberFilters.clearColumn(col.key)"
+        />
+        <NInput
+          :value="memberFilters.q.value"
+          clearable
+          style="width: 180px"
+          :placeholder="t('w57.caseSets.searchMember')"
+          :aria-label="t('w57.caseSets.searchMember')"
+          @update:value="(v: string) => memberFilters.setQuery(v)"
+        />
       </div>
 
       <div class="toolbar">
@@ -569,24 +733,25 @@ void load()
       <p v-if="itemsLoading" class="muted">{{ t('common.loading') }}</p>
       <p v-else-if="items.length === 0" class="muted">{{ t('caseSets.noItems') }}</p>
       <ul v-else class="set-items">
-        <li v-for="(item, index) in items" :key="item.id" class="set-item">
+        <li v-for="(item, index) in visibleItems" :key="item.id" class="set-item">
           <span class="set-item-order">{{ index + 1 }}</span>
           <span class="set-item-code">{{ item.caseCode }}</span>
           <span class="set-item-title">{{ item.title }}</span>
           <span class="row-actions">
+            <!-- 筛选态下显示顺序 ≠ 完整顺序，禁用排序避免按显示下标移动错一条 -->
             <NButton
               text
               size="small"
-              :disabled="index === 0"
-              @click="move(index, -1)"
+              :disabled="index === 0 || memberIsFiltered"
+              @click="move(item, -1)"
             >
               {{ t('caseSets.moveUp') }}
             </NButton>
             <NButton
               text
               size="small"
-              :disabled="index === items.length - 1"
-              @click="move(index, 1)"
+              :disabled="index === visibleItems.length - 1 || memberIsFiltered"
+              @click="move(item, 1)"
             >
               {{ t('caseSets.moveDown') }}
             </NButton>
@@ -737,6 +902,28 @@ void load()
 </template>
 
 <style scoped>
+/* W57-15/16 列表三件套：筛选条与批量条 */
+.member-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.batch-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  font-size: var(--font-size-sm);
+}
+
 .items-card {
   margin-top: var(--space-5);
 }

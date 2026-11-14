@@ -1,0 +1,21 @@
+=== 取真实分类 id 与用例 id
+GET    /api/global/cases/grouped                                  200  {"code":0,"codeName":"OK","message":"OK","data":[{"l1Id":1,"l1Name":"AI应用业务联动","l2s":[{"l2Id":33,"l2Name":"推理负载对照","count":6},
+GET    /api/global/cases?page=1&size=1                            200  {"code":0,"codeName":"OK","message":"OK","data":{"items":[{"id":1667,"caseCode":"AI-APP-001","externalId":"AI-APP-001","title":"GuideLLM单请求TTFT�
+L1=1 CASE=1667
+=== 平台用例集写闭环
+POST   /api/platform/case-sets                                    200  {"code":0,"codeName":"OK","message":"OK","data":{"id":84,"projectId":0,"setCode":"W57-SMOKE-1794652790","name":"冒烟集","description":"v5.7.0 smoke
+SETID=84
+PUT    /api/platform/case-sets/84                                 200  {"code":0,"codeName":"OK","message":"OK","data":{"id":84,"projectId":0,"setCode":"W57-SMOKE-1794652790","name":"冒烟集-已改名","description":"re
+POST   /api/platform/case-sets/84/items                           200  {"code":0,"codeName":"OK","message":"OK","data":{"added":1,"skipped":0},"success":true}
+GET    /api/platform/case-sets/84/items                           200  {"code":0,"codeName":"OK","message":"OK","data":[{"id":1667,"projectId":88,"caseCode":"AI-APP-001","title":"GuideLLM单请求TTFT与TPOT延迟测试",
+DELETE /api/platform/case-sets/84/items/1667                      200  {"code":0,"codeName":"OK","message":"OK","data":null,"success":true}
+PUT    /api/platform/case-sets/84/order                           400  {"code":40001,"codeName":"INVALID_ARGUMENT","message":"排序列表不能为空","data":null,"success":false}
+POST   /api/platform/case-sets/84/items/category-filter           200  {"code":0,"codeName":"OK","message":"OK","data":{"matched":7,"added":7,"itemSource":"category_filter"},"success":true}
+=== 幂等播种（rebuild=false，不重复建集）
+POST   /api/platform/case-sets/seed-samples?rebuild=false         200  {"code":0,"codeName":"OK","message":"OK","data":{"created":0,"skipped":32,"addedItems":0},"success":true}
+=== 清理
+DELETE /api/platform/case-sets/84                                 200  {"code":0,"codeName":"OK","message":"OK","data":null,"success":true}
+GET    /api/platform/case-sets?keyword=W57-SMOKE-1794652790       200  {"code":0,"codeName":"OK","message":"OK","data":{"items":[],"total":0,"page":1,"size":50},"success":true}
+=== 报告类端点（补 projectId）
+GET    /api/reports?page=1&size=3&projectId=95                    200  {"code":0,"codeName":"OK","message":"OK","data":{"items":[{"runId":"w56-24-retry-2","state":"failed","exportable":false,"metadataMissing":["STARTED_AT
+GET    /api/test-reports?page=1&size=3&projectId=95               200  {"code":0,"codeName":"OK","message":"OK","data":[{"id":21,"projectId":95,"runId":"w56-24-retry-2","sourceType":"RUN","caseSetId":null,"title":"撤销�

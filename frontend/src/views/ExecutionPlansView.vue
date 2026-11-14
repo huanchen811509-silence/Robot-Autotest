@@ -1,26 +1,30 @@
 <script setup lang="ts">
 /**
- * 执行计划（即时发起台）—— v4.11.0 / FR-v4.11-12..16。
+ * 执行计划（即时发起台）—— v4.11.0 / FR-v4.11-12..16；v5.7.0 / W57-29/30 重构选区。
  *
- * **与「测试计划」的分界**（最容易混的一处）：
- * - 本页 = 「现在就把这一批用例跑一遍」：选用例 → 配参数 → 安全预检 → 发起 → 跳运行详情；
- * - `/plans` = cron 定时编排：什么时候跑、跑哪个用例集、失败怎么重试。
- * 两套模型完全不同（一次性 run vs 周期 plan），所以是两页，不合并。
+ * **与「测试计划」的分界**：本页 = 「现在就把这一批用例跑一遍」；
+ * `/plans` = cron 定时编排。两套模型不同，所以是两页，不合并。
  *
- * 来源标记：发起时 `runRequestId` 用 `EP-` 前缀，本页的「发起记录」按此前缀过滤，
- * 不新增表 / 列（PRD P-04=A）。前缀 + UUID 共 39 字符，落在 `VARCHAR(64)` 内。
+ * W57-29/30 三处变化：
+ * 1. 选区唯一真源换成 `useRunSelection` 的 `Map<caseId, Set<source>>`：取消用例集
+ *    **只摘该集合来源**，不再用「剩余集合并集」重建已选（旧实现会误删手工单独勾选的用例）。
+ * 2. 四模式（ALL / SET / CASE / MIXED）各自保留草稿；用例集搜索/翻页走后端分页，去掉 size:100。
+ * 3. 发起先走 `preview → confirm-and-start` 两步；后端未部署（404）或幂等冲突（409）
+ *    时**回退到旧 `runCases` 的 caseIds 路径**并给出可读提示，灰度期新旧后端都能用。
+ *
+ * 来源标记：发起时 `runRequestId` 用 `EP-` 前缀，本页「发起记录」按此前缀过滤。
  */
-import { computed, h, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { caseApi, caseSetApi, type TestCase, type TestSet } from '@/api/cases'
-import {
-  executionApi,
-  type ExecutionRun,
-  type SafetyPrecheck,
-} from '@/api/execution'
+import { executionApi, type ExecutionRun, type SafetyPrecheck } from '@/api/execution'
+import { runLaunchApi, type RunPreviewPayload } from '@/api/runLaunch'
+import { ApiError } from '@/api/http'
 import DataTable from '@/components/DataTable.vue'
+import RunSelectionPanel from '@/components/RunSelectionPanel.vue'
+import { useRunSelection, type RunMode, type SourceEntry } from '@/composables/useRunSelection'
 import type { DataTableColumns } from 'naive-ui'
 
 const { t } = useI18n()
@@ -28,18 +32,32 @@ const auth = useAuthStore()
 const router = useRouter()
 
 const projectId = computed(() => auth.projectId ?? 0)
-
-/** 本页发起的标记前缀；改这里必须同步改「发起记录」的过滤条件。 */
 const REQUEST_PREFIX = 'EP-'
 
-/* ------------------------------------------------------------ 选择区 */
+/* ------------------------------------------------------------ 选择区（唯一真源） */
+
+/** W57-29：所有勾选都记在 useRunSelection 里；视图只负责把 props 递给面板、把事件递回来。 */
+const selection = useRunSelection('MIXED')
+/** 兼容既有断言的命名（`selectedCaseIds` 老断言不删只补）。 */
+const selectedCaseIds = selection.selectedCaseIds
+const selectedCount = selection.selectedCount
+const selectedSetIds = selection.selectedSetIds
+const mode = selection.mode
+const allSelected = selection.allSelected
+const sources = computed<SourceEntry[]>(() => selection.toPayload().sources)
+const setNames = computed<Record<number, string>>(() =>
+  Object.fromEntries(caseSets.value.map((set) => [set.id, set.name])),
+)
+
+/* ------------------------------------------------------------ 用例集（后端分页 + keyword） */
 
 const caseSets = ref<TestSet[]>([])
 const setsLoading = ref(false)
-const selectedSetIds = ref<number[]>([])
-/** 已选用例 id —— **唯一真源**；用例集勾选只是「批量加/减」的便捷入口。 */
-const selectedCaseIds = ref<number[]>([])
-const setItems = ref<Record<number, number[]>>({})
+const setKeyword = ref('')
+const setPage = ref(1)
+const setTotal = ref(0)
+/** W57-30：去掉旧实现的 `size:100` 硬上限，走 keyword + page 的后端分页。 */
+const SET_PAGE_SIZE = 20
 
 const caseRows = ref<TestCase[]>([])
 const caseKeyword = ref('')
@@ -48,97 +66,31 @@ const casePage = ref(1)
 const caseTotal = ref(0)
 const CASE_PAGE_SIZE = 20
 
-const selectedSet = computed(() => new Set(selectedCaseIds.value))
-const selectedCount = computed(() => selectedCaseIds.value.length)
-
-function isCaseSelected(caseId: number): boolean {
-  return selectedSet.value.has(caseId)
-}
-
-function toggleCase(testCase: TestCase): void {
-  if (isCaseSelected(testCase.id)) {
-    selectedCaseIds.value = selectedCaseIds.value.filter((id) => id !== testCase.id)
-  } else {
-    selectedCaseIds.value = [...selectedCaseIds.value, testCase.id]
-  }
-  // 用例集勾选态由「它的用例是否都还在已选中」反推——手工取消一条后，
-  // 该集合自动变成未全选，不需要额外记账。
-  selectedSetIds.value = selectedSetIds.value.filter((setId) => {
-    const items = setItems.value[setId] ?? []
-    return items.length > 0 && items.every((id) => selectedCaseIds.value.includes(id))
-  })
-}
-
 async function loadCaseSets(): Promise<void> {
   if (!projectId.value) return
   setsLoading.value = true
   try {
-    const page = await caseSetApi.page(projectId.value, { page: 1, size: 100 })
+    const page = await caseSetApi.page(projectId.value, {
+      keyword: setKeyword.value.trim() || undefined,
+      page: setPage.value,
+      size: SET_PAGE_SIZE,
+    })
     caseSets.value = page.items
+    setTotal.value = page.total
   } catch {
     caseSets.value = []
+    setTotal.value = 0
   } finally {
     setsLoading.value = false
   }
 }
-
-/** 勾选用例集 = 把它的用例 id 并入已选；取消 = 移除该集合独有的那部分。 */
-async function toggleSet(testSet: TestSet): Promise<void> {
-  const active = selectedSetIds.value.includes(testSet.id)
-  if (!active && setItems.value[testSet.id] === undefined) {
-    try {
-      const items = await caseSetApi.items(projectId.value, testSet.id)
-      setItems.value = { ...setItems.value, [testSet.id]: items.map((item) => item.id) }
-    } catch {
-      setItems.value = { ...setItems.value, [testSet.id]: [] }
-    }
-  }
-  const ids = setItems.value[testSet.id] ?? []
-  if (active) {
-    selectedSetIds.value = selectedSetIds.value.filter((id) => id !== testSet.id)
-    const keep = new Set(
-      selectedSetIds.value.flatMap((setId) => setItems.value[setId] ?? []),
-    )
-    selectedCaseIds.value = selectedCaseIds.value.filter((id) => keep.has(id))
-  } else {
-    selectedSetIds.value = [...selectedSetIds.value, testSet.id]
-    selectedCaseIds.value = [...new Set([...selectedCaseIds.value, ...ids])]
-  }
-}
-
-const caseColumns = computed<DataTableColumns<TestCase>>(() => [
-  {
-    title: '',
-    key: 'pick',
-    width: 56,
-    render: (row) =>
-      // 勾选框直接驱动 `selectedCaseIds`，不额外维护一份「视图选中态」
-      h('input', {
-        type: 'checkbox',
-        checked: isCaseSelected(row.id),
-        'data-testid': `pick-${row.id}`,
-        onChange: () => toggleCase(row),
-      }),
-  },
-  { title: t('executionPlans.colCode'), key: 'caseCode', width: 170 },
-  { title: t('executionPlans.colTitle'), key: 'title', minWidth: 240 },
-  { title: t('executionPlans.colPriority'), key: 'priority', width: 90 },
-  {
-    title: t('executionPlans.colSafety'),
-    key: 'safetyLevel',
-    width: 110,
-    render: (row) => row.safetyLevel,
-  },
-])
-
-/** 表格里的勾选框要 `h()` 渲染（见上面 `caseColumns`）。 */
 
 async function loadCases(): Promise<void> {
   if (!projectId.value) return
   caseLoading.value = true
   try {
     const page = await caseApi.page(projectId.value, {
-      keyword: caseKeyword.value,
+      keyword: caseKeyword.value.trim() || undefined,
       page: casePage.value,
       size: CASE_PAGE_SIZE,
     })
@@ -152,16 +104,64 @@ async function loadCases(): Promise<void> {
   }
 }
 
-function searchCases(): void {
+/**
+ * 勾选用例集：先取该集合的成员 id，再交给唯一真源「按来源」增删。
+ * 取消时只摘 `set:<id>`，手工勾选 / 其它集合的来源原样保留（缺陷修复点）。
+ */
+async function onToggleSet(set: TestSet): Promise<void> {
+  let ids: number[] = []
+  try {
+    const items = await caseSetApi.items(projectId.value, set.id)
+    ids = items.map((item) => item.id)
+  } catch {
+    ids = []
+  }
+  selection.toggleSet(set.id, ids)
+}
+
+function onToggleCase(caseId: number): void {
+  selection.toggleCase(caseId)
+}
+
+function onSetMode(next: RunMode): void {
+  selection.setMode(next)
+}
+
+function onSetAll(on: boolean): void {
+  selection.setAll(on)
+}
+
+function onClear(): void {
+  selection.clear()
+}
+
+function onSearchSets(keyword: string): void {
+  setKeyword.value = keyword
+  setPage.value = 1
+  void loadCaseSets()
+}
+
+function onSetPage(page: number): void {
+  setPage.value = page
+  void loadCaseSets()
+}
+
+function onSearchCases(keyword: string): void {
+  caseKeyword.value = keyword
   casePage.value = 1
+  void loadCases()
+}
+
+function onCasePage(page: number): void {
+  casePage.value = page
   void loadCases()
 }
 
 /* ------------------------------------------------------------ 参数区 */
 
 /**
- * 五个参数都保持 `null` / `''` 表示「不填」——提交时**不出现该键**，
- * 让后端用它自己的默认值。给 0 或空串都不行：那会覆盖后端默认（FR-v4.11-14）。
+ * 五个参数保持 `null` / `''` 表示「不填」——提交时**不出现该键**，
+ * 让后端用它自己的默认值。给 0 或空串都不行（会覆盖后端默认，FR-v4.11-14）。
  */
 const environmentId = ref<number | null>(null)
 const concurrency = ref<number | null>(null)
@@ -174,8 +174,12 @@ const includeTag = ref('')
 const precheck = ref<SafetyPrecheck | null>(null)
 const precheckFailed = ref(false)
 const blockedCodes = computed(() => (precheck.value?.blocked ?? []).map((item) => item.caseCode))
+/** ALL 模式靠 allSelected 也能发起，其余模式靠逐条 selectedCount。 */
 const canStart = computed(
-  () => selectedCount.value > 0 && precheck.value?.allowed !== false && !starting.value,
+  () =>
+    (selectedCount.value > 0 || (mode.value === 'ALL' && allSelected.value)) &&
+    precheck.value?.allowed !== false &&
+    !starting.value,
 )
 const starting = ref(false)
 const startError = ref('')
@@ -189,7 +193,7 @@ async function runPrecheck(): Promise<void> {
   }
   const seq = ++precheckSeq
   try {
-    const result = await executionApi.safetyPrecheck(projectId.value, selectedCaseIds.value)
+    const result = await executionApi.safetyPrecheck(projectId.value, [...selectedCaseIds.value])
     if (seq !== precheckSeq) return
     precheck.value = result
     precheckFailed.value = false
@@ -202,10 +206,7 @@ async function runPrecheck(): Promise<void> {
   }
 }
 
-/**
- * 选择变化即预检（含用例集勾选带来的批量变化）。
- * 用 `watch` 而不是在每个 toggle 里手调，避免「加了一条没预检」的漏网。
- */
+/** 选择变化即预检（含用例集勾选带来的批量变化），用 watch 避免漏网。 */
 watch(selectedCaseIds, () => void runPrecheck(), { deep: true })
 
 /* ------------------------------------------------------------ 发起 */
@@ -222,22 +223,62 @@ async function start(): Promise<void> {
   if (!projectId.value || !canStart.value) return
   starting.value = true
   startError.value = ''
-  const payload: Parameters<typeof executionApi.runCases>[1] = {
-    caseIds: [...selectedCaseIds.value],
-    runRequestId: newRequestId(),
+
+  const requestId = newRequestId()
+  const caseIds = [...new Set(selectedCaseIds.value)]
+  const previewPayload: RunPreviewPayload = {
+    caseIds,
+    setIds: selectedSetIds.value,
+    mode: mode.value,
+    all: mode.value === 'ALL' && allSelected.value,
+    runRequestId: requestId,
   }
-  // 只有用户显式填了才带该字段：不填 = 交给后端默认
-  if (environmentId.value !== null) payload.environmentId = environmentId.value
-  if (concurrency.value !== null) payload.concurrency = concurrency.value
-  if (timeoutSeconds.value !== null) payload.timeoutSeconds = timeoutSeconds.value
-  if (testTimeoutSeconds.value !== null) payload.testTimeoutSeconds = testTimeoutSeconds.value
-  if (includeTag.value.trim()) payload.includeTag = includeTag.value.trim()
+  /** 旧路径的兼容载荷：与既有 caseIds 提交完全一致，参数同样「不填就不带键」。 */
+  const legacyPayload: Parameters<typeof executionApi.runCases>[1] = {
+    caseIds,
+    runRequestId: requestId,
+  }
+  // 只有用户显式填了才带该字段：不填 = 交给后端默认。两份载荷同步填充。
+  if (environmentId.value !== null) {
+    previewPayload.environmentId = environmentId.value
+    legacyPayload.environmentId = environmentId.value
+  }
+  if (concurrency.value !== null) {
+    previewPayload.concurrency = concurrency.value
+    legacyPayload.concurrency = concurrency.value
+  }
+  if (timeoutSeconds.value !== null) {
+    previewPayload.timeoutSeconds = timeoutSeconds.value
+    legacyPayload.timeoutSeconds = timeoutSeconds.value
+  }
+  if (testTimeoutSeconds.value !== null) {
+    previewPayload.testTimeoutSeconds = testTimeoutSeconds.value
+    legacyPayload.testTimeoutSeconds = testTimeoutSeconds.value
+  }
+  if (includeTag.value.trim()) {
+    previewPayload.includeTag = includeTag.value.trim()
+    legacyPayload.includeTag = includeTag.value.trim()
+  }
 
   try {
-    const run = await executionApi.runCases(projectId.value, payload)
+    // 新流程：先预览拿 token，再确认并发起。
+    const preview = await runLaunchApi.preview(projectId.value, previewPayload)
+    const run = await runLaunchApi.confirmAndStart(projectId.value, preview.token, previewPayload)
     await router.push(`/runs/${encodeURIComponent(run.runId)}`)
-  } catch (error) {
-    startError.value = error instanceof Error ? error.message : t('executionPlans.startFailed')
+  } catch (e) {
+    // 后端未部署（404）/ 幂等冲突（409）/ 预览不可用：回退到旧 caseIds 路径，并给出可读提示。
+    const code = e instanceof ApiError ? e.code : 0
+    startError.value =
+      code === 404 || code === 409
+        ? t('w57.executionPlans.newLaunchUnavailable', { code })
+        : t('w57.executionPlans.previewUnavailable')
+    try {
+      const run = await executionApi.runCases(projectId.value, legacyPayload)
+      await router.push(`/runs/${encodeURIComponent(run.runId)}`)
+    } catch (legacyError) {
+      startError.value =
+        legacyError instanceof Error ? legacyError.message : t('executionPlans.startFailed')
+    }
   } finally {
     starting.value = false
   }
@@ -248,12 +289,7 @@ async function start(): Promise<void> {
 const records = ref<ExecutionRun[]>([])
 const recordsLoading = ref(false)
 
-/**
- * 只显示「本页发起」的记录：`runRequestId` 以 `EP-` 开头。
- *
- * 用例页发起的运行把 `runRequestId` 留空或给别的值，因此天然不会出现在这里。
- * 取最近 200 条再过滤，够覆盖「最近 20 条本页发起」。
- */
+/** 只显示「本页发起」的记录：`runRequestId` 以 `EP-` 开头。 */
 async function loadRecords(): Promise<void> {
   if (!projectId.value) return
   recordsLoading.value = true
@@ -304,104 +340,67 @@ onMounted(async () => {
       </button>
     </header>
 
-    <p v-if="startError" class="error">{{ startError }}</p>
+    <p v-if="startError" class="error" data-testid="start-error">{{ startError }}</p>
 
-    <!-- 阻断提示：把「哪条用例、什么安全级」直接说出来，不要只说「不可执行」 -->
+    <!-- 阻断提示：把「哪条用例、什么安全级」直接说出来 -->
     <p v-if="blockedCodes.length" class="error" data-testid="blocked-hint">
       {{ t('executionPlans.blocked', { codes: blockedCodes.join('、') }) }}
     </p>
 
-    <div class="grid">
-      <section class="card">
-        <h2>{{ t('executionPlans.pickSets') }}</h2>
-        <p v-if="setsLoading" class="muted">{{ t('global.loading') }}</p>
-        <ul v-else class="set-list">
-          <li v-for="set in caseSets" :key="set.id">
-            <label class="set-row">
-              <input
-                type="checkbox"
-                :checked="selectedSetIds.includes(set.id)"
-                :data-testid="`pick-set-${set.id}`"
-                @change="toggleSet(set)"
-              />
-              <span>{{ set.name }}</span>
-              <span class="mono muted">{{ set.setCode }}</span>
-            </label>
-          </li>
-        </ul>
-        <p v-if="!setsLoading && caseSets.length === 0" class="muted">
-          {{ t('executionPlans.noSets') }}
-        </p>
-        <p class="selected-count" data-testid="selected-count">
-          {{ t('executionPlans.selected', { count: selectedCount }) }}
-        </p>
-      </section>
-
-      <section class="card">
-        <h2>{{ t('executionPlans.params') }}</h2>
-        <div class="params">
-          <label class="field">
-            <span>{{ t('executionPlans.env') }}</span>
-            <input v-model.number="environmentId" class="input" type="number" min="1" />
-          </label>
-          <label class="field">
-            <span>{{ t('executionPlans.concurrency') }}</span>
-            <input v-model.number="concurrency" class="input" type="number" min="1" />
-          </label>
-          <label class="field">
-            <span>{{ t('executionPlans.timeout') }}</span>
-            <input v-model.number="timeoutSeconds" class="input" type="number" min="1" />
-          </label>
-          <label class="field">
-            <span>{{ t('executionPlans.testTimeout') }}</span>
-            <input v-model.number="testTimeoutSeconds" class="input" type="number" min="1" />
-          </label>
-          <label class="field">
-            <span>{{ t('executionPlans.includeTag') }}</span>
-            <input v-model="includeTag" class="input" type="text" />
-          </label>
-        </div>
-        <p class="muted small">{{ t('executionPlans.paramsHint') }}</p>
-        <p v-if="precheckFailed" class="muted small">{{ t('executionPlans.precheckFailed') }}</p>
-      </section>
-    </div>
+    <!-- W57-29/30：四模式选区（用例集 + 用例 + 来源下钻），props 进 / 事件出 -->
+    <RunSelectionPanel
+      :case-sets="caseSets"
+      :case-rows="caseRows"
+      :case-total="caseTotal"
+      :case-page="casePage"
+      :case-page-size="CASE_PAGE_SIZE"
+      :selected-case-ids="selectedCaseIds"
+      :selected-count="selectedCount"
+      :selected-set-ids="selectedSetIds"
+      :mode="mode"
+      :sources="sources"
+      :set-names="setNames"
+      :set-total="setTotal"
+      :set-page="setPage"
+      :set-page-size="SET_PAGE_SIZE"
+      :all-selected="allSelected"
+      @toggle-set="onToggleSet"
+      @toggle-case="onToggleCase"
+      @set-mode="onSetMode"
+      @set-all="onSetAll"
+      @clear="onClear"
+      @search-sets="onSearchSets"
+      @set-page="onSetPage"
+      @search-cases="onSearchCases"
+      @case-page="onCasePage"
+    />
 
     <section class="card">
-      <h2>{{ t('executionPlans.pickCases') }}</h2>
-      <div class="filters">
-        <input
-          v-model="caseKeyword"
-          class="input"
-          type="search"
-          :placeholder="t('executionPlans.searchPlaceholder')"
-          @keyup.enter="searchCases"
-        />
-        <button class="btn" type="button" @click="searchCases">
-          {{ t('executionPlans.search') }}
-        </button>
+      <h2>{{ t('executionPlans.params') }}</h2>
+      <div class="params">
+        <label class="field">
+          <span>{{ t('executionPlans.env') }}</span>
+          <input v-model.number="environmentId" class="input" type="number" min="1" />
+        </label>
+        <label class="field">
+          <span>{{ t('executionPlans.concurrency') }}</span>
+          <input v-model.number="concurrency" class="input" type="number" min="1" />
+        </label>
+        <label class="field">
+          <span>{{ t('executionPlans.timeout') }}</span>
+          <input v-model.number="timeoutSeconds" class="input" type="number" min="1" />
+        </label>
+        <label class="field">
+          <span>{{ t('executionPlans.testTimeout') }}</span>
+          <input v-model.number="testTimeoutSeconds" class="input" type="number" min="1" />
+        </label>
+        <label class="field">
+          <span>{{ t('executionPlans.includeTag') }}</span>
+          <input v-model="includeTag" class="input" type="text" />
+        </label>
       </div>
-      <DataTable
-        :columns="caseColumns"
-        :data="caseRows"
-        :loading="caseLoading"
-        :row-key="(row: TestCase) => row.id"
-        :max-height="420"
-      />
-      <div class="pager">
-        <button class="btn" :disabled="casePage <= 1" @click="((casePage -= 1), loadCases())">
-          {{ t('global.prev') }}
-        </button>
-        <span class="muted">
-          {{ casePage }} / {{ Math.max(1, Math.ceil(caseTotal / CASE_PAGE_SIZE)) }}
-        </span>
-        <button
-          class="btn"
-          :disabled="casePage >= Math.ceil(caseTotal / CASE_PAGE_SIZE)"
-          @click="((casePage += 1), loadCases())"
-        >
-          {{ t('global.next') }}
-        </button>
-      </div>
+      <p class="muted small">{{ t('executionPlans.paramsHint') }}</p>
+      <p v-if="precheckFailed" class="muted small">{{ t('executionPlans.precheckFailed') }}</p>
     </section>
 
     <section class="card">
@@ -424,18 +423,17 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+.page {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
 .page-head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-3);
-}
-
-.grid {
-  display: grid;
-  grid-template-columns: minmax(240px, 1fr) minmax(320px, 1.2fr);
-  gap: var(--space-4);
-  margin-top: var(--space-4);
 }
 
 .card {
@@ -444,10 +442,6 @@ onMounted(async () => {
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   background: var(--panel);
-}
-
-.grid .card {
-  margin-top: 0;
 }
 
 .card h2 {
@@ -465,30 +459,6 @@ onMounted(async () => {
 
 .card-head h2 {
   margin: 0;
-}
-
-.set-list {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  max-height: 240px;
-  overflow: auto;
-}
-
-.set-row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: 6px 4px;
-  cursor: pointer;
-}
-
-.selected-count {
-  margin: var(--space-3) 0 0;
-  font-weight: 600;
 }
 
 .params {
@@ -511,23 +481,8 @@ onMounted(async () => {
   border-radius: var(--radius-sm);
   background: var(--panel);
   color: var(--text);
-}
-
-.filters {
-  display: flex;
-  gap: var(--space-2);
-  margin-bottom: var(--space-3);
-}
-
-.pager {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin-top: var(--space-3);
-}
-
-.mono {
-  font-family: var(--font-mono, monospace);
+  box-sizing: border-box;
+  max-width: 100%;
 }
 
 .small {
@@ -556,11 +511,5 @@ onMounted(async () => {
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-
-@media (max-width: 900px) {
-  .grid {
-    grid-template-columns: 1fr;
-  }
 }
 </style>

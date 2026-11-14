@@ -128,7 +128,8 @@ public class ReportRepositoryJdbc implements ReportRepository {
 
     @Override
     public Optional<ReportRecord> find(long projectId, String runId) {
-        String sql = REPORT_COLUMNS + " WHERE project_id = ? AND run_id = ?";
+        // W57-31：展示层默认过滤软删行（V11_63 的 run.deleted_at）。只改查询条件。
+        String sql = REPORT_COLUMNS + " WHERE project_id = ? AND run_id = ? AND deleted_at IS NULL";
         TenantGuard.requireProjectScope(sql, "run");
         return JdbcSupport.first(jdbc.query(sql, rowMapper, projectId, runId))
                 .map(record -> MetadataOverlay.apply(record, runMetadata.findAll(projectId, runId)));
@@ -142,13 +143,15 @@ public class ReportRepositoryJdbc implements ReportRepository {
 
     @Override
     public PageResult<ReportRecord> page(long projectId, int page, int size) {
-        String countSql = "SELECT COUNT(*) FROM run WHERE project_id = ?";
+        // W57-31：列表计数与明细一起过滤软删行，保证 total 与 items 口径一致。
+        String countSql = "SELECT COUNT(*) FROM run WHERE project_id = ? AND deleted_at IS NULL";
         TenantGuard.requireProjectScope(countSql, "run");
         Long total = jdbc.queryForObject(countSql, Long.class, projectId);
         long totalValue = total == null ? 0L : total;
 
         String listSql = REPORT_COLUMNS
-                + " WHERE project_id = ? ORDER BY started_at DESC, id DESC LIMIT ? OFFSET ?";
+                + " WHERE project_id = ? AND deleted_at IS NULL"
+                + " ORDER BY started_at DESC, id DESC LIMIT ? OFFSET ?";
         TenantGuard.requireProjectScope(listSql, "run");
         List<ReportRecord> rows = jdbc.query(listSql, rowMapper,
                 projectId, size, (long) (page - 1) * size);

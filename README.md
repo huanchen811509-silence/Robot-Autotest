@@ -11,14 +11,14 @@
 
 | 项 | 值 | 说明 |
 |---|---|---|
-| 版本 | `5.6.0` | 唯一真源是根 [`VERSION`](VERSION)；可用 `APP_VERSION` 运行期覆盖；由 v5.6.0 可见性版本落号而来（2026-11-14 大师授权） |
-| 门禁 | 52 步 | `bash scripts/gates.sh`，尾部 `GATES_RESULT FAILS=0 UNJUDGED=0`；第 07 步发布文档机检、第 30 步交付包机检、第 49~52 步 `--self-test` 真注入判红 |
-| 数据库 | 105 张业务表（分库实测见 `docs/plan/v5.0-口径裁决清单.md`） | Flyway 迁移至 `V11_57`（`V11_30`–`V11_37` 八组均附 `db/down/` 回滚），`scripts/db-audit.sh` 体检 |
-| API 契约 | 410 operations / 341 paths | `docs/contracts/openapi.json` 实读（2026-11-14）；口径见 [`v5.0-口径裁决清单`](docs/plan/v5.0-口径裁决清单.md) |
-| 前端 | 2599 i18n 键（中英一致，`check_i18n.py` 实跑） | `tools/check_i18n.py`；硬编码色值 0 处（`check_colors.py`） |
+| 版本 | `5.7.0` | 唯一真源是根 [`VERSION`](VERSION)；可用 `APP_VERSION` 运行期覆盖；由 v5.7.0 用例资产化与执行可信度版本落号而来（2026-11-14 大师授权） |
+| 门禁 | 55 步 | `bash scripts/gates.sh`，尾部 `GATES_RESULT FAILS=0 UNJUDGED=0`；第 07 步发布文档机检、第 30 步交付包机检、第 49~52 步 `--self-test` 真注入判红 |
+| 数据库 | 108 张业务表（分库实测见 `docs/plan/v5.0-口径裁决清单.md`） | Flyway 迁移至 `V11_64`（`V11_30`–`V11_37` 八组均附 `db/down/` 回滚），`scripts/db-audit.sh` 体检 |
+| API 契约 | 437 operations / 360 paths | `docs/contracts/openapi.json` 实读（2026-11-14）；口径见 [`v5.0-口径裁决清单`](docs/plan/v5.0-口径裁决清单.md) |
+| 前端 | 2824 i18n 键（中英一致，`check_i18n.py` 实跑） | `tools/check_i18n.py`；硬编码色值 0 处（`check_colors.py`） |
 | 交付物 | linux-x64 tarball | GitHub Actions `delivery.yml` 产出，见 [交付指南](docs/DELIVERY-GUIDE.md) |
 
-**口径**：当前源码版本 `5.6.0`（唯一真源 [`VERSION`](VERSION)），测试报告见 [v5.6.0](docs/release/v5.6.0/05-TEST-REPORT.md)；
+**口径**：当前源码版本 `5.7.0`（唯一真源 [`VERSION`](VERSION)），测试报告见 [v5.7.0](docs/release/v5.7.0/05-TEST-REPORT.md)；
 统一入口 `:8001` 由 `robot-autotest-entry.service` 托管、后端 `:8081` 由 `robot-autotest-backend.service` 托管（2026-11-12 实测回填，见 [运维手册](docs/OPS-MANUAL.md) §1.2）。
 G4 / G5 / G7 / G8 **门禁仍未判过**，真库 down→up 全量演练与真实 DUT / 负载未执行
 （`V11_30`–`V11_37` 正向迁移已于 2026-11-10 在开发库实跑）
@@ -243,12 +243,13 @@ releases/          本地打包产物（按脚本重建，不入库）
 | `4.11.0` | 全局导航与执行计划 | 全局模式两级菜单、即时发起台、用户管理只读页、菜单不变量机检、导航 query 化 | [v4.11.0](docs/release/v4.11.0/) |
 | `4.12.0` | 资产采集闭环 | 凭据与设备双向可用、三类采集通道、失败四分类、手工录入、我的账户、真正的平台设置 | [v4.12.0](docs/release/v4.12.0/) |
 | `5.0.0` | 存量打磨 | 口径冻结、12 个机检脚本、门禁 36 步、关于页版本统一、A11y 静态整改 | [v5.0.0](docs/release/v5.0.0/) |
-| `5.6.0` | 可见性版本（当前版本） | 全量菜单对齐、复测与抖动、资产实体化、部署自校验、效果基线、跑完即入库 | [v5.6.0](docs/release/v5.6.0/) |
+| `5.6.0` | 可见性版本 | 全量菜单对齐、复测与抖动、资产实体化、部署自校验、效果基线、跑完即入库 | [v5.6.0](docs/release/v5.6.0/) |
+| `5.7.0` | 用例资产化与执行可信度（当前版本） | 全局用例集二级菜单、分类归组与树形勾选、样例集首次播种、向导四类内容来源、执行选择四模式与选择快照、命令摘要承诺、判据层、证据包、全站列表 CRUD 台账、设备凭证自动关联与一次性凭证 | [v5.7.0](docs/release/v5.7.0/) |
 
 合并计划：[PRD](docs/plan/v4.4-v4.9-软件迭代开发PRD-20261110.md) /
 [开发计划](docs/plan/v4.4-v4.9-开发计划-20261110.md) /
 [测试计划](docs/plan/v4.4-v4.9-测试计划-20261110.md)。4.10.0 起逐版本条目见 [CHANGELOG](CHANGELOG.md)（当前 `v5.6.0`）；
-`v5.0.0` 成件见 [发布说明](docs/release/v5.0.0/RELEASE-NOTES.md)，过程件见 [归档索引](docs/plan/v5.0.X存量打磨-归档索引-20261112.md)。
+`v5.0.0` 成件见 [发布说明](docs/release/v5.0.0/RELEASE-NOTES.md)，过程件见 [归档索引](docs/plan/v5.0.X存量打磨-归档索引-20261112.md)；`v5.7.0` 六件套见 [docs/release/v5.7.0](docs/release/v5.7.0/)。
 
 ### 待办
 

@@ -1,0 +1,24 @@
+LOGIN OK token_len=43
+===== 1. 列表（缺 projectId 应 400，带 projectId 应 200）
+GET  /api/reports?page=1&size=3                   400  {"code":40001,"codeName":"INVALID_ARGUMENT","message":"缺少参数：projectId","data":null,"success":false}
+GET  /api/reports?projectId=95&page=1&size=3      200  {"code":0,"codeName":"OK","message":"OK","data":{"items":[{"runId":"w56-24-retry-2","state":"failed","exportable":false,"metadataM
+GET  /api/test-reports?page=1&size=3              400  {"code":40001,"codeName":"INVALID_ARGUMENT","message":"缺少参数：projectId","data":null,"success":false}
+GET  /api/test-reports?projectId=95&page=1&size=3 200  {"code":0,"codeName":"OK","message":"OK","data":[{"id":21,"projectId":95,"runId":"w56-24-retry-2","sourceType":"RUN","caseSetId":n
+===== 2. 取一条运行记录与一条测试报告
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+AttributeError: 'list' object has no attribute 'get'
+POST   create      200  {"code":0,"codeName":"OK","message":"OK","data":{"id":22,"projectId":95,"runId":"w56-24-retry-2","sourceType":"RUN","caseSetId":null,"title":"W57 CRUD
+RUN_ID=w56-24-retry-2  TEST_REPORT_ID=22
+===== 3. 运行记录：影响面 -> PATCH -> 软删 -> 详情 -> 恢复
+GET    impact      200  {"code":0,"codeName":"OK","message":"OK","data":{"testReportExportCount":0,"runArtifactCount":2},"success":true}
+PATCH  run         200  {"code":0,"codeName":"OK","message":"OK","data":{"runId":"w56-24-retry-2","displayName":"W57 smoke","remark":"软删回归","tags":null},"success":tru
+DELETE run         200  {"code":0,"codeName":"OK","message":"OK","data":{"deleted":true,"impact":{"testReportExportCount":0,"runArtifactCount":2}},"success":true}
+GET    详情        404  {"code":40400,"codeName":"NOT_FOUND","message":"报告不存在: w56-24-retry-2","data":null,"success":false}
+POST   restore     200  {"code":0,"codeName":"OK","message":"OK","data":{"runId":"w56-24-retry-2","displayName":"W57 smoke","remark":"软删回归","tags":null},"success":tru
+GET    详情(复原)  200  {"code":0,"codeName":"OK","message":"OK","data":{"runId":"w56-24-retry-2","projectId":95,"state":"failed","exportable":f
+===== 4. 用户报告：改元数据 -> 软删 -> 再删(幂等) -> 恢复
+PUT    test-report 200  {"code":0,"codeName":"OK","message":"OK","data":{"id":22,"title":"W57 smoke","remark":"软删回归","tags":null,"state":"DRAFT"},"success":true}
+DELETE test-report 200  {"code":0,"codeName":"OK","message":"OK","data":{"deleted":true,"impact":{"testReportExportCount":0,"runArtifactCount":2}},"success":true}
+DELETE 再删(幂等)  200  {"code":0,"codeName":"OK","message":"OK","data":{"deleted":false,"impact":{"testReportExportCount":0,"runArtifactCount":2}},"success":true}
+POST   restore     200  {"code":0,"codeName":"OK","message":"OK","data":{"id":22,"title":"W57 smoke","remark":"软删回归","tags":null,"state":"DRAFT"},"success":true}

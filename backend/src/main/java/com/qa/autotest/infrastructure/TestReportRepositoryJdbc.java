@@ -76,8 +76,9 @@ public class TestReportRepositoryJdbc implements TestReportRepository {
 
     @Override
     public List<TestReport> listByProject(long projectId) {
+        // W57-31：列表默认过滤软删行；find(id) 不动，freeze/revoke/archive 语义零改动。
         String sql = "SELECT " + REPORT_COLUMNS
-                + " FROM test_report WHERE project_id = ? ORDER BY id DESC";
+                + " FROM test_report WHERE project_id = ? AND deleted_at IS NULL ORDER BY id DESC";
         return SlowQuery.measure("report.list", sql, () -> jdbc.query(sql, REPORT, projectId));
     }
 

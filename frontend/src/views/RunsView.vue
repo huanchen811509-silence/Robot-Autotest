@@ -29,7 +29,11 @@ import { caseSetApi, type TestSet } from '@/api/cases'
 import { deviceApi, type Device } from '@/api/asset'
 import { useAuthStore } from '@/stores/auth'
 import DataTable from '@/components/DataTable.vue'
+import ReadOnlyNotice from '@/components/ReadOnlyNotice.vue'
+import ConfirmAction from '@/components/ConfirmAction.vue'
 import { useListPageSize, type PageSize } from '@/composables/useListPageSize'
+import { useTableFilters, type TableFilterColumn } from '@/composables/useTableFilters'
+import { listCrudApi, type RunMeta } from '@/api/listCrud'
 import ErrorLineView from '@/components/ErrorLine.vue'
 import FormField from '@/components/FormField.vue'
 import StatusTag from '@/components/StatusTag.vue'
@@ -286,6 +290,135 @@ function confirmPrecheck(): void {
   void executeManual()
 }
 
+/* ---------------------------------------------------------------- W57-15 只读页筛选 */
+/**
+ * 运行记录是服务端分页的只读派生页：这里只接 URL 化筛选（q / t_<列>），
+ * **不接全选**（useServerSelection 属于可写批量页）。筛选作用于当前页的显示层，
+ * 与既有 state 服务端筛选、page/size 分页共存；URL 前缀 runs_ 与其它页面隔离。
+ */
+const runFilters = useTableFilters({ prefix: 'runs_', columns: ['runId', 'failureReason'] })
+const runFilterColumns: TableFilterColumn[] = [
+  { key: 'runId', title: t('w57.runs.colRunId'), mode: 'text' },
+  { key: 'failureReason', title: t('w57.runs.colFailureReason'), mode: 'text' },
+]
+const runFilterValues = computed<Record<string, string[]>>(() => {
+  const out: Record<string, string[]> = {}
+  for (const col of runFilterColumns) {
+    const value = runFilters.texts.value[col.key]
+    if (value) out[col.key] = [value]
+  }
+  return out
+})
+function onRunFilterChange(next: Record<string, string[]>): void {
+  for (const col of runFilterColumns) runFilters.setText(col.key, next[col.key]?.[0] ?? '')
+}
+const visibleRuns = computed<ExecutionRun[]>(() => {
+  const byId = (runFilters.texts.value.runId ?? '').toLowerCase()
+  const byReason = (runFilters.texts.value.failureReason ?? '').toLowerCase()
+  const q = runFilters.q.value.trim().toLowerCase()
+  return runs.value.filter((run) => {
+    if (byId && !run.runId.toLowerCase().includes(byId)) return false
+    if (byReason && !(run.failureReason ?? '').toLowerCase().includes(byReason)) return false
+    if (q && !`${run.runId} ${run.failureReason ?? ''} ${run.deviceScope ?? ''}`.toLowerCase().includes(q))
+      return false
+    return true
+  })
+})
+const runFiltered = runFilters.isFiltered
+
+/* ---------------------------------------------------------------- W57-32/35~37 B 类 CRUD */
+/**
+ * 运行记录是系统产物：不渲染「新增」（既有「手动执行」是发起执行，不是新增记录），
+ * 只做元数据编辑 + 软删 + 恢复。软删前用后端 /impact 回算影响面，确认框写明具体条数。
+ * ExecutionRun DTO 不带 deleted / remark 位，故软删态与编辑结果用本地状态承载（见降级说明）。
+ */
+const runMetas = ref<Record<string, RunMeta>>({})
+const deletedRunIds = ref<Set<string>>(new Set())
+const editOpen = ref(false)
+const editRunId = ref<string | null>(null)
+const editRemark = ref('')
+const editSaving = ref(false)
+const deleting = ref(false)
+const confirmShow = ref(false)
+const confirmCount = ref(0)
+const confirmImpacts = ref<{ label: string; count: number }[]>([])
+const pendingDeleteRunId = ref<string | null>(null)
+
+function openEditRemark(row: ExecutionRun): void {
+  editRunId.value = row.runId
+  editRemark.value = runMetas.value[row.runId]?.remark ?? ''
+  editOpen.value = true
+}
+function closeEdit(): void {
+  editOpen.value = false
+  editRunId.value = null
+  editRemark.value = ''
+}
+async function submitEditRemark(): Promise<void> {
+  if (!editRunId.value || editSaving.value) return
+  editSaving.value = true
+  try {
+    const meta = await listCrudApi.patchRun(projectId.value, editRunId.value, {
+      remark: editRemark.value.trim(),
+    })
+    runMetas.value = { ...runMetas.value, [meta.runId]: meta }
+    closeEdit()
+    await load()
+    message.value = t('w57.runs.remarkSaved')
+  } catch (e) {
+    error.value = localizeError(e)
+  } finally {
+    editSaving.value = false
+  }
+}
+async function askDelete(row: ExecutionRun): Promise<void> {
+  pendingDeleteRunId.value = row.runId
+  confirmCount.value = 0
+  confirmImpacts.value = []
+  confirmShow.value = true
+  try {
+    const impact = await listCrudApi.runImpact(projectId.value, row.runId)
+    confirmImpacts.value = [
+      { label: t('w57.runs.impactReport'), count: impact.testReportExportCount },
+      { label: t('w57.runs.impactArtifact'), count: impact.runArtifactCount },
+    ]
+    confirmCount.value = impact.testReportExportCount + impact.runArtifactCount
+  } catch {
+    // 影响面不可用时如实写 0，不臆造条数
+    confirmCount.value = 0
+    confirmImpacts.value = []
+  }
+}
+async function doDelete(): Promise<void> {
+  const runId = pendingDeleteRunId.value
+  if (!runId || deleting.value) return
+  deleting.value = true
+  try {
+    await listCrudApi.deleteRun(projectId.value, runId)
+    deletedRunIds.value = new Set([...deletedRunIds.value, runId])
+    confirmShow.value = false
+    pendingDeleteRunId.value = null
+    await load()
+    message.value = t('w57.runs.softDeleted')
+  } catch (e) {
+    error.value = localizeError(e)
+  } finally {
+    deleting.value = false
+  }
+}
+async function restoreRow(row: ExecutionRun): Promise<void> {
+  try {
+    await listCrudApi.restoreRun(projectId.value, row.runId)
+    const next = new Set(deletedRunIds.value)
+    next.delete(row.runId)
+    deletedRunIds.value = next
+    await load()
+    message.value = t('w57.runs.restored')
+  } catch (e) {
+    error.value = localizeError(e)
+  }
+}
+
 const stateOptions = computed(() => [
   { label: t('execution.allStates'), value: '' },
   ...RUN_STATUSES.map((item) => ({ label: runStatusLabel(item), value: item.toUpperCase() })),
@@ -359,7 +492,7 @@ const columns = computed<DataTableColumns<ExecutionRun>>(() => [
   {
     title: t('common.actions'),
     key: 'actions',
-    width: 180,
+    width: 300,
     render: (row) =>
       h('div', { class: 'row-actions' }, [
         h(
@@ -383,6 +516,22 @@ const columns = computed<DataTableColumns<ExecutionRun>>(() => [
             },
             { default: () => t('execution.cancelRun') },
           ),
+        h(
+          NButton,
+          { text: true, size: 'small', onClick: () => openEditRemark(row) },
+          { default: () => t('w57.runs.editRemark') },
+        ),
+        deletedRunIds.value.has(row.runId)
+          ? h(
+              NButton,
+              { text: true, size: 'small', onClick: () => void restoreRow(row) },
+              { default: () => t('w57.runs.restore') },
+            )
+          : h(
+              NButton,
+              { text: true, type: 'error', size: 'small', onClick: () => void askDelete(row) },
+              { default: () => t('w57.runs.softDelete') },
+            ),
       ]),
   },
 ])
@@ -728,6 +877,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  runFilters.stop()
   disconnect()
   stopPendingPoll()
   stopProgressPoll()
@@ -759,7 +909,22 @@ onBeforeUnmount(() => {
           {{ t('execution.clustersEntry') }}
         </NButton>
       </RouterLink>
+      <NInput
+        :value="runFilters.q.value"
+        clearable
+        style="width: 200px"
+        :placeholder="t('w57.runs.searchRun')"
+        :aria-label="t('w57.runs.searchRun')"
+        @update:value="(v: string) => runFilters.setQuery(v)"
+      />
     </div>
+
+    <ReadOnlyNotice
+      class="runs-readonly"
+      compact
+      :text="t('w57.runs.readonlyText')"
+      :reason="t('w57.runs.readonlyReason')"
+    />
 
     <ErrorLineView v-if="error" :error="error" />
     <p v-if="message" class="text-ok">{{ message }}</p>
@@ -877,18 +1042,52 @@ onBeforeUnmount(() => {
       </div>
     </NModal>
 
+    <!-- W57-32/35~37：元数据编辑 + 软删/恢复；不渲染「新增」。 -->
+    <NModal v-model:show="editOpen">
+      <div class="crud-dialog" role="dialog" aria-modal="true" :aria-label="t('w57.runs.editRemark')">
+        <h2 class="card-title">{{ t('w57.runs.editRunRemark') }}</h2>
+        <p class="muted">{{ editRunId }}</p>
+        <NInput
+          v-model:value="editRemark"
+          type="textarea"
+          :autosize="{ minRows: 2, maxRows: 5 }"
+          :placeholder="t('w57.runs.remark')"
+          :aria-label="t('w57.runs.remark')"
+        />
+        <div class="crud-dialog__actions">
+          <NButton quaternary @click="closeEdit">{{ t('w57.runs.cancel') }}</NButton>
+          <NButton type="primary" :loading="editSaving" @click="submitEditRemark">{{ t('w57.runs.save') }}</NButton>
+        </div>
+      </div>
+    </NModal>
+
+    <ConfirmAction
+      v-model:show="confirmShow"
+      :count="confirmCount"
+      :impacts="confirmImpacts"
+      :loading="deleting"
+      :title="t('w57.runs.confirmTitle')"
+      :description="t('w57.runs.confirmDesc')"
+      @confirm="doDelete"
+    />
+
     <div class="list-fill">
       <DataTable
         :columns="columns"
-        :data="runs"
+        :data="visibleRuns"
         :loading="loading"
         :row-key="(row: ExecutionRun) => row.id"
         :row-class-name="rowClassName"
         :empty-title="t('common.noData')"
         :empty-description="projectId ? undefined : t('overview.noProject')"
+        :empty-illustration="runFiltered ? 'no-result' : 'no-data'"
         empty-icon="runs"
         :error="Boolean(error)"
+        filterable
+        :filter-columns="runFilterColumns"
+        :filters="runFilterValues"
         flex-height
+        @update:filters="onRunFilterChange"
       />
     </div>
 
@@ -1236,6 +1435,26 @@ onBeforeUnmount(() => {
   justify-content: flex-end;
   gap: 8px;
   margin-top: 16px;
+}
+
+/* W57-15/32：只读提示与元数据编辑弹层 */
+.runs-readonly {
+  margin-bottom: var(--space-2);
+}
+
+.crud-dialog {
+  width: min(420px, 92vw);
+  padding: var(--space-5);
+  border-radius: var(--radius-md);
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.crud-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
 }
 
 </style>

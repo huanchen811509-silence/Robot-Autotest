@@ -1,0 +1,38 @@
+== test_set_item 列 ==
+   id bigint
+   test_set_id bigint
+   test_case_id bigint
+   seq_no int
+   created_at datetime(3)
+   created_by bigint
+   updated_at datetime(3)
+   updated_by bigint
+   item_source varchar(32)
+== test_set 列 ==
+   id bigint
+   project_id bigint
+   set_code varchar(64)
+   name varchar(128)
+   description varchar(512)
+   sample_flag tinyint(1)
+   sample_l1 varchar(128)
+   user_modified tinyint(1)
+   created_at datetime(3)
+   created_by bigint
+   updated_at datetime(3)
+   updated_by bigint
+   owner_id bigint
+   set_status varchar(16)
+   owner_scope varchar(16)
+   source_asset_id bigint
+   scope_project_id bigint
+   kind varchar(24)
+   design_id bigint
+== snapshot 行数 ==
+1
+== 最近快照 ==
+1	95	ALL	469	NULL
+== test_report 最近 ==
+22	95	撤销后改名	REVOKED	NULL
+21	95	撤销后改名	REVOKED	NULL
+20	95	W57 smoke	DRAFT	NULL

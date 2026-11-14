@@ -14,8 +14,10 @@ import com.qa.autotest.domain.common.PageResult;
 import com.qa.autotest.domain.iam.PermissionAction;
 import com.qa.autotest.domain.iam.PermissionResource;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -225,17 +227,33 @@ public class TestSetService {
     }
 
     /**
-     * 平台用例集列表（N9）：跨项目可见的只读视图，仅管理员可看。
+     * 平台用例集列表（W57-06）：跨项目可见视图，鉴权放宽到 case:read（D-57-04）。
      * 不 bindProject —— 平台集不属于任何项目，绑定会把「跨项目」变成「越权」。
+     * 保留 3 参旧入口（等价 source=all），避免既有调用方与单测跟着改签名。
      */
     public PageResult<PlatformSetRow> platformPage(String keyword, int page, int size) {
-        requirePlatformAdmin();
-        PageResult<TestSet> pageSets = sets.platformPage(keyword, page, size);
+        return platformPage(keyword, page, size, "all");
+    }
+
+    /** source ∈ sample / manual / all；播种由平台列表入口同步 try-catch 触发。 */
+    public PageResult<PlatformSetRow> platformPage(String keyword, int page, int size,
+                                                   String source) {
+        requirePlatformRead();
+        PageResult<TestSet> pageSets = sets.platformPage(keyword, page, size, source);
         List<PlatformSetRow> rows = new ArrayList<>();
         for (TestSet set : pageSets.items()) {
-            AssetVersionService.VersionView version = assetVersions.platformVersion(set.id());
-            List<AssetVersionService.ReferenceView> refs =
-                    assetVersions.platformReferences(set.id());
+            // 平台集若尚未登记 asset_version 行（历史集 / 样例集），platformReferences 会抛 404；
+            // 单行容错，不能让一条脏数据把整页列表拖成 500。
+            AssetVersionService.VersionView version;
+            List<AssetVersionService.ReferenceView> refs;
+            try {
+                version = assetVersions.platformVersion(set.id());
+                refs = assetVersions.platformReferences(set.id());
+            } catch (RuntimeException ex) {
+                version = new AssetVersionService.VersionView(0, null, "SYNCED", null, null,
+                        null, false, null, null);
+                refs = List.of();
+            }
             rows.add(new PlatformSetRow(set.id(), set.setCode(), set.name(), set.description(),
                     set.itemCount(), version.assetVersion(), version.contentHash(),
                     version.hasNewVersion(), refs.size(), refs));
@@ -243,15 +261,175 @@ public class TestSetService {
         return new PageResult<>(rows, pageSets.total(), pageSets.page(), pageSets.size());
     }
 
-    /** 平台用例集成员（只读）。空集是合法状态，但集合行必须存在。 */
+    /** 平台用例集成员（case:read）。空集是合法状态，但集合行必须存在。 */
     public List<TestCase> platformItems(long setId) {
-        requirePlatformAdmin();
-        sets.findPlatform(setId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND,
-                        "平台用例集不存在: " + setId));
+        requirePlatformRead();
+        requirePlatformSet(setId);
         return sets.platformItems(setId);
     }
 
+    // ---------------------------------------------------------------- W57-06 平台用例集可写
+
+    /** 批量加入结果：added=新插入，skipped=重复成员 / 用例不存在。 */
+    public record AddItemsResult(int added, int skipped) {
+    }
+
+    public TestSet createPlatform(String setCode, String name, String description) {
+        requirePlatformWrite();
+        if (name == null || name.isBlank()) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "用例集名称不能为空");
+        }
+        requireLength(name, 128, "名称");
+        requireLength(description, 512, "描述");
+        String code = (setCode == null || setCode.isBlank())
+                ? "PS-" + UUID.randomUUID().toString().substring(0, 8)
+                : setCode.trim();
+        requireLength(code, 64, "编号");
+        // 唯一键是生成列 scope_project_id，服务层仍须自己判 set_code 重复并返回 409。
+        if (sets.platformCodeExists(code, null)) {
+            throw new BusinessException(ErrorCode.CONFLICT, "用例集编号已存在：" + code);
+        }
+        long id = sets.insertPlatform(code, name, description, null, TenantContext.userId());
+        audit.record("platform.set.create", "test_set", String.valueOf(id), "code=" + code);
+        return requirePlatformSet(id);
+    }
+
+    public TestSet updatePlatform(long id, String name, String description) {
+        requirePlatformWrite();
+        requirePlatformSet(id);
+        if (name == null || name.isBlank()) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "用例集名称不能为空");
+        }
+        requireLength(name, 128, "名称");
+        requireLength(description, 512, "描述");
+        sets.updatePlatform(id, name, description, TenantContext.userId());
+        audit.record("platform.set.update", "test_set", String.valueOf(id), "name=" + name);
+        return requirePlatformSet(id);
+    }
+
+    /**
+     * 列宽前置校验。
+     *
+     * <p>不校验的后果是 MySQL 抛 `Data too long`，一路冒到全局异常处理变成 **500 服务内部错误**，
+     * 用户只看到「服务内部错误」，不知道是名字太长。这里按 DDL 的 varchar 宽度挡在入口，
+     * 返回 400 并点名是哪个字段、上限多少（对应 TC-v5.7-22）。
+     */
+    private static void requireLength(String value, int max, String label) {
+        if (value != null && value.length() > max) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                    label + "超长：最多 " + max + " 个字符，当前 " + value.length());
+        }
+    }
+
+    public void deletePlatform(long id) {
+        requirePlatformWrite();
+        TestSet existing = requirePlatformSet(id);
+        sets.deletePlatform(id);
+        audit.recordChange("platform.set.delete", "test_set", String.valueOf(id),
+                "code=" + existing.setCode() + "; name=" + existing.name(), null);
+    }
+
+    @Transactional
+    public AddItemsResult addPlatformItems(long setId, List<Long> caseIds) {
+        requirePlatformWrite();
+        requirePlatformSet(setId);
+        return addItemsInternal(setId, caseIds, "add-items");
+    }
+
+    /** 批量加 / 按分类加共用：seq 递增、重复跳过、写后把样例集标记为「用户已接管」。 */
+    private AddItemsResult addItemsInternal(long setId, List<Long> caseIds, String action) {
+        Long operator = TenantContext.userId();
+        Set<Long> seen = new HashSet<>(sets.platformItemIds(setId));
+        int seq = sets.nextPlatformSeqNo(setId);
+        int added = 0;
+        int skipped = 0;
+        if (caseIds != null) {
+            for (Long caseId : caseIds) {
+                if (caseId == null || !seen.add(caseId)) {
+                    skipped++;
+                    continue;
+                }
+                if (sets.addPlatformItemIfAbsent(setId, caseId, ++seq, operator) > 0) {
+                    added++;
+                } else {
+                    seen.remove(caseId);
+                    skipped++;
+                }
+            }
+        }
+        if (added > 0) {
+            sets.markPlatformUserModified(setId);
+            audit.record("platform.set." + action, "test_set_item", String.valueOf(setId),
+                    "added=" + added + " skipped=" + skipped);
+        }
+        return new AddItemsResult(added, skipped);
+    }
+
+    public void removePlatformItem(long setId, long caseId) {
+        requirePlatformWrite();
+        requirePlatformSet(setId);
+        sets.removePlatformItem(setId, caseId);
+        sets.markPlatformUserModified(setId);
+        audit.record("platform.set.remove-item", "test_set_item", setId + ":" + caseId, "");
+    }
+
+    @Transactional
+    public void reorderPlatform(long setId, List<Long> caseIds) {
+        requirePlatformWrite();
+        requirePlatformSet(setId);
+        if (caseIds == null || caseIds.isEmpty()) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "排序列表不能为空");
+        }
+        sets.reorderPlatform(setId, caseIds, TenantContext.userId());
+        sets.markPlatformUserModified(setId);
+        audit.record("platform.set.reorder", "test_set", String.valueOf(setId),
+                "size=" + caseIds.size());
+    }
+
+    /**
+     * W57-06：按一级 / 二级分类 id 批量加，照抄项目侧 addByCategoryFilter 的
+     * matched / added / item_source='category_filter' 口径（筛选维度改用 id + COALESCE 双轨）。
+     */
+    @Transactional
+    public CategoryFilterResult addPlatformItemsByCategory(long setId, Long categoryL1Id,
+                                                           Long categoryL2Id) {
+        requirePlatformWrite();
+        requirePlatformSet(setId);
+        if (categoryL1Id == null && categoryL2Id == null) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                    "categoryL1Id / categoryL2Id 至少指定一个");
+        }
+        List<Long> ids = sets.platformCategoryCaseIds(categoryL1Id, categoryL2Id);
+        AddItemsResult result = addItemsInternal(setId, ids, "add-by-category");
+        return new CategoryFilterResult(ids.size(), result.added(), "category_filter");
+    }
+
+    /** 平台集存在性校验（project_id IS NULL AND owner_scope='PLATFORM'）。 */
+    private TestSet requirePlatformSet(long setId) {
+        return sets.findPlatform(setId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND,
+                        "平台用例集不存在: " + setId));
+    }
+
+    // ---------------------------------------------------------------- 鉴权（W57-06 / D-57-04）
+
+    /**
+     * 平台读鉴权：放宽到 case:read。矩阵里 CASE:READ 四角色全有，
+     * 用 require(CASE, READ) 表达「能读用例即可读平台库」。
+     */
+    private void requirePlatformRead() {
+        access.require(PermissionResource.CASE, PermissionAction.READ);
+    }
+
+    /**
+     * 平台写鉴权：放宽到 case:write。PermissionAction 没有 WRITE 动作，用 CASE:UPDATE
+     * 作为写权限代理（ADMIN / PM / ENGINEER 有，VIEWER 无），等价「非只读角色可写」。
+     */
+    private void requirePlatformWrite() {
+        access.require(PermissionResource.CASE, PermissionAction.UPDATE);
+    }
+
+    /** 保留原管理员校验（N9 旧口径），供其它调用点使用；平台读写入口已不再调用。 */
     private void requirePlatformAdmin() {
         if (!access.isAdmin()) {
             throw new BusinessException(ErrorCode.FORBIDDEN, "平台用例集库只对管理员开放");

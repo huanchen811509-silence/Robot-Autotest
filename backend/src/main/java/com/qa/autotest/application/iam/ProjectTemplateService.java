@@ -14,6 +14,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -587,7 +588,15 @@ public class ProjectTemplateService {
 
     // ------------------------------------------------------------ 向导选内容
 
-    public record ContentRequest(List<Long> caseIds, List<AssetRef> assets, String setName) {
+    /**
+     * 向导「内容」步入参（W57-14 扩 caseSetIds）。
+     * 保留 3 参构造器：老调用方 / 既有 Jackson 请求体不含 caseSetIds 时语义零改动。
+     */
+    public record ContentRequest(List<Long> caseIds, List<AssetRef> assets, String setName,
+                                 List<Long> caseSetIds) {
+        public ContentRequest(List<Long> caseIds, List<AssetRef> assets, String setName) {
+            this(caseIds, assets, setName, null);
+        }
     }
 
     public record AssetRef(String assetType, long assetId) {
@@ -603,7 +612,9 @@ public class ProjectTemplateService {
         access.require(com.qa.autotest.domain.iam.PermissionResource.CASE,
                 com.qa.autotest.domain.iam.PermissionAction.UPDATE);
         long operator = TenantContext.requireUserId();
-        List<Long> caseIds = request.caseIds() == null ? List.of() : request.caseIds();
+        // W57-14：展开 caseSetIds 成员，与 caseIds 去重、保持顺序；
+        // 展开与后续 copyCase 都落在 applyContent 这同一个 @Transactional 内，任一环节失败整体回滚。
+        List<Long> caseIds = resolveCaseIds(request.caseIds(), request.caseSetIds());
         long setId = 0;
         int copied = 0;
         if (!caseIds.isEmpty()) {
@@ -646,6 +657,64 @@ public class ProjectTemplateService {
         audit.record("project.content.apply", "project", String.valueOf(projectId),
                 "cases=" + copied + " assets=" + assets);
         return new ContentResult(setId, copied, assets);
+    }
+
+    /**
+     * W57-14：把 caseSetIds 展开成集合成员，与 caseIds 去重、保持顺序。
+     *
+     * <p>顺序口径：caseIds（老入参，原顺序）在前，再按 caseSetIds 顺序逐个追加集合成员
+     *（集合内按 seq_no），重复 id 只保留首次出现。caseSetIds 为空时结果与老逻辑完全一致。
+     *
+     * <p>集合不存在 / 已停用要指名报错（消息带 setId）；整段由调用方 applyContent 的
+     * {@code @Transactional} 覆盖，任一环节失败整体回滚。
+     */
+    List<Long> resolveCaseIds(List<Long> caseIds, List<Long> caseSetIds) {
+        LinkedHashSet<Long> merged = new LinkedHashSet<>();
+        if (caseIds != null) {
+            for (Long caseId : caseIds) {
+                if (caseId != null) {
+                    merged.add(caseId);
+                }
+            }
+        }
+        if (caseSetIds != null) {
+            for (Long setId : caseSetIds) {
+                if (setId == null) {
+                    continue;
+                }
+                requireUsableSet(setId);
+                for (Long caseId : loadSetMembers(setId)) {
+                    if (caseId != null) {
+                        merged.add(caseId);
+                    }
+                }
+            }
+        }
+        return new ArrayList<>(merged);
+    }
+
+    /** 集合可用性校验：存在且非停用态，否则指名报错（哪个 id 不可用）。 */
+    protected void requireUsableSet(long setId) {
+        String sql = "SELECT set_status FROM test_set WHERE id = ?";
+        List<String> rows = jdbc.queryForList(sql, String.class, setId);
+        if (rows == null || rows.isEmpty()) {
+            throw new BusinessException(ErrorCode.NOT_FOUND,
+                    "用例集不存在或不可用: " + setId);
+        }
+        String status = rows.get(0);
+        if (status != null && (status.equalsIgnoreCase("disabled")
+                || status.equalsIgnoreCase("archived")
+                || status.equalsIgnoreCase("deprecated"))) {
+            throw new BusinessException(ErrorCode.NOT_FOUND,
+                    "用例集不可用（已停用）: " + setId);
+        }
+    }
+
+    /** 展开集合成员 caseId（按 seq_no）。 */
+    protected List<Long> loadSetMembers(long setId) {
+        String sql = "SELECT test_case_id FROM test_set_item"
+                + " WHERE test_set_id = ? ORDER BY seq_no, id";
+        return jdbc.queryForList(sql, Long.class, setId);
     }
 
     /**

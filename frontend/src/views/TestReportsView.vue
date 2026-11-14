@@ -12,10 +12,15 @@
  * 手打入口仍然是**降级**而非删除（判据④）：归档 run 被清掉记录后，仍可能有人拿着
  * RUN_ID 要出一份报告，一刀切删掉会断掉这条路。
  */
-import { computed, onMounted, ref } from 'vue'
+import { computed, h, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NInput, type DataTableColumns } from 'naive-ui'
+import { NButton, NCheckbox, NInput, NModal, type DataTableColumns } from 'naive-ui'
 import DataTable from '@/components/DataTable.vue'
+import ListScaffold from '@/components/ListScaffold.vue'
+import ConfirmAction from '@/components/ConfirmAction.vue'
+import ReadOnlyNotice from '@/components/ReadOnlyNotice.vue'
+import { useTableFilters, type TableFilterColumn } from '@/composables/useTableFilters'
+import { listCrudApi } from '@/api/listCrud'
 import RunPicker from '@/components/RunPicker.vue'
 import CaseSetPicker from '@/components/CaseSetPicker.vue'
 import { useAuthStore } from '@/stores/auth'
@@ -62,7 +67,164 @@ function sourceLabel(row: TestReportItem): string {
     : t('testReports.sourceCaseSet')
 }
 
+/* ---------------------------------------------------------------- W57-15/32 列表骨架 */
+/**
+ * 对外测试报告既有「建草稿」是 A 类用户创建入口（v3.10，已有回归覆盖），保留不动；
+ * 列表侧本次只补 B 类动作：元数据编辑 / 软删 / 恢复 / 批量，**不新增任何「新增」按钮**。
+ * 冻结态不渲染可点动作，改给一句「请先撤销冻结」；软删后导出链接失效也有可读说明。
+ */
+const reportFilters = useTableFilters({ prefix: 'tr_', columns: ['title', 'runId'] })
+const reportFilterColumns: TableFilterColumn[] = [
+  { key: 'title', title: t('w57.testReports.colTitle'), mode: 'text' },
+  { key: 'runId', title: t('w57.testReports.colRunId'), mode: 'text' },
+]
+const reportFilterValues = computed<Record<string, string[]>>(() => {
+  const out: Record<string, string[]> = {}
+  for (const col of reportFilterColumns) {
+    const value = reportFilters.texts.value[col.key]
+    if (value) out[col.key] = [value]
+  }
+  return out
+})
+function onReportFilterChange(next: Record<string, string[]>): void {
+  for (const col of reportFilterColumns) reportFilters.setText(col.key, next[col.key]?.[0] ?? '')
+}
+const visibleRows = computed<TestReportItem[]>(() => {
+  const byTitle = (reportFilters.texts.value.title ?? '').toLowerCase()
+  const byRun = (reportFilters.texts.value.runId ?? '').toLowerCase()
+  const q = reportFilters.q.value.trim().toLowerCase()
+  return rows.value.filter((row) => {
+    if (byTitle && !row.title.toLowerCase().includes(byTitle)) return false
+    if (byRun && !row.runId.toLowerCase().includes(byRun)) return false
+    if (q && !`${row.title} ${row.runId}`.toLowerCase().includes(q)) return false
+    return true
+  })
+})
+const reportFiltered = reportFilters.isFiltered
+
+/** 批量选择：单页列表用 id 集合即可，不引服务端全选（本页不分页）。 */
+const selectedIds = ref<Set<number>>(new Set())
+const selectionCount = computed(() => selectedIds.value.size)
+function isSelected(id: number): boolean {
+  return selectedIds.value.has(id)
+}
+function toggleSelected(id: number): void {
+  const next = new Set(selectedIds.value)
+  if (next.has(id)) next.delete(id)
+  else next.add(id)
+  selectedIds.value = next
+}
+function clearSelection(): void {
+  selectedIds.value = new Set()
+}
+
+const editOpen = ref(false)
+const editId = ref<number | null>(null)
+const editTitle = ref('')
+const editRemark = ref('')
+const editBusy = ref(false)
+const deletedIds = ref<Set<number>>(new Set())
+const deleting = ref(false)
+const confirmShow = ref(false)
+const confirmCount = ref(0)
+const confirmImpacts = ref<{ label: string; count: number }[]>([])
+const pendingDeleteIds = ref<number[]>([])
+
+function isFrozen(row: TestReportItem): boolean {
+  return row.state.toUpperCase() === 'FROZEN' || row.frozenAt !== null
+}
+
+function openEdit(row: TestReportItem): void {
+  editId.value = row.id
+  editTitle.value = row.title
+  editRemark.value = ''
+  editOpen.value = true
+}
+function closeEdit(): void {
+  editOpen.value = false
+  editId.value = null
+  editTitle.value = ''
+  editRemark.value = ''
+}
+async function submitEdit(): Promise<void> {
+  if (editId.value === null || editBusy.value) return
+  editBusy.value = true
+  try {
+    await listCrudApi.updateTestReport(projectId.value, editId.value, {
+      title: editTitle.value.trim(),
+      remark: editRemark.value.trim(),
+    })
+    closeEdit()
+    await load()
+    notice.value = t('w57.testReports.metaSaved')
+  } catch {
+    notice.value = t('testReports.failed')
+  } finally {
+    editBusy.value = false
+  }
+}
+function askDelete(ids: number[]): void {
+  if (ids.length === 0) return
+  pendingDeleteIds.value = ids
+  // 选中条数是确定的事实；关联影响面要等删除后由后端 DeleteResult.impact 回算再展示。
+  confirmCount.value = ids.length
+  confirmImpacts.value = [{ label: t('w57.testReports.pendingDelete'), count: ids.length }]
+  confirmShow.value = true
+}
+function batchDelete(): void {
+  askDelete([...selectedIds.value])
+}
+async function doDelete(): Promise<void> {
+  const ids = pendingDeleteIds.value
+  if (ids.length === 0 || deleting.value) return
+  deleting.value = true
+  try {
+    let exports = 0
+    let artifacts = 0
+    for (const id of ids) {
+      const result = await listCrudApi.deleteTestReport(projectId.value, id)
+      exports += result.impact.testReportExportCount
+      artifacts += result.impact.runArtifactCount
+    }
+    const next = new Set(deletedIds.value)
+    for (const id of ids) next.add(id)
+    deletedIds.value = next
+    clearSelection()
+    confirmShow.value = false
+    pendingDeleteIds.value = []
+    await load()
+    notice.value = t('w57.testReports.batchDeleted', { count: ids.length, exports, artifacts })
+  } catch {
+    notice.value = t('testReports.failed')
+  } finally {
+    deleting.value = false
+  }
+}
+async function restoreRow(row: TestReportItem): Promise<void> {
+  try {
+    await listCrudApi.restoreTestReport(projectId.value, row.id)
+    const next = new Set(deletedIds.value)
+    next.delete(row.id)
+    deletedIds.value = next
+    await load()
+    notice.value = t('w57.testReports.restored')
+  } catch {
+    notice.value = t('testReports.failed')
+  }
+}
+
 const columns = computed<DataTableColumns<TestReportItem>>(() => [
+  {
+    title: t('w57.testReports.colSelect'),
+    key: '__select',
+    width: 64,
+    render: (row) =>
+      h(NCheckbox, {
+        checked: isSelected(row.id),
+        'onUpdate:checked': () => toggleSelected(row.id),
+        'aria-label': t('w57.testReports.selectRow', { title: row.title }),
+      }),
+  },
   { title: t('testReports.colTitle'), key: 'title', minWidth: 160 },
   { title: t('testReports.colRun'), key: 'runId', minWidth: 160 },
   {
@@ -78,6 +240,33 @@ const columns = computed<DataTableColumns<TestReportItem>>(() => [
     key: 'createdAt',
     minWidth: 150,
     render: (row) => formatDateTime(row.createdAt),
+  },
+  {
+    title: t('w57.testReports.colActions'),
+    key: 'actions',
+    width: 220,
+    render: (row) => {
+      if (isFrozen(row)) return h('span', { class: 'muted' }, t('w57.testReports.frozenHint'))
+      if (deletedIds.value.has(row.id)) {
+        return h(
+          NButton,
+          { text: true, size: 'small', onClick: () => void restoreRow(row) },
+          { default: () => t('w57.testReports.restore') },
+        )
+      }
+      return h('span', { class: 'row-actions' }, [
+        h(
+          NButton,
+          { text: true, size: 'small', onClick: () => openEdit(row) },
+          { default: () => t('w57.testReports.edit') },
+        ),
+        h(
+          NButton,
+          { text: true, type: 'error', size: 'small', onClick: () => askDelete([row.id]) },
+          { default: () => t('w57.testReports.softDelete') },
+        ),
+      ])
+    },
   },
 ])
 
@@ -227,12 +416,84 @@ onMounted(load)
 
     <p v-if="notice" class="notice">{{ notice }}</p>
 
-    <DataTable
+    <ListScaffold
       :columns="columns"
-      :data="rows"
+      :data="visibleRows"
       :loading="loading"
       :error="failed"
+      :filtered="reportFiltered"
       :empty-title="t('testReports.empty')"
+      :row-key="(row: TestReportItem) => row.id"
+      :batch-active="selectionCount > 0"
+      show-refresh
+      @refresh="load"
+    >
+      <template #title>
+        <h2 class="report-list-title">{{ t('w57.testReports.listTitle') }}</h2>
+      </template>
+      <template #filters>
+        <div class="report-filters" data-check-semantic>
+          <NInput
+            :value="reportFilters.q.value"
+            clearable
+            style="width: 200px"
+            :placeholder="t('w57.testReports.searchReport')"
+            :aria-label="t('w57.testReports.searchReport')"
+            @update:value="(v: string) => reportFilters.setQuery(v)"
+          />
+          <ReadOnlyNotice compact :text="t('w57.testReports.readonlyText')" :reason="t('w57.testReports.readonlyReason')" />
+        </div>
+      </template>
+      <template #batch>
+        <span>{{ t('w57.testReports.selected', { count: selectionCount }) }}</span>
+        <button class="btn" type="button" @click="batchDelete">{{ t('w57.testReports.batchDelete') }}</button>
+        <button class="btn" type="button" @click="clearSelection">{{ t('w57.testReports.clearSelection') }}</button>
+      </template>
+      <!-- 宿主自渲染 DataTable，才能把 update:filters 接回 URL；空态三态口径复用骨架的 emptyProps -->
+      <template #table="{ emptyProps }">
+        <DataTable
+          :columns="columns"
+          :data="visibleRows"
+          :loading="loading"
+          :row-key="(row: TestReportItem) => row.id"
+          :error="failed"
+          :empty-title="t('testReports.empty')"
+          v-bind="emptyProps"
+          filterable
+          :filter-columns="reportFilterColumns"
+          :filters="reportFilterValues"
+          @update:filters="onReportFilterChange"
+        />
+      </template>
+    </ListScaffold>
+
+    <!-- 元数据编辑 / 危险操作确认；不渲染任何「新增」按钮 -->
+    <NModal v-model:show="editOpen">
+      <div class="crud-dialog" role="dialog" aria-modal="true" :aria-label="t('w57.testReports.editMeta')">
+        <h2 class="card-title">{{ t('w57.testReports.editMeta') }}</h2>
+        <label class="field">
+          <span>{{ t('w57.testReports.title') }}</span>
+          <NInput v-model:value="editTitle" />
+        </label>
+        <label class="field">
+          <span>{{ t('w57.testReports.remark') }}</span>
+          <NInput v-model:value="editRemark" type="textarea" :autosize="{ minRows: 2, maxRows: 4 }" />
+        </label>
+        <div class="crud-dialog__actions">
+          <NButton @click="closeEdit">{{ t('w57.testReports.cancel') }}</NButton>
+          <NButton type="primary" :loading="editBusy" @click="submitEdit">{{ t('w57.testReports.save') }}</NButton>
+        </div>
+      </div>
+    </NModal>
+
+    <ConfirmAction
+      v-model:show="confirmShow"
+      :count="confirmCount"
+      :impacts="confirmImpacts"
+      :loading="deleting"
+      :title="t('w57.testReports.confirmTitle')"
+      :description="t('w57.testReports.confirmDesc')"
+      @confirm="doDelete"
     />
   </div>
 </template>
@@ -255,5 +516,56 @@ onMounted(load)
 }
 .case-set-select {
   min-width: 240px;
+}
+
+/* W57-32：列表骨架标题（≤2 行）、筛选条、编辑弹层 */
+.report-list-title {
+  margin: 0;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  color: var(--text);
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.report-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: var(--space-2) 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.crud-dialog {
+  width: min(420px, 92vw);
+  padding: var(--space-5);
+  border-radius: var(--radius-md);
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.crud-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+/* h() 渲染的操作列按钮不带 scoped 属性 */
+:deep(.row-actions) {
+  display: inline-flex;
+  gap: var(--space-2);
 }
 </style>

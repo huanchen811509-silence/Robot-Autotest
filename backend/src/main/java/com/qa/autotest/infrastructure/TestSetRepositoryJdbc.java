@@ -62,9 +62,22 @@ public class TestSetRepositoryJdbc implements TestSetRepository {
 
     @Override
     public PageResult<TestSet> platformPage(String keyword, int page, int size) {
-        // 平台用例集的 project_id 是 NULL（与项目私有集区分），所以这里的租户条件是 IS NULL。
-        StringBuilder where = new StringBuilder(" WHERE s.project_id IS NULL");
+        // 保留旧 3 参入口：等价 source=all，避免既有调用方与单测跟着改签名。
+        return platformPage(keyword, page, size, "all");
+    }
+
+    @Override
+    public PageResult<TestSet> platformPage(String keyword, int page, int size, String source) {
+        // W57-06：平台集判定收紧为 project_id IS NULL AND owner_scope='PLATFORM'
+        //（scope_project_id 是生成列，平台行恒为 0，历史 project_id 为空的 PROJECT 行不算平台集）。
+        StringBuilder where = new StringBuilder(
+                " WHERE s.project_id IS NULL AND s.owner_scope = 'PLATFORM'");
         List<Object> args = new ArrayList<>();
+        if ("sample".equalsIgnoreCase(source)) {
+            where.append(" AND s.sample_flag = 1");
+        } else if ("manual".equalsIgnoreCase(source)) {
+            where.append(" AND (s.sample_flag = 0 OR s.sample_flag IS NULL)");
+        }
         if (keyword != null && !keyword.isBlank()) {
             where.append(" AND (s.set_code LIKE ? OR s.name LIKE ?)");
             String like = "%" + keyword.trim() + "%";
@@ -74,17 +87,20 @@ public class TestSetRepositoryJdbc implements TestSetRepository {
         String countSql = "SELECT COUNT(*) FROM test_set s" + where;
         TenantGuard.requireProjectScope(countSql, "test_set");
         Long total = jdbc.queryForObject(countSql, Long.class, args.toArray());
-        args.add(size);
-        args.add((page - 1) * size);
+        List<Object> listArgs = new ArrayList<>(args);
+        listArgs.add(size);
+        listArgs.add((page - 1) * size);
         String listSql = SELECT + where + " ORDER BY s.id DESC LIMIT ? OFFSET ?";
         TenantGuard.requireProjectScope(listSql, "test_set");
-        List<TestSet> rows = jdbc.query(listSql, MAPPER, args.toArray());
+        List<TestSet> rows = jdbc.query(listSql, MAPPER, listArgs.toArray());
         return new PageResult<>(rows, total == null ? 0 : total, page, size);
     }
 
     @Override
     public Optional<TestSet> findPlatform(long id) {
-        String sql = SELECT + " WHERE s.project_id IS NULL AND s.id = ?";
+        // W57-06：平台集判定统一为 project_id IS NULL AND owner_scope='PLATFORM'。
+        String sql = SELECT + " WHERE s.project_id IS NULL AND s.owner_scope = 'PLATFORM'"
+                + " AND s.id = ?";
         TenantGuard.requireProjectScope(sql, "test_set");
         return JdbcSupport.first(jdbc.query(sql, MAPPER, id));
     }
@@ -315,5 +331,232 @@ public class TestSetRepositoryJdbc implements TestSetRepository {
         TenantGuard.requireProjectScope(sql, "run");
         Integer count = jdbc.queryForObject(sql, Integer.class, projectId, testSetId, runId);
         return count != null && count > 0;
+    }
+
+    // ---------------------------------------------------------- W57-06 平台用例集可写
+
+    /**
+     * 平台集 item 子查询守卫：既限定只动平台集，也让 TenantGuard 看到 project_id 条件。
+     * 用裸列 test_set_id（不加 i 别名），兼容单表 DELETE / UPDATE 不接受别名的场景。
+     */
+    private static final String PLATFORM_ITEM_SCOPE =
+            " AND test_set_id IN (SELECT s.id FROM test_set s"
+                    + " WHERE s.project_id IS NULL AND s.owner_scope = 'PLATFORM' AND s.id = ?)";
+
+    @Override
+    public boolean platformCodeExists(String setCode, Long excludeId) {
+        String sql = """
+                SELECT COUNT(*) FROM test_set
+                 WHERE project_id IS NULL AND owner_scope = 'PLATFORM'
+                   AND set_code = ? AND id <> ?
+                """;
+        TenantGuard.requireProjectScope(sql, "test_set");
+        Integer count = jdbc.queryForObject(sql, Integer.class, setCode,
+                excludeId == null ? -1L : excludeId);
+        return count != null && count > 0;
+    }
+
+    @Override
+    public long insertPlatform(String setCode, String name, String description, String sampleL1,
+                               Long operatorId) {
+        final String insertSql = """
+                INSERT INTO test_set
+                  (project_id, owner_scope, set_code, name, description,
+                   sample_flag, sample_l1, user_modified, set_status, created_by, updated_by)
+                VALUES (NULL, 'PLATFORM', ?, ?, ?, ?, ?, 0, 'active', ?, ?)
+                """;
+        TenantGuard.requireProjectScope(insertSql, "test_set");
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbc.update(connection -> {
+            PreparedStatement ps = connection.prepareStatement(insertSql,
+                    Statement.RETURN_GENERATED_KEYS);
+            ps.setString(1, setCode);
+            ps.setString(2, name);
+            ps.setString(3, description);
+            ps.setInt(4, sampleL1 == null ? 0 : 1);
+            ps.setString(5, sampleL1);
+            ps.setObject(6, operatorId, java.sql.Types.BIGINT);
+            ps.setObject(7, operatorId, java.sql.Types.BIGINT);
+            return ps;
+        }, keyHolder);
+        long id = keyHolder.getKey() == null ? 0 : keyHolder.getKey().longValue();
+        if (id > 0) {
+            // 平台集自带版本行（project_id=0）：否则 platformReferences 对未登记版本行的集会 404，
+            // 新建的集一进列表就把整个 page 拖成 500。
+            final String versionSql = """
+                    INSERT INTO asset_version
+                      (project_id, asset_type, asset_id, asset_version, content_hash, fork_state)
+                    VALUES (0, 'TESTSET', ?, 1, NULL, 'SYNCED')
+                    """;
+            TenantGuard.requireProjectScope(versionSql, "asset_version");
+            jdbc.update(versionSql, id);
+        }
+        return id;
+    }
+
+    @Override
+    public void updatePlatform(long id, String name, String description, Long operatorId) {
+        // 改名即「用户接管」样例集：user_modified=1 让后续 ensureSamples / rebuild 跳过。
+        String sql = """
+                UPDATE test_set SET name = ?, description = ?, user_modified = 1, updated_by = ?
+                 WHERE project_id IS NULL AND owner_scope = 'PLATFORM' AND id = ?
+                """;
+        TenantGuard.requireProjectScope(sql, "test_set");
+        jdbc.update(sql, name, description, operatorId, id);
+    }
+
+    @Override
+    public void deletePlatform(long id) {
+        String delItems = """
+                DELETE FROM test_set_item WHERE test_set_id = ?
+                  AND test_set_id IN (SELECT s.id FROM test_set s
+                                      WHERE s.project_id IS NULL
+                                        AND s.owner_scope = 'PLATFORM' AND s.id = ?)
+                """;
+        TenantGuard.requireProjectScope(delItems, "test_set_item");
+        jdbc.update(delItems, id, id);
+        String delSet = """
+                DELETE FROM test_set
+                 WHERE project_id IS NULL AND owner_scope = 'PLATFORM' AND id = ?
+                """;
+        TenantGuard.requireProjectScope(delSet, "test_set");
+        jdbc.update(delSet, id);
+    }
+
+    @Override
+    public List<Long> platformItemIds(long testSetId) {
+        String sql = """
+                SELECT i.test_case_id FROM test_set_item i
+                 WHERE i.test_set_id = ?
+                """ + PLATFORM_ITEM_SCOPE + " ORDER BY i.seq_no";
+        TenantGuard.requireProjectScope(sql, "test_set_item");
+        return jdbc.queryForList(sql, Long.class, testSetId, testSetId);
+    }
+
+    @Override
+    public int nextPlatformSeqNo(long testSetId) {
+        String sql = """
+                SELECT COALESCE(MAX(i.seq_no), 0) FROM test_set_item i
+                 WHERE i.test_set_id = ?
+                """ + PLATFORM_ITEM_SCOPE;
+        TenantGuard.requireProjectScope(sql, "test_set_item");
+        Integer max = jdbc.queryForObject(sql, Integer.class, testSetId, testSetId);
+        return max == null ? 0 : max;
+    }
+
+    @Override
+    public int addPlatformItemIfAbsent(long testSetId, long testCaseId, int seqNo,
+                                       Long operatorId) {
+        // INSERT ... SELECT ... WHERE NOT EXISTS：用例不存在 / 已是成员都返回 0，交由服务层计 skipped。
+        String sql = """
+                INSERT INTO test_set_item
+                  (test_set_id, test_case_id, seq_no, item_source, created_by, updated_by)
+                SELECT ?, c.id, ?, 'manual', ?, ?
+                  FROM test_case c
+                 WHERE c.id = ? AND c.project_id IS NOT NULL
+                   AND NOT EXISTS (SELECT 1 FROM test_set_item x
+                                    WHERE x.test_set_id = ? AND x.test_case_id = c.id)
+                   AND EXISTS (SELECT 1 FROM test_set s
+                                WHERE s.project_id IS NULL
+                                  AND s.owner_scope = 'PLATFORM' AND s.id = ?)
+                """;
+        TenantGuard.requireProjectScope(sql, "test_set_item");
+        return jdbc.update(sql, testSetId, seqNo, operatorId, operatorId,
+                testCaseId, testSetId, testSetId);
+    }
+
+    @Override
+    public void removePlatformItem(long testSetId, long testCaseId) {
+        String sql = """
+                DELETE FROM test_set_item WHERE test_set_id = ? AND test_case_id = ?
+                """ + PLATFORM_ITEM_SCOPE;
+        TenantGuard.requireProjectScope(sql, "test_set_item");
+        jdbc.update(sql, testSetId, testCaseId, testSetId);
+    }
+
+    @Override
+    public void reorderPlatform(long testSetId, List<Long> caseIds, Long operatorId) {
+        // 三段式：先整体平移腾位 → 落新序 → 未点名的接在尾部，避开 uk(test_set_id, seq_no)。
+        String shift = """
+                UPDATE test_set_item SET seq_no = seq_no + 1000000
+                 WHERE test_set_id = ?
+                """ + PLATFORM_ITEM_SCOPE;
+        TenantGuard.requireProjectScope(shift, "test_set_item");
+        jdbc.update(shift, testSetId, testSetId);
+
+        String place = """
+                UPDATE test_set_item SET seq_no = ?, updated_by = ?
+                 WHERE test_set_id = ? AND test_case_id = ?
+                """ + PLATFORM_ITEM_SCOPE;
+        TenantGuard.requireProjectScope(place, "test_set_item");
+        int seq = 1;
+        for (Long caseId : caseIds) {
+            jdbc.update(place, seq++, operatorId, testSetId, caseId, testSetId);
+        }
+
+        String pull = """
+                SELECT i.id FROM test_set_item i
+                 WHERE i.test_set_id = ? AND i.seq_no > 1000000
+                """ + PLATFORM_ITEM_SCOPE + " ORDER BY i.seq_no";
+        TenantGuard.requireProjectScope(pull, "test_set_item");
+        List<Long> remainder = jdbc.queryForList(pull, Long.class, testSetId, testSetId);
+        for (Long itemId : remainder) {
+            String settle = """
+                    UPDATE test_set_item SET seq_no = ?, updated_by = ?
+                     WHERE id = ? AND test_set_id = ?
+                    """ + PLATFORM_ITEM_SCOPE;
+            TenantGuard.requireProjectScope(settle, "test_set_item");
+            jdbc.update(settle, seq++, operatorId, itemId, testSetId, testSetId);
+        }
+    }
+
+    @Override
+    public List<Long> platformCategoryCaseIds(Long categoryL1Id, Long categoryL2Id) {
+        StringBuilder sql = new StringBuilder("""
+                SELECT t.id FROM test_case t
+                 WHERE t.project_id = (SELECT p.id FROM project p
+                                        WHERE p.kind = 'platform' ORDER BY p.id LIMIT 1)
+                   AND t.lifecycle_status = 'active'
+                """);
+        List<Object> args = new ArrayList<>();
+        // COALESCE 双轨：id 命中的 active 分类优先；id 为空 / 指向禁用分类时按文本列兜底。
+        if (categoryL1Id != null) {
+            sql.append("""
+                    AND COALESCE(
+                          (SELECT c.id FROM case_category c
+                            WHERE c.id = t.category_l1_id AND c.level = 1 AND c.status = 'active'),
+                          (SELECT c.id FROM case_category c
+                            WHERE c.project_id = t.project_id AND c.level = 1
+                              AND c.status = 'active' AND c.name = t.category_l1
+                            ORDER BY c.id LIMIT 1)) = ?
+                    """);
+            args.add(categoryL1Id);
+        }
+        if (categoryL2Id != null) {
+            sql.append("""
+                    AND COALESCE(
+                          (SELECT c.id FROM case_category c
+                            WHERE c.id = t.category_l2_id AND c.level = 2 AND c.status = 'active'),
+                          (SELECT c.id FROM case_category c
+                            WHERE c.project_id = t.project_id AND c.level = 2
+                              AND c.status = 'active' AND c.name = t.category_l2
+                            ORDER BY c.id LIMIT 1)) = ?
+                    """);
+            args.add(categoryL2Id);
+        }
+        sql.append(" ORDER BY t.id");
+        TenantGuard.requireProjectScope(sql.toString(), "test_case");
+        return jdbc.queryForList(sql.toString(), Long.class, args.toArray());
+    }
+
+    @Override
+    public void markPlatformUserModified(long testSetId) {
+        String sql = """
+                UPDATE test_set SET user_modified = 1
+                 WHERE project_id IS NULL AND owner_scope = 'PLATFORM'
+                   AND sample_flag = 1 AND id = ?
+                """;
+        TenantGuard.requireProjectScope(sql, "test_set");
+        jdbc.update(sql, testSetId);
     }
 }

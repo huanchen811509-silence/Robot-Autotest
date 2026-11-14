@@ -1,0 +1,16 @@
+LOGIN OK
+TEST_REPORT_IDS=22 21 20
+用 id=22 做冻结规则验证
+-- 冻结前 state=DRAFT
+freeze          -> 200 OK
+   冻结后 state=FROZEN
+   改标题(应拒)  -> 409 请先撤销冻结
+   改备注(应过)  -> 200 OK
+   删冻结(应拒)  -> 409 请先撤销冻结
+revoke          -> 200 OK
+   撤销后 state=REVOKED
+   改标题(应过)  -> 200 OK
+   删(应过)      -> 200 OK
+   deleted_at=2026-11-14 18:39:53.542
+restore        -> 200
+   恢复后 deleted_at=NULL

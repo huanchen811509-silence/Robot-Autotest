@@ -12,7 +12,8 @@
 #   19 证据完整性（v2.2 CLOS-02：output.xml metadata 六必填 + 三处单测基线只增不减
 #      + AI 契约机检（AI-06：零 prompt 文件开关 / 零硬编码凭据 / 零 L4-L5 自动提交））
 #
-# 本脚本共 52 步（01–36 判据不动，41–48 为 v5.1–v5.4 新增，49–52 为 EHT P2 新增，只增不删）：01–17 为 run 步，
+# 本脚本共 55 步（01–36 判据不动，41–48 为 v5.1–v5.4 新增，49–52 为 EHT P2 新增，
+# 53–55 为 v5.7.0 W57-46 新增，只增不删）：01–17 为 run 步，
 # 18 为末尾 structure_selfcheck 内联块，19 为证据完整性 run 步，
 # 20–23 为 v3.2.0 的契约 / 包体 / 性能预算 / 版本一致性门禁。
 # 24–27 为 v3.3.0+v3.4.0 的 AI 评测 / 安全扫描 / 容量+备份演练 / i18n+对比度门禁。
@@ -460,6 +461,18 @@ run 51 eht_case_ui "python3 tools/check_eht_case_ui.py"
 #    API 每个方法体都走 request/casesPage、路由与双语八节齐、端点证据 12 个全 200。
 #    自证方式是真注入把端点封装或页面改成本地 mock，必须判红。
 run 52 eht_pages_live "python3 tools/check_eht_pages_live.py"
+
+# ---- v5.7.0 / W57-46 新增段（53–55）--------------------------------------
+# 与 01–52 原始段分别登记：新增段只代表本版三台机检，不得与原始段相加成「全绿」口径。
+# 每台机检都带 --self-test（真注入 → 判红 → 还原 → 判绿），不是只跑绿灯。
+# 53 列表 CRUD 覆盖度：台账 37 页逐页 A/B/C 分类，白名单外缺口即红。
+run 53 list_crud "python3 tools/check_list_crud.py && python3 tools/check_list_crud.py --self-test"
+
+# 54 语义色与对比度：4.5:1 + 硬编码颜色拦截，真注入低对比 token 必判红。
+run 54 ui_contrast "python3 tools/check_ui_contrast.py && python3 tools/check_ui_contrast.py --self-test"
+
+# 55 一次性凭证六处零泄漏：DB / 应用日志 / 审计 / HTTP 响应 / 证据包 / 异常堆栈。
+run 55 oneshot_secret "python3 tools/probe_oneshot_secret.py"
 
 printf '\nGATES_RESULT FAILS=%s UNJUDGED=%s\n' "$FAILS" "${UNJUDGED:-0}"
 

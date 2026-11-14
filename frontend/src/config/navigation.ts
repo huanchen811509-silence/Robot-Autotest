@@ -139,6 +139,9 @@ export const GLOBAL_NAVIGATION: NavNode[] = [
         labelKey: 'menu.globalProjectsAll',
         icon: 'dashboard',
         path: '/g/projects',
+        // W57-09：裸 `/g/projects` 按前缀会命中 `/g/projects/new`，不排除就会
+        // 「点新建项目、全部项目也跟着亮」。exclude 按分段边界比较，不影响本项自身。
+        exclude: ['/g/projects/new'],
       },
       {
         // v4.11.0 / FR-v4.11-29：不能靠 `myRole` 判——全局 admin 无成员关系时该值也是
@@ -148,6 +151,16 @@ export const GLOBAL_NAVIGATION: NavNode[] = [
         icon: 'users',
         path: '/g/projects',
         query: { scope: 'mine' },
+      },
+      {
+        // W57-09：独立 path `/g/projects/new`（不复用项目树的 `/projects/new`），
+        // 避免两棵树在「新建项目」入口上同时点亮；labelKey 用独立 i18n 键，
+        // 经 t() 正常渲染，两棵树不因同名键而同时点亮。
+        key: 'global-projects-new',
+        labelKey: 'w57.nav.newProject',
+        icon: 'plus',
+        path: '/g/projects/new',
+        capability: 'project:create',
       },
     ],
   },
@@ -170,6 +183,14 @@ export const GLOBAL_NAVIGATION: NavNode[] = [
         icon: 'download',
         path: '/g/cases',
         query: { view: 'imports' },
+      },
+      {
+        // W57-09：全局用例集二级入口；详情页 `/g/case-sets/:id` 靠 alsoMatch 点亮父项。
+        key: 'global-cases-sets',
+        labelKey: 'w57.nav.globalCaseSets',
+        icon: 'cases',
+        path: '/g/case-sets',
+        alsoMatch: ['/g/case-sets/'],
       },
     ],
   },

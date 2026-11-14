@@ -411,10 +411,31 @@ const router = createRouter({
       component: () => import('@/views/global/GlobalProjectsView.vue'),
     },
     {
+      // W57-09 / W57-12：全局「新建项目」独立路径，复用同一个 6 步向导；
+      // 与项目树的 `/projects/new` 分开，避免两棵树同时点亮，并由 from=global 决定返回落点。
+      path: '/g/projects/new',
+      name: 'global-project-new',
+      meta: { global: true, capability: 'project:create' },
+      component: () => import('@/views/ProjectWizardView.vue'),
+    },
+    {
       path: '/g/cases',
       name: 'global-cases',
       meta: { global: true },
       component: () => import('@/views/global/GlobalCasesView.vue'),
+    },
+    {
+      // W57-09：全局用例集列表与详情（详情页复用同一视图，按 :id 定位成员）。
+      path: '/g/case-sets',
+      name: 'global-case-sets',
+      meta: { global: true },
+      component: () => import('@/views/global/GlobalCaseSetsView.vue'),
+    },
+    {
+      path: '/g/case-sets/:id',
+      name: 'global-case-sets-detail',
+      meta: { global: true },
+      component: () => import('@/views/global/GlobalCaseSetsView.vue'),
     },
     {
       path: '/g/assets',

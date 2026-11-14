@@ -26,6 +26,8 @@ import {
   type GlobalAssetRow,
 } from '@/api/globalAssets'
 import DataTable from '@/components/DataTable.vue'
+import CredentialPicker from '@/components/CredentialPicker.vue'
+import type { CredentialOption, ManualCollectOutcome } from '@/api/credentialOptions'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -384,6 +386,34 @@ const deviceFormDone = ref('')
 const deviceForm = ref<CreateDevicePayload>(emptyDeviceForm())
 const credentialPicker = ref<GlobalAssetRow[]>([])
 
+/**
+ * W57-41：既有凭据下拉（GlobalAssetRow[]）与凭证选择器的候选（CredentialOption）字段不同。
+ * 新建设备无 assetId（传 0），选择器用 fallbackOptions 展示既有凭据；采集弹层有真实
+ * assetId，会走后端 options 端点拿四级排序结果，fallback 只作接口失败时的兜底。
+ */
+function toCredentialOptions(items: GlobalAssetRow[]): CredentialOption[] {
+  return items.map((row) => ({
+    credentialId: row.id,
+    name: row.name,
+    credType: '',
+    username: '',
+    tier: 3,
+    lastResult: '',
+    lastVerifiedAt: '',
+    boundDevices: 0,
+    configured: true,
+  }))
+}
+const deviceCredentialFallback = computed(() => toCredentialOptions(credentialPicker.value))
+const collectCredentialFallback = computed(() => toCredentialOptions(credentialOptions.value))
+function onManualCollected(outcome: ManualCollectOutcome): void {
+  // 响应不含任何材料位；一次性凭证未写入凭据库，提示要说清「不是新增了一条凭据」。
+  collectDone.value = t('w57.globalAssets.collectDone')
+  // oneShot=false 说明用户显式勾了「另存为凭据」，凭据库多了一条，下拉要刷新；
+  // oneShot=true 时库里没有新增，重拉纯属浪费一次往返。
+  if (!outcome.oneShot) void loadCredentialPicker()
+}
+
 function emptyDeviceForm(): CreateDevicePayload {
   return {
     name: '',
@@ -660,15 +690,13 @@ onMounted(() => {
           {{ t('global.assetCollectNoCredential') }}
         </p>
         <template v-else>
-          <label class="field">
-            <span>{{ t('global.assetCollectCredential') }}</span>
-            <select v-model="collectCredentialId" class="select">
-              <option :value="null">-</option>
-              <option v-for="item in credentialOptions" :key="item.id" :value="item.id">
-                {{ item.name }}
-              </option>
-            </select>
-          </label>
+          <CredentialPicker
+            v-model="collectCredentialId"
+            :asset-id="collectTarget?.id ?? 0"
+            :fallback-options="collectCredentialFallback"
+            :label="t('w57.globalAssets.labelCollect')"
+            @submitted="onManualCollected"
+          />
           <label class="field">
             <span>{{ t('global.assetCollectUsername') }}</span>
             <input v-model="collectUsername" class="input" />
@@ -786,24 +814,20 @@ onMounted(() => {
             <span>{{ t('global.assetFieldBmcAddressAlt') }}</span>
             <input v-model="deviceForm.bmcAddressAlt" class="input" />
           </label>
-          <label class="field">
-            <span>{{ t('global.assetFieldManagementCredential') }}</span>
-            <select v-model="deviceForm.managementCredentialId" class="select">
-              <option :value="null">-</option>
-              <option v-for="item in credentialPicker" :key="item.id" :value="item.id">
-                {{ item.name }}
-              </option>
-            </select>
-          </label>
-          <label class="field">
-            <span>{{ t('global.assetFieldBmcCredential') }}</span>
-            <select v-model="deviceForm.bmcCredentialId" class="select">
-              <option :value="null">-</option>
-              <option v-for="item in credentialPicker" :key="item.id" :value="item.id">
-                {{ item.name }}
-              </option>
-            </select>
-          </label>
+          <CredentialPicker
+            :model-value="deviceForm.managementCredentialId ?? null"
+            @update:model-value="deviceForm.managementCredentialId = $event"
+            :asset-id="0"
+            :fallback-options="deviceCredentialFallback"
+            :label="t('w57.globalAssets.labelManage')"
+          />
+          <CredentialPicker
+            :model-value="deviceForm.bmcCredentialId ?? null"
+            @update:model-value="deviceForm.bmcCredentialId = $event"
+            :asset-id="0"
+            :fallback-options="deviceCredentialFallback"
+            :label="t('w57.globalAssets.labelBmc')"
+          />
         </div>
         <p v-if="deviceFormError" class="error">{{ deviceFormError }}</p>
         <p v-if="deviceFormDone" class="success">{{ deviceFormDone }}</p>

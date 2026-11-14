@@ -16,6 +16,8 @@ import { useAuthStore } from '@/stores/auth'
 import ExecutionPlansView from '@/views/ExecutionPlansView.vue'
 import { caseApi, caseSetApi } from '@/api/cases'
 import { executionApi } from '@/api/execution'
+import { runLaunchApi } from '@/api/runLaunch'
+import { ApiError } from '@/api/http'
 
 vi.mock('@/api/cases', () => ({
   caseApi: { page: vi.fn() },
@@ -27,6 +29,14 @@ vi.mock('@/api/execution', () => ({
     page: vi.fn(),
     safetyPrecheck: vi.fn(),
     runCases: vi.fn(),
+  },
+}))
+
+// W57-30：默认模拟「后端尚未部署两步发起端点」，既有断言借此走旧 caseIds 回退路径全绿。
+vi.mock('@/api/runLaunch', () => ({
+  runLaunchApi: {
+    preview: vi.fn(),
+    confirmAndStart: vi.fn(),
   },
 }))
 
@@ -119,6 +129,13 @@ beforeEach(() => {
   runsPage.mockResolvedValue({ items: runs, total: 4 } as never)
 
   routerState.push.mockReset()
+
+  const launchPreview = vi.mocked(runLaunchApi.preview)
+  const launchConfirm = vi.mocked(runLaunchApi.confirmAndStart)
+  launchPreview.mockReset()
+  launchPreview.mockRejectedValue(new Error('preview endpoint unavailable'))
+  launchConfirm.mockReset()
+  launchConfirm.mockResolvedValue({ runId: 'RUN-NEW-9' } as never)
 
   pinia = createPinia()
   setActivePinia(pinia)
@@ -271,5 +288,61 @@ describe('ExecutionPlansView 发起记录', () => {
     expect(root.textContent).toContain('RUN-EP-2')
     expect(root.textContent).not.toContain('RUN-UI-1')
     expect(root.textContent).not.toContain('RUN-NULL')
+  })
+})
+
+/* --------------------------------------------------------------------------
+ * W57-29/30 补充断言（以上老断言一条未删，全部保持通过）
+ * -------------------------------------------------------------------------- */
+describe('W57-30 两步发起与旧 caseIds 路径回退', () => {
+  const launchPreview = vi.mocked(runLaunchApi.preview)
+  const launchConfirm = vi.mocked(runLaunchApi.confirmAndStart)
+
+  it('预览成功时走 confirm-and-start（带 token），不再打旧 runCases', async () => {
+    launchPreview.mockResolvedValue({ token: 'tok-1', caseIds: [11], total: 1 } as never)
+    launchConfirm.mockResolvedValue({ runId: 'RUN-NEW-1' } as never)
+    const root = await mountView()
+    await check(root, 'pick-11')
+
+    root.querySelector<HTMLButtonElement>('[data-testid="start-run"]')!.click()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(launchConfirm).toHaveBeenCalledTimes(1)
+    expect(launchConfirm.mock.calls[0][1]).toBe('tok-1')
+    expect(runCases).not.toHaveBeenCalled()
+    expect(routerState.push).toHaveBeenCalledWith('/runs/RUN-NEW-1')
+  })
+
+  it('新端点 409：给出含错误码的可读提示，并回退到旧 caseIds 路径', async () => {
+    launchPreview.mockRejectedValue(new ApiError(409, 'CONFLICT', 'conflict'))
+    const root = await mountView()
+    await check(root, 'pick-11')
+
+    root.querySelector<HTMLButtonElement>('[data-testid="start-run"]')!.click()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    const hint = root.querySelector('[data-testid="start-error"]')?.textContent ?? ''
+    expect(hint).toContain('409')
+    expect(hint).toContain('回退')
+    expect(runCases).toHaveBeenCalledTimes(1)
+    expect(runCases.mock.calls[0][1].caseIds).toEqual([11])
+  })
+})
+
+describe('W57-29 toggleSet 缺陷硬对照回归（视图集成）', () => {
+  it('集 71(11+12) + 手工勾 13 → 取消 71 → 只剩 1 条（13），旧实现会剩 0', async () => {
+    const root = await mountView()
+    await check(root, 'pick-set-71') // 集合带来 11、12
+    await check(root, 'pick-13') // 手工单独勾 13
+    expect(countText(root)).toContain('3')
+
+    const box = root.querySelector<HTMLInputElement>('[data-testid="pick-set-71"]')!
+    box.checked = false
+    box.dispatchEvent(new Event('change'))
+    await nextTick()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(countText(root)).toContain('1')
+    expect(precheck.mock.calls.at(-1)![1]).toEqual([13])
   })
 })

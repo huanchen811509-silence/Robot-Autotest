@@ -9,22 +9,27 @@
  */
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { projectApi, userApi, type UserSummary } from '@/api/iam'
 import { projectCardsApi } from '@/api/projectCards'
-import { globalCaseApi, type GlobalCaseRow } from '@/api/globalCases'
-import { globalAssetApi, type GlobalAssetRow } from '@/api/globalAssets'
 import { templateApi } from '@/api/globalTemplates'
 import { capabilitiesForRole, roleFromCodes } from '@/config/navigation'
 import { PROJECT_TEMPLATES } from '@/config/projectTemplates'
 import { engineCode, nextProjectCode, yearMonth } from '@/config/projectCode'
 import ErrorLineView from '@/components/ErrorLine.vue'
+import WizardContentPicker from '@/components/WizardContentPicker.vue'
 import { localizeError, type ErrorLine } from '@/utils/errors'
 
 const { t } = useI18n()
 const router = useRouter()
+const route = useRoute()
 const auth = useAuthStore()
+
+/** W57-12：全局向导（`/g/projects/new` 或 `?from=global`）创建成功后回 `/g/projects`。 */
+const isGlobal = computed(
+  () => route.query.from === 'global' || (typeof route.path === 'string' && route.path.startsWith('/g/')),
+)
 
 const ALL_STEPS = ['template', 'basics', 'runtime', 'members', 'content', 'review'] as const
 type StepKey = (typeof ALL_STEPS)[number]
@@ -51,46 +56,31 @@ const picked = ref<{ userId: number; roleCodes: string[]; username: string }[]>(
 const users = ref<UserSummary[]>([])
 const usersLoading = ref(false)
 
-// 内容步（FR-v4.8-05）：从公共库挑选用例与资产，默认引用；用例复制进项目用例集。
-const contentCases = ref<GlobalCaseRow[]>([])
-const contentAssets = ref<GlobalAssetRow[]>([])
-const selectedCaseIds = ref<number[]>([])
-const selectedAssetIds = ref<number[]>([])
-const contentLoading = ref(false)
-const contentAvailable = ref(true)
-const contentHint = ref('')
-let contentLoaded = false
-
-async function loadContent(): Promise<void> {
-  if (contentLoaded) return
-  contentLoaded = true
-  contentLoading.value = true
-  try {
-    const [cases, assets] = await Promise.all([
-      globalCaseApi.page({ page: 1, size: 100, lifecycleStatus: 'active' }),
-      globalAssetApi.list({ type: 'DEVICE', availability: 'active' }),
-    ])
-    contentCases.value = cases.items
-    contentAssets.value = assets.slice(0, 100)
-  } catch {
-    contentAvailable.value = false
-    contentHint.value = t('projectWizard.contentUnavailable')
-  } finally {
-    contentLoading.value = false
-  }
+/**
+ * 内容步（W57-12/13）：四类来源（模板 / 用例集 / 用例 / 测试资产）交给 WizardContentPicker。
+ * 选择状态放在向导顶层 ref —— content 步被 v-if 销毁再回来（返回上一步）也不丢选择。
+ */
+interface ContentSelection {
+  templateKeys: string[]
+  setIds: number[]
+  sets: { id: number; name: string }[]
+  caseIds: number[]
+  assetIds: number[]
 }
-
-function toggleCase(id: number): void {
-  selectedCaseIds.value = selectedCaseIds.value.includes(id)
-    ? selectedCaseIds.value.filter((item) => item !== id)
-    : [...selectedCaseIds.value, id]
-}
-
-function toggleAsset(id: number): void {
-  selectedAssetIds.value = selectedAssetIds.value.includes(id)
-    ? selectedAssetIds.value.filter((item) => item !== id)
-    : [...selectedAssetIds.value, id]
-}
+const contentSelection = ref<ContentSelection>({
+  templateKeys: [],
+  setIds: [],
+  sets: [],
+  caseIds: [],
+  assetIds: [],
+})
+/** 兼容既有引用：review / 存为模板 / 创建提交都读这几份派生视图。 */
+const selectedCaseIds = computed(() => contentSelection.value.caseIds)
+const selectedAssetIds = computed(() => contentSelection.value.assetIds)
+const selectedSetIds = computed(() => contentSelection.value.setIds)
+const selectedTemplateKeys = computed(() => contentSelection.value.templateKeys)
+/** 提交时后端报「集合已删」的并发冲突，交给内容步指名显示、供用户移除。 */
+const contentConflicts = ref<{ id: number; name: string }[]>([])
 
 /**
  * 项目编码自动生成（v4.4 需求 1）。
@@ -206,7 +196,6 @@ watch(current, async (key) => {
     if (!form.code.trim() || form.code === autoCode.value) void regenerateCode()
   }
   if (key === 'members') void loadUsers()
-  if (key === 'content') void loadContent()
 })
 
 // 改内核（robot ↔ pytest）会改编码里的引擎段：只有编码还是自动建议时才跟着换
@@ -281,18 +270,39 @@ async function createProject(): Promise<void> {
         warnings.value.push(t('projectWizard.memberBatchFailed', { reason: line.summary }))
       }
     }
-    // 内容步（FR-v4.8-05）：用例复制进项目用例集，资产按引用登记；失败不回滚项目
-    if (selectedCaseIds.value.length || selectedAssetIds.value.length) {
+    // 内容步（W57-12/13）：四类来源一次性提交；setIds 一并传给 /projects/{id}/content
+    // （后端已支持）。用变量而非对象字面量传参：既有 API 类型尚未声明 setIds/templateKeys，
+    // TS 结构类型允许变量携带额外字段，无需改动其它代理拥有的 api 文件。
+    if (
+      selectedCaseIds.value.length ||
+      selectedAssetIds.value.length ||
+      selectedSetIds.value.length ||
+      selectedTemplateKeys.value.length
+    ) {
       try {
-        await templateApi.applyContent(project.id, {
-          caseIds: selectedCaseIds.value,
+        const contentPayload = {
+          caseIds: [...new Set(selectedCaseIds.value)],
           assets: selectedAssetIds.value.map((assetId) => ({ assetType: 'DEVICE', assetId })),
           setName: t('projectWizard.contentSetName'),
-        })
+          setIds: [...new Set(selectedSetIds.value)],
+          templateKeys: [...new Set(selectedTemplateKeys.value)],
+        }
+        contentConflicts.value = []
+        await templateApi.applyContent(project.id, contentPayload)
       } catch (e) {
-        warnings.value.push(
-          t('projectWizard.contentFailed', { reason: localizeError(e).summary }),
+        const reason = localizeError(e).summary
+        // 集合已删的并发错误要「指名」：按名称 / id 从已选集合里定位，交内容步显示移除入口。
+        const missing = contentSelection.value.sets.filter(
+          (set) => reason.includes(set.name) || reason.includes(String(set.id)),
         )
+        if (missing.length > 0) {
+          contentConflicts.value = missing
+          warnings.value.push(
+            t('w57.projectWizard.contentConflict', { names: missing.map((set) => set.name).join('、') }),
+          )
+        } else {
+          warnings.value.push(t('projectWizard.contentFailed', { reason }))
+        }
       }
     }
     await auth.loadProjects()
@@ -311,7 +321,8 @@ function openWorkspace(): void {
 }
 
 function openWorkbench(): void {
-  void router.push('/workbench')
+  // W57-12：全局向导创建成功后回全局项目列表，而非项目模式工作台。
+  void router.push(isGlobal.value ? '/g/projects' : '/workbench')
 }
 
 // ---------------------------------------------------------------- 存为模板（FR-49-25）
@@ -355,7 +366,9 @@ async function confirmSaveTemplate(): Promise<void> {
         <h1 class="page-title">{{ t('projectWizard.title') }}</h1>
         <p class="page-subtitle">{{ t('projectWizard.subtitle') }}</p>
       </div>
-      <router-link class="btn" to="/workbench">{{ t('projectWizard.toWorkbench') }}</router-link>
+      <button type="button" class="btn" data-testid="wizard-back" @click="openWorkbench">
+        {{ isGlobal ? t('w57.projectWizard.backToList') : t('projectWizard.toWorkbench') }}
+      </button>
     </div>
 
     <div v-if="created" class="card wizard-result" role="status">
@@ -368,8 +381,8 @@ async function confirmSaveTemplate(): Promise<void> {
         <button type="button" class="btn btn-primary" @click="openWorkspace">
           {{ t('projectWizard.openWorkspace') }}
         </button>
-        <button type="button" class="btn" @click="openWorkbench">
-          {{ t('projectWizard.backToWorkbench') }}
+        <button type="button" class="btn" data-testid="wizard-back-created" @click="openWorkbench">
+          {{ isGlobal ? t('w57.projectWizard.backToList') : t('projectWizard.backToWorkbench') }}
         </button>
         <button type="button" class="btn" data-testid="open-save-template" @click="openSaveTemplate">
           {{ t("saveTemplate.open") }}
@@ -452,7 +465,7 @@ async function confirmSaveTemplate(): Promise<void> {
           </div>
           <label class="wizard-field">
             <span>{{ t('projectWizard.name') }}</span>
-            <input v-model="form.name" class="input wide" type="text" autocomplete="off" />
+            <input v-model="form.name" class="input wide" type="text" autocomplete="off" data-testid="wizard-name" />
           </label>
           <label class="wizard-field">
             <span>{{ t('projectWizard.description') }}</span>
@@ -541,44 +554,8 @@ async function confirmSaveTemplate(): Promise<void> {
       <section v-else-if="current === 'content'" class="card wizard-card">
         <h2 class="card-title">{{ t('projectWizard.contentTitle') }}</h2>
         <p class="wizard-hint">{{ t('projectWizard.contentHint') }}</p>
-        <p v-if="contentHint" class="wizard-hint">{{ contentHint }}</p>
-        <p v-if="contentLoading" class="wizard-hint">{{ t('common.loading') }}</p>
-        <template v-else-if="contentAvailable">
-          <div class="content-group">
-            <h3>{{ t('projectWizard.contentCases', { count: selectedCaseIds.length }) }}</h3>
-            <div class="content-picker">
-              <label v-for="item in contentCases" :key="item.id" class="content-item">
-                <input
-                  type="checkbox"
-                  :checked="selectedCaseIds.includes(item.id)"
-                  @change="toggleCase(item.id)"
-                />
-                <span class="content-item__title">{{ item.title }}</span>
-                <span class="content-item__meta">{{ item.categoryL1 || '—' }}</span>
-              </label>
-              <p v-if="contentCases.length === 0" class="wizard-hint">
-                {{ t('global.empty') }}
-              </p>
-            </div>
-          </div>
-          <div class="content-group">
-            <h3>{{ t('projectWizard.contentAssets', { count: selectedAssetIds.length }) }}</h3>
-            <div class="content-picker">
-              <label v-for="item in contentAssets" :key="item.id" class="content-item">
-                <input
-                  type="checkbox"
-                  :checked="selectedAssetIds.includes(item.id)"
-                  @change="toggleAsset(item.id)"
-                />
-                <span class="content-item__title">{{ item.name }}</span>
-                <span class="content-item__meta">{{ item.managementIp || '—' }}</span>
-              </label>
-              <p v-if="contentAssets.length === 0" class="wizard-hint">
-                {{ t('global.empty') }}
-              </p>
-            </div>
-          </div>
-        </template>
+        <!-- W57-12/13：四类来源由选择器自管理，选择状态经 v-model 持久在向导顶层 -->
+        <WizardContentPicker v-model="contentSelection" :conflicts="contentConflicts" />
       </section>
 
       <section v-else class="card wizard-card">
@@ -605,21 +582,24 @@ async function confirmSaveTemplate(): Promise<void> {
                 cases: selectedCaseIds.length,
                 assets: selectedAssetIds.length,
               }) }}
+              <span class="wizard-hint">
+                {{ t('w57.projectWizard.setTemplateSummary', { sets: selectedSetIds.length, templates: selectedTemplateKeys.length }) }}
+              </span>
             </dd>
           </div>
         </dl>
         <div class="toolbar">
-          <button type="button" class="btn btn-primary" :disabled="busy" @click="createProject">
+          <button type="button" class="btn btn-primary" :disabled="busy" data-testid="wizard-create" @click="createProject">
             {{ busy ? t('projectWizard.creating') : t('projectWizard.create') }}
           </button>
         </div>
       </section>
 
       <div v-if="current !== 'review'" class="wizard-footer">
-        <button v-if="step > 0" type="button" class="btn" @click="goBack">
+        <button v-if="step > 0" type="button" class="btn" data-testid="wizard-back-step" @click="goBack">
           {{ t('projectWizard.back') }}
         </button>
-        <button type="button" class="btn btn-primary" @click="goNext">
+        <button type="button" class="btn btn-primary" data-testid="wizard-next" @click="goNext">
           {{ t('projectWizard.next') }}
         </button>
       </div>

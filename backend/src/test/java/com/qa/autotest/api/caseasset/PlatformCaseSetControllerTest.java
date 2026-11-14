@@ -1,6 +1,7 @@
 package com.qa.autotest.api.caseasset;
 
 import com.qa.autotest.api.GlobalExceptionHandler;
+import com.qa.autotest.application.caseasset.SampleSetSeeder;
 import com.qa.autotest.application.caseasset.TestSetService;
 import com.qa.autotest.common.BusinessException;
 import com.qa.autotest.common.ErrorCode;
@@ -22,7 +23,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * N9 接口层：平台用例集库的路由与错误映射（只读）。
+ * N9 / W57-06 接口层：平台用例集库的路由与错误映射。
+ *
+ * <p>W57-06 起控制器多注入 {@link SampleSetSeeder}（列表入口同步播种），
+ * 列表走 4 参 {@code platformPage(..., source)}；鉴权口径由「仅管理员」放宽为 case:read，
+ * 这里只验证异常映射，不假定具体权限来源。
  */
 class PlatformCaseSetControllerTest {
 
@@ -32,15 +37,16 @@ class PlatformCaseSetControllerTest {
     @BeforeEach
     void setUp() {
         sets = mock(TestSetService.class);
-        mvc = MockMvcBuilders.standaloneSetup(new PlatformCaseSetController(sets))
+        mvc = MockMvcBuilders.standaloneSetup(
+                        new PlatformCaseSetController(sets, mock(SampleSetSeeder.class)))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }
 
     @Test
-    @DisplayName("列表透出 keyword/page/size，size 上限 200")
+    @DisplayName("列表透出 keyword/page/size/source，size 上限 200")
     void 列表路由() throws Exception {
-        when(sets.platformPage("login", 2, 200)).thenReturn(
+        when(sets.platformPage("login", 2, 200, "all")).thenReturn(
                 new PageResult<>(List.of(), 0L, 2, 200));
         mvc.perform(get("/api/platform/case-sets")
                         .param("keyword", "login")
@@ -48,7 +54,7 @@ class PlatformCaseSetControllerTest {
                         .param("size", "999"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.page").value(2));
-        verify(sets).platformPage("login", 2, 200);
+        verify(sets).platformPage("login", 2, 200, "all");
     }
 
     @Test
@@ -61,10 +67,10 @@ class PlatformCaseSetControllerTest {
     }
 
     @Test
-    @DisplayName("非管理员映射 403")
-    void 非管理员403() throws Exception {
-        when(sets.platformPage(null, 1, 50))
-                .thenThrow(new BusinessException(ErrorCode.FORBIDDEN, "平台用例集库只对管理员开放"));
+    @DisplayName("无读权限映射 403")
+    void 无读权限403() throws Exception {
+        when(sets.platformPage(null, 1, 50, "all"))
+                .thenThrow(new BusinessException(ErrorCode.FORBIDDEN, "无权限：CASE:READ"));
         mvc.perform(get("/api/platform/case-sets"))
                 .andExpect(status().isForbidden());
     }

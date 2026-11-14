@@ -435,14 +435,14 @@ describe('v4.11.0 全局菜单两级化', () => {
   const globalLeaves = (): NavLeaf[] =>
     GLOBAL_NAVIGATION.flatMap((node) => (isGroup(node) ? node.children : [node]))
 
-  it('5 个一级组、14 个叶子，每组至少 2 项（PRD §4.2）', () => {
+  it('5 个一级组、16 个叶子，每组至少 2 项（PRD §4.2；W57-09 补 2 叶）', () => {
     expect(GLOBAL_NAVIGATION).toHaveLength(5)
     expect(globalGroups().map((group) => group.key)).toEqual([
       'global-projects', 'global-cases', 'global-assets', 'global-templates', 'global-settings',
     ])
-    // 2 + 2 + 2 + 2 + 6
-    expect(globalGroups().map((group) => group.children.length)).toEqual([2, 2, 2, 2, 6])
-    expect(globalLeaves()).toHaveLength(14)
+    // W57-09：项目组 +「新建项目」、用例组 +「全局用例集」→ 3 + 3 + 2 + 2 + 6
+    expect(globalGroups().map((group) => group.children.length)).toEqual([3, 3, 2, 2, 6])
+    expect(globalLeaves()).toHaveLength(16)
     for (const group of globalGroups()) {
       expect(group.children.length, `全局组 ${group.key} 退化成单叶`).toBeGreaterThanOrEqual(2)
     }
@@ -611,5 +611,56 @@ describe('navTreeFor：全量菜单（v5.6.0 / FR-v5.6-01、02）', () => {
         expect(node.children.length, '分组 ' + node.key + ' 子项过少').toBeGreaterThanOrEqual(2)
       }
     }
+  })
+})
+
+/* --------------------------------------------------------------------------
+ * W57-09：全局用例集二级菜单 + 独立新建项目入口
+ * -------------------------------------------------------------------------- */
+describe('W57-09 全局新增叶子', () => {
+  const projects = GLOBAL_NAVIGATION.find((node) => node.key === 'global-projects') as NavGroup
+  const casesGroup = GLOBAL_NAVIGATION.find((node) => node.key === 'global-cases') as NavGroup
+
+  it('全局「公共用例」组新增 global-cases-sets 叶，路径与 alsoMatch 正确', () => {
+    const leaf = casesGroup.children.find((child) => child.key === 'global-cases-sets') as NavLeaf
+    expect(leaf).toBeTruthy()
+    expect(leaf.path).toBe('/g/case-sets')
+    expect(leaf.alsoMatch).toEqual(['/g/case-sets/'])
+    // 详情页靠 alsoMatch 点亮父项
+    expect(isLeafActive(leaf, { path: '/g/case-sets/12' })).toBe(true)
+  })
+
+  it('全局「项目」组新增 global-projects-new 叶，独立 path 且 capability=project:create', () => {
+    const leaf = projects.children.find((child) => child.key === 'global-projects-new') as NavLeaf
+    expect(leaf).toBeTruthy()
+    expect(leaf.path).toBe('/g/projects/new')
+    expect(leaf.capability).toBe('project:create')
+    // 不复用项目树的 /projects/new（两棵树各自点亮，不串）
+    expect(NAVIGATION.some((node) =>
+      isGroup(node) && node.children.some((child) => child.path === '/g/projects/new'),
+    )).toBe(false)
+  })
+
+  it('三个新路由都能被路由表解析到真实页面（菜单不指向 404）', () => {
+    for (const path of ['/g/case-sets', '/g/case-sets/12', '/g/projects/new']) {
+      const name = router.resolve(path).matched.at(-1)?.name
+      expect(name, path + ' 没有命中路由').toBeTruthy()
+      expect(name).not.toBe('not-found')
+    }
+  })
+
+  it('/g/projects/new 只点亮「新建项目」，不误点亮「全部项目」（exclude 生效）', () => {
+    const route = { path: '/g/projects/new' }
+    const active = projects.children.filter((child) => isLeafActive(child, route))
+    expect(active.map((child) => child.key)).toEqual(['global-projects-new'])
+  })
+
+  it('新叶子追加在组末尾：既有 children[0]/[1] 仍是「全部项目 / 我参与的」', () => {
+    expect(projects.children.slice(0, 2).map((child) => child.key)).toEqual([
+      'global-projects-all', 'global-projects-mine',
+    ])
+    expect(casesGroup.children.slice(0, 2).map((child) => child.key)).toEqual([
+      'global-cases-all', 'global-cases-imports',
+    ])
   })
 })

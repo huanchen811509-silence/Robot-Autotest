@@ -1,0 +1,10 @@
+LOGIN OK token_len=43
+GET     /api/platform/case-sets?page=1&size=5                        200  {"code":0,"codeName":"OK","message":"OK","data":{"items":[{"id":78,"setCode":"SAMPLE-32","name":"虚拟化与�
+GET     /api/global/cases/grouped                                    200  {"code":0,"codeName":"OK","message":"OK","data":[{"l1Id":1,"l1Name":"AI应用业务联动","l2s":[{"l2Id":33,"
+GET     /api/projects/95/cases/count                                 200  {"code":0,"codeName":"OK","message":"OK","data":{"count":469},"success":true}
+POST    /api/projects/95/runs/preview                                200  {"code":0,"codeName":"OK","message":"OK","data":{"snapshotId":1,"selectionSha256":"e35a7578ebd83023eb3ae507b3a
+POST    /api/projects/95/runs/preview-commands                       200  {"code":0,"codeName":"OK","message":"OK","data":{"kernel":"pytest","requested":0,"executable":0,"skipReasons":
+GET     /api/reports?page=1&size=3                                   400  {"code":40001,"codeName":"INVALID_ARGUMENT","message":"缺少参数：projectId","data":null,"success":false}
+GET     /api/test-reports?page=1&size=3                              400  {"code":40001,"codeName":"INVALID_ARGUMENT","message":"缺少参数：projectId","data":null,"success":false}
+GET     /api/global/assets/1/credentials/options                     200  {"code":0,"codeName":"OK","message":"OK","data":{"items":[{"credentialId":6,"name":"lab-eht-bmc","credType":"b
+GET     /api/projects/95/runs/RUN-NOPE/criteria                      200  {"code":0,"codeName":"OK","message":"OK","data":{"runId":"RUN-NOPE","items":[],"coverage":{"total":0,"declared

@@ -131,3 +131,54 @@ describe('DataTable 规范壳', () => {
     expect(root.textContent).not.toContain('还没有计划')
   })
 })
+
+/**
+ * W57-17 可选列筛选：**只加可选能力，不改默认行为**。
+ * 既有 11 例不变，这里只补筛选条的出现条件与受控值联动，不删任何断言。
+ */
+describe('DataTable W57 可选列筛选（默认关闭）', () => {
+  const filterColumns = [
+    {
+      key: 'state',
+      title: '状态',
+      mode: 'multi' as const,
+      options: [{ label: '通过', value: 'PASS' }],
+    },
+    { key: 'name', title: '名称', mode: 'text' as const },
+  ]
+
+  it('默认不渲染筛选条，既有表格行为完全不变', async () => {
+    const root = await mountTable({ columns, data: rows })
+    expect(root.querySelector('.data-table__filters')).toBeNull()
+    expect(root.querySelectorAll('[data-testid^="column-filter-trigger-"]')).toHaveLength(0)
+    expect(root.textContent).toContain('alpha')
+  })
+
+  it('filterable + 非空 filterColumns 才渲染筛选条与每列触发按钮', async () => {
+    const root = await mountTable({ columns, data: rows, filterable: true, filterColumns })
+    expect(root.querySelector('.data-table__filters')).not.toBeNull()
+    expect(root.querySelector('[data-testid="column-filter-trigger-state"]')).not.toBeNull()
+    expect(root.querySelector('[data-testid="column-filter-trigger-name"]')).not.toBeNull()
+  })
+
+  it('filterable=true 但 filterColumns 为空时不渲染筛选条', async () => {
+    const root = await mountTable({ columns, data: rows, filterable: true, filterColumns: [] })
+    expect(root.querySelector('.data-table__filters')).toBeNull()
+  })
+
+  it('受控 filters 让对应列触发按钮进入 is-active，并出现「清除筛选」', async () => {
+    const root = await mountTable({
+      columns,
+      data: rows,
+      filterable: true,
+      filterColumns,
+      filters: { state: ['PASS'] },
+    })
+    expect(
+      root
+        .querySelector('[data-testid="column-filter-trigger-state"]')
+        ?.classList.contains('is-active'),
+    ).toBe(true)
+    expect(root.querySelector('.data-table__filter-clear')).not.toBeNull()
+  })
+})

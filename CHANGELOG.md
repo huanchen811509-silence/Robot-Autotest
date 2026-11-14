@@ -14,7 +14,37 @@
 > 门禁如实 `FAILS=1`（第 13 步 CDP）。正式成件见 `docs/release/v5.0.0/`，过程件见
 > `docs/plan/v5.0.X存量打磨-归档索引-20261112.md`。
 
-## v5.6.0（2026-11-14） <!-- current -->
+## v5.7.0（2026-11-14） <!-- current -->
+
+> **落号说明**：本版由大师授权「按计划开始工作，均按建议来」落号 5.7.0。
+> **落号 ≠ 判定**：G 门未判、未发版、不得对外称 GA；端到端 / 真机 / 视觉类 TC 未执行，见
+> `docs/release/v5.7.0/05-TEST-REPORT.md` §四。
+
+### 新增 <!-- added -->
+- **全局用例资产化**：全局侧栏新增「用例集」与「新建项目」两个入口；公共用例支持按一二级分类归组浏览；平台用例集开放建 / 改名 / 删除 / 成员增删与排序 / 按分类批量加入；按一级分类首次自动播种样例集并支持手动重建（`user_modified` 接管后跳过）
+- **向导式建项目**：模板 / 用例集 / 用例 / 测试资产四类来源可组合可跳过；用例用三态分类树勾选，已选摘要常显，提交去重保序；全局入口用独立路径 `/g/projects/new`，避免两叶同时点亮
+- **手工发起执行四种选择模式**：全部 / 按用例集 / 按用例 / 两者组合；选择冻结为不可变快照，确认只吃 `snapshotId`，派发前重算摘要，不一致返回 409 且不启动进程
+- **执行可信度**：命令清单只读预览 + `sha256` 确认摘要 + 派发前比对；冻结判据与 `status`/`conclusion` 分离，未声明判据不默认 PASS；内容寻址证据包（同挂载点临时目录 → `ATOMIC_MOVE` → 指针原子替换 → 读时重算）
+- **全站列表能力**：列头筛选 URL 化、服务端跨页全选、六槽位 `ListScaffold`、统一危险操作确认；执行报告 / 运行记录 / 用户报告支持编辑与软删，37 页覆盖度台账由 `check_list_crud.py` 守门
+- **设备凭证**：带验证态的候选四级排序、只探测不采集的连通性验证、一次性凭证只走 POST body 且由六处零泄漏探针守门
+- **七道迁移 `V11_58` ~ `V11_64`**：业务表 105 → 108；配套 7 个 `.down.sql` 回滚脚本
+
+### 变更 <!-- changed -->
+- 平台用例集写权限由 `isAdmin` 放宽到 `case:read` / `CASE:UPDATE`（D-57-04 已授权）；无 `WRITE` 枚举值，VIEWER 仍 403
+- 导航叶基线 39 → 41；API 契约 410 endpoints / 341 paths → **437 / 360**；i18n 语言包新增 225 键（zh/en 各 2824）
+- 门禁新增 53–55 三步（列表 CRUD / 对比度 / 一次性凭证），均带 `--self-test` 真注入判红还原；与 01–52 原始段分别登记
+- `test_set` / `test_result` / `execution_plan` / `run` / `test_report` 加列，均为可空或带 DEFAULT，历史行无需回填
+
+### 修复 <!-- fixed -->
+- 修复 `ExecutionPlansView` 取消用例集时用「剩余集合并集」重建已选，误删手工单独勾选用例的缺陷（`TC-v5.7-136` 硬对照回归）
+- 修复 `EvidenceBundleService` 直接依赖 infrastructure 具体类造成的 application→infrastructure 分层环，改走应用层端口 `EvidenceBundleStore`
+- 修复 Vue boolean prop 的 casting 默认 `false` 导致分类树全部勾选框不渲染
+- 修复报告页面「刷新」按钮被包在「有标题才渲染」的头部里而不出现
+
+### 破坏性变更 <!-- breaking -->
+- 无。新增端点均为增量；既有 `caseIds` 提交路径、`/api/reports` GET 语义、freeze/revoke/archive 三动作语义均保持不变。
+
+## v5.6.0（2026-11-14）
 
 ### 新增 <!-- added -->
 - **全量菜单对齐（D-01 裁定）**：pytest 工程与标准工程共用同一套 7 组 28 项导航，唯一增量 `/pytest-workbench` 并入「工作台」组首位；删除 `PYTEST_SUITE_NAVIGATION`，全站只剩 `GLOBAL_NAVIGATION` + `NAVIGATION` 两棵树

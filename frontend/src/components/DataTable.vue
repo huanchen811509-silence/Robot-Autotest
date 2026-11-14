@@ -4,6 +4,8 @@ import { useI18n } from 'vue-i18n'
 import { NDataTable } from 'naive-ui'
 import type { DataTableColumns, DataTableRowKey } from 'naive-ui'
 import EmptyState from './EmptyState.vue'
+import ColumnFilter from './ColumnFilter.vue'
+import type { TableFilterColumn } from '@/composables/useTableFilters'
 import type { IllustrationName } from './EmptyIllustration.vue'
 import type { IconName } from './iconMap'
 import { computeScrollX } from '@/utils/tableWidth'
@@ -64,6 +66,15 @@ const props = withDefaults(
      * 整页滚动（maxHeight=null）时始终关闭。
      */
     virtualScroll?: boolean
+    /**
+     * W57-17：可选列筛选。默认 false —— 不传时组件行为与 v5.6 完全一致，
+     * 既有页面不渲染筛选弹层、不新增任何事件监听。
+     */
+    filterable?: boolean
+    /** 可筛选列声明；`filterable` 为 true 且本数组非空才渲染筛选条 */
+    filterColumns?: TableFilterColumn[]
+    /** 受控筛选值：列 key → 选中值数组（text 模式用单元素数组承载文本） */
+    filters?: Record<string, string[]>
   }>(),
   {
     loading: false,
@@ -80,8 +91,16 @@ const props = withDefaults(
     error: false,
     virtualScroll: undefined,
     flexHeight: false,
+    filterable: false,
+    filterColumns: () => [],
+    filters: () => ({}),
   },
 )
+
+const emit = defineEmits<{
+  'update:filters': [value: Record<string, string[]>]
+  'filter-change': [value: Record<string, string[]>]
+}>()
 
 const { t } = useI18n()
 
@@ -118,6 +137,31 @@ const emptyDescription = computed(() => {
   return props.emptyDescription
 })
 
+/** W57-17：筛选条只在显式开启 + 有列声明时出现，绝不改变默认渲染。 */
+const showFilterBar = computed(
+  () => props.filterable && props.filterColumns.length > 0,
+)
+const hasActiveFilters = computed(() =>
+  Object.values(props.filters).some((values) => values.length > 0),
+)
+
+function filterText(key: string): string {
+  return props.filters[key]?.[0] ?? ''
+}
+
+function updateFilter(key: string, values: string[]): void {
+  const next: Record<string, string[]> = { ...props.filters }
+  if (values.length === 0) delete next[key]
+  else next[key] = values
+  emit('update:filters', next)
+  emit('filter-change', next)
+}
+
+function clearAllFilters(): void {
+  emit('update:filters', {})
+  emit('filter-change', {})
+}
+
 const resolvedRowKey = computed<((row: T) => DataTableRowKey) | undefined>(() => {
   if (props.rowKey) return props.rowKey
   return (row: T) => {
@@ -148,6 +192,30 @@ const skeletonData = computed<T[]>(() =>
 
 <template>
   <div class="data-table" :class="{ 'is-flex': flexHeight }" :aria-busy="loading ? 'true' : 'false'">
+    <div v-if="showFilterBar" class="data-table__filters" data-check-semantic>
+      <ColumnFilter
+        v-for="column in filterColumns"
+        :key="column.key"
+        :column-key="column.key"
+        :title="column.title"
+        :mode="column.mode ?? 'multi'"
+        :options="column.options ?? []"
+        :selected="filters[column.key] ?? []"
+        :text="filterText(column.key)"
+        @update:selected="(values: string[]) => updateFilter(column.key, values)"
+        @update:text="(value: string) => updateFilter(column.key, value ? [value] : [])"
+        @clear="updateFilter(column.key, [])"
+      />
+      <button
+        v-if="hasActiveFilters"
+        type="button"
+        class="data-table__filter-clear"
+        @click="clearAllFilters"
+      >
+        {{ t('w57.dataTable.clearFilter') }}
+      </button>
+    </div>
+
     <NDataTable
       v-if="showSkeleton"
       class="data-table__skeleton"
@@ -249,5 +317,36 @@ const skeletonData = computed<T[]>(() =>
 
 .data-table__skeleton {
   pointer-events: none;
+}
+
+/* W57-17：筛选条。flex-height 下不参与拉伸，避免把表格区挤矮。 */
+.data-table__filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 0 0 auto;
+  padding: 0 0 var(--space-2);
+}
+
+.data-table__filter-clear {
+  padding: 2px var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+  color: var(--text-muted);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.data-table__filter-clear:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+.data-table__filter-clear:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
 }
 </style>

@@ -10,6 +10,8 @@ import com.qa.autotest.domain.caseasset.AssetVersion;
 import com.qa.autotest.domain.caseasset.TestCase;
 import com.qa.autotest.domain.caseasset.TestSet;
 import com.qa.autotest.domain.common.PageResult;
+import com.qa.autotest.domain.iam.PermissionAction;
+import com.qa.autotest.domain.iam.PermissionResource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,15 +21,16 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
- * N9：平台用例集库（只读）的权限与装配。
+ * N9 / W57-06：平台用例集库的权限与装配。
  *
- * <p>平台集不属于任何项目，所以这里**不** bindProject；管理员校验必须在任何仓储调用之前，
- * 否则「先查库再拒绝」会让越权者从耗时差异里探到集合是否存在。
+ * <p>D-57-04 起读鉴权由「仅管理员」放宽为 case:read，写鉴权放宽为 case:write；
+ * 权限判定必须在任何仓储调用之前，否则越权者能从耗时差异里探到集合是否存在。
  */
 class TestSetPlatformServiceTest {
 
@@ -46,9 +49,10 @@ class TestSetPlatformServiceTest {
     }
 
     @Test
-    @DisplayName("非管理员看不到平台库，且不触发任何仓储读取")
-    void 非管理员拒绝() {
-        when(access.isAdmin()).thenReturn(false);
+    @DisplayName("无 case:read 权限看不到平台库，且不触发任何仓储读取")
+    void 读权限拒绝() {
+        doThrow(new BusinessException(ErrorCode.FORBIDDEN, "无权限"))
+                .when(access).require(PermissionResource.CASE, PermissionAction.READ);
         BusinessException e = assertThrows(BusinessException.class,
                 () -> service.platformPage(null, 1, 50));
         assertEquals(ErrorCode.FORBIDDEN, e.errorCode());
@@ -59,10 +63,9 @@ class TestSetPlatformServiceTest {
     }
 
     @Test
-    @DisplayName("平台库列表装配版本读数与引用方")
+    @DisplayName("平台库列表装配版本读数与引用方（source=all）")
     void 列表带版本与引用() {
-        when(access.isAdmin()).thenReturn(true);
-        when(sets.platformPage(null, 1, 50)).thenReturn(
+        when(sets.platformPage(null, 1, 50, "all")).thenReturn(
                 new PageResult<>(List.of(platformSet(101L, "P-SET-1", 2)), 1L, 1, 50));
         when(assetVersions.platformVersion(101L)).thenReturn(
                 new AssetVersionService.VersionView(3, "h3", AssetVersion.DIVERGED,
@@ -83,7 +86,6 @@ class TestSetPlatformServiceTest {
     @Test
     @DisplayName("平台库成员：集合不存在是 404，空集是合法空列表")
     void 成员只读() {
-        when(access.isAdmin()).thenReturn(true);
         when(sets.findPlatform(404L)).thenReturn(Optional.empty());
         BusinessException e = assertThrows(BusinessException.class,
                 () -> service.platformItems(404L));
@@ -97,7 +99,6 @@ class TestSetPlatformServiceTest {
     @Test
     @DisplayName("平台库成员按 seq 顺序透出用例字段")
     void 成员字段() {
-        when(access.isAdmin()).thenReturn(true);
         when(sets.findPlatform(101L)).thenReturn(Optional.of(platformSet(101L, "P-SET-1", 1)));
         when(sets.platformItems(101L)).thenReturn(List.of(testCase()));
         List<TestCase> items = service.platformItems(101L);

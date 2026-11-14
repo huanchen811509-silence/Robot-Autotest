@@ -14,7 +14,7 @@
  */
 import { computed, h, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter, type LocationQueryRaw } from 'vue-router'
 import { NButton, type DataTableColumns } from 'naive-ui'
 import { useAuthStore } from '@/stores/auth'
 import {
@@ -26,10 +26,25 @@ import {
 } from '@/api/globalCases'
 import type { PageResult } from '@/api/iam'
 import DataTable from '@/components/DataTable.vue'
+import CaseCategoryTree from '@/components/CaseCategoryTree.vue'
 
 const { t } = useI18n()
 const route = useRoute()
+const router = useRouter()
 const auth = useAuthStore()
+
+/**
+ * W57-11：列表 / 分类归组切换只增删 URL 上的 `group=1`，**其余筛选参数原样保留**。
+ * 归组视图复用 CaseCategoryTree（默认展开到二级、单分类 >200 显示「前 200 / 共 N」）。
+ */
+const grouped = computed(() => route.query.group === '1')
+
+function setGrouped(on: boolean): void {
+  const query: LocationQueryRaw = { ...route.query }
+  if (on) query.group = '1'
+  else delete query.group
+  void router.replace({ query })
+}
 
 /**
  * 当前视图：`cases`（默认）/ `imports`。
@@ -345,8 +360,28 @@ onMounted(async () => {
       </div>
     </header>
 
+    <!-- W57-11：列表 / 分类归组切换。独立容器，不进 .page-actions（避免打乱既有写按钮索引） -->
+    <div class="view-switch" data-testid="view-switch">
+      <button
+        type="button"
+        class="view-btn"
+        :class="{ active: !grouped }"
+        :aria-pressed="!grouped"
+        data-testid="view-list"
+        @click="setGrouped(false)"
+      >{{ t('w57.globalCases.list') }}</button>
+      <button
+        type="button"
+        class="view-btn"
+        :class="{ active: grouped }"
+        :aria-pressed="grouped"
+        data-testid="view-grouped"
+        @click="setGrouped(true)"
+      >{{ t('w57.globalCases.grouped') }}</button>
+    </div>
+
     <!-- 用例清单分支 -->
-    <div v-if="view === 'cases'" class="cases-layout">
+    <div v-if="view === 'cases' && !grouped" class="cases-layout">
       <aside class="cases-sidebar">
         <h2 class="sidebar-title">{{ t('global.categories') }}</h2>
         <button
@@ -418,6 +453,12 @@ onMounted(async () => {
           </button>
         </div>
       </div>
+    </div>
+
+    <!-- 分类归组分支（W57-11）：默认折叠到二级，单分类 >200 显示「前 200 / 共 N」 -->
+    <div v-else-if="view === 'cases'" class="grouped-pane" data-testid="grouped-view">
+      <p class="muted">{{ t('w57.globalCases.hint') }}</p>
+      <CaseCategoryTree :selectable="false" />
     </div>
 
     <!-- 导入记录分支（v4.11.0 从折叠块提级） -->
@@ -515,6 +556,38 @@ onMounted(async () => {
 .page-actions {
   display: flex;
   gap: var(--space-2);
+}
+
+.view-switch {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: var(--space-3);
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+}
+
+.view-btn {
+  padding: 4px 14px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.view-btn.active {
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-weight: 600;
+}
+
+.grouped-pane {
+  margin-top: var(--space-3);
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .cases-layout {

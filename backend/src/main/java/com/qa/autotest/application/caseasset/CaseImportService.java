@@ -2,6 +2,8 @@ package com.qa.autotest.application.caseasset;
 
 import com.qa.autotest.application.iam.AccessControlService;
 import com.qa.autotest.application.iam.AuditService;
+import com.qa.autotest.application.evidence.EvidenceBundleService;
+import com.qa.autotest.common.security.PasswordHasher;
 import com.qa.autotest.application.repository.TestCaseRepository;
 import com.qa.autotest.common.BusinessException;
 import com.qa.autotest.common.ErrorCode;
@@ -13,7 +15,11 @@ import com.qa.autotest.domain.caseasset.TestCase;
 import com.qa.autotest.domain.iam.PermissionAction;
 import com.qa.autotest.domain.iam.PermissionResource;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -192,11 +198,17 @@ public class CaseImportService {
     private final AccessControlService access;
     private final AuditService audit;
 
+    private static final org.slf4j.Logger LOG =
+            org.slf4j.LoggerFactory.getLogger(CaseImportService.class);
+
     /** 导入成功后让能力索引缓存失效（EW32-03）；测试装配入口不注入时为 null。 */
     private CapabilityCache capabilityCache;
 
     /** OPT-02 补录列写入通道；测试装配入口不注入时为 null（只跳过补录列，不影响主流程）。 */
     private JdbcTemplate jdbc;
+
+    /** W57-24 证据包通道（可选）：未注入时整段跳过，既有导入语义零改动。 */
+    private EvidenceBundleService evidenceBundles;
 
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     void setCapabilityCache(CapabilityCache capabilityCache) {
@@ -206,6 +218,11 @@ public class CaseImportService {
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     void setJdbc(JdbcTemplate jdbc) {
         this.jdbc = jdbc;
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setEvidenceBundles(EvidenceBundleService evidenceBundles) {
+        this.evidenceBundles = evidenceBundles;
     }
 
     public CaseImportService(TestCaseRepository cases, AccessControlService access,
@@ -529,6 +546,7 @@ public class CaseImportService {
         if (capabilityCache != null) {
             capabilityCache.invalidate(projectId);
         }
+        writeEvidence(projectId, rows);
         return new ImportResult(imported, 0);
     }
 
@@ -557,6 +575,44 @@ public class CaseImportService {
         return !isBlank(row.aSideCommand()) || !isBlank(row.bSideCommand())
                 || !isBlank(row.switchConfig()) || !isBlank(row.testResult())
                 || !isBlank(row.testResource());
+    }
+
+    /**
+     * W57-24：用例导入成功后把导入摘要写入证据包（可选通道）。
+     *
+     * <p>只写编号 / 标题摘要，不写任何凭据；证据包失败只告警，绝不阻断导入事务。
+     * 临时文件在系统临时目录，由 {@link EvidenceBundleService} 复制到同挂载点的 .tmp
+     * 后原子发布，故不要求两者同盘。
+     */
+    private void writeEvidence(long projectId, List<ImportRow> rows) {
+        if (evidenceBundles == null) {
+            return;
+        }
+        Path temp = null;
+        try {
+            StringBuilder text = new StringBuilder("case-import evidence\n");
+            text.append("projectId=").append(projectId).append('\n');
+            text.append("rows=").append(rows.size()).append('\n');
+            for (ImportRow row : rows) {
+                text.append(row.caseCode()).append('\t').append(row.title()).append('\n');
+            }
+            String content = text.toString();
+            temp = Files.createTempFile("case-import-", ".txt");
+            Files.writeString(temp, content, StandardCharsets.UTF_8);
+            evidenceBundles.write("case-import:" + projectId + ":"
+                    + PasswordHasher.sha256Hex(content), List.of(temp));
+        } catch (IOException | RuntimeException ex) {
+            LOG.warn("用例导入证据包写入失败 projectId={}：{}", projectId,
+                    ex.getClass().getSimpleName());
+        } finally {
+            if (temp != null) {
+                try {
+                    Files.deleteIfExists(temp);
+                } catch (IOException ignored) {
+                    // 临时文件清理失败不影响导入
+                }
+            }
+        }
     }
 
     private static boolean isBlank(String value) {
