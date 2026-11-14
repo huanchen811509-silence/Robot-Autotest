@@ -112,6 +112,22 @@ describe('二次确认与筛选重置', () => {
     expect(s.isEmpty.value).toBe(true)
   })
 
+  it('待确认期间 pendingTotal 回显命中数，确认/取消后归零', () => {
+    const s = useServerSelection(ref([1]), { confirmThreshold: 5 })
+    expect(s.pendingTotal.value).toBe(0)
+    s.requestSelectAllMatching({ q: 'x' }, 6)
+    // 文案要能说出「命中多少条才要确认」，所以待确认态必须带着这个数字
+    expect(s.pendingTotal.value).toBe(6)
+    s.confirmSelectAllMatching()
+    expect(s.pendingTotal.value).toBe(0)
+
+    s.resetForFilters({})
+    s.requestSelectAllMatching({ q: 'y' }, 7)
+    expect(s.pendingTotal.value).toBe(7)
+    s.cancelSelectAllMatching()
+    expect(s.pendingTotal.value).toBe(0)
+  })
+
   it('confirmSelectAllMatching 后生效并关闭确认态', () => {
     const s = useServerSelection(ref([1]), { confirmThreshold: 5 })
     s.requestSelectAllMatching({ q: 'x' }, 6)
@@ -141,6 +157,17 @@ describe('二次确认与筛选重置', () => {
     expect(s.matchedTotal.value).toBe(0)
     expect(s.excludeIds.value.size).toBe(0)
     expect(s.isEmpty.value).toBe(true)
+  })
+
+  it('toDescriptor 在条件模式下只给条件与排除集，不给 id 名单', () => {
+    const s = useServerSelection(ref([1, 2]))
+    s.requestSelectAllMatching({ keyword: 'roce', priority: 'P1' }, 20)
+    s.toggle(2)
+    expect(s.toDescriptor()).toEqual({
+      mode: 'filter',
+      filters: { keyword: 'roce', priority: 'P1' },
+      excludeIds: [2],
+    })
   })
 
   it('retain 让条件模式退回精确 ids 模式', () => {

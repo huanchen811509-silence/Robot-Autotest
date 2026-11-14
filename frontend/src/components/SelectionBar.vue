@@ -8,6 +8,10 @@
  *
  * v3.1.0「顺手」：批量成功后若响应带 undoToken，展示「已影响 N 项 · 5 分钟内可撤销」
  * 与倒计时。撤销只在可逆动作出现；删除明确标注不可撤销，避免给了撤销按钮却恢复不了。
+ *
+ * v5.8.0（FR-v5.8-02 判据 5）：条件批量下界面显示的是「请求时刻的命中数」，后端按条件回算
+ * 出来的可能不等（列表刷新、他人并发改数据）。不一致时**明说两侧条数并请用户刷新**，
+ * 不用后端数字覆盖界面数字——那会让人以为选的就是这些，实际动作打到了别的集合。
  */
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -29,6 +33,8 @@ const props = defineProps<{
   loading?: boolean
   projectId?: number | null
   action?: string | null
+  /** 条件选择的命中数对账：两侧不等即说明数据在请求前后变了。 */
+  mismatch?: { expected: number; actual: number } | null
 }>()
 
 const emit = defineEmits<{
@@ -138,6 +144,10 @@ onBeforeUnmount(stopCountdown)
       </template>
     </p>
 
+    <p v-if="mismatch" class="selection-mismatch" role="status" data-testid="selection-mismatch">
+      {{ t('cases.batch.resolvedMismatch', { actual: mismatch.actual, expected: mismatch.expected }) }}
+    </p>
+
     <div v-if="showUndo" class="selection-undo" role="status">
       <span>
         {{ t('cases.batch.undoHint', { count: affectedCount, time: formatCountdown(undoRemaining) }) }}
@@ -221,6 +231,12 @@ onBeforeUnmount(stopCountdown)
 
 .selection-undo__btn {
   font-variant-numeric: tabular-nums;
+}
+
+.selection-mismatch {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--warn, #b26a00);
 }
 
 .selection-irreversible {

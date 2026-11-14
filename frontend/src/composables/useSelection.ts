@@ -23,6 +23,8 @@ export interface BatchResult {
   succeeded: number
   failed: number
   items: BatchItemResult[]
+  /** 条件选择解析出的条数（后端回显）：与界面命中数不一致时提示刷新。 */
+  resolvedCount?: number
 }
 
 export function useSelection(pageIds: Ref<number[]> = computed(() => [])) {

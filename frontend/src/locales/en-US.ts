@@ -756,6 +756,13 @@ export default {
       undoFailureItem: '#{id}: {message}',
       undoFailureUnknown: 'unknown reason',
       deleteIrreversible: 'Deletion cannot be undone',
+      selectAllMatching: 'Select all matching',
+      selectAllHint: 'All {count} matching rows selected (spans pages)',
+      selectAllConfirmHint: '{count} rows match, above the {limit} confirmation threshold. Select all?',
+      selectAllGo: 'Confirm',
+      selectAllCancel: 'Cancel',
+      resolvedMismatch: 'Server resolved {actual} rows but {expected} were counted here — data may have changed, please refresh',
+      filterModeNoRun: 'Select-all-by-filter cannot start a run; narrow the filter and select rows explicitly',
     },
     import: {
       title: 'Excel import',

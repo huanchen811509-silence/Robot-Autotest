@@ -15,6 +15,7 @@ import { i18n } from '@/locales'
 import { useAuthStore } from '@/stores/auth'
 import CasesView from '@/views/CasesView.vue'
 import { executionApi } from '@/api/execution'
+import { caseApi } from '@/api/cases'
 
 // EXEC-02：执行所选只依赖 runCases，绑定解析在后端；这里只断言前端把 id 与参数发出去
 // EXEC-15 残余：预检按真实后端规则从「全量选中」里挑出 L2/LX，用于验证跨页禁用的接线
@@ -114,6 +115,15 @@ function checkboxes(root: HTMLElement): HTMLElement[] {
   return [...root.querySelectorAll<HTMLElement>('.n-checkbox')]
 }
 
+/** 按 i18n 文案找按钮，避免硬编码中文。 */
+function button(root: HTMLElement, label: string): HTMLButtonElement {
+  const found = [...root.querySelectorAll('button')].find((b) =>
+    b.textContent?.includes(label),
+  )
+  expect(found).toBeTruthy()
+  return found as HTMLButtonElement
+}
+
 beforeEach(() => {
   pinia = createPinia()
   setActivePinia(pinia)
@@ -196,15 +206,6 @@ describe('CasesView 勾选接线', () => {
 })
 
 describe('CasesView 执行所选（EXEC-02）', () => {
-  /** 按 i18n 文案找按钮，避免硬编码中文。 */
-  function button(root: HTMLElement, label: string): HTMLButtonElement {
-    const found = [...root.querySelectorAll('button')].find((b) =>
-      b.textContent?.includes(label),
-    )
-    expect(found).toBeTruthy()
-    return found as HTMLButtonElement
-  }
-
   async function openRunForm(root: HTMLElement): Promise<void> {
     checkboxes(root)[1].click()
     await nextTick()
@@ -345,5 +346,80 @@ describe('CasesView 表单草稿（v3.1.0）', () => {
     expect(localStorage.getItem(DRAFT_KEY)).toBeNull()
     const inputs = [...root.querySelectorAll<HTMLInputElement>('input')]
     expect(inputs.some((input) => input.value === 'DRAFT-002')).toBe(false)
+  })
+})
+
+describe('CasesView 条件全选（FR-v5.8-02）', () => {
+  /** 点「全选所有命中」——命中数取服务端 total，本地不再自己数一遍。 */
+  async function selectAllMatching(root: HTMLElement): Promise<void> {
+    button(root, i18n.global.t('cases.batch.selectAllMatching')).click()
+    await nextTick()
+  }
+
+  it('全选后下发 selection.mode=filter，不再发 ids 名单', async () => {
+    vi.mocked(caseApi.batch).mockResolvedValueOnce({
+      total: 2,
+      succeeded: 2,
+      failed: 0,
+      items: [],
+      resolvedCount: 2,
+    })
+    const root = await mountView()
+    await selectAllMatching(root)
+    expect(root.textContent).toContain(i18n.global.t('cases.batch.selected', { count: 2 }))
+
+    button(root, i18n.global.t('cases.batch.setPriority')).click()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    await nextTick()
+
+    const body = vi.mocked(caseApi.batch).mock.calls[0][1]
+    expect(body.ids).toBeUndefined()
+    expect(body.selection).toMatchObject({ mode: 'filter', priority: undefined })
+    expect(body.action).toBe('setPriority')
+    expect(body.priority).toBe('P1')
+  })
+
+  it('条件全选下不能发起执行：按钮禁用并给出原因', async () => {
+    const root = await mountView()
+    await selectAllMatching(root)
+
+    const runBtn = button(root, i18n.global.t('cases.run.open'))
+    expect(runBtn.disabled).toBe(true)
+    expect(root.textContent).toContain(i18n.global.t('cases.batch.filterModeNoRun'))
+  })
+
+  it('后端 resolvedCount 与界面命中数不一致时提示刷新', async () => {
+    vi.mocked(caseApi.batch).mockResolvedValueOnce({
+      total: 3,
+      succeeded: 3,
+      failed: 0,
+      items: [],
+      resolvedCount: 5,
+    })
+    const root = await mountView()
+    await selectAllMatching(root)
+
+    button(root, i18n.global.t('cases.batch.setPriority')).click()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    await nextTick()
+
+    expect(root.textContent).toContain(
+      i18n.global.t('cases.batch.resolvedMismatch', { actual: 5, expected: 2 }),
+    )
+  })
+
+  it('筛选条件变化作废旧的全选', async () => {
+    vi.mocked(caseApi.batch).mockResolvedValue({ total: 0, succeeded: 0, failed: 0, items: [] })
+    const root = await mountView()
+    await selectAllMatching(root)
+    expect(root.textContent).toContain(i18n.global.t('cases.batch.selected', { count: 2 }))
+
+    const keywordInput = root.querySelector<HTMLInputElement>('input[type="text"]')
+    expect(keywordInput).toBeTruthy()
+    keywordInput!.value = 'roce'
+    keywordInput!.dispatchEvent(new Event('input'))
+    await nextTick()
+
+    expect(root.textContent).not.toContain(i18n.global.t('cases.batch.selected', { count: 2 }))
   })
 })

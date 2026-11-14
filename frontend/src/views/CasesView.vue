@@ -47,7 +47,7 @@ import {
 import type { CaseViewPayload, SavedView } from '@/api/views'
 import { localizeError, type ErrorLine } from '@/utils/errors'
 import { EMPTY } from '@/utils/format'
-import { useSelection } from '@/composables/useSelection'
+import { useServerSelection } from '@/composables/useServerSelection'
 import { useDraft, isDraftDirty } from '@/composables/useDraft'
 import { confirmAction } from '@/composables/useConfirm'
 import {
@@ -84,9 +84,20 @@ const capabilities = ref<CapabilityStat[]>([])
 const showForm = ref(false)
 const showImport = ref(false)
 
-// ---- 批量选择（UX-02，FR-v0.2-35/36）----
+// ---- 批量选择（UX-02，FR-v0.2-35/36；v5.8.0 起条件全选）----
+/**
+ * 服务端筛选参数：与 `caseApi.page` 同一套字段。条件选择**复用它**而不是另建一套口径，
+ * 否则界面按 A 条件全选、后端按 B 条件回算，动作会打到用户没看见的集合上。
+ */
+const caseFilterParams = computed<Record<string, string | undefined>>(() => ({
+  keyword: keyword.value.trim() || undefined,
+  priority: priority.value || undefined,
+  reviewStatus: reviewStatus.value || undefined,
+  domain: domain.value.trim() || undefined,
+  safetyLevel: safetyLevel.value || undefined,
+}))
 const pageCaseIds = computed(() => cases.value.map((c) => c.id))
-const selection = useSelection(pageCaseIds)
+const selection = useServerSelection(pageCaseIds)
 const {
   selectedIds,
   count: selectedCount,
@@ -98,14 +109,35 @@ const {
   togglePage,
   retain,
   clear: clearSelection,
+  matchAll,
+  matchedTotal,
+  pendingTotal,
+  awaitingConfirm,
+  requestSelectAllMatching,
+  confirmSelectAllMatching,
+  cancelSelectAllMatching,
+  resetForFilters,
+  toDescriptor,
 } = selection
 const batchResult = ref<BatchResult | null>(null)
+/** 发起批量时前端认定的命中数：与后端 `resolvedCount` 对账（FR-v5.8-02 判据 5）。 */
+const requestedCount = ref(0)
+const resolvedMismatch = computed<{ expected: number; actual: number } | null>(() => {
+  const actual = batchResult.value?.resolvedCount
+  if (actual == null || requestedCount.value <= 0) return null
+  return actual === requestedCount.value ? null : { expected: requestedCount.value, actual }
+})
 /** 最近一次批量动作名：SelectionBar 据此判断是否可撤销（删除等不可逆动作不显示）。 */
 const batchAction = ref<string | null>(null)
 const batchLoading = ref(false)
 const batchPriority = ref('P1')
 const batchDomain = ref('')
 const batchSafety = ref('L1')
+
+/** 「全选所有命中」：命中数取服务端 total，超过确认阈值时先要求二次确认。 */
+function selectAllMatching(): void {
+  requestSelectAllMatching(caseFilterParams.value, total.value)
+}
 
 // 勾选用例执行（EXEC-02）：绑定解析在后端，前端只负责收集参数
 const runOpen = ref(false)
@@ -735,6 +767,8 @@ watch([projectId], () => {
 watch([keyword, priority, reviewStatus, domain, safetyLevel, size], () => {
   if (skipFilterReload) return
   page.value = 1
+  // 换了筛选条件，上一组的「按条件全选」必须作废（W57-16 契约，v5.8.0 真正下发后更要紧）
+  resetForFilters(caseFilterParams.value)
   void load()
 })
 
@@ -795,6 +829,11 @@ function turnPage(next: number): void {
 
 /** 展开/收起勾选用例的执行表单（EXEC-02）。 */
 function toggleRunForm(): void {
+  // 条件全选只有「集合」没有「名单」：执行端点要显式 caseIds，不能拿命中数去凑
+  if (matchAll.value) {
+    error.value = { summary: t('cases.batch.filterModeNoRun'), detail: null }
+    return
+  }
   // L2/LX 在执行入口就被拒（ADR-0013），这里提前给出原因，别让用户点了才看到 403
   if (!runOpen.value && blockedSelected.value.length > 0) {
     error.value = {
@@ -855,8 +894,10 @@ async function submitRun(): Promise<void> {
 async function runBatch(action: BatchAction): Promise<void> {
   error.value = null
   message.value = ''
-  const ids = [...selection.selectedIds.value]
-  if (ids.length === 0) return
+  // 条件模式下界面没有 id 名单，改用描述符下发；精确模式行为完全不变
+  const descriptor = toDescriptor()
+  const expected = selection.count.value
+  if (expected === 0) return
 
   let comment: string | undefined
   if (action === 'reject') {
@@ -874,14 +915,28 @@ async function runBatch(action: BatchAction): Promise<void> {
 
   batchLoading.value = true
   try {
+    const filters = caseFilterParams.value
     const result = await caseApi.batch(projectId.value, {
       action,
-      ids,
+      ...(descriptor.mode === 'filter'
+        ? {
+            selection: {
+              mode: 'filter' as const,
+              keyword: filters.keyword,
+              priority: filters.priority,
+              reviewStatus: filters.reviewStatus,
+              domain: filters.domain,
+              safetyLevel: filters.safetyLevel,
+              excludeIds: descriptor.excludeIds,
+            },
+          }
+        : { ids: descriptor.ids }),
       comment,
       priority: action === 'setPriority' ? batchPriority.value : undefined,
       domainTag: action === 'setDomainTag' ? batchDomain.value.trim() : undefined,
       safetyLevel: action === 'setSafetyLevel' ? batchSafety.value : undefined,
     })
+    requestedCount.value = expected
     batchResult.value = result
     batchAction.value = action
     // 失败项保留选中：重试只作用于它们（FR-v0.2-36）
@@ -1248,9 +1303,31 @@ async function runCommit(): Promise<void> {
       <p v-if="importMessage" class="text-ok">{{ importMessage }}</p>
     </div>
 
+    <!-- 条件全选（FR-v5.8-02）：选择本身是筛选条件，不是一份 id 名单 -->
+    <div v-if="total > 0" class="toolbar select-matching" data-testid="select-matching">
+      <NButton size="small" quaternary :disabled="batchLoading" @click="selectAllMatching">
+        {{ t('cases.batch.selectAllMatching') }}
+      </NButton>
+      <span v-if="matchAll" class="muted">
+        {{ t('cases.batch.selectAllHint', { count: matchedTotal }) }}
+      </span>
+      <template v-if="awaitingConfirm">
+        <span class="text-warn">
+          {{ t('cases.batch.selectAllConfirmHint', { count: pendingTotal, limit: selection.confirmThreshold }) }}
+        </span>
+        <NButton size="small" type="primary" @click="confirmSelectAllMatching()">
+          {{ t('cases.batch.selectAllGo') }}
+        </NButton>
+        <NButton size="small" quaternary @click="cancelSelectAllMatching()">
+          {{ t('cases.batch.selectAllCancel') }}
+        </NButton>
+      </template>
+    </div>
+
     <SelectionBar
       v-if="selectedCount > 0 || batchResult !== null"
       :count="selectedCount"
+      :mismatch="resolvedMismatch"
       :cross-page="crossPageCount"
       :result="batchResult"
       :loading="batchLoading"
@@ -1261,7 +1338,7 @@ async function runCommit(): Promise<void> {
     >
       <NButton
         type="primary"
-        :disabled="batchLoading || blockedSelected.length > 0"
+        :disabled="batchLoading || blockedSelected.length > 0 || matchAll"
         @click="toggleRunForm"
       >
         {{ t('cases.run.open') }}
@@ -1269,6 +1346,7 @@ async function runCommit(): Promise<void> {
       <span v-if="blockedSelected.length" class="muted">
         {{ t('cases.run.blocked', { codes: blockedCodes }) }}
       </span>
+      <span v-if="matchAll" class="muted">{{ t('cases.batch.filterModeNoRun') }}</span>
       <NButton quaternary :disabled="batchLoading" @click="runBatch('submit')">
         {{ t('cases.batch.submit') }}
       </NButton>

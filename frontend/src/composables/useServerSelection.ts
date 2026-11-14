@@ -17,11 +17,13 @@
  * isEmpty / selectedOnPage / pageAllSelected / pageIndeterminate / crossPageCount /
  * isSelected / toggle / togglePage / retain / clear），既有调用方零改动即可换成它。
  *
- * **当前接入边界（2026-11-14 复核 P2 登记，L-57-09）**：条件模式只走到「界面状态」——
- * `matchAll / excludeIds / matchedTotal` 用于计数、二次确认与排除集展示，
- * **`toDescriptor()` 目前没有生产调用方**，后端批量端点（`GenericBatchService`）只接受显式
- * `ids`，所以「全选所有命中」还不能真的下发。发布说明与 PRD 已按此改写，不得再声称
- * 「服务端跨页全选已兑现」；接后端批量条件入参排 v5.8.0。
+ * **接入状态（v5.8.0 W58-04 起）**：`toDescriptor()` 已是用例清单页批量动作的生产调用方。
+ * 条件模式下发 `selection: {mode:'filter', …}`，精确模式仍发显式 `ids`；后端
+ * `TestCaseService.resolveIds` 用同一套筛选条件回算命中集，并回显 `resolvedCount`，
+ * 界面据此提示「数据可能已变化，请刷新」（FR-v5.8-02 判据 5）。
+ *
+ * **尚未接入**：用例集页（该页列表还没做服务端分页，「全选所有命中」没有可下发的边界，
+ * 随 W58-05 一起处理）。不得据此对外声称「所有列表都已支持跨页全选」。
  */
 import { computed, ref, type Ref } from 'vue'
 import { useSelection, type BatchItemResult, type BatchResult } from './useSelection'
@@ -56,9 +58,12 @@ export function useServerSelection(
   const excludeIds = ref<Set<number>>(new Set())
   const matchedTotal = ref(0)
   const awaitingConfirm = ref(false)
-  let pending: PendingAll | null = null
+  const pending = ref<PendingAll | null>(null)
 
   const selectionMode = computed<'ids' | 'filter'>(() => (matchAll.value ? 'filter' : 'ids'))
+
+  /** 待确认全选时的命中数：`requestSelectAllMatching` 返回 needs-confirm 时用于文案。 */
+  const pendingTotal = computed(() => pending.value?.total ?? 0)
 
   /** 条件模式下本页选中数 = 本页未被排除的条数。 */
   const selectedOnPage = computed(() =>
@@ -133,7 +138,7 @@ export function useServerSelection(
     total: number,
   ): 'applied' | 'needs-confirm' {
     if (total > threshold) {
-      pending = { filters, total }
+      pending.value = { filters, total }
       awaitingConfirm.value = true
       return 'needs-confirm'
     }
@@ -148,17 +153,18 @@ export function useServerSelection(
     matchedTotal.value = Math.max(0, total)
     excludeIds.value = new Set()
     awaitingConfirm.value = false
-    pending = null
+    pending.value = null
   }
 
   function confirmSelectAllMatching(): void {
-    if (!pending) return
-    applyAll(pending.filters, pending.total)
+    const waiting = pending.value
+    if (!waiting) return
+    applyAll(waiting.filters, waiting.total)
   }
 
   function cancelSelectAllMatching(): void {
     awaitingConfirm.value = false
-    pending = null
+    pending.value = null
   }
 
   /** 筛选条件变化：整组选择必须作废，否则会把上一组条件的「全选」带到新结果上。 */
@@ -169,7 +175,7 @@ export function useServerSelection(
     matchedTotal.value = 0
     excludeIds.value = new Set()
     awaitingConfirm.value = false
-    pending = null
+    pending.value = null
   }
 
   /** 批量回执后只保留失败项：条件模式无法枚举「全部命中」，退回精确 id 模式。 */
@@ -179,7 +185,7 @@ export function useServerSelection(
     matchedTotal.value = 0
     excludeIds.value = new Set()
     awaitingConfirm.value = false
-    pending = null
+    pending.value = null
     base.retain(ids)
   }
 
@@ -190,8 +196,9 @@ export function useServerSelection(
   /**
    * 生成后端批量动作的选择描述（影响面 count 由后端按同一条件回算）。
    *
-   * **未接入**：后端批量端点只收显式 `ids`，条件模式（`mode: 'filter'`）尚无消费方，
-   * 详见文件头的 L-57-09。接入前不得用它对外承诺「跨页全选可下发」。
+   * 条件模式的 `filters` 是页面自己的筛选键（与列表查询同一套参数），调用方负责挑出
+   * 后端 `selection` 认识的字段再拼进请求体——不在这里做映射，避免把某个实体的字段口径
+   * 写进通用 composable。
    */
   function toDescriptor(): SelectionDescriptor {
     if (matchAll.value) {
@@ -226,6 +233,7 @@ export function useServerSelection(
     excludeIds,
     matchedTotal,
     awaitingConfirm,
+    pendingTotal,
     confirmThreshold: threshold,
     requestSelectAllMatching,
     confirmSelectAllMatching,

@@ -765,6 +765,13 @@ export default {
       undoFailureItem: '#{id}：{message}',
       undoFailureUnknown: '原因未知',
       deleteIrreversible: '删除不可撤销',
+      selectAllMatching: '全选所有命中',
+      selectAllHint: '已按当前筛选全选 {count} 条（跨页生效）',
+      selectAllConfirmHint: '命中 {count} 条，超过 {limit} 条确认阈值，确认全选？',
+      selectAllGo: '确认全选',
+      selectAllCancel: '取消',
+      resolvedMismatch: '服务端按条件解析出 {actual} 条，与界面命中 {expected} 条不一致：数据可能已变化，请刷新后重试',
+      filterModeNoRun: '按条件全选不能直接发起执行，请缩小筛选后逐条勾选',
     },
     import: {
       title: 'Excel 导入',
