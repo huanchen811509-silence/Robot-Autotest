@@ -16,6 +16,7 @@ import com.qa.autotest.domain.report.KeywordNode;
 import com.qa.autotest.domain.report.MetadataOverlay;
 import com.qa.autotest.domain.report.ParsedReport;
 import com.qa.autotest.domain.report.ReportRecord;
+import com.qa.autotest.application.execution.CriteriaEvaluation;
 import com.qa.autotest.domain.report.SuiteNode;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
@@ -45,10 +46,36 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class ReportRepositoryJdbc implements ReportRepository {
 
+    /**
+     * 判据汇总走相关子查询，不新增 run 列：
+     * 判据事实只有一份（{@code test_result.criteria_verdict}），在这里聚合就不存在「run 上的
+     * 汇总列与明细不一致」的可能。口径：
+     * <ul>
+     *   <li>任一 FAIL → FAIL；</li>
+     *   <li>全部未声明（criteria_verdict 全 NULL）→ UNDETERMINED；</li>
+     *   <li>有 MISSING 或既有已判又有未声明 → UNDETERMINED（样本不全，不下结论）；</li>
+     *   <li>其余（全 PASS）→ PASS。</li>
+     * </ul>
+     * 空 run（没有 test_result）同样是 UNDETERMINED。
+     */
     private static final String REPORT_COLUMNS = """
-            SELECT project_id, run_id, run_status, exportable, metadata_missing, metadata_json,
-                   pass_count, fail_count, skip_count, started_at, finished_at
-              FROM run
+            SELECT r.project_id, r.run_id, r.run_status, r.exportable, r.metadata_missing,
+                   r.metadata_json, r.pass_count, r.fail_count, r.skip_count,
+                   r.started_at, r.finished_at,
+                   (SELECT CASE
+                             WHEN COUNT(*) = 0 THEN NULL
+                             WHEN SUM(tr.criteria_verdict = 'FAIL') > 0 THEN 'FAIL'
+                             WHEN SUM(tr.criteria_verdict IS NULL) > 0 THEN 'UNDETERMINED'
+                             WHEN SUM(tr.criteria_verdict = 'MISSING') > 0 THEN 'UNDETERMINED'
+                             WHEN SUM(tr.criteria_verdict = 'PASS') = COUNT(*) THEN 'PASS'
+                             ELSE 'UNDETERMINED'
+                           END
+                      FROM test_result tr WHERE tr.run_id = r.id) AS criteria_conclusion,
+                   (SELECT COUNT(*) FROM test_result tr
+                     WHERE tr.run_id = r.id AND tr.criteria_verdict IS NOT NULL) AS criteria_evaluated,
+                   (SELECT COUNT(*) FROM test_result tr
+                     WHERE tr.run_id = r.id AND tr.criteria_verdict = 'MISSING') AS criteria_missing_count
+              FROM run r
             """;
 
     private static final String UPDATE_RUN = """
@@ -71,8 +98,9 @@ public class ReportRepositoryJdbc implements ReportRepository {
             INSERT INTO test_result (run_id, case_id, case_key, round_no, verdict,
                                      duration_ms, failure_msg, log_offset, log_span, failure_kind,
                                      command_text, command_source, command_exit_code,
-                                     retry_count, flaky)
-            VALUES (?, NULL, ?, 1, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?)
+                                     retry_count, flaky,
+                                     criteria_json, criteria_verdict, criteria_missing)
+            VALUES (?, NULL, ?, 1, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?)
             """;
 
     private static final String INSERT_KEYWORD_RESULT = """
@@ -202,6 +230,12 @@ public class ReportRepositoryJdbc implements ReportRepository {
             // 与 RF 的三遍执行同一语义）；复测轮数单独记，两者混用会让 RF 侧统计失真。
             ps.setInt(11, Math.max(0, test.retryCount()));
             ps.setBoolean(12, test.flaky());
+            // W57-50：判据在入库这一刻评估并落列。之前这三列恒 NULL，报告结论只能退回
+            // 「failCount==0 就 PASS」，等于把「判据机检」这条主题架空（审计 P0-4）。
+            CriteriaEvaluation.Result criteria = CriteriaEvaluation.evaluate(test.criteriaPayload());
+            ps.setString(13, criteria.json());
+            ps.setString(14, criteria.verdict());
+            ps.setString(15, criteria.missing());
             return ps;
         }, keyHolder);
         Long testResultId = keyHolder.getKey() == null ? null : keyHolder.getKey().longValue();
@@ -241,7 +275,10 @@ public class ReportRepositoryJdbc implements ReportRepository {
                 rs.getInt("fail_count"),
                 rs.getInt("skip_count"),
                 JdbcSupport.instant(rs.getTimestamp("started_at")),
-                JdbcSupport.instant(rs.getTimestamp("finished_at")));
+                JdbcSupport.instant(rs.getTimestamp("finished_at")),
+                rs.getString("criteria_conclusion"),
+                rs.getInt("criteria_evaluated"),
+                rs.getInt("criteria_missing_count"));
     }
 
     private String writeMetadata(Map<String, String> metadata) {

@@ -425,7 +425,12 @@ public class TestSetService {
      * 平台写鉴权：放宽到 case:write。PermissionAction 没有 WRITE 动作，用 CASE:UPDATE
      * 作为写权限代理（ADMIN / PM / ENGINEER 有，VIEWER 无），等价「非只读角色可写」。
      */
-    private void requirePlatformWrite() {
+    /**
+     * 平台集写权限闸：全站唯一出口。
+     * 复核 P1-2 起由 controller 的播种端点直接调用，因此从 private 提为 public——
+     * 与其在 controller 里复制一遍 require 语句，不如让它只有一个实现。
+     */
+    public void requirePlatformWrite() {
         access.require(PermissionResource.CASE, PermissionAction.UPDATE);
     }
 

@@ -1,0 +1,1003 @@
+{
+  "project": 93,
+  "reportProject": 95,
+  "run": "EHT-REAL-L0-20261113-220048-01",
+  "startedAt": "2026-11-14T13:12:13.580Z",
+  "wizard": {
+    "name": "UI取证-936762",
+    "code": "UIAUTO-936762",
+    "createdId": 122
+  },
+  "launch": {
+    "previewBodies": [
+      {
+        "mode": "ALL",
+        "status": 200,
+        "snapshotId": 2,
+        "caseCount": 20,
+        "selectionSha256": "a6c349f6995171e42535000b8adc5cf47086b59032cb411df4fe8cf6cafa56df",
+        "message": "OK"
+      },
+      {
+        "mode": "SET",
+        "status": 200,
+        "snapshotId": 3,
+        "caseCount": 20,
+        "selectionSha256": "fec4a40fef2a0c01a2b5e989628842d095bd6aec5e6b4fbc53724cb53d362b64",
+        "message": "OK"
+      },
+      {
+        "mode": "CASE",
+        "status": 200,
+        "snapshotId": 5,
+        "caseCount": 1,
+        "selectionSha256": "48e1366f21321249c992cdea5506c2675ec059b445d25a3cd0645b22637fcc98",
+        "message": "OK"
+      },
+      {
+        "mode": "MIXED",
+        "status": 200,
+        "snapshotId": 4,
+        "caseCount": 20,
+        "selectionSha256": "f22425aba7e9c97450e6d90dc976e8192097ec843d11a149fd4ede663169af69",
+        "message": "OK"
+      }
+    ]
+  },
+  "report": {
+    "hasConclusion": false
+  },
+  "remark": {
+    "remark": "UI取证备注-A-56295"
+  },
+  "finishedAt": "2026-11-14T13:12:40.416Z",
+  "pass": 35,
+  "fail": 0,
+  "checks": [
+    {
+      "id": "login",
+      "ok": true,
+      "detail": "已登录 qa-e2e-admin"
+    },
+    {
+      "id": "wizard-route",
+      "ok": true,
+      "detail": "path=/g/projects/new"
+    },
+    {
+      "id": "wizard-template-step",
+      "ok": true,
+      "detail": "模板卡已渲染"
+    },
+    {
+      "id": "wizard-template-selected",
+      "ok": true,
+      "detail": "第一张模板卡 aria-pressed=true"
+    },
+    {
+      "id": "wizard-content-step",
+      "ok": true,
+      "detail": "内容步已到"
+    },
+    {
+      "id": "wizard-content-sets",
+      "ok": true,
+      "detail": "平台用例集列表已加载"
+    },
+    {
+      "id": "wizard-content-summary",
+      "ok": true,
+      "detail": "摘要=「已选：模板 0 / 用例集 1 / 用例 0 / 测试资产 0 / 整理去重」"
+    },
+    {
+      "id": "wizard-review",
+      "ok": true,
+      "detail": "复核步已渲染"
+    },
+    {
+      "id": "wizard-create-2xx",
+      "ok": true,
+      "detail": "200 http://localhost:8001/api/projects | 200 http://localhost:8001/api/projects"
+    },
+    {
+      "id": "wizard-content-submitted",
+      "ok": true,
+      "detail": "200 http://localhost:8001/api/projects/122/content"
+    },
+    {
+      "id": "wizard-created-id",
+      "ok": true,
+      "detail": "projectId=122"
+    },
+    {
+      "id": "wizard-listed",
+      "ok": true,
+      "detail": "列表中可见「UI取证-936762」"
+    },
+    {
+      "id": "launch-route",
+      "ok": true,
+      "detail": "path=/execution-plans"
+    },
+    {
+      "id": "launch-mode-ALL",
+      "ok": true,
+      "detail": "模式提示=「全部用例 · 切换模式会各自保留草稿」"
+    },
+    {
+      "id": "launch-mode-SET",
+      "ok": true,
+      "detail": "模式提示=「仅用例集 · 切换模式会各自保留草稿」"
+    },
+    {
+      "id": "launch-mode-CASE",
+      "ok": true,
+      "detail": "模式提示=「逐条用例 · 切换模式会各自保留草稿」"
+    },
+    {
+      "id": "launch-mode-MIXED",
+      "ok": true,
+      "detail": "模式提示=「集合 + 手工混合 · 切换模式会各自保留草稿」"
+    },
+    {
+      "id": "launch-preview-ALL",
+      "ok": true,
+      "detail": "HTTP 200 snapshotId=2 caseCount=20"
+    },
+    {
+      "id": "launch-preview-SET",
+      "ok": true,
+      "detail": "HTTP 200 snapshotId=3 caseCount=20"
+    },
+    {
+      "id": "launch-preview-CASE",
+      "ok": true,
+      "detail": "HTTP 200 snapshotId=5 caseCount=1"
+    },
+    {
+      "id": "launch-preview-MIXED",
+      "ok": true,
+      "detail": "HTTP 200 snapshotId=4 caseCount=20"
+    },
+    {
+      "id": "set-list",
+      "ok": true,
+      "detail": "平台用例集列表已渲染"
+    },
+    {
+      "id": "set-member-panel",
+      "ok": true,
+      "detail": "成员面板已打开"
+    },
+    {
+      "id": "set-add-input-visible",
+      "ok": true,
+      "detail": "写入口已渲染（capability case:write 生效）"
+    },
+    {
+      "id": "set-add-member-typed",
+      "ok": true,
+      "detail": "输入框写入=true 按钮禁用=false（禁用说明 v-model.number 没吃进值）"
+    },
+    {
+      "id": "set-add-member-2xx",
+      "ok": true,
+      "detail": "200 http://localhost:8001/api/platform/case-sets/78/items {\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":{\"added\":0,\"skipped\":1},\"success\":true} | 200 http://localhost:8001/api/platform/case-sets/78/items {\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":[{\"id\":1354,\"projectId\":88,\"caseCode\":\"IM-VIR-001\",\"title\":\"SR-IOV VF创建与"
+    },
+    {
+      "id": "set-add-member-visible",
+      "ok": true,
+      "detail": "成员行 0 → 36（后端返回 skipped，已在集合里）"
+    },
+    {
+      "id": "report-loaded",
+      "ok": true,
+      "detail": "run=EHT-REAL-L0-20261113-220048-01 报告已加载"
+    },
+    {
+      "id": "report-tree-2xx",
+      "ok": true,
+      "detail": "200 http://localhost:8001/api/reports/EHT-REAL-L0-20261113-220048-01?projectId=95 | 200 http://localhost:8001/api/reports/EHT-REAL-L0-20261113-220048-01/tree?projectId=95 | 200 http://localhost:8001/api/reports/trend/pass-rate?projectId=95&granularity=day&limit=12 | 200 http://localhost:8001/api/reports/EHT-REAL-L0-20261113-220048-01/trend?projectId=95&caseKey=IM-CER-008&limit=5 | 200 http://localhost:8001/api/reports/EHT-REAL-L0-20261113-220048-01/summary?projectId=95 | 200 http://localhost:8001/api/reports/EHT-REAL-L0-20261113-220048-01/exports?projectId=95"
+    },
+    {
+      "id": "remark-rows",
+      "ok": true,
+      "detail": "projectId=29 行数=20"
+    },
+    {
+      "id": "remark-list",
+      "ok": true,
+      "detail": "运行记录列表已渲染（含「编辑备注」动作）"
+    },
+    {
+      "id": "remark-dialog",
+      "ok": true,
+      "detail": "备注弹窗已打开"
+    },
+    {
+      "id": "remark-save-2xx",
+      "ok": true,
+      "detail": "200 http://localhost:8001/api/runs/RUN-20261114030058-1c0000?projectId=29"
+    },
+    {
+      "id": "remark-persisted",
+      "ok": true,
+      "detail": "重开读回=「UI取证备注-A-56295」 期望=「UI取证备注-A-56295」"
+    },
+    {
+      "id": "no-js-exception",
+      "ok": true,
+      "detail": "无未捕获异常"
+    }
+  ],
+  "findings": [
+    {
+      "id": "L-57-11",
+      "detail": "报告详情页（/reports/:runId）未展示判据结论列：criteriaConclusion 只进了快照 / 导出 / 视图渲染，SPA 详情页仍按 status 展示。P0-4 的「报告结论改读判据汇总」在服务端成立，界面尚未透出。"
+    }
+  ],
+  "responses": [
+    {
+      "url": "http://localhost:8001/api/projects",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":[{\"id\":121,\"code\":\"UIAUTO-730437\",\"name\":\"UI取证-730437\",\"description\":\"\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":120,\"code\":\"UIAUTO-558458\",\"name\":\"UI取证-558458\",\"description\":\"\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":119,\"code\":\"UIAUTO-489082\",\"name\":\"UI取证-489082\",\"description\":\"\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":118,\"code\":\"UIAUTO-141455\",\"name\":\"UI取证-141455\",\"description\":\"\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":117,\"code\":\"UIAUTO-991408\",\"name\":\"UI取证-991408\",\"description\":\"\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":95,\"code\":\"EHT-PYTEST-LIB\",\"name\":\"EHT pytest 用例库工程\",\"description\":\"承载 E:\\\\workspace\\\\自动化测试\\\\pytest-cases 的 pytest 用例库工程（D-A=A / kind=pytest-suite）\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"pytest\",\"kind\":\"pytest-suite\",\"codeChangedAt\":null},{\"id\":93,\"code\":\"PRJ-RF-202611-002\",\"name\":\"OPT-D1-人工核对样本-84862\",\"description\":\"from-template:3\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":92,\"code\":\"PRJ-RF-202611-001\",\"name\":\"OPT-D1-实测-接口回归-84841\",\"description\":\"from-template:2\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":80,\"code\":\"demo-pytest\",\"name\":\"演示项目-Pytest\",\"description\":\"v2.7 双内核演示（pytest 侧）\",\"enabled\":true,\"ownerId\":null,\"visibility\":\"public\",\"testKernel\":\"pytest\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":77,\"code\":\"ED202-COMMON\",\"name\":\"ED202 公共用例库\",\"description\":\"ED202 公共用例库（v2.2 SCEN-04 由 tools/seed_ed202_organization.py 经 HTTP 落库）\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":29,\"code\":\"qa-e2e-fixture\",\"name\":\"NODX-03 fixture\",\"description\":\"HTTP 全链路验收夹具，勿手工改\",\"enabled\":true,\"ownerId\":null,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":1,\"code\":\"demo\",\"name\":\"演示项目-RobotFramework\",\"description\":\"v2.7 双内核演示（RF 侧）\",\"enabled\":true,\"ownerId\":null,\"visibility\":\"public\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null}],\"success\":true}"
+    },
+    {
+      "url": "http://localhost:8001/api/projects/cards?window=7d&current=29",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":[{\"id\":121,\"code\":\"UIAUTO-730437\",\"name\":\"UI取证-730437\",\"description\":\"\",\"enabled\":true,\"visibility\":\"private\",\"ownerId\":17,\"isCurrent\":false,\"caseCount\":36,\"runCount\":0,\"passRateBp\":null,\"lastRunAt\":null,\"deviceCount\":0,\"memberCount\":1,\"myRole\":\"admin\",\"own\":true,\"joined\":true,\"testKernel\":\"robot\"},{\"id\":120,\"code\":\"UIAUTO-558458\",\"name\":\"UI取证-558458\",\"description\":\"\",\"enabled\":true,\"visibility\":\"private\",\"ownerId\":17,\"isCurrent\":false,\"caseCount\":35,\"runCount\":0,\"passRateBp\":null,\"lastRunAt\":null,\"deviceCount\":0,\"memberCount\":1,\"myRole\":\"admin\",\"own\":true,\"joined\":true,\"testKernel\":\"robot\"},{\"id\":119,\"code\":\"UIAUTO-489082\",\"name\":\"UI取证-489082\",\"description\":\"\",\"enabled\":true,\"visibility\":\"private\",\"ownerId\":17,\"isCurrent\":false,\"caseCount\":35,\"runCount\":0,\"passRateBp\":null,\"lastRunAt\":null,\"deviceCount\":0,\"memberCount\":1,\"myRole\":\"admin\",\"own\":true,\"joined\":true,\"testKernel\":\"robot\"},{\"id\":118,\"code\":\"UIAUTO-141455\",\"name\":\"UI取证-141455\",\"description\":\"\",\"enabled\":true,\"visibility\":\"private\",\"ownerId\":17,\"isCurrent\":false,\"caseCount\":35,\"runCount\":0,\"passRateBp\":null,\"lastRunAt\":null,\"deviceCount\":0,\"memberCount\":1,\"myRole\":\"admin\",\"own\":true,\"joined\":true,\"testKernel\":\"robot\"},{\"id\":117,\"code\":\"UIAUTO-991408\",\"name\":\"UI取证-991408\",\"description\":\"\",\"enabled\":true,\"visibility\":\"private\",\"ownerId\":17,\"isCurrent\":false,\"caseCount\":0,\"runCount\":0,\"passRateBp\":null,\"lastRunAt\":null,\"deviceCount\":0,\"memberCount\":1,\"myRole\":\"admin\",\"own\":true,\"joined\":true,\"testKernel\":\"robot\"},{\"id\":95,\"code\":\"EHT-PYTEST-LIB\",\"name\":\"EHT pytest 用例库工程\",\"description\":\"承载 E:\\\\workspace\\\\自动化测试\\\\pytest-cases 的 pytest 用例库工程（D-A=A / kind=pytest-suite）\",\"enabled\":true,\"visibility\":\"private\",\"ownerId\":17,\"isCurrent\":false,\"caseCount\":469,\"runCount\":37,\"passRateBp\":0,\"lastRunAt\":\"2026-11-14T13:00:09.920Z\",\"deviceCount\":4,\"memberCount\":1,\"myRole\":\"admin\",\"own\":true,\"joined\":true,\"testKernel\":\"pytest\"},{\"id\":93,\"code\":\"PRJ-RF-202611-002\",\"name\":\"OPT-D1-人工核对样本-84862\",\"description\":\"from-template:3\",\"enabled\":true,\"visibility\":\"private\",\"ownerId\":17,\"isCurrent\":false,\"caseCount\":20,\"runCount\":0,\"passRateBp\":null,\"lastRunAt\":null,\"deviceCount\":0,\"memberCount\":1,\"myRole\":\"admin\",\"own\":true,\"joined\":true,\"testKernel\":\"robot\"},{\"id\":92,\"code\":\"PRJ-RF-202611-001\",\"name\":\"OPT-D1-实测-接口回归-84841\",\"description\":\"from-template:2\",\"enabled\":true,\"visibility\":\"private\",\"ownerId\":17,\"isCurrent\":false,\"caseCount\":20,\"runCount\":0,\"passRateBp\":null,\"lastRunAt\":null,\"deviceCount\":0,\"memberCount\":1,\"myRole\":\"admin\",\"own\":true,\"joined\":true,\"testKernel\":\"robot\"},{\"id\":80,\"code\":\"demo-pytest\",\"name\":\"演示项目-Pytest\",\"description\":\"v2.7 双内核演示（pytest 侧）\",\"enabled\":true,\"visibility\":\"public\",\"ownerId\":null,\"isCurrent\":false,\"caseCount\":12,\"runCount\":6,\"passRateBp\":10000,\"lastRunAt\":\"2026-11-09T05:32:12.357Z\",\"deviceCount\":1,\"memberCount\":1,\"myRole\":\"admin\",\"own\":false,\"joined\":true,\"testKernel\":\"pytest\"},{\"id\":77,\"code\":\"ED202-COMMON\",\"name\":\"ED202 公共用例库\",\"description\":\"ED202 公共用例库（v2.2 SCEN-04 由 tools/seed_ed202_organization.py 经 HTTP 落库）\",\"enabled\":true,\"visibility\":\"private\",\"ownerId\":17,\"isCurrent\":false,\"caseCount\":813,\"runCount\":0,\"passRateBp\":null,\"lastRunAt\":null,\"deviceCount\":0,\"memberCount\":1,\"myRole\":\"admin\",\"own\":true,\"joined\":true,\"testKernel\":\"robot\"},{\"id\":29,\"code\":\"qa-e2e-fixture\",\"name\":\"NODX-03 fixture\",\"description\":\"HTTP 全链路验收夹具，勿手工改\",\"enabled\":true,\"visibility\":\"private\",\"ownerId\":null,\"isCurrent\":true,\"caseCount\":5,\"runCount\":434,\"passRateBp\":10000,\"lastRunAt\":\"2026-11-13T19:00:58.187Z\",\"deviceCount\":0,\"memberCount\":4,\"myRole\":\"ADMIN\",\"own\":false,\"joined\":true,\"testKernel\":\"robot\"},{\"id\":1,\"code\":\"demo\",\"name\":\"演示项目-RobotFramework\",\"description\":\"v2.7 双内核演示（RF 侧）\",\"enabled\":true,\"visibility\":\"public\",\"ownerId\":null,\"isCurrent\":false,\"caseCount\":238,\"runCount\":6,\"passRateBp\":10000,\"lastRunAt\":\"2026-11-09T05:32:12.234Z\",\"deviceCount\":3,\"memberCount\":3,\"myRole\":\"admin\",\"own\":false,\"joined\":false,\"testKernel\":\"robot\"}],\"succ"
+    },
+    {
+      "url": "http://localhost:8001/api/projects/capabilities",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":{\"globalEnter\":true},\"success\":true}"
+    },
+    {
+      "url": "http://localhost:8001/api/me/ui-mode",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":{\"mode\":\"project\"},\"success\":true}"
+    },
+    {
+      "url": "http://localhost:8001/api/me/menu-capabilities",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":[\"settings:read\",\"ai:config\",\"user:write\",\"audit:read\",\"about\",\"changelog\",\"case:write\"],\"success\":true}"
+    },
+    {
+      "url": "http://localhost:8001/api/projects",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":[{\"id\":121,\"code\":\"UIAUTO-730437\",\"name\":\"UI取证-730437\",\"description\":\"\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":120,\"code\":\"UIAUTO-558458\",\"name\":\"UI取证-558458\",\"description\":\"\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":119,\"code\":\"UIAUTO-489082\",\"name\":\"UI取证-489082\",\"description\":\"\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":118,\"code\":\"UIAUTO-141455\",\"name\":\"UI取证-141455\",\"description\":\"\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":117,\"code\":\"UIAUTO-991408\",\"name\":\"UI取证-991408\",\"description\":\"\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":95,\"code\":\"EHT-PYTEST-LIB\",\"name\":\"EHT pytest 用例库工程\",\"description\":\"承载 E:\\\\workspace\\\\自动化测试\\\\pytest-cases 的 pytest 用例库工程（D-A=A / kind=pytest-suite）\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"pytest\",\"kind\":\"pytest-suite\",\"codeChangedAt\":null},{\"id\":93,\"code\":\"PRJ-RF-202611-002\",\"name\":\"OPT-D1-人工核对样本-84862\",\"description\":\"from-template:3\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":92,\"code\":\"PRJ-RF-202611-001\",\"name\":\"OPT-D1-实测-接口回归-84841\",\"description\":\"from-template:2\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":80,\"code\":\"demo-pytest\",\"name\":\"演示项目-Pytest\",\"description\":\"v2.7 双内核演示（pytest 侧）\",\"enabled\":true,\"ownerId\":null,\"visibility\":\"public\",\"testKernel\":\"pytest\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":77,\"code\":\"ED202-COMMON\",\"name\":\"ED202 公共用例库\",\"description\":\"ED202 公共用例库（v2.2 SCEN-04 由 tools/seed_ed202_organization.py 经 HTTP 落库）\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":29,\"code\":\"qa-e2e-fixture\",\"name\":\"NODX-03 fixture\",\"description\":\"HTTP 全链路验收夹具，勿手工改\",\"enabled\":true,\"ownerId\":null,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":1,\"code\":\"demo\",\"name\":\"演示项目-RobotFramework\",\"description\":\"v2.7 双内核演示（RF 侧）\",\"enabled\":true,\"ownerId\":null,\"visibility\":\"public\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null}],\"success\":true}"
+    },
+    {
+      "url": "http://localhost:8001/api/me/ui-mode",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":{\"mode\":\"project\"},\"success\":true}"
+    },
+    {
+      "url": "http://localhost:8001/api/projects/capabilities",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":{\"globalEnter\":true},\"success\":true}"
+    },
+    {
+      "url": "http://localhost:8001/api/me/menu-capabilities",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":[\"settings:read\",\"ai:config\",\"user:write\",\"audit:read\",\"about\",\"changelog\",\"case:write\"],\"success\":true}"
+    },
+    {
+      "url": "http://localhost:8001/api/me/ui-mode",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":{\"mode\":\"global\"},\"success\":true}"
+    },
+    {
+      "url": "http://localhost:8001/api/projects/cards?window=7d",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":[{\"id\":121,\"code\":\"UIAUTO-730437\",\"name\":\"UI取证-730437\",\"description\":\"\",\"enabled\":true,\"visibility\":\"private\",\"ownerId\":17,\"isCurrent\":false,\"caseCount\":36,\"runCount\":0,\"passRateBp\":null,\"lastRunAt\":null,\"deviceCount\":0,\"memberCount\":1,\"myRole\":\"admin\",\"own\":true,\"joined\":true,\"testKernel\":\"robot\"},{\"id\":120,\"code\":\"UIAUTO-558458\",\"name\":\"UI取证-558458\",\"description\":\"\",\"enabled\":true,\"visibility\":\"private\",\"ownerId\":17,\"isCurrent\":false,\"caseCount\":35,\"runCount\":0,\"passRateBp\":null,\"lastRunAt\":null,\"deviceCount\":0,\"memberCount\":1,\"myRole\":\"admin\",\"own\":true,\"joined\":true,\"testKernel\":\"robot\"},{\"id\":119,\"code\":\"UIAUTO-489082\",\"name\":\"UI取证-489082\",\"description\":\"\",\"enabled\":true,\"visibility\":\"private\",\"ownerId\":17,\"isCurrent\":false,\"caseCount\":35,\"runCount\":0,\"passRateBp\":null,\"lastRunAt\":null,\"deviceCount\":0,\"memberCount\":1,\"myRole\":\"admin\",\"own\":true,\"joined\":true,\"testKernel\":\"robot\"},{\"id\":118,\"code\":\"UIAUTO-141455\",\"name\":\"UI取证-141455\",\"description\":\"\",\"enabled\":true,\"visibility\":\"private\",\"ownerId\":17,\"isCurrent\":false,\"caseCount\":35,\"runCount\":0,\"passRateBp\":null,\"lastRunAt\":null,\"deviceCount\":0,\"memberCount\":1,\"myRole\":\"admin\",\"own\":true,\"joined\":true,\"testKernel\":\"robot\"},{\"id\":117,\"code\":\"UIAUTO-991408\",\"name\":\"UI取证-991408\",\"description\":\"\",\"enabled\":true,\"visibility\":\"private\",\"ownerId\":17,\"isCurrent\":false,\"caseCount\":0,\"runCount\":0,\"passRateBp\":null,\"lastRunAt\":null,\"deviceCount\":0,\"memberCount\":1,\"myRole\":\"admin\",\"own\":true,\"joined\":true,\"testKernel\":\"robot\"},{\"id\":95,\"code\":\"EHT-PYTEST-LIB\",\"name\":\"EHT pytest 用例库工程\",\"description\":\"承载 E:\\\\workspace\\\\自动化测试\\\\pytest-cases 的 pytest 用例库工程（D-A=A / kind=pytest-suite）\",\"enabled\":true,\"visibility\":\"private\",\"ownerId\":17,\"isCurrent\":false,\"caseCount\":469,\"runCount\":37,\"passRateBp\":0,\"lastRunAt\":\"2026-11-14T13:00:09.920Z\",\"deviceCount\":4,\"memberCount\":1,\"myRole\":\"admin\",\"own\":true,\"joined\":true,\"testKernel\":\"pytest\"},{\"id\":93,\"code\":\"PRJ-RF-202611-002\",\"name\":\"OPT-D1-人工核对样本-84862\",\"description\":\"from-template:3\",\"enabled\":true,\"visibility\":\"private\",\"ownerId\":17,\"isCurrent\":false,\"caseCount\":20,\"runCount\":0,\"passRateBp\":null,\"lastRunAt\":null,\"deviceCount\":0,\"memberCount\":1,\"myRole\":\"admin\",\"own\":true,\"joined\":true,\"testKernel\":\"robot\"},{\"id\":92,\"code\":\"PRJ-RF-202611-001\",\"name\":\"OPT-D1-实测-接口回归-84841\",\"description\":\"from-template:2\",\"enabled\":true,\"visibility\":\"private\",\"ownerId\":17,\"isCurrent\":false,\"caseCount\":20,\"runCount\":0,\"passRateBp\":null,\"lastRunAt\":null,\"deviceCount\":0,\"memberCount\":1,\"myRole\":\"admin\",\"own\":true,\"joined\":true,\"testKernel\":\"robot\"},{\"id\":80,\"code\":\"demo-pytest\",\"name\":\"演示项目-Pytest\",\"description\":\"v2.7 双内核演示（pytest 侧）\",\"enabled\":true,\"visibility\":\"public\",\"ownerId\":null,\"isCurrent\":false,\"caseCount\":12,\"runCount\":6,\"passRateBp\":10000,\"lastRunAt\":\"2026-11-09T05:32:12.357Z\",\"deviceCount\":1,\"memberCount\":1,\"myRole\":\"admin\",\"own\":false,\"joined\":true,\"testKernel\":\"pytest\"},{\"id\":77,\"code\":\"ED202-COMMON\",\"name\":\"ED202 公共用例库\",\"description\":\"ED202 公共用例库（v2.2 SCEN-04 由 tools/seed_ed202_organization.py 经 HTTP 落库）\",\"enabled\":true,\"visibility\":\"private\",\"ownerId\":17,\"isCurrent\":false,\"caseCount\":813,\"runCount\":0,\"passRateBp\":null,\"lastRunAt\":null,\"deviceCount\":0,\"memberCount\":1,\"myRole\":\"admin\",\"own\":true,\"joined\":true,\"testKernel\":\"robot\"},{\"id\":29,\"code\":\"qa-e2e-fixture\",\"name\":\"NODX-03 fixture\",\"description\":\"HTTP 全链路验收夹具，勿手工改\",\"enabled\":true,\"visibility\":\"private\",\"ownerId\":null,\"isCurrent\":false,\"caseCount\":5,\"runCount\":434,\"passRateBp\":10000,\"lastRunAt\":\"2026-11-13T19:00:58.187Z\",\"deviceCount\":0,\"memberCount\":4,\"myRole\":\"ADMIN\",\"own\":false,\"joined\":true,\"testKernel\":\"robot\"},{\"id\":1,\"code\":\"demo\",\"name\":\"演示项目-RobotFramework\",\"description\":\"v2.7 双内核演示（RF 侧）\",\"enabled\":true,\"visibility\":\"public\",\"ownerId\":null,\"isCurrent\":false,\"caseCount\":238,\"runCount\":6,\"passRateBp\":10000,\"lastRunAt\":\"2026-11-09T05:32:12.234Z\",\"deviceCount\":3,\"memberCount\":3,\"myRole\":\"admin\",\"own\":false,\"joined\":false,\"testKernel\":\"robot\"}],\"suc"
+    },
+    {
+      "url": "http://localhost:8001/api/platform/case-sets",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":{\"items\":[{\"id\":78,\"setCode\":\"SAMPLE-32\",\"name\":\"虚拟化与容器测试 · 样例\",\"description\":\"按一级分类「虚拟化与容器测试」自动派生的样例集\",\"itemCount\":36,\"assetVersion\":1,\"contentHash\":null,\"hasNewVersion\":false,\"referenceCount\":0,\"references\":[]},{\"id\":77,\"setCode\":\"SAMPLE-31\",\"name\":\"稳定性测试 · 样例\",\"description\":\"按一级分类「稳定性测试」自动派生的样例集\",\"itemCount\":26,\"assetVersion\":1,\"contentHash\":null,\"hasNewVersion\":false,\"referenceCount\":0,\"references\":[]},{\"id\":76,\"setCode\":\"SAMPLE-30\",\"name\":\"稳定性与故障恢复 · 样例\",\"description\":\"按一级分类「稳定性与故障恢复」自动派生的样例集\",\"itemCount\":16,\"assetVersion\":1,\"contentHash\":null,\"hasNewVersion\":false,\"referenceCount\":0,\"references\":[]},{\"id\":75,\"setCode\":\"SAMPLE-29\",\"name\":\"硬件与认证测试 · 样例\",\"description\":\"按一级分类「硬件与认证测试」自动派生的样例集\",\"itemCount\":14,\"assetVersion\":1,\"contentHash\":null,\"hasNewVersion\":false,\"referenceCount\":0,\"references\":[]},{\"id\":74,\"setCode\":\"SAMPLE-28\",\"name\":\"混流测试 · 样例\",\"description\":\"按一级分类「混流测试」自动派生的样例集\",\"itemCount\":14,\"assetVersion\":1,\"contentHash\":null,\"hasNewVersion\":false,\"referenceCount\":0,\"references\":[]},{\"id\":73,\"setCode\":\"SAMPLE-27\",\"name\":\"混流与业务隔离 · 样例\",\"description\":\"按一级分类「混流与业务隔离」自动派生的样例集\",\"itemCount\":7,\"assetVersion\":1,\"contentHash\":null,\"hasNewVersion\":false,\"referenceCount\":0,\"references\":[]},{\"id\":72,\"setCode\":\"SAMPLE-26\",\"name\":\"无损网络与拥塞控制 · 样例\",\"description\":\"按一级分类「无损网络与拥塞控制」自动派生的样例集\",\"itemCount\":10,\"assetVersion\":1,\"contentHash\":null,\"hasNewVersion\":false,\"referenceCount\":0,\"references\":[]},{\"id\":71,\"setCode\":\"SAMPLE-25\",\"name\":\"数据完整性 · 样例\",\"description\":\"按一级分类「数据完整性」自动派生的样例集\",\"itemCount\":5,\"assetVersion\":1,\"contentHash\":null,\"hasNewVersion\":false,\"referenceCount\":0,\"references\":[]},{\"id\":70,\"setCode\":\"SAMPLE-24\",\"name\":\"性能测试 · 样例\",\"description\":\"按一级分类「性能测试」自动派生的样例集\",\"itemCount\":69,\"assetVersion\":1,\"contentHash\":null,\"hasNewVersion\":false,\"referenceCount\":0,\"references\":[]},{\"id\":69,\"setCode\":\"SAMPLE-23\",\"name\":\"安全功能测试 · 样例\",\"description\":\"按一级分类「安全功能测试」自动派生的样例集\",\"itemCount\":11,\"assetVersion\":1,\"contentHash\":null,\"hasNewVersion\":false,\"referenceCount\":0,\"references\":[]},{\"id\":68,\"setCode\":\"SAMPLE-22\",\"name\":\"存储性能与效率 · 样例\",\"description\":\"按一级分类「存储性能与效率」自动派生的样例集\",\"itemCount\":13,\"assetVersion\":1,\"contentHash\":null,\"hasNewVersion\":false,\"referenceCount\":0,\"references\":[]},{\"id\":67,\"setCode\":\"SAMPLE-21\",\"name\":\"存储协议与基础网络 · 样例\",\"description\":\"按一级分类「存储协议与基础网络」自动派生的样例集\",\"itemCount\":4,\"assetVersion\":1,\"contentHash\":null,\"hasNewVersion\":false,\"referenceCount\":0,\"references\":[]},{\"id\":66,\"setCode\":\"SAMPLE-20\",\"name\":\"基础组网与链路 · 样例\",\"description\":\"按一级分类「基础组网与链路」自动派生的样例集\",\"itemCount\":8,\"assetVersion\":1,\"contentHash\":null,\"hasNewVersion\":false,\"referenceCount\":0,\"references\":[]},{\"id\":65,\"setCode\":\"SAMPLE-19\",\"name\":\"基础管理测试 · 样例\",\"description\":\"按一级分类「基础管理测试」自动派生的样例集\",\"itemCount\":84,\"assetVersion\":1,\"contentHash\":null,\"hasNewVersion\":false,\"referenceCount\":0,\"references\":[]},{\"id\":64,\"setCode\":\"SAMPLE-18\",\"name\":\"参数网络性能 · 样例\",\"description\":\"按一级分类「参数网络性能」自动派生的样例集\",\"itemCount\":11,\"assetVersion\":1,\"contentHash\":null,\"hasNewVersion\":false,\"referenceCount\":0,\"references\":[]},{\"id\":63,\"setCode\":\"SAMPLE-17\",\"name\":\"压力测试 · 样例\",\"description\":\"按一级分类「压力测试」自动派生的样例集\",\"itemCount\":10,\"assetVersion\":1,\"contentHash\":null,\"hasNewVersion\":false,\"referenceCount\":0,\"references\":[]},{\"id\":62,\"setCode\":\"SAMPLE-16\",\"name\":\"压力与边界 · 样例\",\"description\":\"按一级分类「压力与边界」自动派生的样例集\",\"itemCount\":6,\"assetVersion\":1,\"contentHash\":null,\"hasNewVersion\":false,\"referenceCount\":0,\"references\":[]},{\"id\":61,\"setCode\":\"SAMPLE-15\",\"name\":\"兼容适配与虚拟化 · 样例\",\"description\":\"按一级分类「兼容适配与虚拟化」自动派生的样例集\",\"itemCount\":6,\"assetVersion\":1,\"contentHash\":null,\"hasNewVersion\":false,\"referenceCount\":0,\"references\":[]},{\"id\":60,\"setCode\":\"SAMPLE-14\",\"name\":\"以太网功能测试 · 样例\",\"description\":\"按一级分类「以太网功能测试」自动派生的样例集\",\"itemCount\":138,\"assetVersion\":1,\"contentHash\":null,\"hasNewVersion\":false,\"referenceCount\":0,\"references\":[]},{\"id\":59,\"setCode\":\"SAMPLE-13\",\"name\":\"云资源生命周期测试 · 样例\",\"description\":\"按一级分类「云资源生命周期测试」自动派生的样例集\",\"itemCount\":8,\"assetVersion\":1,\"contentHash\":null,\"has"
+    },
+    {
+      "url": "http://localhost:8001/api/projects",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":{\"id\":122,\"code\":\"UIAUTO-936762\",\"name\":\"UI取证-936762\",\"description\":\"\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},\"success\":true}"
+    },
+    {
+      "url": "http://localhost:8001/api/projects/122/content",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":{\"testSetId\":90,\"cases\":36,\"assets\":0},\"success\":true}"
+    },
+    {
+      "url": "http://localhost:8001/api/projects",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":[{\"id\":122,\"code\":\"UIAUTO-936762\",\"name\":\"UI取证-936762\",\"description\":\"\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":121,\"code\":\"UIAUTO-730437\",\"name\":\"UI取证-730437\",\"description\":\"\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":120,\"code\":\"UIAUTO-558458\",\"name\":\"UI取证-558458\",\"description\":\"\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":119,\"code\":\"UIAUTO-489082\",\"name\":\"UI取证-489082\",\"description\":\"\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":118,\"code\":\"UIAUTO-141455\",\"name\":\"UI取证-141455\",\"description\":\"\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":117,\"code\":\"UIAUTO-991408\",\"name\":\"UI取证-991408\",\"description\":\"\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":95,\"code\":\"EHT-PYTEST-LIB\",\"name\":\"EHT pytest 用例库工程\",\"description\":\"承载 E:\\\\workspace\\\\自动化测试\\\\pytest-cases 的 pytest 用例库工程（D-A=A / kind=pytest-suite）\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"pytest\",\"kind\":\"pytest-suite\",\"codeChangedAt\":null},{\"id\":93,\"code\":\"PRJ-RF-202611-002\",\"name\":\"OPT-D1-人工核对样本-84862\",\"description\":\"from-template:3\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":92,\"code\":\"PRJ-RF-202611-001\",\"name\":\"OPT-D1-实测-接口回归-84841\",\"description\":\"from-template:2\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":80,\"code\":\"demo-pytest\",\"name\":\"演示项目-Pytest\",\"description\":\"v2.7 双内核演示（pytest 侧）\",\"enabled\":true,\"ownerId\":null,\"visibility\":\"public\",\"testKernel\":\"pytest\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":77,\"code\":\"ED202-COMMON\",\"name\":\"ED202 公共用例库\",\"description\":\"ED202 公共用例库（v2.2 SCEN-04 由 tools/seed_ed202_organization.py 经 HTTP 落库）\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":29,\"code\":\"qa-e2e-fixture\",\"name\":\"NODX-03 fixture\",\"description\":\"HTTP 全链路验收夹具，勿手工改\",\"enabled\":true,\"ownerId\":null,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":1,\"code\":\"demo\",\"name\":\"演示项目-RobotFramework\",\"description\":\"v2.7 双内核演示（RF 侧）\",\"enabled\":true,\"ownerId\":null,\"visibility\":\"public\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null}],\"success\":true}"
+    },
+    {
+      "url": "http://localhost:8001/api/projects",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":[{\"id\":122,\"code\":\"UIAUTO-936762\",\"name\":\"UI取证-936762\",\"description\":\"\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":121,\"code\":\"UIAUTO-730437\",\"name\":\"UI取证-730437\",\"description\":\"\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":120,\"code\":\"UIAUTO-558458\",\"name\":\"UI取证-558458\",\"description\":\"\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":119,\"code\":\"UIAUTO-489082\",\"name\":\"UI取证-489082\",\"description\":\"\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":118,\"code\":\"UIAUTO-141455\",\"name\":\"UI取证-141455\",\"description\":\"\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":117,\"code\":\"UIAUTO-991408\",\"name\":\"UI取证-991408\",\"description\":\"\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":95,\"code\":\"EHT-PYTEST-LIB\",\"name\":\"EHT pytest 用例库工程\",\"description\":\"承载 E:\\\\workspace\\\\自动化测试\\\\pytest-cases 的 pytest 用例库工程（D-A=A / kind=pytest-suite）\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"pytest\",\"kind\":\"pytest-suite\",\"codeChangedAt\":null},{\"id\":93,\"code\":\"PRJ-RF-202611-002\",\"name\":\"OPT-D1-人工核对样本-84862\",\"description\":\"from-template:3\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":92,\"code\":\"PRJ-RF-202611-001\",\"name\":\"OPT-D1-实测-接口回归-84841\",\"description\":\"from-template:2\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":80,\"code\":\"demo-pytest\",\"name\":\"演示项目-Pytest\",\"description\":\"v2.7 双内核演示（pytest 侧）\",\"enabled\":true,\"ownerId\":null,\"visibility\":\"public\",\"testKernel\":\"pytest\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":77,\"code\":\"ED202-COMMON\",\"name\":\"ED202 公共用例库\",\"description\":\"ED202 公共用例库（v2.2 SCEN-04 由 tools/seed_ed202_organization.py 经 HTTP 落库）\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":29,\"code\":\"qa-e2e-fixture\",\"name\":\"NODX-03 fixture\",\"description\":\"HTTP 全链路验收夹具，勿手工改\",\"enabled\":true,\"ownerId\":null,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":1,\"code\":\"demo\",\"name\":\"演示项目-RobotFramework\",\"description\":\"v2.7 双内核演示（RF 侧）\",\"enabled\":true,\"ownerId\":null,\"visibility\":\"public\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null}],\"success\":true}"
+    },
+    {
+      "url": "http://localhost:8001/api/me/ui-mode",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":{\"mode\":\"global\"},\"success\":true}"
+    },
+    {
+      "url": "http://localhost:8001/api/projects/cards?window=7d&current=122",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":[{\"id\":122,\"code\":\"UIAUTO-936762\",\"name\":\"UI取证-936762\",\"description\":\"\",\"enabled\":true,\"visibility\":\"private\",\"ownerId\":17,\"isCurrent\":true,\"caseCount\":36,\"runCount\":0,\"passRateBp\":null,\"lastRunAt\":null,\"deviceCount\":0,\"memberCount\":1,\"myRole\":\"admin\",\"own\":true,\"joined\":true,\"testKernel\":\"robot\"},{\"id\":121,\"code\":\"UIAUTO-730437\",\"name\":\"UI取证-730437\",\"description\":\"\",\"enabled\":true,\"visibility\":\"private\",\"ownerId\":17,\"isCurrent\":false,\"caseCount\":36,\"runCount\":0,\"passRateBp\":null,\"lastRunAt\":null,\"deviceCount\":0,\"memberCount\":1,\"myRole\":\"admin\",\"own\":true,\"joined\":true,\"testKernel\":\"robot\"},{\"id\":120,\"code\":\"UIAUTO-558458\",\"name\":\"UI取证-558458\",\"description\":\"\",\"enabled\":true,\"visibility\":\"private\",\"ownerId\":17,\"isCurrent\":false,\"caseCount\":35,\"runCount\":0,\"passRateBp\":null,\"lastRunAt\":null,\"deviceCount\":0,\"memberCount\":1,\"myRole\":\"admin\",\"own\":true,\"joined\":true,\"testKernel\":\"robot\"},{\"id\":119,\"code\":\"UIAUTO-489082\",\"name\":\"UI取证-489082\",\"description\":\"\",\"enabled\":true,\"visibility\":\"private\",\"ownerId\":17,\"isCurrent\":false,\"caseCount\":35,\"runCount\":0,\"passRateBp\":null,\"lastRunAt\":null,\"deviceCount\":0,\"memberCount\":1,\"myRole\":\"admin\",\"own\":true,\"joined\":true,\"testKernel\":\"robot\"},{\"id\":118,\"code\":\"UIAUTO-141455\",\"name\":\"UI取证-141455\",\"description\":\"\",\"enabled\":true,\"visibility\":\"private\",\"ownerId\":17,\"isCurrent\":false,\"caseCount\":35,\"runCount\":0,\"passRateBp\":null,\"lastRunAt\":null,\"deviceCount\":0,\"memberCount\":1,\"myRole\":\"admin\",\"own\":true,\"joined\":true,\"testKernel\":\"robot\"},{\"id\":117,\"code\":\"UIAUTO-991408\",\"name\":\"UI取证-991408\",\"description\":\"\",\"enabled\":true,\"visibility\":\"private\",\"ownerId\":17,\"isCurrent\":false,\"caseCount\":0,\"runCount\":0,\"passRateBp\":null,\"lastRunAt\":null,\"deviceCount\":0,\"memberCount\":1,\"myRole\":\"admin\",\"own\":true,\"joined\":true,\"testKernel\":\"robot\"},{\"id\":95,\"code\":\"EHT-PYTEST-LIB\",\"name\":\"EHT pytest 用例库工程\",\"description\":\"承载 E:\\\\workspace\\\\自动化测试\\\\pytest-cases 的 pytest 用例库工程（D-A=A / kind=pytest-suite）\",\"enabled\":true,\"visibility\":\"private\",\"ownerId\":17,\"isCurrent\":false,\"caseCount\":469,\"runCount\":37,\"passRateBp\":0,\"lastRunAt\":\"2026-11-14T13:00:09.920Z\",\"deviceCount\":4,\"memberCount\":1,\"myRole\":\"admin\",\"own\":true,\"joined\":true,\"testKernel\":\"pytest\"},{\"id\":93,\"code\":\"PRJ-RF-202611-002\",\"name\":\"OPT-D1-人工核对样本-84862\",\"description\":\"from-template:3\",\"enabled\":true,\"visibility\":\"private\",\"ownerId\":17,\"isCurrent\":false,\"caseCount\":20,\"runCount\":0,\"passRateBp\":null,\"lastRunAt\":null,\"deviceCount\":0,\"memberCount\":1,\"myRole\":\"admin\",\"own\":true,\"joined\":true,\"testKernel\":\"robot\"},{\"id\":92,\"code\":\"PRJ-RF-202611-001\",\"name\":\"OPT-D1-实测-接口回归-84841\",\"description\":\"from-template:2\",\"enabled\":true,\"visibility\":\"private\",\"ownerId\":17,\"isCurrent\":false,\"caseCount\":20,\"runCount\":0,\"passRateBp\":null,\"lastRunAt\":null,\"deviceCount\":0,\"memberCount\":1,\"myRole\":\"admin\",\"own\":true,\"joined\":true,\"testKernel\":\"robot\"},{\"id\":80,\"code\":\"demo-pytest\",\"name\":\"演示项目-Pytest\",\"description\":\"v2.7 双内核演示（pytest 侧）\",\"enabled\":true,\"visibility\":\"public\",\"ownerId\":null,\"isCurrent\":false,\"caseCount\":12,\"runCount\":6,\"passRateBp\":10000,\"lastRunAt\":\"2026-11-09T05:32:12.357Z\",\"deviceCount\":1,\"memberCount\":1,\"myRole\":\"admin\",\"own\":false,\"joined\":true,\"testKernel\":\"pytest\"},{\"id\":77,\"code\":\"ED202-COMMON\",\"name\":\"ED202 公共用例库\",\"description\":\"ED202 公共用例库（v2.2 SCEN-04 由 tools/seed_ed202_organization.py 经 HTTP 落库）\",\"enabled\":true,\"visibility\":\"private\",\"ownerId\":17,\"isCurrent\":false,\"caseCount\":813,\"runCount\":0,\"passRateBp\":null,\"lastRunAt\":null,\"deviceCount\":0,\"memberCount\":1,\"myRole\":\"admin\",\"own\":true,\"joined\":true,\"testKernel\":\"robot\"},{\"id\":29,\"code\":\"qa-e2e-fixture\",\"name\":\"NODX-03 fixture\",\"description\":\"HTTP 全链路验收夹具，勿手工改\",\"enabled\":true,\"visibility\":\"private\",\"ownerId\":null,\"isCurrent\":false,\"caseCount\":5,\"runCount\":434,\"passRateBp\":10000,\"lastRunAt\":\"2026-11-13T19:00:58.187Z\",\"deviceCount\":0,\"memberCount\":4,\"myRole\":\"ADMIN\",\"own\":false,\"joined\":true,\"testKernel\":\"robot\"},{\"id\":1,\"code\":\"demo\",\"name\":\"演示项目-RobotFramew"
+    },
+    {
+      "url": "http://localhost:8001/api/projects/capabilities",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":{\"globalEnter\":true},\"success\":true}"
+    },
+    {
+      "url": "http://localhost:8001/api/me/menu-capabilities",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":[\"settings:read\",\"ai:config\",\"user:write\",\"audit:read\",\"about\",\"changelog\",\"case:write\"],\"success\":true}"
+    },
+    {
+      "url": "http://localhost:8001/api/projects",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":[{\"id\":122,\"code\":\"UIAUTO-936762\",\"name\":\"UI取证-936762\",\"description\":\"\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":121,\"code\":\"UIAUTO-730437\",\"name\":\"UI取证-730437\",\"description\":\"\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":120,\"code\":\"UIAUTO-558458\",\"name\":\"UI取证-558458\",\"description\":\"\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":119,\"code\":\"UIAUTO-489082\",\"name\":\"UI取证-489082\",\"description\":\"\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":118,\"code\":\"UIAUTO-141455\",\"name\":\"UI取证-141455\",\"description\":\"\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":117,\"code\":\"UIAUTO-991408\",\"name\":\"UI取证-991408\",\"description\":\"\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":95,\"code\":\"EHT-PYTEST-LIB\",\"name\":\"EHT pytest 用例库工程\",\"description\":\"承载 E:\\\\workspace\\\\自动化测试\\\\pytest-cases 的 pytest 用例库工程（D-A=A / kind=pytest-suite）\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"pytest\",\"kind\":\"pytest-suite\",\"codeChangedAt\":null},{\"id\":93,\"code\":\"PRJ-RF-202611-002\",\"name\":\"OPT-D1-人工核对样本-84862\",\"description\":\"from-template:3\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":92,\"code\":\"PRJ-RF-202611-001\",\"name\":\"OPT-D1-实测-接口回归-84841\",\"description\":\"from-template:2\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":80,\"code\":\"demo-pytest\",\"name\":\"演示项目-Pytest\",\"description\":\"v2.7 双内核演示（pytest 侧）\",\"enabled\":true,\"ownerId\":null,\"visibility\":\"public\",\"testKernel\":\"pytest\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":77,\"code\":\"ED202-COMMON\",\"name\":\"ED202 公共用例库\",\"description\":\"ED202 公共用例库（v2.2 SCEN-04 由 tools/seed_ed202_organization.py 经 HTTP 落库）\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":29,\"code\":\"qa-e2e-fixture\",\"name\":\"NODX-03 fixture\",\"description\":\"HTTP 全链路验收夹具，勿手工改\",\"enabled\":true,\"ownerId\":null,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":1,\"code\":\"demo\",\"name\":\"演示项目-RobotFramework\",\"description\":\"v2.7 双内核演示（RF 侧）\",\"enabled\":true,\"ownerId\":null,\"visibility\":\"public\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null}],\"success\":true}"
+    },
+    {
+      "url": "http://localhost:8001/api/projects/93/case-sets?page=1&size=20",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":{\"items\":[{\"id\":46,\"projectId\":93,\"setCode\":\"TS-87e4d361\",\"name\":\"模板导入用例集\",\"description\":\"模板导入\",\"ownerId\":null,\"setStatus\":\"active\",\"itemCount\":20}],\"total\":1,\"page\":1,\"size\":20},\"success\":true}"
+    },
+    {
+      "url": "http://localhost:8001/api/projects/93/cases?page=1&size=20",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":{\"items\":[{\"id\":1901,\"projectId\":93,\"caseCode\":\"HCI-LIF-008\",\"title\":\"规则批量替换、优先级更新与失败回滚\",\"category\":\"云资源生命周期测试\",\"priority\":\"P1\",\"precondition\":\"1. 实验桥已保存原始规则快照，已核实。\\n2. 具备批量规则变更和撤销权限，已核实。\\n3. 已准备合法与冲突规则集，已核实。\",\"expected\":\"1. 批量更新后的转发结果一致，可核对。\\n2. 失败回滚无半更新状态，可核验。\\n3. 未授权租户无漏发，可核验。\",\"domainTag\":\"\",\"reviewStatus\":\"draft\",\"source\":\"import\",\"capability\":\"\",\"description\":\"\",\"safetyLevel\":\"LX\"},{\"id\":1900,\"projectId\":93,\"caseCode\":\"HCI-LIF-007\",\"title\":\"OpenFlow空闲/硬超时与硬件缓存老化\",\"category\":\"云资源生命周期测试\",\"priority\":\"P1\",\"precondition\":\"1. 实验桥具备可下发规则环境，已核实。\\n2. 可单独设置idle/hard timeout，已核实。\\n3. 具备流表计数及老化观察工具，已核实。\",\"expected\":\"1. 空闲超时按最后命中计时，可核验。\\n2. 硬超时按安装后经过时间计时，可核验。\\n3. 老化后规则/硬件计数不残留，可核验。\",\"domainTag\":\"\",\"reviewStatus\":\"draft\",\"source\":\"import\",\"capability\":\"\",\"description\":\"\",\"safetyLevel\":\"LX\"},{\"id\":1899,\"projectId\":93,\"caseCode\":\"HCI-LIF-006\",\"title\":\"Host bond业务与VM VF功能共存\",\"category\":\"云资源生命周期测试\",\"priority\":\"P0\",\"precondition\":\"1. 宿主机双口Bond已建成，已核实。\\n2. SR-IOV VF仍可独立分配到Guest，已核实。\\n3. 允许验证成员故障及VF业务恢复，已授权。\",\"expected\":\"1. bond与VF共存、归属清晰，可核验。\\n2. Host与Guest两个业务均正常，可核验。\\n3. 回收任何一资源不误释放另一资源，可复测。\\n4. 未具备双口条件前不产生PASS结论，有记录。\",\"domainTag\":\"\",\"reviewStatus\":\"draft\",\"source\":\"import\",\"capability\":\"\",\"description\":\"\",\"safetyLevel\":\"LX\"},{\"id\":1898,\"projectId\":93,\"caseCode\":\"HCI-LIF-005\",\"title\":\"OVS服务重启后云流重建\",\"category\":\"云资源生命周期测试\",\"priority\":\"P1\",\"precondition\":\"1. OVS实验桥及VM业务已部署，可查询。\\n2. 服务重启范围已评估，已核实。\\n3. 具备独立管理连接及配置备份，已核实。\",\"expected\":\"1. OVS服务恢复后测试桥可用，可复测。\\n2. 恢复时间与丢包有客观记录，计数可查。\\n3. 管理网不受重启影响，可核验。\",\"domainTag\":\"\",\"reviewStatus\":\"draft\",\"source\":\"import\",\"capability\":\"\",\"description\":\"\",\"safetyLevel\":\"LX\"},{\"id\":1897,\"projectId\":93,\"caseCode\":\"HCI-LIF-004\",\"title\":\"vDPA VM暂停与恢复\",\"category\":\"云资源生命周期测试\",\"priority\":\"P2\",\"precondition\":\"1. 已建立vDPA Guest业务，已核实。\\n2. 虚拟化平台支持暂停及恢复操作，已核实。\\n3. 已保存虚拟机配置及原始连接状态，已核实。\",\"expected\":\"1. 恢复后Guest网络可用，可复测。\\n2. 后端设备映射正确且无残留失败状态，可核验。\",\"domainTag\":\"\",\"reviewStatus\":\"draft\",\"source\":\"import\",\"capability\":\"\",\"description\":\"\",\"safetyLevel\":\"LX\"},{\"id\":1896,\"projectId\":93,\"caseCode\":\"HCI-LIF-003\",\"title\":\"VF资源不足与释放后调度\",\"category\":\"云资源生命周期测试\",\"priority\":\"P1\",\"precondition\":\"1. SR-IOV资源总量可查询，已核实。\\n2. 至少两个VM或Pod申请同类VF，已核实。\\n3. 支持申请失败后的资源释放与重试，已核实。\",\"expected\":\"1. VF超额请求不能重复分配，可核验。\\n2. 释放后新申请可成功，可核验。\\n3. 原有租户设备不变，可核验。\",\"domainTag\":\"\",\"reviewStatus\":\"draft\",\"source\":\"import\",\"capability\":\"\",\"description\":\"\",\"safetyLevel\":\"LX\"},{\"id\":1895,\"projectId\":93,\"caseCode\":\"HCI-LIF-002\",\"title\":\"DPDK后端端口重建后的VM恢复\",\"category\":\"云资源生命周期测试\",\"priority\":\"P1\",\"precondition\":\"1. OVS-DPDK后端和Guest已连通，已核实。\\n2. 允许独立重建vhost-user端口，已授权。\\n3. 管理链路与被测业务相互独立，已核实。\",\"expected\":\"1. 仅目标Guest业务受重建影响，可核验。\\n2. socket重新连接并可正常收发，可核验。\\n3. 旁路端口持续可用，可核验。\",\"domainTag\":\"\",\"reviewStatus\":\"draft\",\"source\":\"import\",\"capability\":\"\",\"description\":\"\",\"safetyLevel\":\"LX\"},{\"id\":1894,\"projectId\":93,\"caseCode\":\"HCI-LIF-001\",\"title\":\"VM或Pod重建不影响旁路租户\",\"category\":\"云资源生命周期测试\",\"priority\":\"P0\",\"precondition\":\"1. 两个租户实例已独立部署，已核实。\\n2. 一侧流量持续运行作为对照，已核实。\\n3. 具备重建与网络恢复权限，已核实。\",\"expected\":\"1. 租户二未出现额外网络重置，可核验。\\n2. 租户一重建后资源重新绑定，可核验。\\n3. 残留VF、OVS规则可核查，可核验。\",\"domainTag\":\"\",\"reviewStatus\":\"draft\",\"source\":\"import\",\"capability\":\"\",\"description\":\"\",\"safetyLevel\":\"LX\"},{\"id\":1893,\"projectId\":93,\"caseCode\":\"HCI-FUN-012\",\"title\":\"双200G LACP成员故障与恢复\",\"category\":\"云平台接入测试\",\"priority\":\"P0\",\"precondition\":\"1. 两成员LACP及Guest链路已部署，可查询。\\n2. 业务已有连续收发基线，已核实。\\n3. 允许单成员故障注入和恢复，已授权。\",\"expected\":\"1. 故障期间存活成员继续转发，可核验。\\n2. 恢复后两个成员重新完成LACP同步，可复测。\\n3. 收敛时间、TCP中断与恢复有日志证据，可复测。\\n4. 未具备双口条件前不产生PASS结论，有记录。\",\"domainTag\":\"\",\"reviewStatus\":\"draft\",\"source\":\"import\",\"capability\":\"\",\"description\":\"\",\"safetyLevel\":\"LX\"},{\"id\":1892,\"projectId\":93,\"caseCode\":\"HCI-FUN-011\",\"title\":\"单VM双VF不同租户网络\",\"category\":\"云平台接入测试\",\"priority\":\"P2\",\"precondition\":\"1. 单台Guest能接收两个独立VF，已核实。\\n2. 两租户网络已配置独立地址和VLAN，可查询。\\n3. 具备跨租户隔离验证条件，已核实。\",\"expected\":\"1. 两VF在Guest独立识别并绑定不同租户，可核验。\\n2. 关闭其中一VF不影响另一VF，可核验。\\n3. 恢复后两个租户均可通信，可复测。\",\"domainTag\":\"\",\"reviewStatus\":\"draft\",\"source\":\"import\",\"capability\":\"\",\"descrip"
+    },
+    {
+      "url": "http://localhost:8001/api/me/ui-mode",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":{\"mode\":\"project\"},\"success\":true}"
+    },
+    {
+      "url": "http://localhost:8001/api/projects/capabilities",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":{\"globalEnter\":true},\"success\":true}"
+    },
+    {
+      "url": "http://localhost:8001/api/me/menu-capabilities",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":[\"settings:read\",\"ai:config\",\"user:write\",\"audit:read\",\"about\",\"changelog\",\"case:write\"],\"success\":true}"
+    },
+    {
+      "url": "http://localhost:8001/api/projects/93/runs/preview",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":{\"snapshotId\":2,\"selectionSha256\":\"a6c349f6995171e42535000b8adc5cf47086b59032cb411df4fe8cf6cafa56df\",\"caseCount\":20,\"items\":[{\"caseId\":1882,\"caseCode\":\"HCI-FUN-001\"},{\"caseId\":1883,\"caseCode\":\"HCI-FUN-002\"},{\"caseId\":1884,\"caseCode\":\"HCI-FUN-003\"},{\"caseId\":1885,\"caseCode\":\"HCI-FUN-004\"},{\"caseId\":1886,\"caseCode\":\"HCI-FUN-005\"},{\"caseId\":1887,\"caseCode\":\"HCI-FUN-006\"},{\"caseId\":1888,\"caseCode\":\"HCI-FUN-007\"},{\"caseId\":1889,\"caseCode\":\"HCI-FUN-008\"},{\"caseId\":1890,\"caseCode\":\"HCI-FUN-009\"},{\"caseId\":1891,\"caseCode\":\"HCI-FUN-010\"},{\"caseId\":1892,\"caseCode\":\"HCI-FUN-011\"},{\"caseId\":1893,\"caseCode\":\"HCI-FUN-012\"},{\"caseId\":1894,\"caseCode\":\"HCI-LIF-001\"},{\"caseId\":1895,\"caseCode\":\"HCI-LIF-002\"},{\"caseId\":1896,\"caseCode\":\"HCI-LIF-003\"},{\"caseId\":1897,\"caseCode\":\"HCI-LIF-004\"},{\"caseId\":1898,\"caseCode\":\"HCI-LIF-005\"},{\"caseId\":1899,\"caseCode\":\"HCI-LIF-006\"},{\"caseId\":1900,\"caseCode\":\"HCI-LIF-007\"},{\"caseId\":1901,\"caseCode\":\"HCI-LIF-008\"}],\"sha256\":\"a6c349f6995171e42535000b8adc5cf47086b59032cb411df4fe8cf6cafa56df\"},\"success\":true}"
+    },
+    {
+      "url": "http://localhost:8001/api/projects/93/runs/preview",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":{\"snapshotId\":3,\"selectionSha256\":\"fec4a40fef2a0c01a2b5e989628842d095bd6aec5e6b4fbc53724cb53d362b64\",\"caseCount\":20,\"items\":[{\"caseId\":1882,\"caseCode\":\"HCI-FUN-001\"},{\"caseId\":1883,\"caseCode\":\"HCI-FUN-002\"},{\"caseId\":1884,\"caseCode\":\"HCI-FUN-003\"},{\"caseId\":1885,\"caseCode\":\"HCI-FUN-004\"},{\"caseId\":1886,\"caseCode\":\"HCI-FUN-005\"},{\"caseId\":1887,\"caseCode\":\"HCI-FUN-006\"},{\"caseId\":1888,\"caseCode\":\"HCI-FUN-007\"},{\"caseId\":1889,\"caseCode\":\"HCI-FUN-008\"},{\"caseId\":1890,\"caseCode\":\"HCI-FUN-009\"},{\"caseId\":1891,\"caseCode\":\"HCI-FUN-010\"},{\"caseId\":1892,\"caseCode\":\"HCI-FUN-011\"},{\"caseId\":1893,\"caseCode\":\"HCI-FUN-012\"},{\"caseId\":1894,\"caseCode\":\"HCI-LIF-001\"},{\"caseId\":1895,\"caseCode\":\"HCI-LIF-002\"},{\"caseId\":1896,\"caseCode\":\"HCI-LIF-003\"},{\"caseId\":1897,\"caseCode\":\"HCI-LIF-004\"},{\"caseId\":1898,\"caseCode\":\"HCI-LIF-005\"},{\"caseId\":1899,\"caseCode\":\"HCI-LIF-006\"},{\"caseId\":1900,\"caseCode\":\"HCI-LIF-007\"},{\"caseId\":1901,\"caseCode\":\"HCI-LIF-008\"}],\"sha256\":\"fec4a40fef2a0c01a2b5e989628842d095bd6aec5e6b4fbc53724cb53d362b64\"},\"success\":true}"
+    },
+    {
+      "url": "http://localhost:8001/api/projects/93/runs/preview",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":{\"snapshotId\":5,\"selectionSha256\":\"48e1366f21321249c992cdea5506c2675ec059b445d25a3cd0645b22637fcc98\",\"caseCount\":1,\"items\":[{\"caseId\":1901,\"caseCode\":\"HCI-LIF-008\"}],\"sha256\":\"48e1366f21321249c992cdea5506c2675ec059b445d25a3cd0645b22637fcc98\"},\"success\":true}"
+    },
+    {
+      "url": "http://localhost:8001/api/projects/93/runs/preview",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":{\"snapshotId\":4,\"selectionSha256\":\"f22425aba7e9c97450e6d90dc976e8192097ec843d11a149fd4ede663169af69\",\"caseCount\":20,\"items\":[{\"caseId\":1882,\"caseCode\":\"HCI-FUN-001\"},{\"caseId\":1883,\"caseCode\":\"HCI-FUN-002\"},{\"caseId\":1884,\"caseCode\":\"HCI-FUN-003\"},{\"caseId\":1885,\"caseCode\":\"HCI-FUN-004\"},{\"caseId\":1886,\"caseCode\":\"HCI-FUN-005\"},{\"caseId\":1887,\"caseCode\":\"HCI-FUN-006\"},{\"caseId\":1888,\"caseCode\":\"HCI-FUN-007\"},{\"caseId\":1889,\"caseCode\":\"HCI-FUN-008\"},{\"caseId\":1890,\"caseCode\":\"HCI-FUN-009\"},{\"caseId\":1891,\"caseCode\":\"HCI-FUN-010\"},{\"caseId\":1892,\"caseCode\":\"HCI-FUN-011\"},{\"caseId\":1893,\"caseCode\":\"HCI-FUN-012\"},{\"caseId\":1894,\"caseCode\":\"HCI-LIF-001\"},{\"caseId\":1895,\"caseCode\":\"HCI-LIF-002\"},{\"caseId\":1896,\"caseCode\":\"HCI-LIF-003\"},{\"caseId\":1897,\"caseCode\":\"HCI-LIF-004\"},{\"caseId\":1898,\"caseCode\":\"HCI-LIF-005\"},{\"caseId\":1899,\"caseCode\":\"HCI-LIF-006\"},{\"caseId\":1900,\"caseCode\":\"HCI-LIF-007\"},{\"caseId\":1901,\"caseCode\":\"HCI-LIF-008\"}],\"sha256\":\"f22425aba7e9c97450e6d90dc976e8192097ec843d11a149fd4ede663169af69\"},\"success\":true}"
+    },
+    {
+      "url": "http://localhost:8001/api/projects",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":[{\"id\":122,\"code\":\"UIAUTO-936762\",\"name\":\"UI取证-936762\",\"description\":\"\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":121,\"code\":\"UIAUTO-730437\",\"name\":\"UI取证-730437\",\"description\":\"\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":120,\"code\":\"UIAUTO-558458\",\"name\":\"UI取证-558458\",\"description\":\"\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":119,\"code\":\"UIAUTO-489082\",\"name\":\"UI取证-489082\",\"description\":\"\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":118,\"code\":\"UIAUTO-141455\",\"name\":\"UI取证-141455\",\"description\":\"\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":117,\"code\":\"UIAUTO-991408\",\"name\":\"UI取证-991408\",\"description\":\"\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":95,\"code\":\"EHT-PYTEST-LIB\",\"name\":\"EHT pytest 用例库工程\",\"description\":\"承载 E:\\\\workspace\\\\自动化测试\\\\pytest-cases 的 pytest 用例库工程（D-A=A / kind=pytest-suite）\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"pytest\",\"kind\":\"pytest-suite\",\"codeChangedAt\":null},{\"id\":93,\"code\":\"PRJ-RF-202611-002\",\"name\":\"OPT-D1-人工核对样本-84862\",\"description\":\"from-template:3\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":92,\"code\":\"PRJ-RF-202611-001\",\"name\":\"OPT-D1-实测-接口回归-84841\",\"description\":\"from-template:2\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":80,\"code\":\"demo-pytest\",\"name\":\"演示项目-Pytest\",\"description\":\"v2.7 双内核演示（pytest 侧）\",\"enabled\":true,\"ownerId\":null,\"visibility\":\"public\",\"testKernel\":\"pytest\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":77,\"code\":\"ED202-COMMON\",\"name\":\"ED202 公共用例库\",\"description\":\"ED202 公共用例库（v2.2 SCEN-04 由 tools/seed_ed202_organization.py 经 HTTP 落库）\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":29,\"code\":\"qa-e2e-fixture\",\"name\":\"NODX-03 fixture\",\"description\":\"HTTP 全链路验收夹具，勿手工改\",\"enabled\":true,\"ownerId\":null,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":1,\"code\":\"demo\",\"name\":\"演示项目-RobotFramework\",\"description\":\"v2.7 双内核演示（RF 侧）\",\"enabled\":true,\"ownerId\":null,\"visibility\":\"public\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null}],\"success\":true}"
+    },
+    {
+      "url": "http://localhost:8001/api/projects/capabilities",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":{\"globalEnter\":true},\"success\":true}"
+    },
+    {
+      "url": "http://localhost:8001/api/me/ui-mode",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":{\"mode\":\"project\"},\"success\":true}"
+    },
+    {
+      "url": "http://localhost:8001/api/me/menu-capabilities",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":[\"settings:read\",\"ai:config\",\"user:write\",\"audit:read\",\"about\",\"changelog\",\"case:write\"],\"success\":true}"
+    },
+    {
+      "url": "http://localhost:8001/api/me/ui-mode",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":{\"mode\":\"global\"},\"success\":true}"
+    },
+    {
+      "url": "http://localhost:8001/api/platform/case-sets?page=1&size=100",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":{\"items\":[{\"id\":78,\"setCode\":\"SAMPLE-32\",\"name\":\"虚拟化与容器测试 · 样例\",\"description\":\"按一级分类「虚拟化与容器测试」自动派生的样例集\",\"itemCount\":36,\"assetVersion\":1,\"contentHash\":null,\"hasNewVersion\":false,\"referenceCount\":0,\"references\":[]},{\"id\":77,\"setCode\":\"SAMPLE-31\",\"name\":\"稳定性测试 · 样例\",\"description\":\"按一级分类「稳定性测试」自动派生的样例集\",\"itemCount\":26,\"assetVersion\":1,\"contentHash\":null,\"hasNewVersion\":false,\"referenceCount\":0,\"references\":[]},{\"id\":76,\"setCode\":\"SAMPLE-30\",\"name\":\"稳定性与故障恢复 · 样例\",\"description\":\"按一级分类「稳定性与故障恢复」自动派生的样例集\",\"itemCount\":16,\"assetVersion\":1,\"contentHash\":null,\"hasNewVersion\":false,\"referenceCount\":0,\"references\":[]},{\"id\":75,\"setCode\":\"SAMPLE-29\",\"name\":\"硬件与认证测试 · 样例\",\"description\":\"按一级分类「硬件与认证测试」自动派生的样例集\",\"itemCount\":14,\"assetVersion\":1,\"contentHash\":null,\"hasNewVersion\":false,\"referenceCount\":0,\"references\":[]},{\"id\":74,\"setCode\":\"SAMPLE-28\",\"name\":\"混流测试 · 样例\",\"description\":\"按一级分类「混流测试」自动派生的样例集\",\"itemCount\":14,\"assetVersion\":1,\"contentHash\":null,\"hasNewVersion\":false,\"referenceCount\":0,\"references\":[]},{\"id\":73,\"setCode\":\"SAMPLE-27\",\"name\":\"混流与业务隔离 · 样例\",\"description\":\"按一级分类「混流与业务隔离」自动派生的样例集\",\"itemCount\":7,\"assetVersion\":1,\"contentHash\":null,\"hasNewVersion\":false,\"referenceCount\":0,\"references\":[]},{\"id\":72,\"setCode\":\"SAMPLE-26\",\"name\":\"无损网络与拥塞控制 · 样例\",\"description\":\"按一级分类「无损网络与拥塞控制」自动派生的样例集\",\"itemCount\":10,\"assetVersion\":1,\"contentHash\":null,\"hasNewVersion\":false,\"referenceCount\":0,\"references\":[]},{\"id\":71,\"setCode\":\"SAMPLE-25\",\"name\":\"数据完整性 · 样例\",\"description\":\"按一级分类「数据完整性」自动派生的样例集\",\"itemCount\":5,\"assetVersion\":1,\"contentHash\":null,\"hasNewVersion\":false,\"referenceCount\":0,\"references\":[]},{\"id\":70,\"setCode\":\"SAMPLE-24\",\"name\":\"性能测试 · 样例\",\"description\":\"按一级分类「性能测试」自动派生的样例集\",\"itemCount\":69,\"assetVersion\":1,\"contentHash\":null,\"hasNewVersion\":false,\"referenceCount\":0,\"references\":[]},{\"id\":69,\"setCode\":\"SAMPLE-23\",\"name\":\"安全功能测试 · 样例\",\"description\":\"按一级分类「安全功能测试」自动派生的样例集\",\"itemCount\":11,\"assetVersion\":1,\"contentHash\":null,\"hasNewVersion\":false,\"referenceCount\":0,\"references\":[]},{\"id\":68,\"setCode\":\"SAMPLE-22\",\"name\":\"存储性能与效率 · 样例\",\"description\":\"按一级分类「存储性能与效率」自动派生的样例集\",\"itemCount\":13,\"assetVersion\":1,\"contentHash\":null,\"hasNewVersion\":false,\"referenceCount\":0,\"references\":[]},{\"id\":67,\"setCode\":\"SAMPLE-21\",\"name\":\"存储协议与基础网络 · 样例\",\"description\":\"按一级分类「存储协议与基础网络」自动派生的样例集\",\"itemCount\":4,\"assetVersion\":1,\"contentHash\":null,\"hasNewVersion\":false,\"referenceCount\":0,\"references\":[]},{\"id\":66,\"setCode\":\"SAMPLE-20\",\"name\":\"基础组网与链路 · 样例\",\"description\":\"按一级分类「基础组网与链路」自动派生的样例集\",\"itemCount\":8,\"assetVersion\":1,\"contentHash\":null,\"hasNewVersion\":false,\"referenceCount\":0,\"references\":[]},{\"id\":65,\"setCode\":\"SAMPLE-19\",\"name\":\"基础管理测试 · 样例\",\"description\":\"按一级分类「基础管理测试」自动派生的样例集\",\"itemCount\":84,\"assetVersion\":1,\"contentHash\":null,\"hasNewVersion\":false,\"referenceCount\":0,\"references\":[]},{\"id\":64,\"setCode\":\"SAMPLE-18\",\"name\":\"参数网络性能 · 样例\",\"description\":\"按一级分类「参数网络性能」自动派生的样例集\",\"itemCount\":11,\"assetVersion\":1,\"contentHash\":null,\"hasNewVersion\":false,\"referenceCount\":0,\"references\":[]},{\"id\":63,\"setCode\":\"SAMPLE-17\",\"name\":\"压力测试 · 样例\",\"description\":\"按一级分类「压力测试」自动派生的样例集\",\"itemCount\":10,\"assetVersion\":1,\"contentHash\":null,\"hasNewVersion\":false,\"referenceCount\":0,\"references\":[]},{\"id\":62,\"setCode\":\"SAMPLE-16\",\"name\":\"压力与边界 · 样例\",\"description\":\"按一级分类「压力与边界」自动派生的样例集\",\"itemCount\":6,\"assetVersion\":1,\"contentHash\":null,\"hasNewVersion\":false,\"referenceCount\":0,\"references\":[]},{\"id\":61,\"setCode\":\"SAMPLE-15\",\"name\":\"兼容适配与虚拟化 · 样例\",\"description\":\"按一级分类「兼容适配与虚拟化」自动派生的样例集\",\"itemCount\":6,\"assetVersion\":1,\"contentHash\":null,\"hasNewVersion\":false,\"referenceCount\":0,\"references\":[]},{\"id\":60,\"setCode\":\"SAMPLE-14\",\"name\":\"以太网功能测试 · 样例\",\"description\":\"按一级分类「以太网功能测试」自动派生的样例集\",\"itemCount\":138,\"assetVersion\":1,\"contentHash\":null,\"hasNewVersion\":false,\"referenceCount\":0,\"references\":[]},{\"id\":59,\"setCode\":\"SAMPLE-13\",\"name\":\"云资源生命周期测试 · 样例\",\"description\":\"按一级分类「云资源生命周期测试」自动派生的样例集\",\"itemCount\":8,\"assetVersion\":1,\"contentHash\":null,\"has"
+    },
+    {
+      "url": "http://localhost:8001/api/platform/case-sets/78/items",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":[{\"id\":1354,\"projectId\":88,\"caseCode\":\"IM-VIR-001\",\"title\":\"SR-IOV VF创建与功能\",\"category\":\"虚拟化与容器测试\",\"priority\":\"P0\",\"precondition\":\"1. GPU01第二张CX7网口为ens24np0，PCI地址为0000:ac:00.0。\\n2. GPU01的IP为172.30.2.1，GPU02第二轨IP为172.30.2.2，链路可达。\\n3. 该PF不存在在用VF，已停止客机并解除直通绑定。\\n4. 当前sriov_numvfs=0。\\n5. 执行前读取sriov_totalvfs，不将旧环境的16视为当前上限。\",\"expected\":\"1. sr-iov_totalvfs≥2，实际创建后sriov_numvfs=2，virtfn0/1均存在并可由lspci识别。\\n2. PF原有对端通信成功；测试后sriov_numvfs恢复为0。若已存在VF或权限/资源不满足，则停止并记录，不得判通过。\",\"domainTag\":\"\",\"reviewStatus\":\"draft\",\"source\":\"import\",\"capability\":\"\",\"description\":\"\",\"safetyLevel\":\"LX\"},{\"id\":1355,\"projectId\":88,\"caseCode\":\"IM-VIR-002\",\"title\":\"SR-IOV PF/VF规格上限\",\"category\":\"虚拟化与容器测试\",\"priority\":\"P0\",\"precondition\":\"1. GPU01第二张CX7网口为ens24np0，PCI地址为0000:ac:00.0。\\n2. GPU01的IP为172.30.2.1，GPU02第二轨IP为172.30.2.2，链路可达。\\n3. 该PF不存在在用VF，已停止客机并解除直通绑定。\\n4. 当前sriov_numvfs=0。\\n5. 执行前读取sriov_totalvfs，不将旧环境的16视为当前上限。\",\"expected\":\"1. 获取实际TotalVFs=N，且在允许的实测环境中成功设置sriov_numvfs=N。\\n2. virtfn0至virtfn(N−1)均有效枚举；测试结束恢复为0。\\n3. 如果只读取上限、未创建到N或受硬件资源限制失败，不能判定“最大规格通过”。\",\"domainTag\":\"\",\"reviewStatus\":\"draft\",\"source\":\"import\",\"capability\":\"\",\"description\":\"\",\"safetyLevel\":\"LX\"},{\"id\":1356,\"projectId\":88,\"caseCode\":\"IM-VIR-003\",\"title\":\"PF与VF并发使用\",\"category\":\"虚拟化与容器测试\",\"priority\":\"P0\",\"precondition\":\"1. GPU01第二张CX7 PF为0000:ac:00.0/ens24np0。\\n2. VF 0000:ac:00.1已直通KVM客机v0295-pfvf。\\n3. GPU01客机VF IP为198.18.34.1。\\n4. GPU02对应VF命名空间IP为198.18.34.2。\\n5. 宿主PF在GPU01/GPU02分别保留172.30.2.1和172.30.2.2。\",\"expected\":\"1. GPU01宿主机PF和同PF的真实直通VF均Up，具有不同MAC/IP，宿主机VFIO分配及客机PCI身份可对应。\\n2. 宿主机PF至172.30.2.2、客机vf0至198.18.34.2的20次Ping在实际时间上重叠并全部收到应答，两个接口分别有收发增量。\\n3. 业务结束后PF地址、链路和对端连通正常，初始VM/VF资源保持正常。仅创建VF、串行分别Ping或只PF可达不能判通过。\",\"domainTag\":\"\",\"reviewStatus\":\"draft\",\"source\":\"import\",\"capability\":\"\",\"description\":\"\",\"safetyLevel\":\"LX\"},{\"id\":1357,\"projectId\":88,\"caseCode\":\"IM-VIR-004\",\"title\":\"K8s RDMA设备插件\",\"category\":\"虚拟化与容器测试\",\"priority\":\"P0\",\"precondition\":\"1. GPU01已安装K3s/kubectl，K3s节点状态为Ready。\\n2. 已部署RDMA Device Plugin，其资源名称及容量匹配CX7 ens24np0。\\n3. rdma_pod.json及工具容器镜像已实际部署到GPU01。\\n4. 不能以历史目录路径推定测试文件已存在。\",\"expected\":\"1. Kubernetes节点Allocatable公布RDMA扩展资源，测试Pod的requests/limits明确申请该资源且成功Ready。\\n2. Pod容器内存在相应/dev/infiniband设备并且ibv_devinfo -l识别RDMA设备；Pod正常删除。\\n3. 缺少K8s/插件/资源或只在宿主机看到RDMA设备，均不能判定插件测试通过。\",\"domainTag\":\"\",\"reviewStatus\":\"draft\",\"source\":\"import\",\"capability\":\"\",\"description\":\"\",\"safetyLevel\":\"LX\"},{\"id\":1358,\"projectId\":88,\"caseCode\":\"IM-VIR-005\",\"title\":\"macvlan容器网络\",\"category\":\"虚拟化与容器测试\",\"priority\":\"P0\",\"precondition\":\"1. GPU01已部署K3s、Multus CNI及macvlan/static IPAM。\\n2. GPU01/GPU02的CX7网口均为ens17np0。\\n3. 两端IP为172.30.1.1/24和172.30.1.2/24，链路互通。\\n4. GPU01交换机口eth-0-5/1、GPU02交换机口eth-0-2/1已确认。\\n5. VLAN 1001允许多MAC转发。\\n6. Pod镜像及macvlan_pod.json已在GPU01就绪。\\n7. 预分配Pod IP 172.30.1.21/24无冲突。\",\"expected\":\"1. Pod为hostNetwork=false，Multus创建net1。\\n2. net1的MAC与GPU01 ens17np0不同，IP为172.30.1.21/24。\\n3. Pod经net1向172.30.1.2发送4次ICMP，4次回复、丢包0%。\\n4. Pod与NAD删除成功。\",\"domainTag\":\"\",\"reviewStatus\":\"draft\",\"source\":\"import\",\"capability\":\"\",\"description\":\"\",\"safetyLevel\":\"LX\"},{\"id\":1359,\"projectId\":88,\"caseCode\":\"IM-VIR-006\",\"title\":\"VF MAC配置\",\"category\":\"虚拟化与容器测试\",\"priority\":\"P0\",\"precondition\":\"1. ens17np0 可建 VF，VF 与对端同处 VLAN100。\\n2. 允许临时改 VF MAC 并配 IP。\\n环境核验：确认GPU01/GPU02相应VF、容器、存储客户端/服务端及必要权限已经准备，原节点的实例不自动迁移。\",\"expected\":\"1. VF0 MAC 显示 02:00:00:00:00:11；用该 VF ping 对端 0% 丢包，证明 MAC 配置实际生效。\",\"domainTag\":\"\",\"reviewStatus\":\"draft\",\"source\":\"import\",\"capability\":\"\",\"description\":\"\",\"safetyLevel\":\"LX\"},{\"id\":1360,\"projectId\":88,\"caseCode\":\"IM-VIR-007\",\"title\":\"VF VLAN配置\",\"category\":\"虚拟化与容器测试\",\"priority\":\"P0\",\"precondition\":\"1. GPU01 CX7 ens17np0 支持创建 VF0，VF 驱动正常，当前 VF 数为 0；GPU02 支持 VLAN 100 子接口。\\n2. 交换机允许 VLAN 100，198.18.100.0/30 未被其他业务占用；若曾执行 TN-ETH-003 且保留 ens17np0.100，先在两端确认归属后清理，不得与 VF VLAN 测试同时占用相同地址。\\n环境核验：确认GPU01/GPU02相应VF、容器、存储客户端/服务端及必要权限已经准备，原节点的实例不自动迁移。\",\"expected\":\"1. 两端VF管理VLAN100；VM不创建VLAN子接口，5/5互通。\",\"domainTag\":\"\",\"reviewStatus\":\"draft\",\"source\":\"import\",\"capability\":\"\",\"desc"
+    },
+    {
+      "url": "http://localhost:8001/api/platform/case-sets/78/items",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":{\"added\":0,\"skipped\":1},\"success\":true}"
+    },
+    {
+      "url": "http://localhost:8001/api/platform/case-sets/78/items",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":[{\"id\":1354,\"projectId\":88,\"caseCode\":\"IM-VIR-001\",\"title\":\"SR-IOV VF创建与功能\",\"category\":\"虚拟化与容器测试\",\"priority\":\"P0\",\"precondition\":\"1. GPU01第二张CX7网口为ens24np0，PCI地址为0000:ac:00.0。\\n2. GPU01的IP为172.30.2.1，GPU02第二轨IP为172.30.2.2，链路可达。\\n3. 该PF不存在在用VF，已停止客机并解除直通绑定。\\n4. 当前sriov_numvfs=0。\\n5. 执行前读取sriov_totalvfs，不将旧环境的16视为当前上限。\",\"expected\":\"1. sr-iov_totalvfs≥2，实际创建后sriov_numvfs=2，virtfn0/1均存在并可由lspci识别。\\n2. PF原有对端通信成功；测试后sriov_numvfs恢复为0。若已存在VF或权限/资源不满足，则停止并记录，不得判通过。\",\"domainTag\":\"\",\"reviewStatus\":\"draft\",\"source\":\"import\",\"capability\":\"\",\"description\":\"\",\"safetyLevel\":\"LX\"},{\"id\":1355,\"projectId\":88,\"caseCode\":\"IM-VIR-002\",\"title\":\"SR-IOV PF/VF规格上限\",\"category\":\"虚拟化与容器测试\",\"priority\":\"P0\",\"precondition\":\"1. GPU01第二张CX7网口为ens24np0，PCI地址为0000:ac:00.0。\\n2. GPU01的IP为172.30.2.1，GPU02第二轨IP为172.30.2.2，链路可达。\\n3. 该PF不存在在用VF，已停止客机并解除直通绑定。\\n4. 当前sriov_numvfs=0。\\n5. 执行前读取sriov_totalvfs，不将旧环境的16视为当前上限。\",\"expected\":\"1. 获取实际TotalVFs=N，且在允许的实测环境中成功设置sriov_numvfs=N。\\n2. virtfn0至virtfn(N−1)均有效枚举；测试结束恢复为0。\\n3. 如果只读取上限、未创建到N或受硬件资源限制失败，不能判定“最大规格通过”。\",\"domainTag\":\"\",\"reviewStatus\":\"draft\",\"source\":\"import\",\"capability\":\"\",\"description\":\"\",\"safetyLevel\":\"LX\"},{\"id\":1356,\"projectId\":88,\"caseCode\":\"IM-VIR-003\",\"title\":\"PF与VF并发使用\",\"category\":\"虚拟化与容器测试\",\"priority\":\"P0\",\"precondition\":\"1. GPU01第二张CX7 PF为0000:ac:00.0/ens24np0。\\n2. VF 0000:ac:00.1已直通KVM客机v0295-pfvf。\\n3. GPU01客机VF IP为198.18.34.1。\\n4. GPU02对应VF命名空间IP为198.18.34.2。\\n5. 宿主PF在GPU01/GPU02分别保留172.30.2.1和172.30.2.2。\",\"expected\":\"1. GPU01宿主机PF和同PF的真实直通VF均Up，具有不同MAC/IP，宿主机VFIO分配及客机PCI身份可对应。\\n2. 宿主机PF至172.30.2.2、客机vf0至198.18.34.2的20次Ping在实际时间上重叠并全部收到应答，两个接口分别有收发增量。\\n3. 业务结束后PF地址、链路和对端连通正常，初始VM/VF资源保持正常。仅创建VF、串行分别Ping或只PF可达不能判通过。\",\"domainTag\":\"\",\"reviewStatus\":\"draft\",\"source\":\"import\",\"capability\":\"\",\"description\":\"\",\"safetyLevel\":\"LX\"},{\"id\":1357,\"projectId\":88,\"caseCode\":\"IM-VIR-004\",\"title\":\"K8s RDMA设备插件\",\"category\":\"虚拟化与容器测试\",\"priority\":\"P0\",\"precondition\":\"1. GPU01已安装K3s/kubectl，K3s节点状态为Ready。\\n2. 已部署RDMA Device Plugin，其资源名称及容量匹配CX7 ens24np0。\\n3. rdma_pod.json及工具容器镜像已实际部署到GPU01。\\n4. 不能以历史目录路径推定测试文件已存在。\",\"expected\":\"1. Kubernetes节点Allocatable公布RDMA扩展资源，测试Pod的requests/limits明确申请该资源且成功Ready。\\n2. Pod容器内存在相应/dev/infiniband设备并且ibv_devinfo -l识别RDMA设备；Pod正常删除。\\n3. 缺少K8s/插件/资源或只在宿主机看到RDMA设备，均不能判定插件测试通过。\",\"domainTag\":\"\",\"reviewStatus\":\"draft\",\"source\":\"import\",\"capability\":\"\",\"description\":\"\",\"safetyLevel\":\"LX\"},{\"id\":1358,\"projectId\":88,\"caseCode\":\"IM-VIR-005\",\"title\":\"macvlan容器网络\",\"category\":\"虚拟化与容器测试\",\"priority\":\"P0\",\"precondition\":\"1. GPU01已部署K3s、Multus CNI及macvlan/static IPAM。\\n2. GPU01/GPU02的CX7网口均为ens17np0。\\n3. 两端IP为172.30.1.1/24和172.30.1.2/24，链路互通。\\n4. GPU01交换机口eth-0-5/1、GPU02交换机口eth-0-2/1已确认。\\n5. VLAN 1001允许多MAC转发。\\n6. Pod镜像及macvlan_pod.json已在GPU01就绪。\\n7. 预分配Pod IP 172.30.1.21/24无冲突。\",\"expected\":\"1. Pod为hostNetwork=false，Multus创建net1。\\n2. net1的MAC与GPU01 ens17np0不同，IP为172.30.1.21/24。\\n3. Pod经net1向172.30.1.2发送4次ICMP，4次回复、丢包0%。\\n4. Pod与NAD删除成功。\",\"domainTag\":\"\",\"reviewStatus\":\"draft\",\"source\":\"import\",\"capability\":\"\",\"description\":\"\",\"safetyLevel\":\"LX\"},{\"id\":1359,\"projectId\":88,\"caseCode\":\"IM-VIR-006\",\"title\":\"VF MAC配置\",\"category\":\"虚拟化与容器测试\",\"priority\":\"P0\",\"precondition\":\"1. ens17np0 可建 VF，VF 与对端同处 VLAN100。\\n2. 允许临时改 VF MAC 并配 IP。\\n环境核验：确认GPU01/GPU02相应VF、容器、存储客户端/服务端及必要权限已经准备，原节点的实例不自动迁移。\",\"expected\":\"1. VF0 MAC 显示 02:00:00:00:00:11；用该 VF ping 对端 0% 丢包，证明 MAC 配置实际生效。\",\"domainTag\":\"\",\"reviewStatus\":\"draft\",\"source\":\"import\",\"capability\":\"\",\"description\":\"\",\"safetyLevel\":\"LX\"},{\"id\":1360,\"projectId\":88,\"caseCode\":\"IM-VIR-007\",\"title\":\"VF VLAN配置\",\"category\":\"虚拟化与容器测试\",\"priority\":\"P0\",\"precondition\":\"1. GPU01 CX7 ens17np0 支持创建 VF0，VF 驱动正常，当前 VF 数为 0；GPU02 支持 VLAN 100 子接口。\\n2. 交换机允许 VLAN 100，198.18.100.0/30 未被其他业务占用；若曾执行 TN-ETH-003 且保留 ens17np0.100，先在两端确认归属后清理，不得与 VF VLAN 测试同时占用相同地址。\\n环境核验：确认GPU01/GPU02相应VF、容器、存储客户端/服务端及必要权限已经准备，原节点的实例不自动迁移。\",\"expected\":\"1. 两端VF管理VLAN100；VM不创建VLAN子接口，5/5互通。\",\"domainTag\":\"\",\"reviewStatus\":\"draft\",\"source\":\"import\",\"capability\":\"\",\"desc"
+    },
+    {
+      "url": "http://localhost:8001/api/projects",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":[{\"id\":122,\"code\":\"UIAUTO-936762\",\"name\":\"UI取证-936762\",\"description\":\"\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":121,\"code\":\"UIAUTO-730437\",\"name\":\"UI取证-730437\",\"description\":\"\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":120,\"code\":\"UIAUTO-558458\",\"name\":\"UI取证-558458\",\"description\":\"\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":119,\"code\":\"UIAUTO-489082\",\"name\":\"UI取证-489082\",\"description\":\"\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":118,\"code\":\"UIAUTO-141455\",\"name\":\"UI取证-141455\",\"description\":\"\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":117,\"code\":\"UIAUTO-991408\",\"name\":\"UI取证-991408\",\"description\":\"\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":95,\"code\":\"EHT-PYTEST-LIB\",\"name\":\"EHT pytest 用例库工程\",\"description\":\"承载 E:\\\\workspace\\\\自动化测试\\\\pytest-cases 的 pytest 用例库工程（D-A=A / kind=pytest-suite）\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"pytest\",\"kind\":\"pytest-suite\",\"codeChangedAt\":null},{\"id\":93,\"code\":\"PRJ-RF-202611-002\",\"name\":\"OPT-D1-人工核对样本-84862\",\"description\":\"from-template:3\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":92,\"code\":\"PRJ-RF-202611-001\",\"name\":\"OPT-D1-实测-接口回归-84841\",\"description\":\"from-template:2\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":80,\"code\":\"demo-pytest\",\"name\":\"演示项目-Pytest\",\"description\":\"v2.7 双内核演示（pytest 侧）\",\"enabled\":true,\"ownerId\":null,\"visibility\":\"public\",\"testKernel\":\"pytest\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":77,\"code\":\"ED202-COMMON\",\"name\":\"ED202 公共用例库\",\"description\":\"ED202 公共用例库（v2.2 SCEN-04 由 tools/seed_ed202_organization.py 经 HTTP 落库）\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":29,\"code\":\"qa-e2e-fixture\",\"name\":\"NODX-03 fixture\",\"description\":\"HTTP 全链路验收夹具，勿手工改\",\"enabled\":true,\"ownerId\":null,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":1,\"code\":\"demo\",\"name\":\"演示项目-RobotFramework\",\"description\":\"v2.7 双内核演示（RF 侧）\",\"enabled\":true,\"ownerId\":null,\"visibility\":\"public\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null}],\"success\":true}"
+    },
+    {
+      "url": "http://localhost:8001/api/reports/EHT-REAL-L0-20261113-220048-01?projectId=95",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":{\"runId\":\"EHT-REAL-L0-20261113-220048-01\",\"projectId\":95,\"state\":\"finished\",\"exportable\":true,\"metadataMissing\":[],\"metadata\":{\"SW_BUILD\":\"v5.5.0-eht\",\"STARTED_AT\":\"2026-11-13T22:00:48\",\"CASE_ID\":\"EHT-REAL-L0\",\"DUT\":\"gpu01,gpu02\",\"QA_PROJECT\":\"EHT-PYTEST-LIB\",\"OPERATOR\":\"xuetu\",\"RUN_ID\":\"EHT-REAL-L0-20261113-220048-01\",\"BASELINE\":\"eht-real-20261113\",\"CASE_KIND\":\"PYTEST-REAL\",\"LINK\":\"ens17np0\"},\"counts\":{\"pass\":21,\"fail\":0,\"skip\":0},\"startedAt\":\"2026-11-13T14:00:48.908Z\",\"finishedAt\":\"2026-11-13T14:01:51.704Z\"},\"success\":true}"
+    },
+    {
+      "url": "http://localhost:8001/api/me/ui-mode",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":{\"mode\":\"project\"},\"success\":true}"
+    },
+    {
+      "url": "http://localhost:8001/api/reports/EHT-REAL-L0-20261113-220048-01/tree?projectId=95",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":{\"name\":\"EHT-REAL-L0-20261113-220048-01\",\"status\":\"PASS\",\"suites\":[{\"name\":\"IM-CER-008\",\"status\":\"PASS\",\"suites\":[],\"cases\":[{\"caseKey\":\"IM-CER-008\",\"name\":\"IM-CER-008\",\"verdict\":\"PASS\",\"durationMs\":22998,\"failureMsg\":null,\"commandText\":\"NONE\",\"commandSource\":\"NONE\",\"commandExitCode\":null,\"keywords\":[],\"retryCount\":0,\"flaky\":false}]},{\"name\":\"IM-FUN-014\",\"status\":\"PASS\",\"suites\":[],\"cases\":[{\"caseKey\":\"IM-FUN-014\",\"name\":\"IM-FUN-014\",\"verdict\":\"PASS\",\"durationMs\":796,\"failureMsg\":null,\"commandText\":\"NONE\",\"commandSource\":\"NONE\",\"commandExitCode\":null,\"keywords\":[],\"retryCount\":0,\"flaky\":false}]},{\"name\":\"IM-FUN-018\",\"status\":\"PASS\",\"suites\":[],\"cases\":[{\"caseKey\":\"IM-FUN-018\",\"name\":\"IM-FUN-018\",\"verdict\":\"PASS\",\"durationMs\":578,\"failureMsg\":null,\"commandText\":\"NONE\",\"commandSource\":\"NONE\",\"commandExitCode\":null,\"keywords\":[],\"retryCount\":0,\"flaky\":false}]},{\"name\":\"IM-FUN-020\",\"status\":\"PASS\",\"suites\":[],\"cases\":[{\"caseKey\":\"IM-FUN-020\",\"name\":\"IM-FUN-020\",\"verdict\":\"PASS\",\"durationMs\":537,\"failureMsg\":null,\"commandText\":\"NONE\",\"commandSource\":\"NONE\",\"commandExitCode\":null,\"keywords\":[],\"retryCount\":0,\"flaky\":false}]},{\"name\":\"IM-FUN-021\",\"status\":\"PASS\",\"suites\":[],\"cases\":[{\"caseKey\":\"IM-FUN-021\",\"name\":\"IM-FUN-021\",\"verdict\":\"PASS\",\"durationMs\":2157,\"failureMsg\":null,\"commandText\":\"NONE\",\"commandSource\":\"NONE\",\"commandExitCode\":null,\"keywords\":[],\"retryCount\":0,\"flaky\":false}]},{\"name\":\"IM-FUN-035\",\"status\":\"PASS\",\"suites\":[],\"cases\":[{\"caseKey\":\"IM-FUN-035\",\"name\":\"IM-FUN-035\",\"verdict\":\"PASS\",\"durationMs\":1062,\"failureMsg\":null,\"commandText\":\"NONE\",\"commandSource\":\"NONE\",\"commandExitCode\":null,\"keywords\":[],\"retryCount\":0,\"flaky\":false}]},{\"name\":\"IM-FUN-036\",\"status\":\"PASS\",\"suites\":[],\"cases\":[{\"caseKey\":\"IM-FUN-036\",\"name\":\"IM-FUN-036\",\"verdict\":\"PASS\",\"durationMs\":803,\"failureMsg\":null,\"commandText\":\"NONE\",\"commandSource\":\"NONE\",\"commandExitCode\":null,\"keywords\":[],\"retryCount\":0,\"flaky\":false}]},{\"name\":\"IM-FUN-037\",\"status\":\"PASS\",\"suites\":[],\"cases\":[{\"caseKey\":\"IM-FUN-037\",\"name\":\"IM-FUN-037\",\"verdict\":\"PASS\",\"durationMs\":511,\"failureMsg\":null,\"commandText\":\"NONE\",\"commandSource\":\"NONE\",\"commandExitCode\":null,\"keywords\":[],\"retryCount\":0,\"flaky\":false}]},{\"name\":\"IM-FUN-040\",\"status\":\"PASS\",\"suites\":[],\"cases\":[{\"caseKey\":\"IM-FUN-040\",\"name\":\"IM-FUN-040\",\"verdict\":\"PASS\",\"durationMs\":507,\"failureMsg\":null,\"commandText\":\"NONE\",\"commandSource\":\"NONE\",\"commandExitCode\":null,\"keywords\":[],\"retryCount\":0,\"flaky\":false}]},{\"name\":\"IM-FUN-041\",\"status\":\"PASS\",\"suites\":[],\"cases\":[{\"caseKey\":\"IM-FUN-041\",\"name\":\"IM-FUN-041\",\"verdict\":\"PASS\",\"durationMs\":658,\"failureMsg\":null,\"commandText\":\"NONE\",\"commandSource\":\"NONE\",\"commandExitCode\":null,\"keywords\":[],\"retryCount\":0,\"flaky\":false}]},{\"name\":\"IM-FUN-042\",\"status\":\"PASS\",\"suites\":[],\"cases\":[{\"caseKey\":\"IM-FUN-042\",\"name\":\"IM-FUN-042\",\"verdict\":\"PASS\",\"durationMs\":1101,\"failureMsg\":null,\"commandText\":\"NONE\",\"commandSource\":\"NONE\",\"commandExitCode\":null,\"keywords\":[],\"retryCount\":0,\"flaky\":false}]},{\"name\":\"IM-FUN-043\",\"status\":\"PASS\",\"suites\":[],\"cases\":[{\"caseKey\":\"IM-FUN-043\",\"name\":\"IM-FUN-043\",\"verdict\":\"PASS\",\"durationMs\":659,\"failureMsg\":null,\"commandText\":\"NONE\",\"commandSource\":\"NONE\",\"commandExitCode\":null,\"keywords\":[],\"retryCount\":0,\"flaky\":false}]},{\"name\":\"IM-FUN-044\",\"status\":\"PASS\",\"suites\":[],\"cases\":[{\"caseKey\":\"IM-FUN-044\",\"name\":\"IM-FUN-044\",\"verdict\":\"PASS\",\"durationMs\":2619,\"failureMsg\":null,\"commandText\":\"NONE\",\"commandSource\":\"NONE\",\"commandExitCode\":null,\"keywords\":[],\"retryCount\":0,\"flaky\":false}]},{\"name\":\"IM-FUN-045\",\"status\":\"PASS\",\"suites\":[],\"cases\":[{\"caseKey\":\"IM-FUN-045\",\"name\":\"IM-FUN-045\",\"verdict\":\"PASS\",\"durationMs\":3134,\"failureMsg\":null,\"commandText\":\"NONE\",\"commandSource\":\"NONE\",\"commandExitCode\":null,\"keywords\":[],\"retryCount\":0,\"flaky\":false}]},{\"name\":\"IM-FUN-048\",\"status\":\"PASS\",\"suites\":[],\"cases\":[{\"caseKey\":\"IM-FUN-048\",\"name\":\"IM-FUN-048\",\"verdict\":\"PASS\",\"durationMs\":1194,\"fa"
+    },
+    {
+      "url": "http://localhost:8001/api/projects/capabilities",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":{\"globalEnter\":true},\"success\":true}"
+    },
+    {
+      "url": "http://localhost:8001/api/reports/trend/pass-rate?projectId=95&granularity=day&limit=12",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":{\"granularity\":\"day\",\"buckets\":[{\"bucket\":\"2026-11-13\",\"pass\":59,\"fail\":2,\"skip\":0,\"total\":61,\"passRate\":0.9672},{\"bucket\":\"2026-11-14\",\"pass\":5,\"fail\":8,\"skip\":62,\"total\":75,\"passRate\":0.0667}]},\"success\":true}"
+    },
+    {
+      "url": "http://localhost:8001/api/reports/EHT-REAL-L0-20261113-220048-01/trend?projectId=95&caseKey=IM-CER-008&limit=5",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":{\"caseKey\":\"IM-CER-008\",\"currentEnvKey\":\"DUT=（空）;LINK=（空）\",\"baselineMs\":26,\"deviated\":true,\"points\":[{\"runId\":\"EHT-REAL-L0-20261113-220048-01\",\"startedAt\":\"2026-11-13T14:00:48.908Z\",\"verdict\":\"PASS\",\"durationMs\":22998,\"envKey\":\"DUT=（空）;LINK=（空）\",\"deviated\":true},{\"runId\":\"EHT-FAKE-1794661209912\",\"startedAt\":\"2026-11-14T13:00:09.920Z\",\"verdict\":\"SKIP\",\"durationMs\":26,\"envKey\":\"DUT=（空）;LINK=（空）\",\"deviated\":false}],\"series\":[{\"envKey\":\"DUT=（空）;LINK=（空）\",\"points\":[{\"runId\":\"EHT-REAL-L0-20261113-220048-01\",\"startedAt\":\"2026-11-13T14:00:48.908Z\",\"verdict\":\"PASS\",\"durationMs\":22998,\"envKey\":\"DUT=（空）;LINK=（空）\",\"deviated\":true},{\"runId\":\"EHT-FAKE-1794661209912\",\"startedAt\":\"2026-11-14T13:00:09.920Z\",\"verdict\":\"SKIP\",\"durationMs\":26,\"envKey\":\"DUT=（空）;LINK=（空）\",\"deviated\":false}]}]},\"success\":true}"
+    },
+    {
+      "url": "http://localhost:8001/api/me/menu-capabilities",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":[\"settings:read\",\"ai:config\",\"user:write\",\"audit:read\",\"about\",\"changelog\",\"case:write\"],\"success\":true}"
+    },
+    {
+      "url": "http://localhost:8001/api/reports/EHT-REAL-L0-20261113-220048-01/summary?projectId=95",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":{\"conclusion\":\"PASSED\",\"total\":21,\"passed\":21,\"failed\":0,\"skipped\":0,\"passRate\":100.0,\"durationMs\":62796,\"topFailures\":[],\"risks\":[],\"generatedAt\":\"2026-11-14T13:12:31.715632536Z\",\"flaky\":0},\"success\":true}"
+    },
+    {
+      "url": "http://localhost:8001/api/reports/EHT-REAL-L0-20261113-220048-01/exports?projectId=95",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":[{\"exportId\":51,\"runId\":\"EHT-REAL-L0-20261113-220048-01\",\"format\":\"xlsx\",\"mode\":\"internal\",\"fileName\":\"report_EHT-REAL-L0-20261113-220048-01_internal.xlsx\",\"bytes\":5231,\"sha256\":\"267702edf5164059b796f2528d34a3085c6936fabb5be1eb3fe7046dca5b1c30\",\"status\":\"created\",\"requestedBy\":17,\"createdAt\":\"2026-11-13T17:36:10.406Z\"},{\"exportId\":50,\"runId\":\"EHT-REAL-L0-20261113-220048-01\",\"format\":\"docx\",\"mode\":\"internal\",\"fileName\":\"report_EHT-REAL-L0-20261113-220048-01_internal.docx\",\"bytes\":4415,\"sha256\":\"eca999a14df4d5dbe3ff31cc861b1135a8832de906483a70c22d025ca8a33cae\",\"status\":\"created\",\"requestedBy\":17,\"createdAt\":\"2026-11-13T17:36:09.172Z\"},{\"exportId\":49,\"runId\":\"EHT-REAL-L0-20261113-220048-01\",\"format\":\"pdf\",\"mode\":\"internal\",\"fileName\":\"report_EHT-REAL-L0-20261113-220048-01_internal.pdf\",\"bytes\":337593,\"sha256\":\"c1ae4edc30aefdcb1aa8d461dd4713d4817c5e96d4b289b281bbd70ee4ef7ea2\",\"status\":\"created\",\"requestedBy\":17,\"createdAt\":\"2026-11-13T17:36:06.379Z\"},{\"exportId\":48,\"runId\":\"EHT-REAL-L0-20261113-220048-01\",\"format\":\"docx\",\"mode\":\"internal\",\"fileName\":\"report_EHT-REAL-L0-20261113-220048-01_internal.docx\",\"bytes\":4412,\"sha256\":\"43caa090e85b0044be14f8bb26217b77619f7318b3fae1130cfcd6c3e568a157\",\"status\":\"created\",\"requestedBy\":17,\"createdAt\":\"2026-11-13T17:22:52.143Z\"},{\"exportId\":44,\"runId\":\"EHT-REAL-L0-20261113-220048-01\",\"format\":\"xlsx\",\"mode\":\"external\",\"fileName\":\"report_EHT-REAL-L0-20261113-220048-01_external.xlsx\",\"bytes\":3865,\"sha256\":\"426da7e049e518854368da43df717b5945ab04f9ef6ebe526a7c676d33c3d681\",\"status\":\"created\",\"requestedBy\":17,\"createdAt\":\"2026-11-13T14:10:52.881Z\"},{\"exportId\":43,\"runId\":\"EHT-REAL-L0-20261113-220048-01\",\"format\":\"docx\",\"mode\":\"external\",\"fileName\":\"report_EHT-REAL-L0-20261113-220048-01_external.docx\",\"bytes\":4304,\"sha256\":\"c6420cf36f1170f5a6b627246926450bd4f2063e58f3edebde77f7e25ee6aa38\",\"status\":\"created\",\"requestedBy\":17,\"createdAt\":\"2026-11-13T14:10:52.528Z\"},{\"exportId\":42,\"runId\":\"EHT-REAL-L0-20261113-220048-01\",\"format\":\"pdf\",\"mode\":\"external\",\"fileName\":\"report_EHT-REAL-L0-20261113-220048-01_external.pdf\",\"bytes\":302061,\"sha256\":\"a0dec5af81afe5cbfe15281ed105d5232e9243ac54882f41da3a40cb745b23ad\",\"status\":\"created\",\"requestedBy\":17,\"createdAt\":\"2026-11-13T14:10:51.745Z\"},{\"exportId\":40,\"runId\":\"EHT-REAL-L0-20261113-220048-01\",\"format\":\"pdf\",\"mode\":\"external\",\"fileName\":\"report_EHT-REAL-L0-20261113-220048-01_external.pdf\",\"bytes\":302061,\"sha256\":\"d39ef265c96e42ba4003d472fde67ab1be02ea853f233fe9d6582939d6635f30\",\"status\":\"created\",\"requestedBy\":17,\"createdAt\":\"2026-11-13T14:10:35.971Z\"},{\"exportId\":36,\"runId\":\"EHT-REAL-L0-20261113-220048-01\",\"format\":\"xlsx\",\"mode\":\"external\",\"fileName\":\"report_EHT-REAL-L0-20261113-220048-01_external.xlsx\",\"bytes\":3866,\"sha256\":\"e648f6d2af6e03d0bef683e3252888a704005dc3cf1e0b643b6651d06d08e4b2\",\"status\":\"created\",\"requestedBy\":17,\"createdAt\":\"2026-11-13T14:08:09.858Z\"},{\"exportId\":35,\"runId\":\"EHT-REAL-L0-20261113-220048-01\",\"format\":\"docx\",\"mode\":\"external\",\"fileName\":\"report_EHT-REAL-L0-20261113-220048-01_external.docx\",\"bytes\":4307,\"sha256\":\"516c05f4ca84b0c0c963e15fdb7168bcfe368803688e3ec3cd9fcb3079ec8cd3\",\"status\":\"created\",\"requestedBy\":17,\"createdAt\":\"2026-11-13T14:08:09.462Z\"},{\"exportId\":34,\"runId\":\"EHT-REAL-L0-20261113-220048-01\",\"format\":\"pdf\",\"mode\":\"external\",\"fileName\":\"report_EHT-REAL-L0-20261113-220048-01_external.pdf\",\"bytes\":302059,\"sha256\":\"9d84c3a1fc9c553425ffe9b2baad5ae877cdc563df99b2d7044abd54d3638479\",\"status\":\"created\",\"requestedBy\":17,\"createdAt\":\"2026-11-13T14:08:08.370Z\"},{\"exportId\":32,\"runId\":\"EHT-REAL-L0-20261113-220048-01\",\"format\":\"pdf\",\"mode\":\"external\",\"fileName\":\"report_EHT-REAL-L0-20261113-220048-01_external.pdf\",\"bytes\":302060,\"sha256\":\"4bc195204e7e8d148093b8de0ce07bdb8dae7c69822fa023873230d39e6cb3bb\",\"status\":\"created\",\"requestedBy\":17,\"createdAt\":\"2026-11-13T14:07:39.860Z\"}],\"success\":true}"
+    },
+    {
+      "url": "http://localhost:8001/api/projects",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":[{\"id\":122,\"code\":\"UIAUTO-936762\",\"name\":\"UI取证-936762\",\"description\":\"\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":121,\"code\":\"UIAUTO-730437\",\"name\":\"UI取证-730437\",\"description\":\"\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":120,\"code\":\"UIAUTO-558458\",\"name\":\"UI取证-558458\",\"description\":\"\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":119,\"code\":\"UIAUTO-489082\",\"name\":\"UI取证-489082\",\"description\":\"\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":118,\"code\":\"UIAUTO-141455\",\"name\":\"UI取证-141455\",\"description\":\"\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":117,\"code\":\"UIAUTO-991408\",\"name\":\"UI取证-991408\",\"description\":\"\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":95,\"code\":\"EHT-PYTEST-LIB\",\"name\":\"EHT pytest 用例库工程\",\"description\":\"承载 E:\\\\workspace\\\\自动化测试\\\\pytest-cases 的 pytest 用例库工程（D-A=A / kind=pytest-suite）\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"pytest\",\"kind\":\"pytest-suite\",\"codeChangedAt\":null},{\"id\":93,\"code\":\"PRJ-RF-202611-002\",\"name\":\"OPT-D1-人工核对样本-84862\",\"description\":\"from-template:3\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":92,\"code\":\"PRJ-RF-202611-001\",\"name\":\"OPT-D1-实测-接口回归-84841\",\"description\":\"from-template:2\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":80,\"code\":\"demo-pytest\",\"name\":\"演示项目-Pytest\",\"description\":\"v2.7 双内核演示（pytest 侧）\",\"enabled\":true,\"ownerId\":null,\"visibility\":\"public\",\"testKernel\":\"pytest\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":77,\"code\":\"ED202-COMMON\",\"name\":\"ED202 公共用例库\",\"description\":\"ED202 公共用例库（v2.2 SCEN-04 由 tools/seed_ed202_organization.py 经 HTTP 落库）\",\"enabled\":true,\"ownerId\":17,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":29,\"code\":\"qa-e2e-fixture\",\"name\":\"NODX-03 fixture\",\"description\":\"HTTP 全链路验收夹具，勿手工改\",\"enabled\":true,\"ownerId\":null,\"visibility\":\"private\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null},{\"id\":1,\"code\":\"demo\",\"name\":\"演示项目-RobotFramework\",\"description\":\"v2.7 双内核演示（RF 侧）\",\"enabled\":true,\"ownerId\":null,\"visibility\":\"public\",\"testKernel\":\"robot\",\"kind\":\"standard\",\"codeChangedAt\":null}],\"success\":true}"
+    },
+    {
+      "url": "http://localhost:8001/api/me/ui-mode",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":{\"mode\":\"project\"},\"success\":true}"
+    },
+    {
+      "url": "http://localhost:8001/api/projects/capabilities",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":{\"globalEnter\":true},\"success\":true}"
+    },
+    {
+      "url": "http://localhost:8001/api/me/menu-capabilities",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":[\"settings:read\",\"ai:config\",\"user:write\",\"audit:read\",\"about\",\"changelog\",\"case:write\"],\"success\":true}"
+    },
+    {
+      "url": "http://localhost:8001/api/runs/RUN-20261114030058-1c0000?projectId=29",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":{\"runId\":\"RUN-20261114030058-1c0000\",\"displayName\":null,\"remark\":\"UI取证备注-A-25046\",\"tags\":null},\"success\":true}"
+    },
+    {
+      "url": "http://localhost:8001/api/runs/RUN-20261114030058-1c0000?projectId=29",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":{\"runId\":\"RUN-20261114030058-1c0000\",\"displayName\":null,\"remark\":\"UI取证备注-A-56295\",\"tags\":null},\"success\":true}"
+    },
+    {
+      "url": "http://localhost:8001/api/runs/RUN-20261114030058-1c0000?projectId=29",
+      "status": 200,
+      "body": "{\"code\":0,\"codeName\":\"OK\",\"message\":\"OK\",\"data\":{\"runId\":\"RUN-20261114030058-1c0000\",\"displayName\":null,\"remark\":\"UI取证备注-A-56295\",\"tags\":null},\"success\":true}"
+    }
+  ],
+  "network": [
+    {
+      "url": "http://localhost:8001/api/notifications/unread-count?projectId=29",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/ai/state?projectId=29",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/auth/me",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/projects",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/users/me/preferences",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/projects/cards?window=7d&current=29",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/projects/capabilities",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/me/ui-mode",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/me/menu-capabilities",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/me/ui-mode",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/notifications/unread-count?projectId=93",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/projects",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/auth/me",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/me/ui-mode",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/projects/capabilities",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/ai/state?projectId=93",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/users/me/preferences",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/users?page=1&size=100",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/me/menu-capabilities",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/me/ui-mode",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/projects/cards?window=7d",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/global/cases/grouped",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/platform/case-sets",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/global/assets?type=DEVICE&availability=active",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/projects",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/projects/122/content",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/projects",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/notifications/unread-count?projectId=122",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/ai/state?projectId=122",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/notifications/unread-count?projectId=122",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/auth/me",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/projects",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/users/me/preferences",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/me/ui-mode",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/projects/cards?window=7d&current=122",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/ai/state?projectId=122",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/projects/capabilities",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/me/menu-capabilities",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/me/ui-mode",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/notifications/unread-count?projectId=93",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/projects",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/auth/me",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/ai/state?projectId=93",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/projects/93/case-sets?page=1&size=20",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/execution/runs?projectId=93&page=1&size=200",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/projects/93/cases?page=1&size=20",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/users/me/preferences",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/me/ui-mode",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/projects/capabilities",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/me/menu-capabilities",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/projects/93/runs/preview",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/projects/93/runs/preview",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/projects/93/runs/preview",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/projects/93/runs/preview",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/notifications/unread-count?projectId=93",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/auth/me",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/projects",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/projects/capabilities",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/me/ui-mode",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/users/me/preferences",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/ai/state?projectId=93",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/me/menu-capabilities",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/me/ui-mode",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/platform/case-sets?page=1&size=100",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/platform/case-sets/78/items",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/platform/case-sets/78/items",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/platform/case-sets/78/items",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/me/ui-mode",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/notifications/unread-count?projectId=95",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/auth/me",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/projects",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/reports/EHT-REAL-L0-20261113-220048-01?projectId=95",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/users/me/preferences",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/ai/state?projectId=95",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/me/ui-mode",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/reports/EHT-REAL-L0-20261113-220048-01/tree?projectId=95",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/projects/capabilities",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/reports/trend/pass-rate?projectId=95&granularity=day&limit=12",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/reports/EHT-REAL-L0-20261113-220048-01/trend?projectId=95&caseKey=IM-CER-008&limit=5",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/me/menu-capabilities",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/reports/EHT-REAL-L0-20261113-220048-01/summary?projectId=95",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/reports/EHT-REAL-L0-20261113-220048-01/exports?projectId=95",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/me/ui-mode",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/notifications/unread-count?projectId=29",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/projects",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/auth/me",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/execution/runs?projectId=29&page=1&size=20",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/ai/state?projectId=29",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/users/me/preferences",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/me/ui-mode",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/projects/capabilities",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/me/menu-capabilities",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/runs/RUN-20261114030058-1c0000?projectId=29",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/runs/RUN-20261114030058-1c0000?projectId=29",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/execution/runs?projectId=29&page=1&size=20",
+      "status": 200,
+      "method": ""
+    },
+    {
+      "url": "http://localhost:8001/api/runs/RUN-20261114030058-1c0000?projectId=29",
+      "status": 200,
+      "method": ""
+    }
+  ]
+}

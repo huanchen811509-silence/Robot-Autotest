@@ -56,7 +56,8 @@ class ReportViewRenderDumpTest {
         for (String key : view.keySet()) {
             assertTrue(ReportFieldWhitelist.EXTERNAL_FIELDS.contains(key), "非白名单字段: " + key);
         }
-        assertEquals("FAIL", view.get("conclusion"));
+        // 复核 P0-4：没有判据汇总的运行结论是 UNDETERMINED，不再由 failCount 翻译。
+        assertEquals("UNDETERMINED", view.get("conclusion"));
         assertEquals(42L, ((Number) view.get("reportId")).longValue());
 
         String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(view) + "\n";

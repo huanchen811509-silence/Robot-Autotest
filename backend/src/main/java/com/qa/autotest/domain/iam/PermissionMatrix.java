@@ -31,9 +31,16 @@ public final class PermissionMatrix {
      */
     private static Map<RoleCode, Set<String>> MENU_MATRIX = buildMenuMatrix();
 
-    /** 6 个菜单能力固定顺序，服务端下发能力数组时按此顺序，避免前端拿到散序集合。 */
+    /**
+     * 菜单能力固定顺序，服务端下发能力数组时按此顺序，避免前端拿到散序集合。
+     *
+     * <p>v5.7.0 / 复核 P1-1 追加 {@code case:write}：前端「平台用例集能不能写」原先按
+     * {@code roles.includes('admin')} 判，而服务端用的是 {@code CASE:UPDATE}——两套口径
+     * 导致 PM 有写权限却看不到入口。能力码与资源矩阵保持单一真源：见 {@link #menuAllows}。
+     */
     public static final List<String> MENU_CAPABILITIES = List.of(
-            "settings:read", "ai:config", "user:write", "audit:read", "about", "changelog");
+            "settings:read", "ai:config", "user:write", "audit:read", "about", "changelog",
+            "case:write");
 
     private PermissionMatrix() {
     }
@@ -69,6 +76,11 @@ public final class PermissionMatrix {
     public static boolean menuAllows(RoleCode role, String capability) {
         if (role == null || capability == null) {
             return false;
+        }
+        // case:write 不落 MENU_MATRIX：它必须与「写平台用例集」的那道闸完全同源，
+        // 否则前端的显隐和后端的 403 迟早会分叉。
+        if ("case:write".equals(capability)) {
+            return allows(role, PermissionResource.CASE, PermissionAction.UPDATE);
         }
         return MENU_MATRIX.getOrDefault(role, Set.of()).contains(capability);
     }

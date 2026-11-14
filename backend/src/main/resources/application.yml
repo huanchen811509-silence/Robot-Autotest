@@ -22,6 +22,15 @@ spring:
     # 迁移由 make db-migrate（mvn flyway:migrate）执行，不跟应用启动绑死
     enabled: false
     locations: filesystem:${DB_MIGRATION_PATH:../db/migration}
+  jackson:
+    deserialization:
+      # 契约守门的地基（2026-11-14 复核 P0 补丁）：Spring Boot 默认把
+      # FAIL_ON_UNKNOWN_PROPERTIES 关掉，于是请求体字段名写错（`token` / `setIds` /
+      # `caseId`）会被**静默丢弃**，接口照样 200、数据照样不对。
+      # 注意：在 record 上写 `@JsonIgnoreProperties(ignoreUnknown = false)` **不管用**——
+      # 它只表示「不忽略」，仍会落回全局这个开关，而全局是 false（实测 2026-11-14：
+      # 带 `token` 的 preview 请求仍返回 200）。所以必须在这里打开。
+      fail-on-unknown-properties: true
   servlet:
     multipart:
       # 导入上限由接口自校验（20 MB）给出明确错误码；容器留 1 MB 余量，

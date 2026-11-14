@@ -50,7 +50,9 @@ class EvidenceBundleServiceTest {
         paths = EvidencePaths.of(tempDir.resolve("store"));
         repository = mock(EvidenceBundleStore.class);
         when(repository.find(anyString())).thenReturn(Optional.empty());
-        service = new EvidenceBundleService(paths, repository);
+        // W57-51 起哈希不符要留审计，构造器多一个 AuditService；单测用 mock，不连库。
+        service = new EvidenceBundleService(paths, repository,
+                mock(com.qa.autotest.application.iam.AuditService.class));
     }
 
     private Path file(String name, String content) throws Exception {

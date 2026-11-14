@@ -10,6 +10,7 @@ import com.qa.autotest.domain.report.ReportSnapshot;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class ReportSnapshotTest {
@@ -44,8 +45,23 @@ class ReportSnapshotTest {
         for (String key : view.keySet()) {
             assertTrue(ReportFieldWhitelist.EXTERNAL_FIELDS.contains(key), "非白名单字段: " + key);
         }
-        assertEquals("FAIL", view.get("conclusion"));
+        // 复核 P0-4 后：没有判据汇总的运行一律 UNDETERMINED——不再用 failCount 翻译结论。
+        assertEquals("UNDETERMINED", view.get("conclusion"));
         assertEquals("INTERNAL USE ONLY", view.get("watermark"));
+    }
+
+    @Test
+    @DisplayName("有判据汇总时结论跟随判据，与 failCount 无关（W57-50）")
+    void conclusionFollowsCriteriaNotFailCount() {
+        ReportRecord withCriteria = new ReportRecord(
+                source().projectId(), source().runId(), source().state(), source().exportable(),
+                source().metadataMissing(), source().metadata(), source().passCount(),
+                source().failCount(), source().skipCount(), source().startedAt(),
+                source().finishedAt(), "PASS", 8, 0);
+        Map<String, Object> view = renderer.external(
+                snapshots.build(withCriteria, 1), 3L, "季度回归报告", "", "INTERNAL USE ONLY");
+        // failCount > 0 但判据全 PASS：这正是「退出码不等于达标」的场景，结论必须是 PASS。
+        assertEquals("PASS", view.get("conclusion"));
     }
 
     @Test

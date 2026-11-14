@@ -22,6 +22,12 @@ export interface PlatformCaseSetItem {
   categoryL1: string | null
 }
 
+/** 批量加成员的返回：`added` 真加进去的条数、`skipped` 已存在跳过数。 */
+export interface AddItemsResult {
+  added: number
+  skipped: number
+}
+
 export interface SeedSamplesResult {
   created: number
   rebuilt: boolean
@@ -42,8 +48,18 @@ export interface PlatformCaseSetCommand {
 }
 
 export const platformCaseSetApi = {
-  list(params: PlatformCaseSetQuery = {}) {
-    return request<PlatformCaseSet[]>(`/platform/case-sets${toQuery(params)}`)
+  /**
+   * 列表。后端返回的是**分页信封** `{ items, page, size, total }`，不是裸数组——
+   * v5.7.0 首版这里declare 成 `PlatformCaseSet[]`，调用方 `rows.map(...)` 直接抛
+   * `rows.map is not a function`，`/g/case-sets` 列表与向导「内容」步的用例集分区
+   * 因此**永远是空的**（2026-11-14 真实界面取证发现，见 `06-ACCEPTANCE-AUDIT.md` 补记）。
+   * 这里统一拆信封，调用方只拿数组；需要翻页元数据的场景另开 `page()`。
+   */
+  async list(params: PlatformCaseSetQuery = {}): Promise<PlatformCaseSet[]> {
+    const page = await request<{ items?: PlatformCaseSet[] }>(
+      `/platform/case-sets${toQuery(params)}`,
+    )
+    return Array.isArray(page?.items) ? page.items : []
   },
   create(body: PlatformCaseSetCommand) {
     return request<PlatformCaseSet>('/platform/case-sets', {
@@ -64,10 +80,22 @@ export const platformCaseSetApi = {
   items(id: number) {
     return request<PlatformCaseSetItem[]>(`/platform/case-sets/${id}/items`)
   },
-  addItem(id: number, caseId: number) {
-    return request<void>(`/platform/case-sets/${id}/items`, {
+  /**
+   * 批量加成员。后端入参是 `List<Long> caseIds`——**单条也要包成数组**，
+   * 直接发 `{caseId}` 会被 Jackson 忽略成 `caseIds=null`，静默返回 `added=0`
+   * （v5.7.0 首版缺陷，见 06-ACCEPTANCE-AUDIT P0-3）。
+   */
+  addItems(id: number, caseIds: number[]) {
+    return request<AddItemsResult>(`/platform/case-sets/${id}/items`, {
       method: 'POST',
-      body: JSON.stringify({ caseId }),
+      body: JSON.stringify({ caseIds }),
+    })
+  },
+  /** 单条添加：转调批量端点，全站只保留一套契约。 */
+  addItem(id: number, caseId: number) {
+    return request<AddItemsResult>(`/platform/case-sets/${id}/items`, {
+      method: 'POST',
+      body: JSON.stringify({ caseIds: [caseId] }),
     })
   },
   removeItem(id: number, caseId: number) {

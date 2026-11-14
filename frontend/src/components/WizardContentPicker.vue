@@ -9,7 +9,6 @@
  * `conflicts` 并在此**指名**显示、提供移除入口。
  */
 import { onMounted, ref } from 'vue'
-import { templateApi } from '@/api/globalTemplates'
 import { platformCaseSetApi } from '@/api/platformCaseSets'
 import { globalAssetApi } from '@/api/globalAssets'
 import CaseCategoryTree from './CaseCategoryTree.vue'
@@ -18,10 +17,6 @@ import type { CategoryGroup, TreeCase } from '@/composables/useCategorySelection
 import { useI18n } from 'vue-i18n'
 const { t } = useI18n()
 
-interface Option {
-  key: string
-  name: string
-}
 interface ContentSetRef {
   id: number
   name: string
@@ -42,7 +37,6 @@ const props = defineProps<{
   initialGroups?: CategoryGroup[]
   caseLoader?: (l1Name: string, l2Name: string) => Promise<{ items: TreeCase[]; total: number }>
   /** 注入选项后不再自行请求（单测 / 已有数据的父级用）。 */
-  templateOptions?: Option[]
   setOptions?: ContentSetRef[]
   assetOptions?: ContentSetRef[]
 }>()
@@ -60,17 +54,12 @@ const sectionLabels: Record<SectionKey, string> = {
 /** 默认只展开「用例」分区。 */
 const openSections = ref<Set<SectionKey>>(new Set<SectionKey>(['case']))
 
-const templates = ref<Option[]>(props.templateOptions ?? [])
 const sets = ref<ContentSetRef[]>(props.setOptions ?? [])
 const assets = ref<ContentSetRef[]>(props.assetOptions ?? [])
 const loadError = ref('')
 
 onMounted(async () => {
   try {
-    if (!props.templateOptions) {
-      const rows = await templateApi.list({})
-      templates.value = rows.map((row) => ({ key: row.code, name: row.name }))
-    }
     if (!props.setOptions) {
       const rows = await platformCaseSetApi.list({})
       sets.value = rows.map((row) => ({ id: row.id, name: row.name }))
@@ -100,12 +89,6 @@ function emitChange(next: ContentSelection): void {
     caseIds: [...new Set(next.caseIds)],
     assetIds: [...new Set(next.assetIds)],
   })
-}
-
-function toggleTemplate(key: string): void {
-  const current = props.modelValue.templateKeys
-  const next = current.includes(key) ? current.filter((item) => item !== key) : [...current, key]
-  emitChange({ ...props.modelValue, templateKeys: next })
 }
 
 function toggleSet(option: ContentSetRef): void {
@@ -187,16 +170,9 @@ function dedupe(): void {
 
       <div v-if="openSections.has(key)" class="section-body" :data-testid="`section-body-${key}`">
         <template v-if="key === 'template'">
-          <label v-for="item in templates" :key="item.key" class="picker-item">
-            <input
-              type="checkbox"
-              :checked="modelValue.templateKeys.includes(item.key)"
-              :data-testid="`template-${item.key}`"
-              @change="toggleTemplate(item.key)"
-            />
-            <span class="picker-name">{{ item.name }}</span>
-          </label>
-          <p v-if="templates.length === 0" class="picker-empty">{{ t('w57.wizardContent.noTemplate') }}</p>
+          <p class="picker-hint" data-testid="template-inherited">
+            {{ t('w57.wizardContent.templateInherited') }}
+          </p>
         </template>
 
         <template v-else-if="key === 'set'">

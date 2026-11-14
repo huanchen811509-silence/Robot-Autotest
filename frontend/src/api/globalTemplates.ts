@@ -83,7 +83,13 @@ export const templateApi = {
   },
   applyContent(
     projectId: number,
-    body: { caseIds: number[]; assets: { assetType: string; assetId: number }[]; setName?: string },
+    body: {
+      caseIds: number[]
+      assets: { assetType: string; assetId: number }[]
+      setName?: string
+      /** 与后端 `ContentRequest.caseSetIds` 同名：集合成员由服务端展开后并入 caseIds。 */
+      caseSetIds?: number[]
+    },
   ) {
     return request<ContentResult>(`/projects/${projectId}/content`, {
       method: 'POST',

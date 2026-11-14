@@ -338,21 +338,43 @@ const editOpen = ref(false)
 const editRunId = ref<string | null>(null)
 const editRemark = ref('')
 const editSaving = ref(false)
+/** 编辑框加载真实备注中：期间禁用保存，避免用空值覆盖（复核 P1-5）。 */
+const editLoading = ref(false)
 const deleting = ref(false)
 const confirmShow = ref(false)
 const confirmCount = ref(0)
 const confirmImpacts = ref<{ label: string; count: number }[]>([])
 const pendingDeleteRunId = ref<string | null>(null)
 
-function openEditRemark(row: ExecutionRun): void {
+/**
+ * 打开备注编辑框。
+ *
+ * 复核 P1-5：原实现从 `runMetas` 取备注，而 `runMetas` 只在「保存过之后」才有值——
+ * 列表 DTO 不带 remark。于是第二次打开看到空、直接保存就把旧备注覆盖成空串。
+ * 现在每次打开都向后端取一次真实值；取不到时禁用保存，绝不拿空串当默认。
+ */
+async function openEditRemark(row: ExecutionRun): Promise<void> {
   editRunId.value = row.runId
-  editRemark.value = runMetas.value[row.runId]?.remark ?? ''
+  editRemark.value = ''
+  editLoading.value = true
   editOpen.value = true
+  try {
+    const meta = await listCrudApi.getRun(projectId.value, row.runId)
+    runMetas.value = { ...runMetas.value, [meta.runId]: meta }
+    editRemark.value = meta.remark ?? ''
+  } catch (e) {
+    error.value = localizeError(e)
+    editOpen.value = false
+    editRunId.value = null
+  } finally {
+    editLoading.value = false
+  }
 }
 function closeEdit(): void {
   editOpen.value = false
   editRunId.value = null
   editRemark.value = ''
+  editLoading.value = false
 }
 async function submitEditRemark(): Promise<void> {
   if (!editRunId.value || editSaving.value) return
@@ -518,7 +540,14 @@ const columns = computed<DataTableColumns<ExecutionRun>>(() => [
           ),
         h(
           NButton,
-          { text: true, size: 'small', onClick: () => openEditRemark(row) },
+          {
+            text: true,
+            size: 'small',
+            // 可测锚点：行内动作由 `h()` 渲染，没有稳定选择器时界面取证只能靠文案匹配，
+            // 表格里同名文案一多就会点错（2026-11-14 取证实测踩过）。
+            'data-testid': 'edit-remark',
+            onClick: () => openEditRemark(row),
+          },
           { default: () => t('w57.runs.editRemark') },
         ),
         deletedRunIds.value.has(row.runId)
@@ -1056,7 +1085,12 @@ onBeforeUnmount(() => {
         />
         <div class="crud-dialog__actions">
           <NButton quaternary @click="closeEdit">{{ t('w57.runs.cancel') }}</NButton>
-          <NButton type="primary" :loading="editSaving" @click="submitEditRemark">{{ t('w57.runs.save') }}</NButton>
+          <NButton
+            type="primary"
+            :loading="editSaving"
+            :disabled="editLoading"
+            @click="submitEditRemark"
+          >{{ t('w57.runs.save') }}</NButton>
         </div>
       </div>
     </NModal>

@@ -20,8 +20,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { caseApi, caseSetApi, type TestCase, type TestSet } from '@/api/cases'
 import { executionApi, type ExecutionRun, type SafetyPrecheck } from '@/api/execution'
-import { runLaunchApi, type RunPreviewPayload } from '@/api/runLaunch'
-import { ApiError } from '@/api/http'
+import { runLaunchApi, type RunConfirmPayload, type RunPreviewPayload } from '@/api/runLaunch'
 import DataTable from '@/components/DataTable.vue'
 import RunSelectionPanel from '@/components/RunSelectionPanel.vue'
 import { useRunSelection, type RunMode, type SourceEntry } from '@/composables/useRunSelection'
@@ -226,59 +225,29 @@ async function start(): Promise<void> {
 
   const requestId = newRequestId()
   const caseIds = [...new Set(selectedCaseIds.value)]
+  // 预览只交「选择条件」，由后端冻结快照并回传 snapshotId（字段名与后端 record 同名）。
   const previewPayload: RunPreviewPayload = {
-    caseIds,
-    setIds: selectedSetIds.value,
     mode: mode.value,
-    all: mode.value === 'ALL' && allSelected.value,
-    runRequestId: requestId,
-  }
-  /** 旧路径的兼容载荷：与既有 caseIds 提交完全一致，参数同样「不填就不带键」。 */
-  const legacyPayload: Parameters<typeof executionApi.runCases>[1] = {
+    setIds: selectedSetIds.value,
     caseIds,
-    runRequestId: requestId,
   }
-  // 只有用户显式填了才带该字段：不填 = 交给后端默认。两份载荷同步填充。
-  if (environmentId.value !== null) {
-    previewPayload.environmentId = environmentId.value
-    legacyPayload.environmentId = environmentId.value
-  }
-  if (concurrency.value !== null) {
-    previewPayload.concurrency = concurrency.value
-    legacyPayload.concurrency = concurrency.value
-  }
-  if (timeoutSeconds.value !== null) {
-    previewPayload.timeoutSeconds = timeoutSeconds.value
-    legacyPayload.timeoutSeconds = timeoutSeconds.value
-  }
-  if (testTimeoutSeconds.value !== null) {
-    previewPayload.testTimeoutSeconds = testTimeoutSeconds.value
-    legacyPayload.testTimeoutSeconds = testTimeoutSeconds.value
-  }
-  if (includeTag.value.trim()) {
-    previewPayload.includeTag = includeTag.value.trim()
-    legacyPayload.includeTag = includeTag.value.trim()
-  }
+  // 确认只交 snapshotId + 本次执行参数：不填就不带键，交给后端默认。
+  const confirmPayload: RunConfirmPayload = { snapshotId: 0, runRequestId: requestId }
+  if (environmentId.value !== null) confirmPayload.environmentId = environmentId.value
+  if (concurrency.value !== null) confirmPayload.concurrency = concurrency.value
+  if (timeoutSeconds.value !== null) confirmPayload.timeoutSeconds = timeoutSeconds.value
+  if (testTimeoutSeconds.value !== null) confirmPayload.testTimeoutSeconds = testTimeoutSeconds.value
+  if (includeTag.value.trim()) confirmPayload.includeTag = includeTag.value.trim()
 
   try {
-    // 新流程：先预览拿 token，再确认并发起。
     const preview = await runLaunchApi.preview(projectId.value, previewPayload)
-    const run = await runLaunchApi.confirmAndStart(projectId.value, preview.token, previewPayload)
+    confirmPayload.snapshotId = preview.snapshotId
+    const run = await runLaunchApi.confirmAndStart(projectId.value, confirmPayload)
     await router.push(`/runs/${encodeURIComponent(run.runId)}`)
   } catch (e) {
-    // 后端未部署（404）/ 幂等冲突（409）/ 预览不可用：回退到旧 caseIds 路径，并给出可读提示。
-    const code = e instanceof ApiError ? e.code : 0
-    startError.value =
-      code === 404 || code === 409
-        ? t('w57.executionPlans.newLaunchUnavailable', { code })
-        : t('w57.executionPlans.previewUnavailable')
-    try {
-      const run = await executionApi.runCases(projectId.value, legacyPayload)
-      await router.push(`/runs/${encodeURIComponent(run.runId)}`)
-    } catch (legacyError) {
-      startError.value =
-        legacyError instanceof Error ? legacyError.message : t('executionPlans.startFailed')
-    }
+    // **不自动回退旧链路**：回退会绕过选择快照、摘要比对与 409 拦截，等于静默降级
+    // （审计 P0-1）。失败就如实报错，让用户决定是否改用「按用例执行」旧入口。
+    startError.value = e instanceof Error ? e.message : t('executionPlans.startFailed')
   } finally {
     starting.value = false
   }

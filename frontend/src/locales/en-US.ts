@@ -3091,6 +3091,7 @@ export default {
       remove: 'Remove {name}',
       skippable: 'Optional',
       noTemplate: 'No templates',
+      templateInherited: 'Template content is applied from the first step. Go back to change it.',
       noSet: 'No case sets, create one on the "Global case sets" page',
       noAsset: 'No available test assets',
     },
@@ -3113,8 +3114,6 @@ export default {
       searchMember: 'Search members',
     },
     executionPlans: {
-      newLaunchUnavailable: 'New launch API unavailable ({code}), automatically fell back to the legacy submit path',
-      previewUnavailable: 'Preview launch unavailable, automatically fell back to the legacy submit path',
     },
     globalAssets: {
       collectDone: 'Manual collection submitted: one-time credential used, not saved to the vault',
@@ -3170,7 +3169,7 @@ export default {
     projectWizard: {
       contentConflict: 'The following case sets were deleted, please return to the content step and remove them before retrying: {names}',
       backToList: 'Back to project list',
-      setTemplateSummary: 'Case sets {sets} · Templates {templates}',
+      setSummary: 'Case sets {sets}',
     },
     runs: {
       colRunId: 'Run ID',

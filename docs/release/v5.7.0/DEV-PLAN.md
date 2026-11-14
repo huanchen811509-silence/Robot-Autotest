@@ -20,6 +20,7 @@
 | W8 | 列表 CRUD 全覆盖 | W57-31 ~ W57-37 | 是 | 依赖 W1（迁移）、W4（列表骨架）；与 W7 可并行 |
 | W9 | 设备凭证 | W57-38 ~ W57-42 | 是 | 依赖 W1（迁移）；与 W7/W8 可并行 |
 | W10 | 体验契约与全量收口 | W57-43 ~ W57-46 | 否（最终收口波） | 依赖 W7 ~ W9；**W57-26 的全量回归职责在此执行** |
+| W11 | **复核缺陷修复** | W57-47 ~ W57-58 | 是 | 依赖 W1 ~ W10 全部产出；由 `06-ACCEPTANCE-AUDIT.md` 触发 |
 
 **并行纪律**：W4 与 W5 可并行；W2 → W3 串行；W7 / W8 / W9 三者可并行（改动面不重叠：执行台 / 列表页 / 资产页）；
 W10 必须最后，且 W10 开始前 W7 ~ W9 的出口判据全部满足。
@@ -720,7 +721,7 @@ node scripts/browser-regression.mjs
 | 新增 Java | 38 个主源 + 13 个测试类 |
 | 新增 Vue / TS | 32 个（含 `.spec.ts`） |
 | 新增迁移 | 7 个（`V11_58` ~ `V11_64`），配 7 个 `.down.sql` |
-| 单测 | 后端 **1899** 例、前端 **1008** 例，全绿；`vue-tsc` 0 错 |
+| 单测 | 后端 **1917** 例、前端 **1015** 例，全绿；`vue-tsc` 0 错 |
 | 业务表 | 105 → **108**（`db-audit` PASS） |
 
 ### 17.2 波次完成情况
@@ -735,7 +736,7 @@ node scripts/browser-regression.mjs
 | W7 | 选择四模式 + 快照 | 预览链路完成 | `confirm-and-start` 未接既有批量派发 |
 | W8 | 列表 CRUD 与台账 | 端点 + 台账 + 机检完成 | 3 个页面未接骨架（L-57-05） |
 | W9 | 凭证验证与一次性凭证 | 完成 | 真实远程采集未触发（L-57-04） |
-| W10 | 收口、门禁、落号、交付包 | 完成；55 步 `FAILS=0`；jar/交付包已产 | 无 |
+| W10 | 收口、门禁、落号、交付包 | 完成；55 步 `FAILS=0`（W11 新增第 56 步契约对账后为 56 步）；jar/交付包已产 | 无 |
 
 ### 17.3 计划外工作（必须记账）
 
@@ -751,10 +752,174 @@ node scripts/browser-regression.mjs
 
 ---
 
-## 18. 修订记录
+## 18. W11 复核缺陷修复（W57-47 ~ W57-58）
+
+> **触发** `06-ACCEPTANCE-AUDIT.md`（2026-11-14 20:30，复核对象 `1beea30`）：代码走查发现 **4 处 P0 功能断裂 + 8 条 P1 契约/权限偏差 + 6 条 P2「声称 vs 实际」**。
+> **性质** 不是新需求，也不是波次返工——是 W2 / W3 / W5 / W7 / W8 已交付能力在**跨层拼装**处的断链。不新增 FR、不改 PRD 判据，只让已声明的判据真的成立。
+> **纪律** 每条 WBS 必须**先写出会判红的用例**再改实现（红 → 绿），不许先改代码后补测试；改完必须能被某个机检或真实链路拦住，**拦不住的算未完成**。
+> **不动的东西** 迁移号不新增（本波不改表结构，只改读写与契约）；`V11_58` ~ `V11_64` 已应用，一律不动。
+
+### 18.1 波次拆解
+
+| WBS | 目标 | 对应缺陷 | 依赖 | 出口判据 |
+|---|---|---|---|---|
+| W57-47 | 发起执行字段契约对齐 + **删静默回退** | P0-1 | W57-27 ~ W57-30 | 界面发起确实走 `preview → confirm-and-start`；409/404 时**进程数不变** |
+| W57-48 | 向导「选用例集」字段对齐 | P0-2 | W57-12 ~ W57-14 | 向导勾 2 个集 → 建出的项目内 2 个集非空 |
+| W57-49 | 平台集「添加成员」字段对齐 | P0-3 | W57-06 ~ W57-11 | 界面点添加 → `added = n > 0` 且库内成员数增加 |
+| W57-50 | 判据写入接线 + 报告结论改读判据 | P0-4 | W57-22 | `test_result.criteria_*` 有值；报告结论不再是 `failCount` 单判 |
+| W57-51 | 摘要公式补 `planId` + `selectionSha`；派发比对**确认摘要**；三条审计事件落名 | P1-6 / P1-7 / P1-8 | W57-47 | 只换脚本内容、用例集不变 → 409；三条审计事件可查 |
+| W57-52 | 平台集写权限前后端一致 + `seed-samples` 鉴权 + 去 `GET` 写副作用 | P1-1 / P1-2 / P1-3 | W57-49 | 只读用户看不到写入口且直调 403；`GET` 列表不新增行 |
+| W57-53 | 软删后详情 / 导出 / 模板渲染一律 404 | P1-4 | W57-31 | 软删后 `GET /test-reports/{id}` 404、导出失效 |
+| W57-54 | 运行记录备注回填，空值不覆盖旧值 | P1-5 | W57-31 | 二次编辑不丢备注 |
+| W57-55 | **前端请求体 vs 后端 record 字段对账机检**，并入门禁（55 → 56 步） | 根因 2 | W57-47 ~ W57-49 | 对 `1beea30` 回放判红 3 处；修完判绿；`--self-test` 真注入判红 |
+| W57-56 | 错误契约单测整改（mock 假契约 → 真契约） | 根因 1 | W57-47 ~ W57-50 | 把实现回退成 `1beea30` 时这些测试必须判红 |
+| W57-57 | 台账纠错 3 条 + `ListScaffold` / `toDescriptor` 二选一收口 | P2 | W57-55 | 台账与代码逐条对齐，不再有「声称 vs 实际」 |
+| W57-58 | 真实界面回归取证 + 文档回写 | — | 全部 | 逐页实操截图归档；`05-TEST-REPORT` / `06-ACCEPTANCE-AUDIT` 回写 |
+
+### 18.2 明细
+
+#### W57-47 发起执行字段契约对齐 + 删静默回退（P0-1）
+
+| 项 | 内容 |
+|---|---|
+| 交付物 | `frontend/src/api/runLaunch.ts`（预览返回读 `snapshotId`/`selectionSha256`；确认发 `{ snapshotId }`）、`frontend/src/views/ExecutionPlansView.vue`（删除 `catch` 里的 `runCases` 回退）、`backend/src/main/java/com/qa/autotest/api/execution/RunLaunchController.java`（错误码对齐信封 `40400 / 40900`） |
+| 关键约束 | 回退分支**删除**而不是改成静默重试；确实需要旧路径时给显式按钮 + 二次确认，**默认不出现** |
+| 验收命令 | `cd frontend && npx vitest run src/views/__tests__/ExecutionPlansView.spec.ts`；`curl -s -X POST .../runs/preview` 取 `snapshotId` 再 `confirm-and-start`，期望 200 且 `runId` 非空 |
+| 反向判据 | 派发前 `ps -ef \| grep -c pytest` 与 409 之后对比，**数目不变** |
+
+#### W57-48 向导用例集字段对齐（P0-2）
+
+| 项 | 内容 |
+|---|---|
+| 交付物 | `frontend/src/views/ProjectWizardView.vue`（`setIds` → `caseSetIds`，与 `ProjectTemplateService` 的 record 字段同名） |
+| 兜底 | 同时在后端 DTO 上加 `@JsonAlias("setIds")`？**不加**——别名会掩盖下一个同名错误，宁可在机检里禁止未知字段 |
+| 验收命令 | `curl` 建项目带 `caseSetIds: [<id1>,<id2>]` → `GET /api/projects/{newId}/test-sets` 期望 ≥ 2 条 |
+
+#### W57-49 平台集添加成员字段对齐（P0-3）
+
+| 项 | 内容 |
+|---|---|
+| 交付物 | `frontend/src/api/platformCaseSets.ts`（单条也发 `{ caseIds: [id] }`）、`GlobalCaseSetsView.vue` / `CaseSetsView.vue` 的调用点 |
+| 验收命令 | `curl -X POST .../case-sets/{id}/items -d '{"caseIds":[1,2]}'` 期望 `added=2`；界面单条添加后 `GET .../case-sets/{id}/items` 计数 +1 |
+
+#### W57-50 判据写入接线 + 报告结论改读判据（P0-4）
+
+| 项 | 内容 |
+|---|---|
+| 交付物 | `application/execution/CriteriaIngestService` 增加从执行产物（junit / RF output.xml）解析判据的入口并在 run 收尾时调用；`application/report/ReportViewRenderer.java` + `ReportExportService.java` 的结论改由 `CaseConclusionResolver` 汇总，`failCount` 仅作辅助列 |
+| 语义 | 未声明判据 → `UNDETERMINED`，**不得默认 PASS**；`MISSING`（用例没跑）与 `NULL`（跑了但没判据）必须区分到结论文案里 |
+| 验收命令 | 跑一条 `fake` pytest → `SELECT criteria_verdict, criteria_detail FROM test_result WHERE run_id=?` 非空；报告结论行含「判据」字样 |
+| 反向判据 | 把某用例判据置为失败但 `failCount=0` → 报告结论必须是 `FAIL` |
+
+#### W57-51 摘要公式与审计事件（P1-6 / P1-7 / P1-8）
+
+| 项 | 内容 |
+|---|---|
+| 交付物 | `application/execution/CommandDigest.java`：`sha256("v5.7-run-confirm:" + planId + ":" + selectionSha256 + ":" + commandDigest)`；`RunLaunchController` 派发前比对 `confirmed_digest`（不是只比 `selection_sha256`）；审计事件 `run.digest-mismatch` / `run.blocked-unconfirmed` / `evidence.hash-mismatch` 落名 |
+| 兼容 | 摘要算法变更后旧快照不可复用——按 `planId` 分域，旧值为空时首次派发重新确认，不做隐式迁移 |
+| 验收命令 | 改脚本内容不改用例集 → `confirm-and-start` 期望 **409** 且不启动；`SELECT * FROM audit_log WHERE event IN (...)` 三条均出现 |
+
+#### W57-52 平台集权限一致（P1-1 / P1-2 / P1-3）
+
+| 项 | 内容 |
+|---|---|
+| 交付物 | `GlobalCaseSetsView.vue` 写权限判据从 `auth.isAdmin` 改为后端下发的能力位（`CASE:UPDATE`）；`PlatformCaseSetController.seedSamples` 加 `access.require(CASE, UPDATE)`；列表端点去掉 `ensureSamples()`，播种改由**显式端点或启动期一次性任务**完成 |
+| 验收命令 | 只读账号 `GET /api/platform/case-sets` 前后 `SELECT COUNT(*) FROM test_set` 不变；`POST .../seed-samples` 用只读账号 403 |
+
+#### W57-53 软删一致性（P1-4）
+
+| 项 | 内容 |
+|---|---|
+| 交付物 | `infrastructure/TestReportRepositoryJdbc.find(id)` 过滤 `deleted_at IS NULL`；`ReportViewRenderer` / 模板渲染 / 导出三处随 `find` 一起 404 |
+| 风险 | 已软删报告的历史链接会 404——这正是 AC-25-6 要的语义，写进发布说明 |
+| 验收命令 | 软删后 `GET /api/reports/{id}` 与 `GET /api/reports/{id}/export` 均 404；`GET /api/reports?includeDeleted=true` 仍可查（管理面） |
+
+#### W57-54 备注回填（P1-5）
+
+| 项 | 内容 |
+|---|---|
+| 交付物 | 列表接口返回 `remark`；`RunsView.vue` 编辑前从行数据取（不再依赖未加载的 `runMetas`）；后端 `COALESCE` 语义改为「未传字段才保留」，显式空串等于清空需二次确认 |
+| 验收命令 | 备注改成 A → 存 → 重开编辑 → 显示 A → 直接保存 → 再查仍为 A |
+
+#### W57-55 契约对账机检（根因 2）
+
+| 项 | 内容 |
+|---|---|
+| 交付物 | `tools/check_fe_contract.py`：扫 `frontend/src/api/*.ts` 的请求体字段字面量 + 对应 `@PostMapping` 端点的 Java `record` 字段，做「前端字段 ⊆ 后端字段」对账；白名单按端点显式登记并写明理由；`--self-test` 真注入一条假字段 → 判红 → 还原 |
+| 接入 | `scripts/gates.sh` 新增一步（55 → 56），编号插在契约快照之后 |
+| 判据 | 以 `1beea30` 为基线回放应判红 3 处（`token`/`setIds`/`caseId`）；本波修完判绿 |
+| 已知盲区 | 只覆盖**字面量请求体**；经变量拼接的请求体标注 `SKIP` 并计入读数，不许静默放过 |
+
+#### W57-56 错误契约单测整改（根因 1）
+
+| 项 | 内容 |
+|---|---|
+| 交付物 | `ExecutionPlansView.spec.ts`（删掉自造的 `token` 与 `ApiError(409)`，改用与后端一致的信封码断言）、`ProjectWizardView.spec.ts`（断言 `caseSetIds` 且断言后端 record 能接住）、`GlobalCaseSetsView.spec.ts`（断言请求体是 `caseIds` 数组不是 `caseId`） |
+| 判据 | 把实现回退到 `1beea30` 时这三个文件必须**判红**；这是「测试有没有守住契约」的唯一证明 |
+| 验收命令 | `cd frontend && npx vitest run src/views/__tests__/ExecutionPlansView.spec.ts src/views/__tests__/ProjectWizardView.spec.ts src/views/global/__tests__/GlobalCaseSetsView.spec.ts` |
+
+#### W57-57 台账与骨架收口（P2）
+
+| 项 | 内容 |
+|---|---|
+| 台账纠错 | `/g/assets` 去掉「U」（后端确无 PUT）或补 PUT；`/plans/groups` 与 `/scenarios` 从 C 类改登记为 **A/B 类**（实际有写操作）；「37 页」改为台账真实读数 |
+| 骨架 | `ListScaffold` 要么接入宣称的页面，要么从发布说明与 README 里删掉「全站统一」的表述；`useServerSelection.toDescriptor()` 同理 |
+| 判据 | `python3 tools/check_list_crud.py` 读数与代码逐条一致；发布说明无未兑现的「全站」措辞 |
+
+#### W57-58 界面回归取证 + 文档回写
+
+| 项 | 内容 |
+|---|---|
+| 交付物 | `docs/evidence/v5.7.0/ui-regression-20261115/`：向导建项目、发起台四模式、平台集添加成员、报告结论、运行记录备注五条链路的实操截图 + 关键响应；`05-TEST-REPORT.md` §十与 `06-ACCEPTANCE-AUDIT.md` §七结论回写 |
+| 手段 | `scripts/browser-regression.mjs` 扩到覆盖本波五条链路（不只路由 200）；失败即判红 |
+| 判据 | 五条链路截图齐全；报告页结论显示判据汇总而非 `failCount` |
+
+### 18.3 本波不做的事（必须声明）
+
+| 项 | 原因 | 归属 |
+|---|---|---|
+| 真实 DUT 派发 | ADR-0013 安全闸 + G-1 场景授权不含本波 | L-57-01 |
+| 一次性凭证接入采集链 | 需要真实远程通道，本波无授权窗口 | L-57-04 |
+| 证据包补齐另两处接入 | 与 P0 无依赖关系，不影响「执行可信度」成立 | L-57-03 |
+| 10 万行性能 | 无夹具 | L-57-05 |
+
+### 18.4 W11 实际完成情况（2026-11-14 回写）
+
+| WBS | 计划内容 | 实际 |
+|---|---|---|
+| W57-47 | 发起台两步字段对齐 | 完成：`snapshotId` 落地，`token` 删除，静默回退移除 |
+| W57-48 | 向导内容提交字段对齐 | 完成：`caseSetIds`；模板移出请求体改只读回显 |
+| W57-49 | 平台集成员契约 | 完成：统一 `{caseIds:[...]}` |
+| W57-50 | 判据入库与结论汇总 | 完成：入库评估落列 + 报告/导出/快照读判据；**无真实样本**（L-57-10） |
+| W57-51 | 权限与软删（P1-1~4） | 完成（P1-2/3/4 只到单测与代码，未做 403/404 实测） |
+| W57-52 | 备注回填（P1-5） | 完成：新增 `GET /api/runs/{runId}`，真实界面往返已验 |
+| W57-53 | 摘要绑 planId + 派发前比对（P1-6/7） | 完成（真实 409 未跑） |
+| W57-54 | 审计三事件落名（P1-8） | 完成（未逐条触发取证） |
+| W57-55 | 契约对账机检入门禁 | 完成：`check_fe_contract.py` 第 56 步；`1beea30` 回放判红、`--self-test` 双向 |
+| W57-56 | 错误契约单测整改 | 完成：回退实现 → 13 条判红；恢复 → 46 条全绿 |
+| W57-57 | 台账与骨架收口 | 完成：3 条事实纠错 + 读数 42 页 + 三处文档改「部分落地」+ L-57-09 |
+| W57-58 | 界面回归取证 + 文档回写 | 完成：`docs/evidence/v5.7.0/ui-regression-20261114/`（13 张截图 + result.json，PASS=35 FAIL=0）；五份文档已回写 |
+
+**计划外新增（按流程记账，不藏在计划里）**：
+
+| 编号 | 事项 | 原因 |
+|---|---|---|
+| X-11 | 修 `platformCaseSetApi.list()` 分页信封误用（新 P0-5） | 真实界面取证发现列表永远为空，属功能断裂 |
+| X-12 | 打开 `spring.jackson.deserialization.fail-on-unknown-properties` | 实测证明 record 上的 `@JsonIgnoreProperties(ignoreUnknown=false)` 无效，P0 的反向闸实际没生效 |
+| X-13 | `RunsView` 行内动作补 `data-testid="edit-remark"` | 行内动作由 `h()` 渲染，界面取证只能靠文案匹配，同名文案会点错 |
+| X-14 | `scripts/ui-flows-v57.mjs`（新工具） | 五链路取证的执行体，可复跑 |
+
+### 18.5 本波遗留（→ v5.8.0）
+
+`L-57-09`（条件全选无下发）、`L-57-10`（判据无真实入库样本）、`L-57-11`（报告页不展示结论）；
+以及 P1 中只到代码路径的三条（403/404 实测、连打计数、审计事件触发取证）。
+
+## 19. 修订记录
 
 | 日期 | 修订 | 原因 |
 |---|---|---|
-| 2026-11-14 | 第三轮：§17 实际完成情况与偏差（133 文件 / 7 迁移 / 1899+1008 单测；7 项计划外工作逐条记账） | 编码与测试完成，按流程第 7 道回写 |
+| 2026-11-14 | **第四轮：新增 §18 W11 复核缺陷修复波（W57-47 ~ W57-58，12 个 WBS）** | `06-ACCEPTANCE-AUDIT.md` 代码走查发现 4 处 P0 断链 + 8 条 P1 偏差，原 46 WBS 无一遗漏但跨层拼装断裂 |
+| 2026-11-14 | **第五轮：W11 收口回写（§18.4 实际完成 + 4 项计划外工作 + 遗留 L-57-09~11）** | 编码与取证完成，按流程第 7 道回写；新增 P0-5 与 Jackson 开关两处计划外修复 |
+| 2026-11-14 | 第三轮：§17 实际完成情况与偏差（133 文件 / 7 迁移 / 1917+1015 单测；7 项计划外工作逐条记账） | 编码与测试完成，按流程第 7 道回写 |
 | 2026-11-14 | 初稿 | 依 PRD 15 FR 拆 26 个 WBS（**AC 数更正为 110**：初稿写 88 系统计笔误，实测表格 110 行） |
 | 2026-11-14 | 第二轮补充（+20 WBS / +4 波） | 大师四条补充：W7 执行选择、W8 列表 CRUD、W9 设备凭证、W10 体验契约与全量收口；W57-26 改为阶段性回归，全量收口移交 W57-45 |

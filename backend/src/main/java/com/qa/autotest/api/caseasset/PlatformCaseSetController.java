@@ -59,13 +59,9 @@ public class PlatformCaseSetController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "50") int size,
             @RequestParam(defaultValue = "all") String source) {
-        // W57-07：平台列表入口同步播种样例集；try-catch 包住，失败不影响列表响应
-        //（刻意不用异步线程，避免后台线程丢失 TenantContext 鉴权上下文）。
-        try {
-            seeder.ensureSamples();
-        } catch (RuntimeException ignored) {
-            // 播种失败只影响「是否补齐样例集」，绝不能让整页列表 500
-        }
+        // 复核 P1-3：GET 不再播种。原实现让 case:read 用户每刷一次列表就写一次 test_set，
+        // 与「写需写权限」直接冲突。现在播种只走 POST /seed-samples（有写权限才通），
+        // 页面在无样例集时给空态 + 显式按钮（PRD AC-01-5）。
         return ApiResponse.ok(sets.platformPage(keyword, page, Math.min(size, 200), source));
     }
 
@@ -117,10 +113,16 @@ public class PlatformCaseSetController {
                 request.categoryL2Id()));
     }
 
-    /** W57-07：手动触发样例集播种 / 重建。 */
+    /**
+     * 手动触发样例集播种 / 重建。
+     *
+     * <p>复核 P1-2：原实现无任何鉴权，任何登录用户都能写 {@code test_set / test_set_item}。
+     * 播种是「创建集合 + 写成员」，本质是写操作，必须与其它写端点同一道闸。
+     */
     @PostMapping("/seed-samples")
     public ApiResponse<SampleSetSeeder.SeedResult> seedSamples(
             @RequestParam(defaultValue = "false") boolean rebuild) {
+        sets.requirePlatformWrite();
         return ApiResponse.ok(rebuild ? seeder.rebuild() : seeder.ensureSamples());
     }
 }

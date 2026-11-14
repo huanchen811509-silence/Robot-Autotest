@@ -68,9 +68,17 @@ public class TestReportRepositoryJdbc implements TestReportRepository {
         return ts == null ? null : ts.toInstant();
     }
 
+    /**
+     * 按 id 取报告。
+     *
+     * <p>复核 P1-4：原实现不过滤 {@code deleted_at}，于是「列表里已消失、直链仍能打开、
+     * 导出仍能下载」，与 AC-25-6「软删后详情 404、导出失效」相反。软删的语义是「对用户不存在」，
+     * 所有读入口（详情 / 模板渲染 / 导出）都走本方法，因此在这一处收口。
+     */
     @Override
     public Optional<TestReport> find(long id) {
-        return jdbc.query("SELECT " + REPORT_COLUMNS + " FROM test_report WHERE id = ?",
+        return jdbc.query("SELECT " + REPORT_COLUMNS
+                        + " FROM test_report WHERE id = ? AND deleted_at IS NULL",
                 REPORT, id).stream().findFirst();
     }
 

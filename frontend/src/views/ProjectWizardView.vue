@@ -78,7 +78,6 @@ const contentSelection = ref<ContentSelection>({
 const selectedCaseIds = computed(() => contentSelection.value.caseIds)
 const selectedAssetIds = computed(() => contentSelection.value.assetIds)
 const selectedSetIds = computed(() => contentSelection.value.setIds)
-const selectedTemplateKeys = computed(() => contentSelection.value.templateKeys)
 /** 提交时后端报「集合已删」的并发冲突，交给内容步指名显示、供用户移除。 */
 const contentConflicts = ref<{ id: number; name: string }[]>([])
 
@@ -270,22 +269,18 @@ async function createProject(): Promise<void> {
         warnings.value.push(t('projectWizard.memberBatchFailed', { reason: line.summary }))
       }
     }
-    // 内容步（W57-12/13）：四类来源一次性提交；setIds 一并传给 /projects/{id}/content
-    // （后端已支持）。用变量而非对象字面量传参：既有 API 类型尚未声明 setIds/templateKeys，
-    // TS 结构类型允许变量携带额外字段，无需改动其它代理拥有的 api 文件。
-    if (
-      selectedCaseIds.value.length ||
-      selectedAssetIds.value.length ||
-      selectedSetIds.value.length ||
-      selectedTemplateKeys.value.length
-    ) {
+    // 内容步（W57-12/13）：四类来源一次性提交。字段名必须与后端
+    // `ProjectTemplateService.ContentRequest` 严格同名——`caseSetIds` 不是 `setIds`；
+    // 写错会被 Jackson 忽略成 null，建出的项目里集合为空且不报错
+    // （v5.7.0 首版缺陷，见 06-ACCEPTANCE-AUDIT P0-2）。
+    // 模板不在此提交：向导第 1 步选定的模板已在建项目时生效，此处只做只读回显。
+    if (selectedCaseIds.value.length || selectedAssetIds.value.length || selectedSetIds.value.length) {
       try {
         const contentPayload = {
           caseIds: [...new Set(selectedCaseIds.value)],
           assets: selectedAssetIds.value.map((assetId) => ({ assetType: 'DEVICE', assetId })),
           setName: t('projectWizard.contentSetName'),
-          setIds: [...new Set(selectedSetIds.value)],
-          templateKeys: [...new Set(selectedTemplateKeys.value)],
+          caseSetIds: [...new Set(selectedSetIds.value)],
         }
         contentConflicts.value = []
         await templateApi.applyContent(project.id, contentPayload)
@@ -583,7 +578,7 @@ async function confirmSaveTemplate(): Promise<void> {
                 assets: selectedAssetIds.length,
               }) }}
               <span class="wizard-hint">
-                {{ t('w57.projectWizard.setTemplateSummary', { sets: selectedSetIds.length, templates: selectedTemplateKeys.length }) }}
+                {{ t('w57.projectWizard.setSummary', { sets: selectedSetIds.length }) }}
               </span>
             </dd>
           </div>

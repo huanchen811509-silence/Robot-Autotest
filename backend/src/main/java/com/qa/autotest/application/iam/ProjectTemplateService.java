@@ -592,6 +592,7 @@ public class ProjectTemplateService {
      * 向导「内容」步入参（W57-14 扩 caseSetIds）。
      * 保留 3 参构造器：老调用方 / 既有 Jackson 请求体不含 caseSetIds 时语义零改动。
      */
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = false)
     public record ContentRequest(List<Long> caseIds, List<AssetRef> assets, String setName,
                                  List<Long> caseSetIds) {
         public ContentRequest(List<Long> caseIds, List<AssetRef> assets, String setName) {

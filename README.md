@@ -12,7 +12,7 @@
 | 项 | 值 | 说明 |
 |---|---|---|
 | 版本 | `5.7.0` | 唯一真源是根 [`VERSION`](VERSION)；可用 `APP_VERSION` 运行期覆盖；由 v5.7.0 用例资产化与执行可信度版本落号而来（2026-11-14 大师授权） |
-| 门禁 | 55 步 | `bash scripts/gates.sh`，尾部 `GATES_RESULT FAILS=0 UNJUDGED=0`；第 07 步发布文档机检、第 30 步交付包机检、第 49~52 步 `--self-test` 真注入判红 |
+| 门禁 | 56 步 | `bash scripts/gates.sh`，尾部 `GATES_RESULT FAILS=0 UNJUDGED=0`；第 07 步发布文档机检、第 30 步交付包机检、第 49~52 步 `--self-test` 真注入判红 |
 | 数据库 | 108 张业务表（分库实测见 `docs/plan/v5.0-口径裁决清单.md`） | Flyway 迁移至 `V11_64`（`V11_30`–`V11_37` 八组均附 `db/down/` 回滚），`scripts/db-audit.sh` 体检 |
 | API 契约 | 437 operations / 360 paths | `docs/contracts/openapi.json` 实读（2026-11-14）；口径见 [`v5.0-口径裁决清单`](docs/plan/v5.0-口径裁决清单.md) |
 | 前端 | 2824 i18n 键（中英一致，`check_i18n.py` 实跑） | `tools/check_i18n.py`；硬编码色值 0 处（`check_colors.py`） |

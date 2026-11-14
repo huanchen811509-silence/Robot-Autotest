@@ -16,6 +16,12 @@
  * **兼容**：返回对象完整保留 `useSelection` 的字段与方法名（selectedIds / count /
  * isEmpty / selectedOnPage / pageAllSelected / pageIndeterminate / crossPageCount /
  * isSelected / toggle / togglePage / retain / clear），既有调用方零改动即可换成它。
+ *
+ * **当前接入边界（2026-11-14 复核 P2 登记，L-57-09）**：条件模式只走到「界面状态」——
+ * `matchAll / excludeIds / matchedTotal` 用于计数、二次确认与排除集展示，
+ * **`toDescriptor()` 目前没有生产调用方**，后端批量端点（`GenericBatchService`）只接受显式
+ * `ids`，所以「全选所有命中」还不能真的下发。发布说明与 PRD 已按此改写，不得再声称
+ * 「服务端跨页全选已兑现」；接后端批量条件入参排 v5.8.0。
  */
 import { computed, ref, type Ref } from 'vue'
 import { useSelection, type BatchItemResult, type BatchResult } from './useSelection'
@@ -181,7 +187,12 @@ export function useServerSelection(
     resetForFilters()
   }
 
-  /** 生成后端批量动作的选择描述（影响面 count 由后端按同一条件回算）。 */
+  /**
+   * 生成后端批量动作的选择描述（影响面 count 由后端按同一条件回算）。
+   *
+   * **未接入**：后端批量端点只收显式 `ids`，条件模式（`mode: 'filter'`）尚无消费方，
+   * 详见文件头的 L-57-09。接入前不得用它对外承诺「跨页全选可下发」。
+   */
   function toDescriptor(): SelectionDescriptor {
     if (matchAll.value) {
       return {

@@ -86,6 +86,21 @@ public final class CommandDigest {
         return sha256Hex(PREFIX + String.join("\n", canonicalize(plans)));
     }
 
+    /**
+     * 确认摘要（v5.7.0 / FR-v5.7-11，复核 P1-6）：
+     * {@code sha256("v5.7-run-confirm:" + planId + ":" + selectionSha256 + ":" + commandDigest)}。
+     *
+     * <p>为什么必须带 planId 与选择摘要：只对命令清单算摘要时，同一批脚本在两个计划、
+     * 两种选择下会得到**同一个摘要**，于是「确认过 A 计划」可以拿去启动 B 计划——
+     * 摘要承诺就退化成「点过一次同意」。三者绑定后，任一项变化都会让摘要不同。
+     */
+    public static String confirmationDigest(long planId, String selectionSha256,
+                                            String commandDigest) {
+        String selection = selectionSha256 == null ? "" : selectionSha256.trim();
+        String command = commandDigest == null ? "" : commandDigest.trim();
+        return sha256Hex(PREFIX + planId + ":" + selection + ":" + command);
+    }
+
     /** 前 12 位，供预览接口展示。 */
     public static String shortDigest(List<CommandPlan> plans) {
         return digest(plans).substring(0, 12);

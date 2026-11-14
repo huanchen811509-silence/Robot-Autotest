@@ -126,6 +126,22 @@ public class ReportLifecycleService {
         return runMetaOf(runId, findRunRow(projectId, runId).orElse(row));
     }
 
+    /**
+     * 读取 run 的可编辑元数据（备注回填用，复核 P1-5）。
+     *
+     * <p>没有这个读入口时，前端只能拿列表行里的字段——而列表 DTO 不带 {@code remark}，
+     * 于是「打开编辑框 → 看到空 → 直接保存」会把旧备注写成空串。这是**读缺失导致的写错误**，
+     * 修在读侧才治根。软删行同样 404，与 {@link #updateRun} 保持一致。
+     */
+    public RunMeta readRun(long projectId, String runId) {
+        requireRunId(runId);
+        Map<String, Object> row = requireRunRow(projectId, runId);
+        if (isDeleted(row)) {
+            throw new BusinessException(ErrorCode.NOT_FOUND, "运行记录已删除: " + runId);
+        }
+        return runMetaOf(runId, row);
+    }
+
     /** 软删 run；重复删幂等返回 deleted=false，不写第二条审计。 */
     public DeleteResult deleteRun(long projectId, String runId) {
         requireRunId(runId);

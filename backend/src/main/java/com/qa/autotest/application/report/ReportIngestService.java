@@ -176,6 +176,10 @@ public class ReportIngestService {
                 : pytestLogs.persist(artifactDir);
         com.qa.autotest.domain.kernel.NormalizedRun normalized =
                 pytestKernel.normalize(artifactDir, run.runId());
+        // W57-50：判据原文（junit 的每用例 <system-out>）在归一阶段会被丢弃，这里先取出来。
+        // 解析失败只返回已收集部分，不影响执行事实入库。
+        com.qa.autotest.application.kernel.pytest.PytestCriteriaExtractor.Extraction criteriaText =
+                com.qa.autotest.application.kernel.pytest.PytestCriteriaExtractor.scan(artifactDir);
         // v5.1.0 / W51-07：nodeid → 用例库编号（GAP-09）。报告页要显示 IM-NET-131，
         // 而不是 test_im_net_131[param]；匹配键与结果归一共用一套（见 matchKey）。
         java.util.Map<String, String> codeIndex = pytestNormalizer == null
@@ -197,12 +201,21 @@ public class ReportIngestService {
             // v3.9.0 / FR-v3.9-02：命令三列随用例一起入库，报告页才有「下发了什么」可看。
             // v5.6.0 / FR-v5.6-24：重试两列同样入库——报告的失败数、抖动统计都从
             // test_result 读，不落库就只能在执行页看到「复测过了」，报告里看不到。
+            // junit 的 name 属性就是 pytest 的 item.name（含参数化后缀），先用它匹配；
+            // 匹配不到再退到 nodeId 的 `::` 后段，避免不同 pytest 版本的命名差异漏采。
+            String criteriaPayload = criteriaText.byCaseName().get(item.name());
+            if (criteriaPayload == null && item.nodeId() != null) {
+                int sep = item.nodeId().lastIndexOf("::");
+                if (sep > 0) {
+                    criteriaPayload = criteriaText.byCaseName().get(item.nodeId().substring(sep + 2));
+                }
+            }
             cases.add(new com.qa.autotest.domain.report.CaseNode(
                     displayName(item.nodeId(), item.name(), codeIndex), status,
                     Math.round(item.durationSeconds() * 1000.0), message,
                     java.util.List.of(), spans.offsetOf(item.nodeId()), spans.spanOf(item.nodeId()),
                     item.commandText(), item.commandSource(), item.commandExitCode(),
-                    item.retryCount(), item.flaky()));
+                    item.retryCount(), item.flaky(), criteriaPayload));
         }
         String rootStatus = fail > 0 ? "FAIL" : pass + skip == cases.size() ? "PASS" : "UNKNOWN";
         com.qa.autotest.domain.report.SuiteNode root =

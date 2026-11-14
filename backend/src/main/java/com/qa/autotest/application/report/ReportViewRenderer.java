@@ -211,9 +211,29 @@ public class ReportViewRenderer {
         return found == null ? "" : scrub(String.valueOf(found));
     }
 
+    /**
+     * 结论口径（v5.7.0 / FR-v5.7-13，复核 W57-50）：<b>先看判据汇总</b>，只有判据全 PASS 才 PASS。
+     *
+     * <p>旧的「{@code failCount == 0} 就 PASS」把「进程没报错」当成「达标」，正是白泽调研指出的
+     * 核心缺陷。现在：
+     * <ul>
+     *   <li>判据汇总为 PASS / FAIL → 直接采用；</li>
+     *   <li>汇总缺失或 UNDETERMINED → 判 {@code UNDETERMINED}，**不再回落成 PASS**；</li>
+     *   <li>仅有历史快照（没有 criteriaConclusion 键）时才退回计数口径，并显式标注
+     *       {@code PASS(count-only)}，让读者知道这条结论没有判据支撑。</li>
+     * </ul>
+     */
     private static String conclusion(Map<String, Object> all) {
+        Object declared = all.get("criteriaConclusion");
+        if (declared != null) {
+            String value = String.valueOf(declared);
+            if (!value.isBlank() && !"UNDETERMINED".equals(value)) {
+                return value;
+            }
+            return "UNDETERMINED";
+        }
         int fail = ((Number) all.getOrDefault("failCount", 0)).intValue();
-        return fail == 0 ? "PASS" : "FAIL";
+        return fail == 0 ? "PASS(count-only)" : "FAIL";
     }
 
     @SuppressWarnings("unchecked")

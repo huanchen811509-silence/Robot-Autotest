@@ -11,6 +11,11 @@
  *     写操作后由 `@refresh` 就地刷新，不整页重载。
  *
  * 颜色全部走 `theme.css` 的语义 token；标题容器限两行，1280/1440 两档都不撑高头部。
+ *
+ * **接入范围（2026-11-14 复核 P2 订正）**：v5.7.0 只有 `/test-reports`
+ * （`TestReportsView.vue`）接了本骨架，**不是「全站统一」**；其余列表页仍用各自结构，
+ * 未接入的七条在 `docs/evidence/v5.7.0/list-crud-matrix.md` 缺口白名单里逐条登记理由，
+ * 发布说明与 CHANGELOG 已同步改写（L-57-05）。
  */
 import { computed } from 'vue'
 import type { DataTableColumns, DataTableRowKey } from 'naive-ui'

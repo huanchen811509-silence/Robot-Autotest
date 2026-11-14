@@ -290,7 +290,8 @@ public class ExportService {
     private static Map<String, Object> summarySheet(ReportRecord report, ExportMode mode,
                                                     String qualityLabel) {
         Map<String, Object> sheet = ReportExportService.summaryView(report.runId(), report.state(),
-                report.passCount(), report.failCount(), report.skipCount(), report.metadata());
+                report.passCount(), report.failCount(), report.skipCount(), report.metadata(),
+                report.effectiveConclusion());
         if (mode == ExportMode.INTERNAL) {
             sheet.put("watermark", ReportExportService.WATERMARK + " / INTERNAL");
         }

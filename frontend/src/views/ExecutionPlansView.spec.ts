@@ -7,6 +7,7 @@
  * ② 五个参数「不填」必须是**不带该键**，不是传 0 / 空串（那会覆盖后端默认值）；
  * ③ `runRequestId` 必须带 `EP-` 前缀，否则「发起记录」无法与用例页发起的运行区分；
  * ④ 安全预检为 blocked 时，发起按钮要真的禁用（只提示不禁用等于没拦）。
+ * ⑤ 发起只有「预览 → 确认」这一条路，失败**不许**回退 `runCases`（复核 P0-1）。
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createApp, nextTick, type App } from 'vue'
@@ -75,6 +76,16 @@ const runs = [
   { id: 3, runId: 'RUN-EP-2', state: 'RUNNING', totalTests: 3, runRequestId: 'EP-def' },
   { id: 4, runId: 'RUN-NULL', state: 'FINISHED', totalTests: 1, runRequestId: null },
 ]
+
+/** 预览返回体（与后端 `SelectionPreviewResponse` 同名）。 */
+function previewOf(snapshotId: number, caseIds: number[]) {
+  return {
+    snapshotId,
+    selectionSha256: 'f'.repeat(64),
+    caseCount: caseIds.length,
+    items: caseIds.map((caseId) => ({ caseId, caseCode: `CLI-${caseId}` })),
+  }
+}
 
 const casePage = vi.mocked(caseApi.page)
 const setPage = vi.mocked(caseSetApi.page)
@@ -194,16 +205,24 @@ describe('ExecutionPlansView 发起', () => {
     await check(root, 'pick-11')
   }
 
-  it('未填参数时请求体不带这些键（不是传 0 / 空串）', async () => {
+  it('未填参数时确认体不带这些键（不是传 0 / 空串）', async () => {
+    const launchPreview = vi.mocked(runLaunchApi.preview)
+    const launchConfirm = vi.mocked(runLaunchApi.confirmAndStart)
+    launchPreview.mockResolvedValue(previewOf(88, [11]))
+
     const root = await mountView()
     await selectOne(root)
 
     root.querySelector<HTMLButtonElement>('[data-testid="start-run"]')!.click()
     await new Promise((resolve) => setTimeout(resolve, 0))
 
-    expect(runCases).toHaveBeenCalledTimes(1)
-    const payload = runCases.mock.calls[0][1]
-    expect(payload.caseIds).toEqual([11])
+    // 选择条件只走预览，执行参数只走确认——两步各管一段，不混在一个请求里。
+    expect(launchPreview).toHaveBeenCalledTimes(1)
+    expect(launchPreview.mock.calls[0][1].caseIds).toEqual([11])
+
+    expect(launchConfirm).toHaveBeenCalledTimes(1)
+    const payload = launchConfirm.mock.calls[0][1]
+    expect(payload.snapshotId).toBe(88)
     for (const key of [
       'environmentId',
       'concurrency',
@@ -213,9 +232,12 @@ describe('ExecutionPlansView 发起', () => {
     ]) {
       expect(Object.prototype.hasOwnProperty.call(payload, key)).toBe(false)
     }
+    // 旧链路一旦被调用就是静默回退，判红。
+    expect(runCases).not.toHaveBeenCalled()
   })
 
   it('填了参数才带该键，且值原样透传', async () => {
+    vi.mocked(runLaunchApi.preview).mockResolvedValue(previewOf(88, [11]))
     const root = await mountView()
     await selectOne(root)
 
@@ -228,19 +250,21 @@ describe('ExecutionPlansView 发起', () => {
     root.querySelector<HTMLButtonElement>('[data-testid="start-run"]')!.click()
     await new Promise((resolve) => setTimeout(resolve, 0))
 
-    const payload = runCases.mock.calls[0][1]
+    const payload = vi.mocked(runLaunchApi.confirmAndStart).mock.calls[0][1]
     expect(payload.concurrency).toBe(4)
     expect(Object.prototype.hasOwnProperty.call(payload, 'environmentId')).toBe(false)
   })
 
   it('runRequestId 以 EP- 开头（本页发起的唯一标记），并发起后跳运行详情', async () => {
+    vi.mocked(runLaunchApi.preview).mockResolvedValue(previewOf(88, [11]))
+    vi.mocked(runLaunchApi.confirmAndStart).mockResolvedValue({ runId: 'RUN-EP-9' } as never)
     const root = await mountView()
     await selectOne(root)
 
     root.querySelector<HTMLButtonElement>('[data-testid="start-run"]')!.click()
     await new Promise((resolve) => setTimeout(resolve, 0))
 
-    const payload = runCases.mock.calls[0][1]
+    const payload = vi.mocked(runLaunchApi.confirmAndStart).mock.calls[0][1]
     expect(payload.runRequestId?.startsWith('EP-')).toBe(true)
     // EP- + UUID = 39 字符，必须落在 run.run_request_id 的 VARCHAR(64) 内
     expect(payload.runRequestId!.length).toBeLessThanOrEqual(64)
@@ -294,12 +318,25 @@ describe('ExecutionPlansView 发起记录', () => {
 /* --------------------------------------------------------------------------
  * W57-29/30 补充断言（以上老断言一条未删，全部保持通过）
  * -------------------------------------------------------------------------- */
-describe('W57-30 两步发起与旧 caseIds 路径回退', () => {
+/**
+ * W57-47 整改（复核 P0-1 / W57-56）：这里的断言**必须与后端 record 同名**。
+ *
+ * 首版在此伪造了 `token` 与 `new ApiError(409, ...)`，断言的是「我发了请求」而不是
+ * 「后端认这个请求」，于是确认阶段恒传 0、前端静默回退旧链路，测试全绿而功能是断的。
+ * 现在断言三件事：① 预览返回被读成 `snapshotId`；② 确认体只带后端认的字段；
+ * ③ 失败时**不**回退旧链路（回退会绕过摘要比对）。
+ */
+describe('W57-47 两步发起：字段契约 + 禁止静默回退', () => {
   const launchPreview = vi.mocked(runLaunchApi.preview)
   const launchConfirm = vi.mocked(runLaunchApi.confirmAndStart)
 
-  it('预览成功时走 confirm-and-start（带 token），不再打旧 runCases', async () => {
-    launchPreview.mockResolvedValue({ token: 'tok-1', caseIds: [11], total: 1 } as never)
+  it('预览返回 snapshotId 时，确认体带 snapshotId 且不含 token', async () => {
+    launchPreview.mockResolvedValue({
+      snapshotId: 4321,
+      selectionSha256: 'a'.repeat(64),
+      caseCount: 1,
+      items: [{ caseId: 11, caseCode: 'TC-11' }],
+    } as never)
     launchConfirm.mockResolvedValue({ runId: 'RUN-NEW-1' } as never)
     const root = await mountView()
     await check(root, 'pick-11')
@@ -308,13 +345,30 @@ describe('W57-30 两步发起与旧 caseIds 路径回退', () => {
     await new Promise((resolve) => setTimeout(resolve, 0))
 
     expect(launchConfirm).toHaveBeenCalledTimes(1)
-    expect(launchConfirm.mock.calls[0][1]).toBe('tok-1')
+    const body = launchConfirm.mock.calls[0][1] as unknown as Record<string, unknown>
+    expect(body.snapshotId).toBe(4321)
+    expect(body).not.toHaveProperty('token')
     expect(runCases).not.toHaveBeenCalled()
     expect(routerState.push).toHaveBeenCalledWith('/runs/RUN-NEW-1')
   })
 
-  it('新端点 409：给出含错误码的可读提示，并回退到旧 caseIds 路径', async () => {
-    launchPreview.mockRejectedValue(new ApiError(409, 'CONFLICT', 'conflict'))
+  it('预览体只交后端认的字段（mode / setIds / caseIds）', async () => {
+    launchPreview.mockResolvedValue({
+      snapshotId: 1, selectionSha256: 'b'.repeat(64), caseCount: 1, items: [],
+    } as never)
+    launchConfirm.mockResolvedValue({ runId: 'RUN-NEW-2' } as never)
+    const root = await mountView()
+    await check(root, 'pick-11')
+
+    root.querySelector<HTMLButtonElement>('[data-testid="start-run"]')!.click()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    const previewBody = launchPreview.mock.calls[0][1] as unknown as Record<string, unknown>
+    expect(Object.keys(previewBody).sort()).toEqual(['caseIds', 'mode', 'setIds'])
+  })
+
+  it('预览失败时如实报错且**不**回退旧链路（不启动任何执行）', async () => {
+    launchPreview.mockRejectedValue(new ApiError(40900, 'DIGEST_MISMATCH', '选择摘要不一致'))
     const root = await mountView()
     await check(root, 'pick-11')
 
@@ -322,10 +376,10 @@ describe('W57-30 两步发起与旧 caseIds 路径回退', () => {
     await new Promise((resolve) => setTimeout(resolve, 0))
 
     const hint = root.querySelector('[data-testid="start-error"]')?.textContent ?? ''
-    expect(hint).toContain('409')
-    expect(hint).toContain('回退')
-    expect(runCases).toHaveBeenCalledTimes(1)
-    expect(runCases.mock.calls[0][1].caseIds).toEqual([11])
+    expect(hint).toContain('选择摘要不一致')
+    // 关键：回退会绕过选择快照与 409 拦截，等于把「执行可信度」整条主题架空。
+    expect(runCases).not.toHaveBeenCalled()
+    expect(routerState.push).not.toHaveBeenCalledWith(expect.stringContaining('/runs/'))
   })
 })
 

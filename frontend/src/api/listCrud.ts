@@ -88,6 +88,11 @@ export const listCrudApi = {
 
   /* ------------------------------------------------ 运行记录（/api/runs） */
 
+  /** 读运行记录的展示层元数据（编辑框回填用）。 */
+  getRun(projectId: number, runId: string): Promise<RunMeta> {
+    return request<RunMeta>(`${runPath(runId)}${toQuery({ projectId })}`)
+  },
+
   patchRun(projectId: number, runId: string, body: RunUpdate): Promise<RunMeta> {
     return request<RunMeta>(`${runPath(runId)}${toQuery({ projectId })}`, {
       method: 'PATCH',

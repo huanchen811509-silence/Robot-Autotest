@@ -202,12 +202,15 @@ class PermissionMatrixTest {
 
     private static Map<RoleCode, Set<String>> menuExpected() {
         Map<RoleCode, Set<String>> matrix = new EnumMap<>(RoleCode.class);
+        // v5.7.0 复核 P1-1：新增 case:write（⇄ CASE:UPDATE）。ADMIN / PM / ENGINEER 有写权限，
+        // VIEWER 只读——基线按真实权限同步，不是放宽。
         matrix.put(RoleCode.ADMIN, Set.of(
-                "settings:read", "ai:config", "user:write", "audit:read", "about", "changelog"));
+                "settings:read", "ai:config", "user:write", "audit:read", "about", "changelog",
+                "case:write"));
         matrix.put(RoleCode.PM, Set.of(
-                "settings:read", "audit:read", "about", "changelog"));
+                "settings:read", "audit:read", "about", "changelog", "case:write"));
         matrix.put(RoleCode.ENGINEER, Set.of(
-                "settings:read", "about", "changelog"));
+                "settings:read", "about", "changelog", "case:write"));
         matrix.put(RoleCode.VIEWER, Set.of(
                 "settings:read", "about", "changelog"));
         return matrix;
@@ -224,16 +227,16 @@ class PermissionMatrixTest {
     }
 
     @Test
-    @DisplayName("MENU 矩阵维度：4 角色 × 6 能力 = 24 格")
+    @DisplayName("MENU 矩阵维度：4 角色 × 7 能力 = 28 格")
     void menu矩阵维度() {
         assertThat(MENU_EXPECTED.keySet()).hasSize(4);
-        assertThat(PermissionMatrix.MENU_CAPABILITIES).hasSize(6);
-        assertThat(menuCells().count()).isEqualTo(24);
+        assertThat(PermissionMatrix.MENU_CAPABILITIES).hasSize(7);
+        assertThat(menuCells().count()).isEqualTo(28);
     }
 
     @ParameterizedTest(name = "{0} / {1} -> {2}")
     @MethodSource("menuCells")
-    @DisplayName("24 格逐格断言：menuAllows 与 menuCapabilities 口径一致")
+    @DisplayName("28 格逐格断言：menuAllows 与 menuCapabilities 口径一致")
     void menu逐格断言(RoleCode role, String capability, boolean expected) {
         assertThat(PermissionMatrix.menuAllows(role, capability))
                 .as("menuAllows %s / %s", role, capability).isEqualTo(expected);

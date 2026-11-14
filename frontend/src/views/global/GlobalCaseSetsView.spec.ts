@@ -7,6 +7,7 @@ import { createApp, nextTick, type App } from 'vue'
 import { i18n } from '@/locales'
 import { createPinia, setActivePinia, type Pinia } from 'pinia'
 import { useAuthStore } from '@/stores/auth'
+import { useMenuCapabilitiesStore } from '@/stores/menuCapabilities'
 import GlobalCaseSetsView from '@/views/global/GlobalCaseSetsView.vue'
 import { platformCaseSetApi } from '@/api/platformCaseSets'
 
@@ -86,6 +87,14 @@ beforeEach(() => {
   setActivePinia(pinia)
   const auth = useAuthStore()
   auth.user = { id: 1, username: 'admin', displayName: '管理员', roles: ['admin'] } as never
+  // 写入口显隐走 capability（case:write ⇄ CASE:UPDATE），与角色名无关（复核 P1-1）。
+  useMenuCapabilitiesStore().capabilities = [
+    'public',
+    'case:read',
+    'case:write',
+    'project:read',
+    'project:write',
+  ]
 })
 
 afterEach(() => {
@@ -112,9 +121,10 @@ describe('GlobalCaseSetsView 列表与权限', () => {
     expect(root.querySelector('[data-testid="delete-1"]')).not.toBeNull()
   })
 
-  it('只读用户不渲染写按钮，但列表与「成员」入口仍可见', async () => {
+  it('能力集缺 case:write 时不渲染写按钮，但列表与「成员」入口仍可见', async () => {
     const auth = useAuthStore()
     auth.user = { id: 2, username: 'viewer', displayName: '只读', roles: ['viewer'] } as never
+    useMenuCapabilitiesStore().capabilities = ['public', 'case:read', 'project:read']
     const root = await mountView()
     expect(root.querySelector('[data-testid="create-btn"]')).toBeNull()
     expect(root.querySelector('[data-testid="seed-btn"]')).toBeNull()
@@ -122,6 +132,15 @@ describe('GlobalCaseSetsView 列表与权限', () => {
     expect(root.querySelector('[data-testid="delete-1"]')).toBeNull()
     expect(root.querySelector('[data-testid="case-set-row-1"]')).not.toBeNull()
     expect(root.querySelector('[data-testid="manage-1"]')).not.toBeNull()
+  })
+
+  it('角色非 admin 只要能力集含 case:write，写按钮照样出现（P1-1 正向判据）', async () => {
+    const auth = useAuthStore()
+    auth.user = { id: 3, username: 'pm', displayName: '项目经理', roles: ['pm'] } as never
+    useMenuCapabilitiesStore().capabilities = ['public', 'case:read', 'case:write']
+    const root = await mountView()
+    expect(root.querySelector('[data-testid="create-btn"]')).not.toBeNull()
+    expect(root.querySelector('[data-testid="edit-1"]')).not.toBeNull()
   })
 
   it('空态自解释：说明如何新建与按一级分类重建', async () => {

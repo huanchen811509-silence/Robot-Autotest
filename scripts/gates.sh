@@ -474,6 +474,13 @@ run 54 ui_contrast "python3 tools/check_ui_contrast.py && python3 tools/check_ui
 # 55 一次性凭证六处零泄漏：DB / 应用日志 / 审计 / HTTP 响应 / 证据包 / 异常堆栈。
 run 55 oneshot_secret "python3 tools/probe_oneshot_secret.py"
 
+# ---- v5.7.0 W11 复核修复新增段（56）--------------------------------------
+# 56 前后端请求体字段对账（W57-55）：api 层每个字面量/类型化请求体的键必须存在于
+#    后端 @RequestBody record 里；多出来的键后端会静默忽略，等于「点了没效果」。
+#    回放 1beea30 能判红 P0-3（caseId）；自证方式是真注入错误字段判红、还原判绿。
+#    覆盖边界：view 里传给 api 函数的额外字段抓不到（由后端 ignoreUnknown=false 兜底）。
+run 56 fe_contract "python3 tools/check_fe_contract.py && python3 tools/check_fe_contract.py --self-test"
+
 printf '\nGATES_RESULT FAILS=%s UNJUDGED=%s\n' "$FAILS" "${UNJUDGED:-0}"
 
 exit "$FAILS"

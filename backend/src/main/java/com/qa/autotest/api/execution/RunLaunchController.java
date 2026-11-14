@@ -11,6 +11,8 @@ import com.qa.autotest.common.ApiResponse;
 import com.qa.autotest.common.BusinessException;
 import com.qa.autotest.common.ErrorCode;
 import com.qa.autotest.common.tenant.TenantContext;
+import com.qa.autotest.application.iam.AuditService;
+import com.qa.autotest.application.execution.CommandDigest;
 import com.qa.autotest.domain.execution.RunRecord;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -27,6 +29,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 /**
  * v5.7.0 执行可信度 + 选择快照端点（W57-19 / 20 / 28）。
@@ -55,6 +58,7 @@ public class RunLaunchController {
     private final SelectionResolver.CaseScopeQuery scope;
     private final CriteriaIngestService criteriaIngest;
     private final CaseRunService caseRuns;
+    private final AuditService audit;
 
     public RunLaunchController(CommandPreviewService commandPreview,
                                RunConfirmationService runConfirmation,
@@ -62,7 +66,8 @@ public class RunLaunchController {
                                SelectionResolver resolver,
                                SelectionResolver.CaseScopeQuery scope,
                                CriteriaIngestService criteriaIngest,
-                               CaseRunService caseRuns) {
+                               CaseRunService caseRuns,
+                               AuditService audit) {
         this.commandPreview = commandPreview;
         this.runConfirmation = runConfirmation;
         this.snapshots = snapshots;
@@ -70,6 +75,7 @@ public class RunLaunchController {
         this.scope = scope;
         this.criteriaIngest = criteriaIngest;
         this.caseRuns = caseRuns;
+        this.audit = audit;
     }
 
     /** 命令清单只读预览：条数、跳过原因、digest 前 12 位。不写 run / 不落确认 / 不启动进程。 */
@@ -81,14 +87,19 @@ public class RunLaunchController {
                 request.kernel(), request.caseIds()));
     }
 
-    /** 落确认摘要：服务端按同一规则复算命令摘要，不信任前端传入的 digest。 */
+    /**
+     * 落确认摘要：服务端按同一规则复算命令摘要，不信任前端传入的 digest。
+     *
+     * <p>复核 P1-6：摘要同时绑定 {@code planId} 与选择快照摘要——只绑命令清单时，
+     * 同一批脚本换一个计划就能复用同一个「已确认」。
+     */
     @PostMapping("/runs/confirm")
     public ApiResponse<ConfirmResponse> confirm(@PathVariable long projectId,
                                                  @RequestBody ConfirmRequest request) {
         CommandPreviewService.PreviewResult preview = commandPreview.preview(
                 projectId, request.kernel(), request.caseIds());
         RunConfirmationService.Confirmation saved = runConfirmation.confirm(
-                projectId, request.planId(), preview.digest());
+                projectId, request.planId(), request.selectionSha256(), preview.digest());
         return ApiResponse.ok(new ConfirmResponse(saved.planId(), saved.digest(),
                 saved.confirmedAt(), saved.confirmedBy()));
     }
@@ -136,6 +147,35 @@ public class RunLaunchController {
                             "选择摘要不一致，未创建 run、未启动进程", data));
         }
 
+        // 复核 P1-7：第一道比对只覆盖「选择变化」。命令内容变了但用例集不变时摘要一致，
+        // 防护形同虚设。这里补第二道：用当前选择重算命令清单，与已确认摘要逐位比对。
+        if (request.planId() != null) {
+            String expected = runConfirmation.expected(projectId, request.planId());
+            if (expected == null) {
+                audit.record("run.blocked-unconfirmed", "execution_plan",
+                        String.valueOf(request.planId()),
+                        "snapshotId=" + snapshotId + ", reason=无确认记录");
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(
+                        new ApiResponse<>(ErrorCode.CONFLICT.code(), "UNCONFIRMED",
+                                "该执行计划还没有确认摘要，已拒绝派发", null));
+            }
+            String kernel = request.kernel() == null || request.kernel().isBlank()
+                    ? "robot" : request.kernel();
+            String commandDigest = commandPreview
+                    .preview(projectId, kernel, recompute.currentCaseIds()).digest();
+            String actual = CommandDigest.confirmationDigest(
+                    request.planId(), recompute.expectedSha(), commandDigest);
+            if (!expected.equals(actual)) {
+                audit.record("run.digest-mismatch", "execution_plan",
+                        String.valueOf(request.planId()),
+                        "snapshotId=" + snapshotId + ", expected12=" + expected.substring(0, 12)
+                                + ", actual12=" + actual.substring(0, 12));
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(
+                        new ApiResponse<>(ErrorCode.CONFLICT.code(), "DIGEST_MISMATCH",
+                                "确认摘要与当前计划/选择/命令不一致，未创建 run、未启动进程", null));
+            }
+        }
+
         // 派发链路可能落到异步线程，显式 runAs 包裹消费 + 派发，保证租户上下文不丢。
         Long userId = TenantContext.userId();
         String username = TenantContext.username();
@@ -147,9 +187,13 @@ public class RunLaunchController {
                         "快照命中 " + frozen.size() + " 条，超过既有按用例执行链路单次上限 "
                                 + CASE_RUN_LIMIT + " 条；本主题未改动 CaseRunService，未接线到派发，请缩小选择范围");
             }
+            String runRequestId = request.runRequestId() == null || request.runRequestId().isBlank()
+                    ? "SNAP-" + snapshotId
+                    : request.runRequestId();
             created.set(caseRuns.run(new CaseRunService.CaseRunCommand(
-                    projectId, frozen, null, List.of(), 1,
-                    null, null, null, "SNAP-" + snapshotId)));
+                    projectId, frozen, request.environmentId(), List.of(),
+                    request.concurrency(), request.timeoutSeconds(),
+                    request.testTimeoutSeconds(), request.includeTag(), runRequestId)));
         });
         return ResponseEntity.ok(ApiResponse.ok(created.get()));
     }
@@ -188,9 +232,15 @@ public class RunLaunchController {
     public record PreviewCommandsRequest(String kernel, List<Long> caseIds) {
     }
 
-    public record ConfirmRequest(long planId, String kernel, List<Long> caseIds) {
+    /**
+     * @param selectionSha256 选择快照摘要；为空表示本次确认只绑命令清单
+     */
+    @JsonIgnoreProperties(ignoreUnknown = false)
+    public record ConfirmRequest(long planId, String kernel, List<Long> caseIds,
+                                 String selectionSha256) {
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = false)
     public record SelectionPreviewRequest(String mode,
                                           List<Long> setIds,
                                           List<Long> caseIds,
@@ -208,7 +258,26 @@ public class RunLaunchController {
     public record SelectionItem(long caseId, String caseCode) {
     }
 
-    public record ConfirmAndStartRequest(long snapshotId) {
+    /**
+     * 确认并发起。
+     *
+     * <p>{@code ignoreUnknown = false}：字段名写错必须 400，不许被 Jackson 静默丢弃
+     * （v5.7.0 首版因未知字段被忽略，导致前端传 {@code token} 时快照恒 0，见审计 P0-1）。
+     */
+    /**
+     * @param planId 非空时，派发前会用当前选择重算命令摘要并与已确认摘要比对（复核 P1-7）
+     * @param kernel 重算命令清单用的执行内核，缺省 {@code robot}
+     */
+    @JsonIgnoreProperties(ignoreUnknown = false)
+    public record ConfirmAndStartRequest(long snapshotId,
+                                         Long planId,
+                                         String kernel,
+                                         Long environmentId,
+                                         Integer concurrency,
+                                         Integer timeoutSeconds,
+                                         Integer testTimeoutSeconds,
+                                         String includeTag,
+                                         String runRequestId) {
     }
 
     /** 409 差异体：added/removed/reordered 均为 1-based 位置编号数组。 */

@@ -51,6 +51,11 @@ public class ReportSnapshotService {
         root.put("skipCount", source.skipCount());
         root.put("caseTotal", source.passCount() + source.failCount() + source.skipCount());
         root.put("passRate", rate(source));
+        // W57-50：结论按判据汇总冻结进快照，渲染期不再回查 test_result——
+        // 冻结之后源数据被重跑覆盖，也不该改历史报告的口径。
+        root.put("criteriaConclusion", source.effectiveConclusion());
+        root.put("criteriaEvaluated", source.criteriaEvaluated());
+        root.put("criteriaMissingCount", source.criteriaMissingCount());
         root.put("metadataMissing", source.metadataMissing());
         root.put("metadata", ReportViewRenderer.safeMetadata(source.metadata()));
         root.put("startedAt", source.startedAt() == null ? null : source.startedAt().toString());

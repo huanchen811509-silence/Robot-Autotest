@@ -28,7 +28,7 @@
 | `/g/projects` | 全局项目 `GlobalProjectsView.vue` | A | `/api/projects/cards` + 项目 CRUD 端点；由另一代理维护 | A：C/R/U/D 全 | 无 | W57-09 | - |
 | `/g/cases` | 公共用例 `GlobalCasesView.vue` | A | 公共用例分页/导入端点；由另一代理维护，本次未改 | A：C/R/U/D 全 | 无 | W57-32 | - |
 | `/g/case-sets` | 全局用例集 `GlobalCaseSetsView.vue` | A | 平台用例集端点（`api/platformCaseSets.ts`）；由另一代理维护 | A：C/R/U/D 全 | 无 | W57-06 | - |
-| `/g/assets` | 公共资产 `GlobalAssetsView.vue` | A | `globalAssetApi.list/createDevice/createCredential/remove` 齐备；本次接 `CredentialPicker`（管理/BMC/采集三处）与 `credentialOptionsApi` | A：C/R/U/D 全 + 凭证选择器 | 无 | W57-41/42 | - |
+| `/g/assets` | 公共资产 `GlobalAssetsView.vue` | A | `globalAssetApi.list/createDevice/createCredential/remove` 齐备；**`GlobalAssetController` 无 `PUT`**——资产信息回写走 `POST /{id}/collect`、`POST /{type}/{id}/reference`、`POST /{type}/{id}/unreference`，不是表单式更新，故本页 U 无独立端点；本次接 `CredentialPicker`（管理/BMC/采集三处）与 `credentialOptionsApi` | A：C/R/D 全 + 采集回写 + 引用关系 + 凭证选择器（**无通用 U**） | 无 | W57-41/42 | - |
 | `/g/templates` | 公共模板 `GlobalTemplatesView.vue` | A | 模板列表端点齐备；页面既有内置/自定义页签，本次未接骨架 | A：C/R/U/D 全 + ListScaffold | 未接 ListScaffold + 行内编辑/软删/恢复/批量 | W57-32/43 | 见缺口白名单 |
 | `/reports/templates` | 报告模板 `ReportTemplatesView.vue` | A | 模板端点齐备；页面既有 CRUD，本次未接骨架 | A：C/R/U/D 全 + ListScaffold | 未接 ListScaffold + 批量/软删/恢复 | W57-32/43 | 见缺口白名单 |
 | `/settings/users` | 用户管理 `SettingsUsersView.vue` | A | `api/iam.ts` 的 userApi.page/update/remove 齐备 | A：C/R/U/D 全 | 无 | W57-32 | - |
@@ -43,7 +43,7 @@
 | `/overview` | 项目看板 `OverviewView.vue` | C | 单项目指标聚合，只读派生；`router/index.ts:94` 注册 | C：只读 + 白名单理由 | 不适用（只读派生） | W57-32 | 指标聚合视图：数值由运行/用例统计实时算出，改动必须回到源记录，页面上不存在可编辑实体 |
 | `/cases/board` | 测试总表 `CasesBoardView.vue` | C | 历史/当前双计数看板，只读派生；`router/index.ts:337` 注册 | C：只读 + 白名单理由 | 不适用（只读派生） | W57-32 | 双计数统计视图：展示用例库历史与当前计数对比，写操作归属用例列表页，不属于本页职责 |
 | `/runs/failure-clusters` | 失败聚类 `FailureClustersView.vue` | C | 运行下钻派生，只读；`router/index.ts:153` 注册 | C：只读 + 白名单理由 | 不适用（只读派生） | W57-32 | 运行失败聚类是 `/runs` 的下钻聚合，筛选某次运行的失败用例，本身不持有记录 |
-| `/plans/groups` | 计划组 `PlanGroupsView.vue` | C | 计划分组视图，只读派生；`router/index.ts:139` 注册 | C：只读 + 白名单理由 | 不适用（只读派生） | W57-32 | 计划组是计划条目的分组投影，编辑入口在 `/plans`，此处只做分组浏览 |
+| `/plans/groups` | 计划组 `PlanGroupsView.vue` | A | 原登记「C 类只读」**有误**：页面实有 `planGroupApi.create / update / remove / addMembers / removeMember / reorder / apply`（`PlanGroupsView.vue:74,92,106,119,138,149`；api 见 `api/planGroups.ts:42-90`），是完整可写页 | A：C/R/U/D 全 + 成员增删 / 排序 / 应用 | 无 | W57-32 | - |
 | `/plans/graph` | 依赖图 `PlanGraphView.vue` | C | 计划依赖图，只读派生；`router/index.ts:146` 注册 | C：只读 + 白名单理由 | 不适用（只读派生） | W57-32 | 依赖图是计划关系的可视化投影，无独立实体，增删改必须回到 `/plans` |
 | `/nodes` | 执行节点 `NodesView.vue` | C | 节点健康只读；`router/index.ts:251` 注册 | C：只读 + 白名单理由 | 不适用（只读派生） | W57-32 | 节点是执行器上报的运行时状态，页面只读展示在线/负载，节点注册由部署链路管理 |
 | `/kernels` | 内核自检 `KernelsView.vue` | C | RF/pytest 内核可用性只读；`router/index.ts:281` 注册 | C：只读 + 白名单理由 | 不适用（只读派生） | W57-32 | 内核自检是部署环境的探测结果，页面只回答「能不能跑」，不持有可编辑记录 |
@@ -62,7 +62,21 @@
 | `/eht/cases` | EHT 用例 `EhtCasesView.vue` | C | 只读派生（EHT 八页由 `check_eht_case_ui.py` 守）；`router/index.ts:295` 注册 | C：只读 + 白名单理由 | 不适用（只读派生） | W57-32 | EHT 用例页绑定真实用例库快照，只读展示与筛选，写入由用例库工作树外链路管理 |
 | `/admin/ops` | 运维 `OpsView.vue` | C | 只读派生；`router/index.ts:203` 注册 | C：只读 + 白名单理由 | 不适用（只读派生） | W57-32 | 运维页是运行时状态汇总，无独立实体，操作由运维脚本执行 |
 | `/g/settings` | 全局设置 `GlobalSettingsView.vue` | C | 平台配置只读入口；`router/index.ts:453` 注册 | C：只读 + 白名单理由 | 不适用（只读派生） | W57-32 | 设置项由服务端偏好与配置中心管理，页面是配置入口的容器，不持有可 CRUD 的列表实体 |
-| `/scenarios` | 场景 `ScenariosView.vue` | C | 只读派生；`router/index.ts:518` 注册 | C：只读 + 白名单理由 | 不适用（只读派生） | W57-32 | 场景页是能力域标签的展示投影，编辑归属用例 domain_tag，页面无独立记录 |
+| `/scenarios` | 场景 `ScenariosView.vue` | A | 原登记「C 类只读」**有误**：页面实有 `scenarioApi.create / regroup / remove`（`ScenariosView.vue:82,106,118`；api 见 `api/cases.ts:275-303`），U 由 `regroup`（编组一层用例集）表达 | A：C/R/U/D 全（U = `regroup` 编组） | 无 | W57-32 | - |
+## 读数（与上表逐行对应；`tools/check_list_crud.py` 按同一份表统计）
+
+| 分类 | 行数 | 含义 |
+| --- | --- | --- |
+| A | 13 | 用户可创建，C/R/U/D 全（`/plans/groups`、`/scenarios` 由 C 类纠正而来） |
+| B | 7 | 系统产物：R + 元数据编辑 + 软删 + 恢复 + 导出，C 不适用 |
+| C | 22 | 只读派生：白名单逐条写理由 |
+| 合计 | 42 | 全站列表 / 数据型路由总数（`navigation.ts` + `router/index.ts` 实读） |
+
+> 口径订正记录：发布说明与 CHANGELOG 曾写「37 页」，与本表 42 行不符且找不到出处，
+> 已按本表读数改为 **42 页**（A 13 / B 7 / C 22）。`/g/assets` 由「C/R/U/D 全」订正为
+> 「C/R/D 全 + 采集回写」，`/plans/groups` 与 `/scenarios` 由 C 类订正为 A 类。
+> 这三条都不是格式问题，是**机检只看形状不看事实**留下的假绿（见 `06-ACCEPTANCE-AUDIT.md` §四）。
+
 
 ## 缺口白名单
 

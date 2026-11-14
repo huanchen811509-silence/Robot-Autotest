@@ -42,6 +42,15 @@ public class RunRecordController {
         return ApiResponse.ok(lifecycle.updateRun(projectId, runId, body));
     }
 
+    /** 读展示层元数据（备注 / 展示名 / 标签），供编辑框回填（复核 P1-5）。 */
+    @GetMapping("/{runId}")
+    public ApiResponse<ReportLifecycleService.RunMeta> get(
+            @PathVariable String runId,
+            @RequestParam long projectId) {
+        access.bindProject(projectId);
+        return ApiResponse.ok(lifecycle.readRun(projectId, runId));
+    }
+
     /** 软删（幂等）。 */
     @DeleteMapping("/{runId}")
     public ApiResponse<ReportLifecycleService.DeleteResult> delete(

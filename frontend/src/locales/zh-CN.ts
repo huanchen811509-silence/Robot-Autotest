@@ -3102,6 +3102,7 @@ export default {
       remove: '移除 {name}',
       skippable: '可跳过',
       noTemplate: '暂无模板',
+      templateInherited: '模板内容已在第一步选定并自动带入；如需更换请回到「模板」步。',
       noSet: '暂无用例集，可在「全局用例集」页新建',
       noAsset: '暂无可用测试资产',
     },
@@ -3124,8 +3125,6 @@ export default {
       searchMember: '搜索成员',
     },
     executionPlans: {
-      newLaunchUnavailable: '新发起接口暂不可用（{code}），已自动回退到旧提交路径',
-      previewUnavailable: '预览发起不可用，已自动回退到旧提交路径',
     },
     globalAssets: {
       collectDone: '手工采集已提交：使用一次性凭证，未写入凭据库',
@@ -3181,7 +3180,7 @@ export default {
     projectWizard: {
       contentConflict: '以下用例集已被删除，请返回内容步移除后再试：{names}',
       backToList: '返回项目列表',
-      setTemplateSummary: '用例集 {sets} · 模板 {templates}',
+      setSummary: '用例集 {sets}',
     },
     runs: {
       colRunId: '运行编号',

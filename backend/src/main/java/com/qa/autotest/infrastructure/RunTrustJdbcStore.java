@@ -92,6 +92,14 @@ public class RunTrustJdbcStore implements
                 digest, now, by, now, by, planId, projectId);
     }
 
+    @Override
+    public String confirmedDigest(long projectId, long planId) {
+        java.util.List<String> rows = jdbc.query(
+                "SELECT confirmed_digest FROM execution_plan WHERE id = ? AND project_id = ?",
+                (rs, n) -> rs.getString(1), planId, projectId);
+        return rows.isEmpty() ? null : rows.get(0);
+    }
+
     // ---------- SelectionSnapshotService.SnapshotStore ----------
 
     private static final String SNAPSHOT_COLUMNS =
@@ -224,17 +232,6 @@ public class RunTrustJdbcStore implements
     }
 
     // ---------- CriteriaIngestService.ResultStore ----------
-
-    @Override
-    public void updateCriteria(long projectId, String runId, long caseId,
-                               String criteriaJson, String verdict, String missing) {
-        jdbc.update("UPDATE test_result SET criteria_json = ?, criteria_verdict = ?, "
-                        + "criteria_missing = ?, updated_at = ? "
-                        + "WHERE case_id = ? AND run_id = "
-                        + "(SELECT id FROM run WHERE project_id = ? AND run_id = ?)",
-                criteriaJson, verdict, missing, Timestamp.from(Instant.now()),
-                caseId, projectId, runId);
-    }
 
     @Override
     public List<CriteriaIngestService.CriteriaRow> listCriteria(long projectId, String runId) {

@@ -7,7 +7,7 @@
  * 后端仍会二次校验（前端只做显隐）。
  */
 import { computed, onMounted, ref } from 'vue'
-import { useAuthStore } from '@/stores/auth'
+import { useMenuCapabilitiesStore } from '@/stores/menuCapabilities'
 import {
   platformCaseSetApi,
   type PlatformCaseSet,
@@ -17,8 +17,12 @@ import {
 import { useI18n } from 'vue-i18n'
 const { t } = useI18n()
 
-const auth = useAuthStore()
-const canWrite = computed(() => auth.isAdmin)
+const capabilities = useMenuCapabilitiesStore()
+/**
+ * 写入口显隐与服务端同一道闸：capability 的 case:write 直接映射到 CASE:UPDATE。
+ * 原来按「角色里有 admin」判，导致 PM 后端能写、前端却没入口（复核 P1-1）。
+ */
+const canWrite = computed(() => capabilities.has('case:write'))
 
 const sets = ref<PlatformCaseSet[]>([])
 const keyword = ref('')

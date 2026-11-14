@@ -421,6 +421,17 @@ public class ReportExportService {
     public static Map<String, Object> summaryView(String runId, String state, int passCount,
                                                   int failCount, int skipCount,
                                                   Map<String, String> metadata) {
+        return summaryView(runId, state, passCount, failCount, skipCount, metadata, null);
+    }
+
+    /**
+     * 带判据结论的重载（W57-50）：结论与页面同源，避免「页面 UNDETERMINED、导出 PASS」。
+     * 旧 6 参签名保留并显式按 UNDETERMINED 处理——不回落成计数口径。
+     */
+    public static Map<String, Object> summaryView(String runId, String state, int passCount,
+                                                  int failCount, int skipCount,
+                                                  Map<String, String> metadata,
+                                                  String criteriaConclusion) {
         Map<String, Object> view = new LinkedHashMap<>();
         int total = passCount + failCount + skipCount;
         view.put("runId", runId);
@@ -431,7 +442,8 @@ public class ReportExportService {
         view.put("caseTotal", total);
         view.put("passRate", total == 0 ? 0.0
                 : Math.round(10000.0 * passCount / total) / 100.0);
-        view.put("conclusion", failCount == 0 ? "PASS" : "FAIL");
+        view.put("conclusion", criteriaConclusion == null || criteriaConclusion.isBlank()
+                ? "UNDETERMINED" : criteriaConclusion);
         Map<String, String> safe = ReportViewRenderer.safeMetadata(metadata);
         safe.forEach(view::put);
         view.put("watermark", WATERMARK);

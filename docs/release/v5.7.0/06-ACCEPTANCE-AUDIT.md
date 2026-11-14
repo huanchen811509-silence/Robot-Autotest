@@ -134,3 +134,38 @@
 - 本件**只做代码走查**：未启浏览器、未连真机、未压测，因此「视觉走查」「真机采集」「10 万量级」三类判据**未复核**，仍维持测试报告的「未执行」。
 - `05-TEST-REPORT.md` 里的真实 HTTP 证据（`docs/evidence/v5.7.0/api-smoke-20261114/raw/*.log`）是**用 curl 直连接口**打的，证明「端点按契约工作」，**不证明「界面调得通」**——这是本件与测试报告口径差异的根源。
 - 本件不判 G 门，不放行/不放行由大师裁定。
+
+## 九、处置回写（2026-11-14 修复轮，P0/P1/P2 逐条）
+
+> 本节由修复轮补写，**不修改**上文复核结论——上文是「修之前的事实」，本节是「修完之后的事实」。
+> 判据：能拿出反向实证（修前会红）才算闭合；拿不出的，如实标「部分」并登记遗留。
+
+| 编号 | 原判定 | 处置 | 反向实证（修前会红 / 修后判绿） |
+|---|---|---|---|
+| P0-1 | 发起台字段虚构 `token` + 静默回退旧链路 | 字段改 `snapshotId`，删除回退；后端 `confirm-and-start` 接收完整执行参数 | 回退 6 个实现文件到 `1beea30` → 4 个 spec **13 条判红**；恢复后 46 条全绿。真实界面：四模式 `preview` 200 回 `snapshotId` |
+| P0-2 | 向导发 `setIds` / `templateKeys`，后端不认 | 前端改 `caseSetIds`，模板从请求体移除改为只读回显 | 真实调用 `POST /projects/122/content` 带 `setIds` → **400**（修前 200 静默丢弃）；正确字段 200 `testSetId=91 cases=8` |
+| P0-3 | 平台集加成员发 `{caseId}` 被吞 | 统一发 `{caseIds:[...]}` | 真实界面加成员 → 响应 `{"added":1,"skipped":0}`；回退实现后 `platformCaseSets.spec` 3 条判红 |
+| P0-4 | 判据只算不写入，报告结论仍按 `failCount` | 入库时评估并落 `criteria_json/verdict/missing`；报告/导出/快照结论读判据汇总，未声明判据 `UNDETERMINED` | 单测：`CriteriaEvaluationTest`(6) / `PytestCriteriaExtractorTest`(4) / `ReportSnapshotTest`(结论与 failCount 解耦)。**未取得真实入库样本 → L-57-10** |
+| P0-5（本件新增） | —（复核时未发现） | `platformCaseSetApi.list()` 把分页信封当数组，`/g/case-sets` 与向导内容步的用例集**永远为空** | 真实界面取证发现；修后 `wizard-content-sets` / `set-list` PASS；`platformCaseSets.spec` 加 2 条信封用例 |
+| P1-1 | 前端按 `isAdmin` 判写权限 | 能力码 `case:write` ⇄ `CASE:UPDATE` 单一真源 | `PermissionMatrixTest` 7 能力 28 格；真实界面写入口由能力集控制（`set-add-input-visible` PASS） |
+| P1-2 | `seed-samples` 无写权限 | 加 `requirePlatformWrite()` | 代码 + 权限矩阵单测；**未用只读账号实测 403**（TC-265 部分） |
+| P1-3 | `GET` 有播种副作用 | `page()` 删除 `ensureSamples()` | 代码；**未做连打 3 次计数取证**（TC-266 部分） |
+| P1-4 | `find(id)` 不过滤软删 | 加 `AND deleted_at IS NULL` | 单测；导出共用同一路径（TC-268 部分） |
+| P1-5 | 备注从空 `runMetas` 取，二次编辑覆盖成空串 | 新增 `GET /api/runs/{runId}`，打开即取真实值 | 真实界面：保存 A → 关掉重开读回 A（`remark-persisted` PASS） |
+| P1-6 | 摘要不含 `planId` 与选择摘要 | `confirmationDigest(planId, selectionSha256, commandDigest)` | 单测 + 代码；真实 409 未跑（TC-262 部分） |
+| P1-7 | 派发前不比确认摘要 | 重算比对，不等 → 409 + 审计 | 代码路径 + 审计事件落名；真实派发未跑 |
+| P1-8 | 三条审计事件只存在于文档 | 事件名落码：`run.digest-mismatch` / `run.blocked-unconfirmed` / `evidence.hash-mismatch` | 代码；**未逐条触发取证**（TC-263 部分） |
+| P2 | 台账 3 条事实错误 + 「37 页」 | `/g/assets` 去 U、`/plans/groups` 与 `/scenarios` 改 A 类、读数改 42 页（A13/B7/C22） | `LIST_CRUD_RESULT PASS=114 FAIL=0` + `--self-test` |
+| P2 | `ListScaffold` / `toDescriptor` 声称 vs 实际 | 承认只落 1 页 / 无调用方：发布说明、CHANGELOG、PRD 改为「部分落地」，代码注释写明边界，登记 L-57-05 / L-57-09 | 检索无「全站统一骨架」「服务端跨页全选」残留（需求条文已附落地状态） |
+| P2 | 缺前后端字段对账机检 | 新增 `tools/check_fe_contract.py`，入门禁第 56 步 | 在 `1beea30` 上回放判红 3 处；`--self-test` 注入判红 → 还原判绿 |
+| **新发现** | Spring Boot 全局关闭 `FAIL_ON_UNKNOWN_PROPERTIES`，record 上的 `@JsonIgnoreProperties(ignoreUnknown=false)` **无效** | `application.yml` 打开开关，并加 `JacksonStrictBodyConfigTest` 钉住配置 | 带 `token` 的 `preview` / 带 `setIds` 的 `content` 修前 **200**、修后 **400** |
+
+**结论**：P0 五条（含新发现一条）全部闭合到「代码 + 反向实证」；P1 八条中五条有真实界面或单测实证、
+三条只到代码路径并登记为部分；P2 三条闭合。仍欠真实派发与真实判据入库样本两项（L-57-01 / L-57-10），
+以及报告页结论列（L-57-11）。
+
+### 9.1 本件遗留的口径问题（自查）
+
+本件 §五 曾按「WBS 有没有交付文件」判「完全没落地 0」，这个判据本身**太宽**——
+文件在 ≠ 拼得上。修复轮把判据改成「真实请求/真实界面能走通」，才抓出 P0-5 与 Jackson 开关这两处。
+下一版复核建议直接把「真实浏览器五链路」与「未知字段 400」列进放行门槛，而不是等审计件来发现。

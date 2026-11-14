@@ -39,10 +39,13 @@ public class EvidenceBundleService {
 
     private final EvidencePaths paths;
     private final EvidenceBundleStore repository;
+    private final com.qa.autotest.application.iam.AuditService audit;
 
-    public EvidenceBundleService(EvidencePaths paths, EvidenceBundleStore repository) {
+    public EvidenceBundleService(EvidencePaths paths, EvidenceBundleStore repository,
+                                 com.qa.autotest.application.iam.AuditService audit) {
         this.paths = paths;
         this.repository = repository;
+        this.audit = audit;
     }
 
     // ---------------------------------------------------------------- write
@@ -162,6 +165,8 @@ public class EvidenceBundleService {
         String actual = sha256Hex(pointerBytes);
         repository.find(key).ifPresent(row -> {
             if ("ready".equals(row.status()) && !actual.equals(row.pointerSha())) {
+                audit.record("evidence.hash-mismatch", "evidence_pointer", key,
+                        "expected=" + row.pointerSha() + ", actual=" + actual);
                 throw new BusinessException(ErrorCode.CONFLICT, "证据包指针 sha256 校验失败");
             }
         });
@@ -186,6 +191,10 @@ public class EvidenceBundleService {
         byte[] content = Files.readAllBytes(object);
         // 读时重算：文件名就是内容 sha256，对不上说明被篡改或写坏了。
         if (!sha256Hex(content).equals(sha) || content.length != size) {
+            // 复核 P1-8：哈希不符必须留审计痕迹——不然「证据被改过」这件事只能靠人复述。
+            audit.record("evidence.hash-mismatch", "evidence_object", parts[2],
+                    "expected=" + sha + ", actual=" + sha256Hex(content)
+                            + ", expectedSize=" + size + ", actualSize=" + content.length);
             throw new BusinessException(ErrorCode.CONFLICT, "证据文件 sha256 校验失败: " + parts[2]);
         }
         return new EvidenceEntry(parts[2], sha, size, content);

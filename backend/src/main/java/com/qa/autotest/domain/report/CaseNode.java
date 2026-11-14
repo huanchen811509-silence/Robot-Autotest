@@ -30,7 +30,13 @@ public record CaseNode(String name,
                        String commandSource,
                        Integer commandExitCode,
                        int retryCount,
-                       boolean flaky) {
+                       boolean flaky,
+                       /**
+                        * 判据原文（junit {@code <system-out>} 等）：报告入库时由
+                        * {@code CriteriaEvaluation} 评估成 {@code test_result.criteria_*} 三列。
+                        * 不落库到本字段——它只在解析 → 入库之间传递，入库后事实在 test_result。
+                        */
+                       String criteriaPayload) {
 
     /** 无命令时的显式取值：报告页据此显示「本用例未下发外部命令」。 */
     public static final String NO_COMMAND = "NONE";
@@ -47,14 +53,14 @@ public record CaseNode(String name,
     public CaseNode(String name, String status, long durationMs,
                     String failureMessage, List<KeywordNode> keywords) {
         this(name, status, durationMs, failureMessage, keywords, -1L, null,
-                NO_COMMAND, NO_COMMAND, null, 0, false);
+                NO_COMMAND, NO_COMMAND, null, 0, false, null);
     }
 
     /** 兼容 RPT-02 的七参写法（v3.9.0 之前没有命令三列）。 */
     public CaseNode(String name, String status, long durationMs, String failureMessage,
                     List<KeywordNode> keywords, long logOffset, String logSpan) {
         this(name, status, durationMs, failureMessage, keywords, logOffset, logSpan,
-                NO_COMMAND, NO_COMMAND, null, 0, false);
+                NO_COMMAND, NO_COMMAND, null, 0, false, null);
     }
 
     /** 兼容 v3.9.0 的十参写法（未复测）。 */
@@ -62,6 +68,6 @@ public record CaseNode(String name,
                     List<KeywordNode> keywords, long logOffset, String logSpan,
                     String commandText, String commandSource, Integer commandExitCode) {
         this(name, status, durationMs, failureMessage, keywords, logOffset, logSpan,
-                commandText, commandSource, commandExitCode, 0, false);
+                commandText, commandSource, commandExitCode, 0, false, null);
     }
 }

@@ -26,6 +26,9 @@ public class RunConfirmationService {
 
         /** 覆盖式写入最近一次确认。 */
         void updateConfirmation(long projectId, long planId, String digest, Instant at, Long by);
+
+        /** 读最近一次确认摘要；从未确认返回 null（不要用空串冒充「已确认」）。 */
+        String confirmedDigest(long projectId, long planId);
     }
 
     public record Confirmation(long planId, String digest, Instant confirmedAt, Long confirmedBy) {
@@ -41,6 +44,29 @@ public class RunConfirmationService {
         this.store = store;
         this.access = access;
         this.audit = audit;
+    }
+
+    /**
+     * 确认「命令清单 + 选择快照 + 计划」三者绑定的摘要（复核 P1-6 / P1-7）。
+     *
+     * @param selectionSha256 选择快照摘要；为空表示本次不绑选择（仅命令清单）
+     * @param commandDigest   服务端复算的命令清单摘要
+     */
+    public Confirmation confirm(long projectId, long planId, String selectionSha256,
+                                String commandDigest) {
+        return confirm(projectId, planId,
+                CommandDigest.confirmationDigest(planId, selectionSha256, commandDigest));
+    }
+
+    /**
+     * 读已确认摘要。
+     *
+     * @return 64 位 sha256；从未确认返回 null
+     */
+    public String expected(long projectId, long planId) {
+        access.bindProject(projectId);
+        access.require(PermissionResource.EXECUTION, PermissionAction.READ);
+        return store.confirmedDigest(projectId, planId);
     }
 
     public Confirmation confirm(long projectId, long planId, String digest) {

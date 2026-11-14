@@ -4,7 +4,8 @@
  * <p>盯的是这几件与 W57 直接相关的事：
  * - 全局入口（`?from=global` 或 `/g/*`）创建成功后的返回落点回 `/g/projects`；
  * - 向导 content 步复用 `WizardContentPicker`，选择状态放在顶层、返回上一步不丢；
- * - 提交时把 `setIds` / `templateKeys` 一并交给 `templateApi.applyContent` 且去重；
+ * - 提交时把 `caseSetIds` 交给 `templateApi.applyContent` 且去重（字段名与后端
+ *   `ProjectTemplateService.ContentRequest` 同名，见复核 P0-2）；
  * - 集合已删的并发错误按名称 / id 指名，提示用户返回内容步移除。
  *
  * <p>`WizardContentPicker` 被打桩成一个可点击发 `update:modelValue` 的假组件：
@@ -317,8 +318,8 @@ describe('W57-12 向导步骤与 content 步复用', () => {
   })
 })
 
-describe('W57-13 内容提交 setIds / 去重 / 可跳过', () => {
-  it('四类来源齐备时把 caseIds / assets / setIds / templateKeys 一并提交', async () => {
+describe('W57-13 内容提交 caseSetIds / 去重 / 可跳过', () => {
+  it('四类来源齐备时提交 caseIds / assets / caseSetIds，且不带后端不认的字段', async () => {
     picker.payload = {
       ...emptyPayload(),
       caseIds: [11, 12],
@@ -343,19 +344,21 @@ describe('W57-13 内容提交 setIds / 去重 / 可跳过', () => {
       expect.objectContaining({
         caseIds: [11, 12],
         assets: [{ assetType: 'DEVICE', assetId: 9 }],
-        setIds: [5, 6],
-        templateKeys: ['tpl-x'],
+        // 后端 record 是 caseSetIds；写 setIds 会被 Jackson 忽略，建出的项目里集合为空。
+        caseSetIds: [5, 6],
       }),
     )
+    const body = vi.mocked(templateApi.applyContent).mock.calls[0][1] as Record<string, unknown>
+    expect(body).not.toHaveProperty('setIds')
+    expect(body).not.toHaveProperty('templateKeys')
   })
 
-  it('提交去重：重复 caseIds / setIds / templateKeys 只留一份', async () => {
+  it('提交去重：重复 caseIds / caseSetIds 只留一份', async () => {
     picker.payload = {
       ...emptyPayload(),
       caseIds: [11, 11, 12],
       setIds: [5, 5],
       sets: [{ id: 5, name: '冒烟集' }],
-      templateKeys: ['a', 'a'],
     }
     const root = await mountView()
     await toReview(root)
@@ -366,8 +369,7 @@ describe('W57-13 内容提交 setIds / 去重 / 可跳过', () => {
       42,
       expect.objectContaining({
         caseIds: [11, 12],
-        setIds: [5],
-        templateKeys: ['a'],
+        caseSetIds: [5],
       }),
     )
   })
@@ -382,7 +384,7 @@ describe('W57-13 内容提交 setIds / 去重 / 可跳过', () => {
     expect(root.querySelector('.wizard-result')).not.toBeNull()
   })
 
-  it('只选用例集（跳过用例）也提交 setIds', async () => {
+  it('只选用例集（跳过用例）也提交 caseSetIds', async () => {
     picker.payload = {
       ...emptyPayload(),
       setIds: [5],
@@ -395,7 +397,7 @@ describe('W57-13 内容提交 setIds / 去重 / 可跳过', () => {
 
     expect(templateApi.applyContent).toHaveBeenCalledWith(
       42,
-      expect.objectContaining({ caseIds: [], setIds: [5] }),
+      expect.objectContaining({ caseIds: [], caseSetIds: [5] }),
     )
   })
 })
