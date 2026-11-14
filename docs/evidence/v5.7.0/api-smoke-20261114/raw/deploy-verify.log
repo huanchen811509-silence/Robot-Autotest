@@ -7,3 +7,14 @@
 [verify] 判据 4/4 运行期版本与提交
 [verify] PASS 4/4 运行期：version=5.7.0，commit=0060216 与 HEAD 一致
 [verify] 结论：PASS=4 FAIL=0 SKIP=0
+
+=== 2026-11-14 21:43 (W11 修复后重建) commit=e00fe5e ===
+[verify] 判据 1/4 构建产物与 HEAD 一致
+[verify] PASS 1/4 构建：jar commit=e00fe5e 与 HEAD 一致
+[verify] 判据 2/4 运行进程晚于 jar（重启生效）
+[verify] PASS 2/4 重启：进程 712543 起于 11-14 21:43:47，晚于 jar
+[verify] 判据 3/4 健康检查
+[verify] PASS 3/4 健康：8081 /api/_ping=200，8001 /healthz=200
+[verify] 判据 4/4 运行期版本与提交
+[verify] PASS 4/4 运行期：version=5.7.0，commit=e00fe5e 与 HEAD 一致
+[verify] 结论：PASS=4 FAIL=0 SKIP=0

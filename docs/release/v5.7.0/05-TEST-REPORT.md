@@ -34,7 +34,7 @@
 | 真实服务·TC 级 | TC-18 `added 5/0`、TC-19 `seq_no=1..5`、TC-22 129 字符 **400**（修复前 500） | `docs/evidence/v5.7.0/api-smoke-20261114/raw/``tc-dedupe-order-length.log` |
 | 真实服务·冻结规则 | 冻结后改标题/删除均 **409「请先撤销冻结」**，改备注 200；`revoke` 后放行 | `docs/evidence/v5.7.0/api-smoke-20261114/raw/``tc-freeze-rules.log` |
 | 部署验证 | `deploy.sh --verify` **4/4 PASS**（jar commit=HEAD、进程晚于 jar、双端口健康、运行期 5.7.0） | `docs/evidence/v5.7.0/api-smoke-20261114/raw/``deploy-verify.log` |
-| 交付包 | `releases/robot-autotest-5.7.0-<commit>-linux-x64.tar.gz`，423 文件 / 49.2 MB（`<commit>` 与 HEAD 同源） | `scripts/package-release.sh` |
+| 交付包 | `releases/robot-autotest-5.7.0-e00fe5e-linux-x64.tar.gz`，423 文件 / 49258609 字节（47.0 MiB），sha256 `5364cb019ec7ae60…`（`e00fe5e` 与 HEAD 同源） | `scripts/package-release.sh` |
 | TC 逐条结论 | 达成 **112** 条（含 10 条真实服务闭环 + 24 条复核回归）；部分达成 **13** 条；未执行 **155** 条；降级登记 **11** 项 | §三 / §五 |
 
 **总判定：本版已完成编码、自动化验证、56 步门禁全绿、真实服务 HTTP 闭环与五条链路的真实浏览器取证；尚未完成真机 SSH 采集、真实派发执行（需 ADR-0013 安全闸）与人工视觉走查，故仍不得对外称已交付、不得判 G 门。**
