@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.qa.autotest.application.execution.ExecutionPaths;
 import com.qa.autotest.application.execution.RunArtifact;
+import com.qa.autotest.application.evidence.EvidenceBundleService;
 import com.qa.autotest.application.iam.AccessControlService;
 import com.qa.autotest.application.iam.AuditService;
 import com.qa.autotest.application.repository.ExportRecordRepository;
@@ -47,6 +48,9 @@ import org.springframework.stereotype.Service;
 @Service
 public class ExportService {
 
+    private static final org.slf4j.Logger LOG =
+            org.slf4j.LoggerFactory.getLogger(ExportService.class);
+
     private final ReportRepository reports;
     private final ReportTreeService trees;
     private final RunRepository runs;
@@ -59,6 +63,14 @@ public class ExportService {
     private final AuditService audit;
     private final ObjectMapper objectMapper;
     private final Clock clock;
+
+    /** W58-06 证据包通道（可选）：单测装配入口不注入时为 null，整段跳过。 */
+    private EvidenceBundleService evidenceBundles;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setEvidenceBundles(EvidenceBundleService evidenceBundles) {
+        this.evidenceBundles = evidenceBundles;
+    }
 
     public ExportService(ReportRepository reports,
                          ReportTreeService trees,
@@ -179,6 +191,8 @@ public class ExportService {
             throw new BusinessException(ErrorCode.INTERNAL_ERROR,
                     "导出文件落盘失败：" + ex.getMessage());
         }
+
+        recordExportEvidence(runId, target);
 
         String sha256 = sha256(bytes);
         long exportId = exportRecords.insert(projectId, runId, format, mode, fileName,
@@ -349,6 +363,28 @@ public class ExportService {
 
     private static String safeName(String runId) {
         return runId.replaceAll("[^A-Za-z0-9._-]", "_");
+    }
+
+    /**
+     * 把刚落到磁盘的导出件登记进证据包（W58-06，key=`report-export:{runId}:{file}`）。
+     *
+     * <p>传的是**磁盘上的产物路径**而不是内存里的 `byte[]`：证据包按路径流式取 sha256 与
+     * 拷贝对象，几百 MB 的 xlsx 不会在写入时被整份读进堆里。
+     *
+     * <p>失败只记 warn：证据是旁路，不能因为它把已经成功的导出变成失败（用户拿到的文件
+     * 是对的，只是少了可追溯的登记）。
+     */
+    private void recordExportEvidence(String runId, Path target) {
+        if (evidenceBundles == null) {
+            return;
+        }
+        try {
+            evidenceBundles.write("report-export:" + safeName(runId) + ":"
+                    + target.getFileName(), java.util.List.of(target));
+        } catch (RuntimeException ex) {
+            LOG.warn("导出证据包写入失败 runId={} file={}：{}", runId, target.getFileName(),
+                    ex.getClass().getSimpleName());
+        }
     }
 
     private static String sha256(byte[] bytes) {

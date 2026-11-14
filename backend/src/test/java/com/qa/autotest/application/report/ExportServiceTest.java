@@ -1,11 +1,20 @@
 package com.qa.autotest.application.report;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.qa.autotest.application.evidence.EvidenceBundleService;
+import com.qa.autotest.application.evidence.EvidenceBundleStore;
+import com.qa.autotest.application.evidence.EvidencePaths;
 import com.qa.autotest.application.iam.AccessControlService;
 import com.qa.autotest.application.iam.AuditService;
 import com.qa.autotest.application.repository.AuditRepository;
@@ -134,6 +143,47 @@ class ExportServiceTest {
         assertEquals(64, result.sha256().length());
         assertTrue(result.downloadUrl().contains("/api/exports/" + result.exportId() + "/download"));
         assertTrue(result.downloadUrl().contains("projectId=" + PROJECT));
+    }
+
+    @Test
+    @DisplayName("导出件写证据包：read 回来与磁盘文件逐字节一致（W58-06）")
+    void exportWritesEvidenceBundle() throws IOException {
+        reports.report = report(true, List.of(), fullMetadata());
+        EvidencePaths paths = EvidencePaths.of(artifactDir.resolve("evidence"));
+        EvidenceBundleStore store = mock(EvidenceBundleStore.class);
+        when(store.find(anyString())).thenReturn(Optional.empty());
+        EvidenceBundleService bundles = new EvidenceBundleService(paths, store,
+                new AuditService(audit));
+        service.setEvidenceBundles(bundles);
+
+        service.export(PROJECT, RUN_ID, "external", "docx");
+
+        Path artifact = artifactDir.resolve("report_" + RUN_ID + "_external.docx");
+        List<EvidenceBundleService.EvidenceEntry> entries = bundles.read(
+                "report-export:" + RUN_ID + ":" + artifact.getFileName());
+        assertEquals(1, entries.size(), "一次导出登记一份证据");
+        // read() 内部会重算每个对象的 sha256 与文件名比对，能读出来即已通过哈希校验
+        assertArrayEquals(Files.readAllBytes(artifact), entries.get(0).content());
+        assertEquals(Files.size(artifact), entries.get(0).size());
+        // 对象是按内容 sha 命名的另一份文件：证明是流式拷贝进证据库，不是记下原路径
+        assertTrue(Files.isRegularFile(paths.objectFile(entries.get(0).sha256())));
+    }
+
+    @Test
+    @DisplayName("证据通道故障不得把已经成功的导出变成失败（旁路纪律）")
+    void exportSucceedsWhenEvidenceChannelFails() throws IOException {
+        reports.report = report(true, List.of(), fullMetadata());
+        EvidencePaths paths = EvidencePaths.of(artifactDir.resolve("evidence"));
+        EvidenceBundleStore store = mock(EvidenceBundleStore.class);
+        doThrow(new IllegalStateException("db down")).when(store).begin(anyString(), any());
+        service.setEvidenceBundles(new EvidenceBundleService(paths, store,
+                new AuditService(audit)));
+
+        service.export(PROJECT, RUN_ID, "external", "docx");
+
+        Path artifact = artifactDir.resolve("report_" + RUN_ID + "_external.docx");
+        assertTrue(Files.isRegularFile(artifact), "用户拿到的文件必须还在");
+        assertEquals(1, exportRecords.rows.size(), "export_record 照常写");
     }
 
     @Test

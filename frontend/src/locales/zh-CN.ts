@@ -1241,6 +1241,14 @@ export default {
       envHint: '环境变化处自动断线',
       currentHint: '点击数据点可跳到对应运行',
     },
+    crud: {
+      editTitle: '编辑报告信息',
+      displayName: '显示名称',
+      remark: '备注',
+      tags: '标签',
+      confirmDelete: '确认删除报告 {runId}？报告会从列表移除，用例级结果与产物登记保留，可在运行记录页恢复。',
+      deleted: '已删除 {deleted} 条 / 关联导出件 {exports} 个、产物文件 {artifacts} 个',
+    },
     retention: {
       open: '清理产物',
       title: '产物清理（仅管理员）',

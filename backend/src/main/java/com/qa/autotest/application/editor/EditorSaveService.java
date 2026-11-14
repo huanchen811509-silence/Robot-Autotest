@@ -13,7 +13,10 @@ import com.qa.autotest.domain.caseasset.RobotFile;
 import com.qa.autotest.domain.caseasset.RobotFileVersion;
 import com.qa.autotest.domain.iam.PermissionAction;
 import com.qa.autotest.domain.iam.PermissionResource;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import org.springframework.stereotype.Service;
 
@@ -30,10 +33,22 @@ import org.springframework.stereotype.Service;
 @Service
 public class EditorSaveService {
 
+    private static final org.slf4j.Logger LOG =
+            org.slf4j.LoggerFactory.getLogger(EditorSaveService.class);
+
     private final RobotFileRepository files;
     private final AccessControlService access;
     private final AuditService audit;
     private final RobotSyntaxValidator syntax;
+
+    /** W58-07 证据包通道（可选）：单测装配入口不注入时为 null，整段跳过。 */
+    private com.qa.autotest.application.evidence.EvidenceBundleService evidenceBundles;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setEvidenceBundles(
+            com.qa.autotest.application.evidence.EvidenceBundleService evidenceBundles) {
+        this.evidenceBundles = evidenceBundles;
+    }
 
     public EditorSaveService(RobotFileRepository files, AccessControlService access,
                              AuditService audit, RobotSyntaxValidator syntax) {
@@ -80,6 +95,7 @@ public class EditorSaveService {
         if (existing == null) {
             long id = files.insert(command.projectId(), path, content, sha256, operator);
             audit.record("file.create", "robot_file", String.valueOf(id), "path=" + path);
+            recordSaveEvidence(id, path, content);
             return new SaveResult(id, path, 1, sha256, true, report.checked());
         }
         if (sha256.equalsIgnoreCase(existing.sha256())) {
@@ -97,7 +113,43 @@ public class EditorSaveService {
             throw conflict(path, expected, existing.currentVersion());
         }
         audit.record("file.save", "robot_file", String.valueOf(existing.id()), "path=" + path);
+        recordSaveEvidence(existing.id(), path, content);
         return new SaveResult(existing.id(), path, expected + 1, sha256, true, report.checked());
+    }
+
+    /**
+     * 把这次保存的内容登记进证据包（W58-07，key=`editor-save:{fileId}`）。
+     *
+     * <p>「内容未变不建版本」那条分支**不写**证据：没产生新版本，就没有新事实可留，
+     * 重复登记只会把指针换来换去。每次真保存都会原子替换同一 key 的指针，而历史版本仍在
+     * `robot_file_version` 里一条不少 —— 证据包回答的是「最近一次保存的到底是什么字节」。
+     *
+     * <p>写失败只 warn：证据是旁路，不能因为它把用户的保存退回去。
+     */
+    private void recordSaveEvidence(long fileId, String path, String content) {
+        if (evidenceBundles == null) {
+            return;
+        }
+        Path dir = null;
+        try {
+            // 用原文件名建临时件，证据条目名才有意义（否则是一串随机临时名）
+            dir = Files.createTempDirectory("editor-save-");
+            Path temp = dir.resolve(Path.of(path).getFileName().toString());
+            Files.writeString(temp, content, StandardCharsets.UTF_8);
+            evidenceBundles.write("editor-save:" + fileId, List.of(temp));
+        } catch (IOException | RuntimeException ex) {
+            LOG.warn("编辑器保存证据包写入失败 fileId={}：{}", fileId,
+                    ex.getClass().getSimpleName());
+        } finally {
+            if (dir != null) {
+                try {
+                    Files.deleteIfExists(dir.resolve(Path.of(path).getFileName().toString()));
+                    Files.deleteIfExists(dir);
+                } catch (IOException ignored) {
+                    // 临时目录清理失败不影响保存
+                }
+            }
+        }
     }
 
     /**

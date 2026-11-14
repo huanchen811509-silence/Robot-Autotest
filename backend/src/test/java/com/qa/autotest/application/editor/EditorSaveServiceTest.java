@@ -1,11 +1,18 @@
 package com.qa.autotest.application.editor;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.qa.autotest.application.editor.EditorSaveService.SaveCommand;
+import com.qa.autotest.application.evidence.EvidenceBundleService;
+import com.qa.autotest.application.evidence.EvidenceBundleStore;
+import com.qa.autotest.application.evidence.EvidencePaths;
 import com.qa.autotest.application.editor.EditorSaveService.SaveResult;
 import com.qa.autotest.application.editor.RobotSyntaxValidator.SyntaxReport;
 import com.qa.autotest.application.iam.AccessControlService;
@@ -21,6 +28,8 @@ import com.qa.autotest.domain.iam.PermissionAction;
 import com.qa.autotest.domain.iam.PermissionMatrix;
 import com.qa.autotest.domain.iam.PermissionResource;
 import com.qa.autotest.domain.iam.RoleCode;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -31,6 +40,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 /** 保存链路单测（EDT-09 / FR-v0.3-19 ~ 23）。 */
 class EditorSaveServiceTest {
@@ -41,6 +51,17 @@ class EditorSaveServiceTest {
     private FakeFiles files;
     private EditorSaveService service;
     private SyntaxReport syntaxResult;
+
+    @TempDir
+    Path evidenceRoot;
+
+    /** 装配证据包通道：与生产同一条链路（真实落盘 + mock 指针表）。 */
+    private EvidenceBundleService evidenceBundles() {
+        EvidencePaths paths = EvidencePaths.of(evidenceRoot.resolve("store"));
+        EvidenceBundleStore store = mock(EvidenceBundleStore.class);
+        when(store.find(anyString())).thenReturn(Optional.empty());
+        return new EvidenceBundleService(paths, store, noopAudit());
+    }
 
     @BeforeEach
     void setUp() {
@@ -102,6 +123,50 @@ class EditorSaveServiceTest {
         assertEquals(3, v3.version());
         assertEquals(3, files.versions(PROJECT, v1.fileId()).size());
         assertEquals(body("3"), files.findByPath(PROJECT, "suites/demo.robot").orElseThrow().content());
+    }
+
+    @Test
+    @DisplayName("同一 docId 重复保存：版本历史不覆盖，证据指针只留最近一次（W58-07）")
+    void 保存写证据包且不覆盖历史() throws Exception {
+        EvidenceBundleService bundles = evidenceBundles();
+        service.setEvidenceBundles(bundles);
+
+        SaveResult v1 = service.save(command("suites/demo.robot", body("1"), null));
+        SaveResult v2 = service.save(command("suites/demo.robot", body("2"), v1.version()));
+
+        assertEquals(2, v2.version());
+        assertEquals(2, files.versions(PROJECT, v1.fileId()).size(), "两次保存两个版本，历史一条不删");
+        List<EvidenceBundleService.EvidenceEntry> entries =
+                bundles.read("editor-save:" + v1.fileId());
+        assertEquals(1, entries.size(), "同一 key 的指针原子替换，证据只留最近一次");
+        assertArrayEquals(body("2").getBytes(StandardCharsets.UTF_8), entries.get(0).content());
+    }
+
+    @Test
+    @DisplayName("证据条目沿用原文件名，内容等于刚保存的字节")
+    void 证据内容与保存字节一致() throws Exception {
+        EvidenceBundleService bundles = evidenceBundles();
+        service.setEvidenceBundles(bundles);
+
+        SaveResult saved = service.save(command("suites/demo.robot", body("9"), null));
+
+        List<EvidenceBundleService.EvidenceEntry> entries =
+                bundles.read("editor-save:" + saved.fileId());
+        assertEquals(1, entries.size());
+        assertEquals("demo.robot", entries.get(0).name(), "临时件用原文件名，证据条目才可读");
+        assertArrayEquals(body("9").getBytes(StandardCharsets.UTF_8), entries.get(0).content());
+    }
+
+    @Test
+    @DisplayName("内容未变的分支不建版本（因此也没有新事实可留证）")
+    void 内容未变不写新证据() {
+        service.setEvidenceBundles(evidenceBundles());
+        String content = body("1");
+        SaveResult first = service.save(command("suites/demo.robot", content, null));
+        SaveResult second = service.save(command("suites/demo.robot", content, first.version()));
+
+        assertFalse(second.changed());
+        assertEquals(1, files.versions(PROJECT, first.fileId()).size());
     }
 
     @Test

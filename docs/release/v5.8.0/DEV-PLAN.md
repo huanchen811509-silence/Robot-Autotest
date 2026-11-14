@@ -276,6 +276,9 @@ W6 最后，且开始前 W1 ~ W5 出口判据全部满足。
 | W58-03 | 完成（真实 HTTP 待补） | ① 后端 13 例（用例 6 + 通用批量 7）② 真实 HTTP 四类请求待补 ③ 契约快照已重生成且 `--check` PASS（并修了参数解析缺陷，见 D-58-04） | `f16825e` |
 | W58-04 | 完成（网络日志待补） | ① 真实网络日志待补 ② spec 断言条件模式不发 `ids` ③ spec 断言不一致文案 | `c1108e1`；`CasesView.spec` 14 例、`useServerSelection.spec` 16 例 |
 | W58-05 | 完成（3 页反向实证待补） | ① 三页数据下反向实证待补 ② spec 用 URL 复现证明筛选可复制 ③ DOM 断言「共 N 条」取 `total` ④ 3 例覆盖筛选变化与翻页保留 | `CaseSetsView.spec` 15 例；`TestSetControllerTest` 5 例 |
+| W58-06 | 完成（回放待补） | ① `ExportServiceTest` 11 例（新增 2：read 回来逐字节一致 + 通道故障不影响导出）② 大文件不整读内存：证据写入传**磁盘路径**，`EvidencePaths.sha256Of`/`Files.copy` 均流式 ③ `9fda073` 回放待补 | `ExportService` + `EvidenceBundleService` |
+| W58-07 | 完成（回放待补） | ① `EditorSaveServiceTest` 12 例（新增 3）② 同上，传临时文件路径 ③ 额外断言：同一 docId 两次保存 = 2 个版本、证据指针只留最近一次 | `EditorSaveService` |
+| W58-08 | 完成（截图待补） | ① 台账 42 行逐条有结论，缺口 7 → 6 ② `ReportsView` 行为对齐 `TestReportsView`（编辑/软删），截图待补 ③ 前端全量 130 文件 1030 例（只增不减） | `docs/evidence/v5.8.0/list-crud-matrix.md`；`ReportsView.spec.ts` 3 例 |
 
 ### 12.1 偏差登记
 
@@ -284,6 +287,8 @@ W6 最后，且开始前 W1 ~ W5 出口判据全部满足。
 | D-58-01 | W58-04 只接了**用例清单页**，用例集页的条件选择未接线 | 用例集列表此前不是服务端分页，「全选所有命中」没有可下发的边界；更关键的是**该页至今没有批量动作**（选择器没有消费者），发了描述符也无处可用 | W58-05 之后列表已服务端分页，前提具备；等该页出现真实批量动作时接线。在此之前不得对外称「所有列表都支持跨页全选」 |
 | D-58-02 | FR-03 后端补了 **2 个**查询参数（`setCode` / `name`），超出 DEV-PLAN 预留的「补 1 个」 | 两列筛选都要服务端生效就各需一个参数；只补一个会变成「一列走服务端、一列走本地」的半吊子口径，比不补更难解释 | 已并入 `openapi.json` 重生成范围（FR-03 也改了接口签名） |
 | D-58-03 | 全量后端单测首跑假红：`ProjectRunDispatcherTest`（1934 例 1 失败） | 断言与派发线程的 `inFlight` 回减抢跑（latch 在 runnable 内 countDown，`inFlightCount` 在 runnable 返回后才减），单跑必过、全量被压到 1 | 已改为「轮询等状态收敛」，断言语义不变；单跑 5 例全过，全量复跑 1934 例 FAIL 0 |
+| D-58-05 | W58-08 四页里只有 `ReportsView` 判定为「接」，其余三页不接 | `GlobalAssetsView` 无通用 `PUT`（资产由采集回写）；`GlobalTemplatesView` 只缺外壳、接它无行为变化；`RunsView` 缺口本就是「无」。判定依据写在台账 §本轮判定 | 台账逐页留结论与证据，不把「不接」写成「已完成」；FR-04 按 P2 登记（允许未达成） |
+| D-58-06 | **计划外修正**：`tools/check_list_crud.py` 把台账路径写死成 `docs/evidence/v5.7.0/` | 新台账放在 `v5.8.0/` 时机检会继续对着旧台账判绿——台账没人看、机检还是 PASS，属最难发现的假绿（与门禁 29 的 `host_inventory` 证据目录同型） | 改为按目录版本序取最新台账；`--self-test` 真注入判红→还原判绿，PASS=113 |
 | D-58-04 | **计划外修正**：`tools/gen_api_contract.py` 长期解析不出任何注解参数（438 个操作里只有 6 个带参数，且都出自 `MultipartFile` 分支） | `request_param()` 要求「注解」与「类型+参数名」分属两个逗号段，而 Java 把两者写在同一段；结果 `@PathVariable` / `@RequestParam` 一律返回 `None`，契约快照**从来没有覆盖过 query/path 参数**——本版 FR-02/FR-03 的请求形状变化原本无法被 NFR-02 兜住 | 已修：剥掉前缀注解后再解析类型与参数名；重生成后带参数的操作 6 → 359，`--check` PASS，`endpoints=438 / paths=360` 不变（依赖方只用路径与 `info.version`，已逐个核对） |
 
 ### 12.2 本轮验证读数（2026-11-14）

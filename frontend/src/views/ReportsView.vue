@@ -2,8 +2,9 @@
 import { computed, h, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { NButton, NPagination, type DataTableColumns } from 'naive-ui'
+import { NButton, NInput, NPagination, type DataTableColumns } from 'naive-ui'
 import { reportsApi, type ReportListItem, type RetentionResult } from '@/api/reports'
+import { listCrudApi, type DeleteResult } from '@/api/listCrud'
 import { useAuthStore } from '@/stores/auth'
 import DataTable from '@/components/DataTable.vue'
 import { useListPageSize, type PageSize } from '@/composables/useListPageSize'
@@ -35,6 +36,14 @@ const retention = ref<RetentionResult | null>(null)
 const retentionDone = ref<RetentionResult | null>(null)
 
 const projectId = computed(() => auth.projectId ?? 0)
+
+// 行内 CRUD（W58-08）：报告是「系统产物」，只做元数据编辑 + 软删，不给「新增」。
+const editingRunId = ref<string | null>(null)
+const editForm = ref({ displayName: '', remark: '', tags: '' })
+const editLoading = ref(false)
+const editSaving = ref(false)
+const deletingRunId = ref<string | null>(null)
+const deletedImpact = ref<DeleteResult | null>(null)
 const pageCount = computed(() => Math.max(1, Math.ceil(total.value / size.value)))
 
 /**
@@ -89,6 +98,36 @@ const columns = computed<DataTableColumns<ReportListItem>>(() => [
             h('span', { class: 'missing-keys' }, row.metadataMissing.join(', ')),
           ]),
   },
+  {
+    title: t('common.actions'),
+    key: '__actions',
+    width: 160,
+    render: (row) =>
+      h('div', { class: 'row-actions' }, [
+        h(
+          NButton,
+          {
+            text: true,
+            type: 'primary',
+            size: 'small',
+            'data-testid': `edit-${row.runId}`,
+            onClick: () => void openEdit(row.runId),
+          },
+          { default: () => t('common.edit') },
+        ),
+        h(
+          NButton,
+          {
+            text: true,
+            size: 'small',
+            'data-testid': `delete-${row.runId}`,
+            loading: deletingRunId.value === row.runId,
+            onClick: () => void deleteReport(row.runId),
+          },
+          { default: () => t('common.delete') },
+        ),
+      ]),
+  },
 ])
 
 /** 清理清单（dry-run 预览）：三元列的只读表 */
@@ -132,6 +171,77 @@ function turnPage(next: number): void {
 
 function openReport(runId: string): void {
   void router.push({ name: 'report-detail', params: { runId } })
+}
+
+/**
+ * 打开元数据编辑框。
+ *
+ * 列表项里没有展示层三件套（名称/备注/标签），所以先 `getRun` 回填；
+ * 回填失败时**不猜默认值**，直接把错误亮给用户——拿空表单去覆盖真实备注是数据事故。
+ */
+async function openEdit(runId: string): Promise<void> {
+  editingRunId.value = runId
+  editLoading.value = true
+  error.value = null
+  try {
+    const meta = await listCrudApi.getRun(projectId.value, runId)
+    editForm.value = {
+      displayName: meta.displayName ?? '',
+      remark: meta.remark ?? '',
+      tags: meta.tags ?? '',
+    }
+  } catch (e) {
+    error.value = localizeError(e)
+    editingRunId.value = null
+  } finally {
+    editLoading.value = false
+  }
+}
+
+async function submitEdit(): Promise<void> {
+  const runId = editingRunId.value
+  if (!runId || editSaving.value) return
+  editSaving.value = true
+  error.value = null
+  try {
+    await listCrudApi.updateReport(projectId.value, runId, {
+      displayName: editForm.value.displayName.trim(),
+      remark: editForm.value.remark.trim(),
+      tags: editForm.value.tags.trim(),
+    })
+    editingRunId.value = null
+    await load()
+  } catch (e) {
+    error.value = localizeError(e)
+  } finally {
+    editSaving.value = false
+  }
+}
+
+/**
+ * 软删报告。
+ *
+ * 影响面**不做预览**：`/impact` 只挂在运行记录上，报告这条链路没有预览端点。
+ * 删除响应会带回真实影响面（导出件数 / 产物文件数），删完如实展示条数——
+ * 宁可先说「会发生什么」再说「已经发生了什么」，也不在确认框里编一个数字。
+ */
+async function deleteReport(runId: string): Promise<void> {
+  if (deletingRunId.value) return
+  if (!(await confirmAction(t('reports.crud.confirmDelete', { runId }), { tone: 'danger' }))) {
+    return
+  }
+  deletingRunId.value = runId
+  error.value = null
+  deletedImpact.value = null
+  try {
+    const result = await listCrudApi.deleteReport(projectId.value, runId)
+    deletedImpact.value = result
+    await load()
+  } catch (e) {
+    error.value = localizeError(e)
+  } finally {
+    deletingRunId.value = null
+  }
 }
 
 function reasonLabel(reason: string): string {
@@ -267,6 +377,41 @@ watch(
 
     <ErrorLineView v-if="error" :error="error" />
 
+    <p v-if="deletedImpact" class="text-ok" data-testid="report-delete-impact">
+      {{
+        t('reports.crud.deleted', {
+          deleted: deletedImpact.deleted ? 1 : 0,
+          exports: deletedImpact.impact.testReportExportCount,
+          artifacts: deletedImpact.impact.runArtifactCount,
+        })
+      }}
+    </p>
+
+    <div v-if="editingRunId" class="card wide-card crud-dialog" role="dialog" aria-modal="true"
+         :aria-label="t('reports.crud.editTitle')">
+      <h2 class="card-title">{{ t('reports.crud.editTitle') }}</h2>
+      <p class="muted">{{ editingRunId }}</p>
+      <p v-if="editLoading" class="muted">{{ t('common.loading') }}</p>
+      <template v-else>
+        <div class="toolbar crud-fields">
+          <NInput v-model:value="editForm.displayName" :placeholder="t('reports.crud.displayName')"
+                  :aria-label="t('reports.crud.displayName')" data-testid="edit-display-name" />
+          <NInput v-model:value="editForm.remark" :placeholder="t('reports.crud.remark')"
+                  :aria-label="t('reports.crud.remark')" data-testid="edit-remark" />
+          <NInput v-model:value="editForm.tags" :placeholder="t('reports.crud.tags')"
+                  :aria-label="t('reports.crud.tags')" data-testid="edit-tags" />
+        </div>
+        <div class="toolbar">
+          <NButton type="primary" :loading="editSaving" data-testid="edit-submit" @click="submitEdit">
+            {{ t('common.save') }}
+          </NButton>
+          <NButton quaternary :disabled="editSaving" @click="editingRunId = null">
+            {{ t('common.cancel') }}
+          </NButton>
+        </div>
+      </template>
+    </div>
+
     <div class="list-fill">
       <DataTable
         :columns="columns"
@@ -305,5 +450,17 @@ watch(
 
 .retention-panel {
   margin-bottom: 16px;
+}
+
+.crud-dialog {
+  margin-bottom: 16px;
+}
+
+.crud-fields {
+  align-items: center;
+}
+
+.crud-fields > * {
+  width: 220px;
 }
 </style>

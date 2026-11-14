@@ -25,7 +25,21 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-MATRIX = ROOT / "docs" / "evidence" / "v5.7.0" / "list-crud-matrix.md"
+def _latest_matrix() -> Path:
+    """取版本号最大的那份台账。
+
+    台账路径写死版本号会在下一版静默失效：机检继续对着旧台账判绿，新台账没人看
+    （门禁 29 的 host_inventory 证据目录踩过同一个坑）。这里按目录名做版本序排序。
+    """
+    base = ROOT / "docs" / "evidence"
+    candidates = sorted(
+        (p for p in base.glob("v*/list-crud-matrix.md")),
+        key=lambda p: [int(x) for x in re.findall(r"\d+", p.parent.name)] or [0],
+    )
+    return candidates[-1] if candidates else base / "v5.7.0" / "list-crud-matrix.md"
+
+
+MATRIX = _latest_matrix()
 
 MIN_ROWS = 24
 EXPECTED_COLUMNS = 8

@@ -1229,6 +1229,14 @@ export default {
       envHint: 'Line breaks when the environment changes',
       currentHint: 'Click a point to open that run',
     },
+    crud: {
+      editTitle: 'Edit report info',
+      displayName: 'Display name',
+      remark: 'Remark',
+      tags: 'Tags',
+      confirmDelete: 'Delete report {runId}? It disappears from this list; case-level results and artifacts stay registered and can be restored from the Runs page.',
+      deleted: 'Deleted {deleted} / linked exports {exports}, artifacts {artifacts}',
+    },
     retention: {
       open: 'Purge artifacts',
       title: 'Artifact retention (admin only)',
