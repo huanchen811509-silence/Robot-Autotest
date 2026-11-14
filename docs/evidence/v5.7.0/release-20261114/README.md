@@ -23,7 +23,8 @@
 | 项 | 值 | 来源 |
 |---|---|---|
 | 版本 | `5.7.0` | `VERSION` / `/api/_ping` / 入口托管 `CHANGELOG.md` 三处一致 |
-| 构建 commit | `762d2dd` | jar 内 `build-info.properties` 与 HEAD 一致（判据 1/4） |
+| 收口运行 | 见 §六 | 在发布提交上再跑一次 `deploy.sh`，判据 1/4 恢复「jar commit == HEAD」 |
+| 构建 commit | `762d2dd`（归档运行） | jar 内 `build-info.properties` 与当时的 HEAD 一致（判据 1/4） |
 | 进程重启 | 起于 `11-14 19:38:28`，晚于 jar | 判据 2/4 |
 | 双端口健康 | `8081 /api/_ping=200`、`8001 /healthz=200` | 判据 3/4 |
 | 运行期 | `version=5.7.0`、`commit=762d2dd` | 判据 4/4 |
@@ -55,7 +56,20 @@
 | `raw/version-consistency.log` | 五处版本同源机检（含运行期与入口托管） |
 | `raw/gates-55.log` | 55 步全量门禁在发版提交上的复跑输出（含 53~55 `--self-test` 真注入段） |
 
-## 五、口径提醒
+## 五、两次构建运行（为什么证据里的 commit 会比 HEAD 旧一个提交）
+
+`deploy.sh --verify` 的判据 1/4 是「jar 内 build commit == HEAD」。而**记录构建读数的文件自身
+还要再提交一次**，提交后 HEAD 立刻前移，于是「已归档的日志」永远比 HEAD 慢一个提交。
+处理办法沿用 `fac4512` 定下的口径：
+
+| 运行 | 时点 | 用途 | 落点 |
+|---|---|---|---|
+| 归档运行 | 发版文档提交之后立即执行 | 产出本目录 `raw/*.log`，作为**可复核的原始读数** | 入库 |
+| 收口运行 | 本次提交全部落盘之后再执行一次 | 让 HEAD 上 `deploy.sh --verify` 恢复四项全 PASS | 只报读数，不新增日志文件（避免再次前移 HEAD） |
+
+两轮之间**只有文档差异**，可用 `git diff --stat <归档运行 commit>..HEAD` 自查（应只有 `.md` / `.log`）。
+
+## 六、口径提醒
 
 - 本轮补做的是**发版与部署**，不是 G 门判定；`05-TEST-REPORT.md` §四的 153 条 UI / 真机 / 性能 TC 仍未执行。
 - 交付包**不含**任何凭据、日志、`node_modules`、`target`、`.git`；打包脚本内已有四条断言。
