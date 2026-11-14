@@ -816,6 +816,7 @@ export default {
     triggered: '已创建运行 {runId}；执行严格串行排队，可在运行记录页查看',
     empty: '还没有用例集',
     emptyHint: '先新建一个用例集，再把用例加进来',
+    totalCount: '共 {count} 个用例集',
     itemsTitle: '用例集内容：{name}',
     itemsCount: '{count} 条用例',
     addCase: '添加用例',

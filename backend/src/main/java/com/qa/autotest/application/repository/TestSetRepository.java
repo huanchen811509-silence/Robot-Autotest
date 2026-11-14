@@ -9,7 +9,18 @@ import java.util.Optional;
 /** 用例集仓储。 */
 public interface TestSetRepository {
 
-    PageResult<TestSet> page(long projectId, String keyword, int page, int size);
+    /**
+     * 用例集分页（v5.8.0 FR-v5.8-03 起支持列级筛选）。
+     *
+     * `setCode` / `name` 各自模糊匹配，与 `keyword`（编号或名称命中任一）取交集；
+     * 三者都可为 null。5 参入口保留为默认方法，既有调用方不必跟着改签名。
+     */
+    PageResult<TestSet> page(long projectId, String keyword, String setCode, String name,
+                             int page, int size);
+
+    default PageResult<TestSet> page(long projectId, String keyword, int page, int size) {
+        return page(projectId, keyword, null, null, page, size);
+    }
 
     /** 平台用例集（test_set.project_id IS NULL）分页：平台库只读视图用。 */
     PageResult<TestSet> platformPage(String keyword, int page, int size);

@@ -106,7 +106,7 @@ class ProjectRunDispatcherTest {
         release.countDown();
         assertTrue(done.await(10, TimeUnit.SECONDS), "第三条应在释放后补位跑完");
         assertEquals(2, peak.get(), "单项目峰值并发等于 MAX_PARALLEL");
-        assertEquals(0, queue.inFlightCount());
+        awaitInFlightIdle(queue);
     }
 
     @Test
@@ -150,7 +150,7 @@ class ProjectRunDispatcherTest {
 
         Thread.sleep(200);
         assertEquals(1, count.get(), "重复提交必须被丢弃");
-        assertEquals(0, queue.inFlightCount());
+        awaitInFlightIdle(queue);
     }
 
     @Test
@@ -198,7 +198,7 @@ class ProjectRunDispatcherTest {
         Thread.sleep(50);
         assertEquals("done", repo.states.get("seed"));
         assertTrue(queue.status("seed").isEmpty());
-        assertEquals(0, queue.inFlightCount());
+        awaitInFlightIdle(queue);
     }
 
     private static final class FakeQueueRepository implements RunQueueRepository {
@@ -218,6 +218,31 @@ class ProjectRunDispatcherTest {
         public void markDone(long projectId, String runId) {
             states.put(runId, "done");
         }
+    }
+
+    /**
+     * 等派发器把 inFlight 回减到 0。
+     *
+     * `inFlightCount()` 是**工作线程跑完 runnable 之后**才减的，而用例里的 latch 在 runnable
+     * 内部就 countDown。latch 一响立刻断言 0，等于和派发线程的收尾动作抢跑——单跑必过、
+     * 全量跑被 CPU 挤一下就红（2026-11-14 全量门禁实际红过一次）。这里改成轮询等收敛，
+     * 断言语义（跑完后队列清空）不变，只是不再要求「瞬时」。
+     */
+    private static void awaitInFlightIdle(ProjectRunDispatcher queue) {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+        while (System.nanoTime() < deadline) {
+            if (queue.inFlightCount() == 0) {
+                assertEquals(0, queue.inFlightCount());
+                return;
+            }
+            try {
+                Thread.sleep(5);
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+        assertEquals(0, queue.inFlightCount(), "任务结束后派发器应回减到 0");
     }
 
     private static void await(CountDownLatch latch) {

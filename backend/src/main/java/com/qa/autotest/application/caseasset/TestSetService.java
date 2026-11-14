@@ -62,9 +62,15 @@ public class TestSetService {
     }
 
     public PageResult<TestSet> page(long projectId, String keyword, int page, int size) {
+        return page(projectId, keyword, null, null, page, size);
+    }
+
+    /** v5.8.0 FR-v5.8-03：列级筛选（集合编号 / 名称）在服务端生效，不再只筛当前页。 */
+    public PageResult<TestSet> page(long projectId, String keyword, String setCode, String name,
+                                    int page, int size) {
         access.bindProject(projectId);
         access.require(PermissionResource.CASE, PermissionAction.READ);
-        return sets.page(projectId, keyword, page, size);
+        return sets.page(projectId, keyword, setCode, name, page, size);
     }
 
     public TestSet get(long projectId, long id) {

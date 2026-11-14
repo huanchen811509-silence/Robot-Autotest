@@ -121,6 +121,26 @@ def literal(args: str, key: str = "value") -> str | None:
     return m.group(1) if m else None
 
 
+def strip_leading_annotations(text: str) -> str:
+    """去掉参数段开头的注解，剩下的才是「类型 + 参数名」。
+
+    Java 的注解与声明在同一个逗号段内（`@RequestParam(required = false) String k`），
+    按逗号切开的每一段里两者是黏在一起的；不剥掉注解，正则会把 `@RequestParam(...) String`
+    当成类型名，参数名则被 `$` 锚点拒掉，最终返回 None。
+    """
+    rest = text.lstrip()
+    while rest.startswith("@"):
+        _, _, end = annotation_at(rest, 0)
+        if end and end > 0:
+            rest = rest[end:].lstrip()
+            continue
+        m = re.match(r"@\w+", rest)
+        if not m:
+            break
+        rest = rest[m.end():].lstrip()
+    return rest
+
+
 def request_param(param_text: str) -> Param | None:
     """把单个方法参数解析成 Param；没有 Spring 参数注解则忽略（由 @RequestBody 分支处理）。"""
     param_text = param_text.strip()
@@ -130,9 +150,13 @@ def request_param(param_text: str) -> Param | None:
     annotations = {}
     name_and_type = ""
     for part in parts:
+        part = part.strip()
         if part.startswith("@"):
             ann_name, ann_args, _ = annotation_at(part, 0)
-            annotations[ann_name] = ann_args
+            if ann_name:
+                annotations[ann_name] = ann_args
+            # 注解后面紧跟声明，剥掉注解再当「类型 + 参数名」用
+            name_and_type = strip_leading_annotations(part)
         else:
             name_and_type = part
     if not name_and_type:

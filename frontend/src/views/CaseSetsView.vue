@@ -8,10 +8,11 @@
  */
 import { computed, h, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NButton, NCheckbox, NInput, NSelect, type DataTableColumns } from 'naive-ui'
+import { NButton, NCheckbox, NInput, NPagination, NSelect, type DataTableColumns } from 'naive-ui'
 import ColumnFilter from '@/components/ColumnFilter.vue'
 import { useTableFilters, type TableFilterColumn } from '@/composables/useTableFilters'
 import { useServerSelection } from '@/composables/useServerSelection'
+import { useListPageSize, type PageSize } from '@/composables/useListPageSize'
 import { caseApi, caseSetApi, assetVersionApi, platformCaseSetApi,
          type TestCase, type TestSet, type AssetVersionView, type AssetDiffRow,
          type PlatformCaseSetRow, type SyncStrategy } from '@/api/cases'
@@ -31,6 +32,11 @@ const projectId = computed(() => auth.projectId ?? 0)
 
 const sets = ref<TestSet[]>([])
 const keyword = ref('')
+// v5.8.0 FR-v5.8-03：列表改服务端分页 + 服务端筛选，计数取后端 total
+const page = ref(1)
+const total = ref(0)
+const { size, pageSizes } = useListPageSize()
+const pageCount = computed(() => Math.max(1, Math.ceil(total.value / size.value)))
 const loading = ref(false)
 const error = ref<ErrorLine | null>(null)
 const message = ref('')
@@ -142,22 +148,21 @@ const setsFilterValues = computed<Record<string, string[]>>(() => {
   return out
 })
 const memberIsFiltered = memberFilters.isFiltered
-const visibleSets = computed<TestSet[]>(() => {
-  const byCode = (setsFilters.texts.value.setCode ?? '').toLowerCase()
-  const byName = (setsFilters.texts.value.name ?? '').toLowerCase()
-  const q = setsFilters.q.value.trim().toLowerCase()
-  return sets.value.filter((set) => {
-    if (byCode && !set.setCode.toLowerCase().includes(byCode)) return false
-    if (byName && !set.name.toLowerCase().includes(byName)) return false
-    if (q && !`${set.setCode} ${set.name}`.toLowerCase().includes(q)) return false
-    return true
-  })
-})
 function onSetsFilterChange(next: Record<string, string[]>): void {
   for (const column of setsFilterColumns) {
     setsFilters.setText(column.key, next[column.key]?.[0] ?? '')
   }
+  // 筛选条件交给服务端：回到第 1 页重新查询。本地再筛一遍会把「第 2 页无结果」变成假空。
+  page.value = 1
+  void load()
 }
+
+/** 服务端筛选参数：与 `caseSetApi.page` 同形，条件选择也复用它。 */
+const setsQueryParams = computed<Record<string, string | undefined>>(() => ({
+  keyword: keyword.value.trim() || undefined,
+  setCode: (setsFilters.texts.value.setCode ?? '').trim() || undefined,
+  name: (setsFilters.texts.value.name ?? '').trim() || undefined,
+}))
 
 /** 服务端选择：全选用筛选条件表达，跨页生效；>10000 需二次确认。 */
 const pageIds = computed<number[]>(() => sets.value.map((set) => set.id))
@@ -166,7 +171,7 @@ const selectionCount = selection.count
 const awaitingSelectAllConfirm = selection.awaitingConfirm
 
 function selectAllMatching(): void {
-  selection.requestSelectAllMatching(setsFilters.queryParams.value, sets.value.length)
+  selection.requestSelectAllMatching(setsQueryParams.value, total.value)
 }
 function clearSelection(): void {
   selection.clear()
@@ -174,7 +179,9 @@ function clearSelection(): void {
 
 watch(setsFilters.revision, () => {
   // 筛选条件一变，旧的「按条件全选」必须作废（W57-16）
-  selection.resetForFilters(setsFilters.queryParams.value)
+  selection.resetForFilters(setsQueryParams.value)
+  page.value = 1
+  void load()
 })
 
 const columns = computed<DataTableColumns<TestSet>>(() => [
@@ -235,12 +242,13 @@ async function load(): Promise<void> {
   }
   loading.value = true
   try {
-    const page = await caseSetApi.page(projectId.value, {
-      keyword: keyword.value.trim() || undefined,
-      page: 1,
-      size: 100,
+    const result = await caseSetApi.page(projectId.value, {
+      ...setsQueryParams.value,
+      page: page.value,
+      size: size.value,
     })
-    sets.value = page.items
+    sets.value = result.items
+    total.value = result.total
   } catch (e) {
     error.value = localizeError(e)
   } finally {
@@ -318,6 +326,23 @@ async function removeSet(row: TestSet): Promise<void> {
   } catch (e) {
     error.value = localizeError(e)
   }
+}
+
+/** 关键字变更后必须回到第 1 页：停在第 3 页上搜一个只命中第 1 页的词会得到假空。 */
+function onKeywordSearch(): void {
+  page.value = 1
+  void load()
+}
+
+function changePageSize(next: number): void {
+  size.value = next as PageSize
+  page.value = 1
+  void load()
+}
+function turnPage(next: number): void {
+  if (next < 1 || next > pageCount.value) return
+  page.value = next
+  void load()
 }
 
 async function loadItems(): Promise<void> {
@@ -600,7 +625,7 @@ void load()
         style="width: 200px"
         :placeholder="t('common.searchPlaceholder')"
         :aria-label="t('common.searchPlaceholder')"
-        @keyup.enter="load"
+        @keyup.enter="onKeywordSearch"
       />
       <NButton type="primary" @click="openCreate">{{ t('caseSets.create') }}</NButton>
       <NButton quaternary :loading="loading" @click="load">{{ t('common.refresh') }}</NButton>
@@ -664,9 +689,13 @@ void load()
       </template>
     </div>
 
+    <p class="muted list-total" data-testid="case-sets-total">
+      {{ t('caseSets.totalCount', { count: total }) }}
+    </p>
+
     <DataTable
       :columns="columns"
-      :data="visibleSets"
+      :data="sets"
       :loading="loading"
       :row-key="(row: TestSet) => row.id"
       :empty-title="t('caseSets.empty')"
@@ -677,6 +706,20 @@ void load()
       :filter-columns="setsFilterColumns"
       :filters="setsFilterValues"
       @update:filters="onSetsFilterChange"
+    />
+
+    <NPagination
+      v-if="total > 0"
+      class="pager"
+      data-testid="case-sets-pager"
+      :page="page"
+      :page-count="pageCount"
+      :page-slot="7"
+      :page-size="size"
+      :page-sizes="pageSizes"
+      show-size-picker
+      @update:page-size="changePageSize"
+      @update:page="turnPage"
     />
 
     <div v-if="activeSet" class="card items-card">
@@ -909,6 +952,14 @@ void load()
   align-items: center;
   gap: var(--space-2);
   margin-bottom: var(--space-2);
+}
+
+.list-total {
+  margin: 8px 0 4px;
+}
+
+.pager {
+  margin-top: 12px;
 }
 
 .batch-bar {

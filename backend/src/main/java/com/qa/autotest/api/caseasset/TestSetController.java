@@ -71,9 +71,12 @@ public class TestSetController {
     @GetMapping
     public ApiResponse<PageResult<TestSet>> page(@PathVariable long projectId,
                                                  @RequestParam(required = false) String keyword,
+                                                 @RequestParam(required = false) String setCode,
+                                                 @RequestParam(required = false) String name,
                                                  @RequestParam(defaultValue = "1") int page,
                                                  @RequestParam(defaultValue = "20") int size) {
-        return ApiResponse.ok(sets.page(projectId, keyword, page, Math.min(size, 200)));
+        return ApiResponse.ok(sets.page(projectId, keyword, setCode, name, page,
+                Math.min(size, 200)));
     }
 
     @GetMapping("/{id}")

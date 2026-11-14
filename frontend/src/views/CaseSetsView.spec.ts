@@ -459,3 +459,86 @@ describe('CaseSetsView 平台用例集库（N9）', () => {
     expect(platformCaseSetApi.page).not.toHaveBeenCalled()
   })
 })
+
+describe('CaseSetsView 服务端筛选与计数（FR-v5.8-03）', () => {
+  /** 让列表有多页，否则分页器不渲染、翻页行为无从验证。 */
+  function manyRows(total = 50): void {
+    vi.mocked(caseSetApi.page).mockResolvedValue({
+      items: sets,
+      total,
+      page: 1,
+      size: 10,
+    } as never)
+  }
+
+  function pagerItem(root: HTMLElement, label: string): HTMLElement {
+    const items = [...root.querySelectorAll<HTMLElement>('.n-pagination-item')]
+    const found = items.find((el) => el.textContent?.trim() === label)
+    if (!found) throw new Error('pager item not found: ' + label)
+    return found
+  }
+
+  beforeEach(() => {
+    vi.mocked(caseSetApi.page).mockClear()
+    window.history.replaceState({}, '', '/case-sets')
+  })
+
+  afterEach(() => {
+    window.history.replaceState({}, '', '/')
+  })
+
+  it('底部计数取服务端 total，与当前页行数无关', async () => {
+    manyRows(50)
+    const root = await mountView()
+    expect(root.textContent).toContain(i18n.global.t('caseSets.totalCount', { count: 50 }))
+    // 本页只有 2 行，计数不能变成 2
+    expect(rows(root)).toHaveLength(2)
+  })
+
+  it('搜索回车重新请求并回到第 1 页', async () => {
+    manyRows(50)
+    const root = await mountView()
+    pagerItem(root, '2').click()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    await nextTick()
+    expect(vi.mocked(caseSetApi.page).mock.calls.at(-1)![1]).toMatchObject({ page: 2 })
+
+    // 按占位文案定位搜索框，别拿「第一个 input」蒙：列筛选弹层里也有 input
+    const placeholder = i18n.global.t('common.searchPlaceholder')
+    const input = root.querySelector<HTMLInputElement>(
+      `input[placeholder="${placeholder}"]`,
+    )!
+    expect(input).toBeTruthy()
+    input.value = 'REG'
+    input.dispatchEvent(new Event('input'))
+    await nextTick()
+    input.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter', bubbles: true }))
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    await nextTick()
+
+    expect(vi.mocked(caseSetApi.page).mock.calls.at(-1)![1]).toMatchObject({
+      keyword: 'REG',
+      page: 1,
+    })
+  })
+
+  it('URL 里的列筛选直接进首次请求，翻页后仍带着它', async () => {
+    manyRows(50)
+    // 筛选条件落在 URL（prefix sets_）：拷给别人打开应重现同一份结果
+    window.history.replaceState({}, '', '/case-sets?sets_t_setCode=REG')
+    const root = await mountView()
+
+    expect(vi.mocked(caseSetApi.page).mock.calls[0][1]).toMatchObject({
+      setCode: 'REG',
+      page: 1,
+    })
+
+    pagerItem(root, '2').click()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    await nextTick()
+    expect(vi.mocked(caseSetApi.page).mock.calls.at(-1)![1]).toMatchObject({
+      setCode: 'REG',
+      page: 2,
+    })
+  })
+})

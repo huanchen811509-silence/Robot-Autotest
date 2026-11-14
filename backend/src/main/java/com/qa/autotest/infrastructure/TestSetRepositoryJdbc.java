@@ -39,7 +39,8 @@ public class TestSetRepositoryJdbc implements TestSetRepository {
     }
 
     @Override
-    public PageResult<TestSet> page(long projectId, String keyword, int page, int size) {
+    public PageResult<TestSet> page(long projectId, String keyword, String setCode, String name,
+                                    int page, int size) {
         StringBuilder where = new StringBuilder(" WHERE s.project_id = ?");
         List<Object> args = new ArrayList<>();
         args.add(projectId);
@@ -48,6 +49,15 @@ public class TestSetRepositoryJdbc implements TestSetRepository {
             String like = "%" + keyword.trim() + "%";
             args.add(like);
             args.add(like);
+        }
+        // 列级筛选与关键字取交集：SQL 上就是各自 AND 一条，不做「有列筛选就忽略关键字」
+        if (setCode != null && !setCode.isBlank()) {
+            where.append(" AND s.set_code LIKE ?");
+            args.add("%" + setCode.trim() + "%");
+        }
+        if (name != null && !name.isBlank()) {
+            where.append(" AND s.name LIKE ?");
+            args.add("%" + name.trim() + "%");
         }
         String countSql = "SELECT COUNT(*) FROM test_set s" + where;
         TenantGuard.requireProjectScope(countSql, "test_set");

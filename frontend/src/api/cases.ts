@@ -232,7 +232,17 @@ export const caseApi = {
 }
 
 export const caseSetApi = {
-  page(projectId: number, params: { keyword?: string; page?: number; size?: number }) {
+  /**
+   * 列表（v5.8.0 FR-v5.8-03）：`setCode` / `name` 是服务端列级筛选，与 `keyword` 取交集。
+   * 三者都不传即「本项目全部」。
+   */
+  page(projectId: number, params: {
+    keyword?: string
+    setCode?: string
+    name?: string
+    page?: number
+    size?: number
+  }) {
     return request<PageResult<TestSet>>(`${base(projectId)}/case-sets${toQuery(params)}`)
   },
   create(projectId: number, body: { setCode: string; name: string; description?: string }) {

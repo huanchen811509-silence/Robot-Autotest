@@ -54,7 +54,7 @@ class TestSetControllerTest {
     @Test
     @DisplayName("列表：默认 size 上限 200，itemCount / setStatus 原样返回")
     void page_默认参数与字段() throws Exception {
-        when(sets.page(7L, "reg", 1, 200)).thenReturn(new PageResult<>(
+        when(sets.page(7L, "reg", null, null, 1, 200)).thenReturn(new PageResult<>(
                 List.of(new TestSet(3L, 7L, "REG", "回归集", "每晚跑", 1L, "ACTIVE", 12)), 1L, 1, 200));
 
         mvc.perform(get("/api/projects/7/case-sets?keyword=reg&size=500"))
@@ -62,6 +62,22 @@ class TestSetControllerTest {
                 .andExpect(jsonPath("$.data.items[0].setCode").value("REG"))
                 .andExpect(jsonPath("$.data.items[0].itemCount").value(12))
                 .andExpect(jsonPath("$.data.total").value(1));
+    }
+
+    @Test
+    @DisplayName("列级筛选：setCode / name 透传到服务端，不再由前端只筛当前页")
+    void page_列级筛选透传() throws Exception {
+        when(sets.page(7L, null, "REG", "回归", 2, 50)).thenReturn(new PageResult<>(
+                List.of(new TestSet(3L, 7L, "REG-001", "夜间回归", null, null, "ACTIVE", 4)),
+                1L, 2, 50));
+
+        mvc.perform(get("/api/projects/7/case-sets?setCode=REG&name=回归&page=2&size=50"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.page").value(2));
+
+        // 关键断言：两个筛选值是真的进了服务端查询，而不是被 Controller 丢掉
+        verify(sets).page(7L, null, "REG", "回归", 2, 50);
     }
 
     @Test

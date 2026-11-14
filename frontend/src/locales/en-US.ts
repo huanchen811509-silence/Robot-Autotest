@@ -807,6 +807,7 @@ export default {
     triggered: 'Run {runId} created; executions queue strictly in order — track it on the runs page',
     empty: 'No test sets yet',
     emptyHint: 'Create a test set, then add cases to it',
+    totalCount: '{count} case set(s)',
     itemsTitle: 'Cases in {name}',
     itemsCount: '{count} cases',
     addCase: 'Add case',
