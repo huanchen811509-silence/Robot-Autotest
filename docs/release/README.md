@@ -565,3 +565,33 @@ G 门与对外口径仍归大师，本节只报实装与机检结论。`v3.12+` 
 | 证据 | `docs/evidence/v5.6.0/`（`EW56-HI` 主机清单、`w3-report`、`w4-host-assets`、`w5-ops`、`effect-metrics`、`probe`） |
 
 > **口径提醒**：本版**只落号、不判门、不发版**。G 门未判过，界面与文档均不得称 GA；判定与对外口径归大师。
+
+---
+
+## 附录 F `v5.7.0` 用例资产与执行可信度版本登记（2026-11-14，已授权发版）
+
+> 本节只做**登记与索引**。前一条登记见附录 E（`v5.6.0`，2026-11-14）。
+
+| 项 | 内容 |
+|---|---|
+| 当前版本 | `5.7.0`（`VERSION` / `CHANGELOG` 当前标记 / build-info / OpenAPI / 入口托管 CHANGELOG 五处同源，由 `tools/check_version_consistency.py` 守） |
+| 版本目录 | `docs/release/v5.7.0/`：`00-RESEARCH` / `01-ASSESSMENT` / `PRD` / `DEV-PLAN` / `TEST-PLAN` / `05-TEST-REPORT` 六件套 **+ `RELEASE-NOTES.md`**（面向部署方） |
+| 迭代条目 | `CHANGELOG.md` 的 `v5.7.0` 小节（带 `<!-- current -->`）；「关于」页与「版本迭代」页同读这一份 |
+| 交付范围 | 30 条 FR / 218 条 AC / 12 条 NFR；WBS `W57-01` ~ `W57-46`（10 波） |
+| 门禁 | **55 步，`GATES_RESULT FAILS=0 UNJUDGED=0`**；53~55 为 `--self-test` 真注入段，单独登记，不与 01~52 相加成「全绿」 |
+| 契约与规模 | `openapi.json` **437 operations / 360 paths**；Flyway 最大 `V11_64`（7 支，均配 down）；i18n **2824** 键；业务表 **108** 张 |
+| 单测 | 后端 1899 例（失败 0）/ 前端 128 文件 1008 例；`vue-tsc --noEmit` 0 错 |
+| 发版物 | `releases/robot-autotest-5.7.0-<commit>-linux-x64.tar.gz` + `.sha256` + `.manifest.json`；`releases/` 已 gitignore，不入库 |
+| 部署 | `bash scripts/deploy.sh` 一条命令构建 + 重启 + 自校验四项判据；日志见 `docs/evidence/v5.7.0/release-20261114/` |
+| TC 读数 | 245 条：达成 **88** / 部分达成 **4** / 未执行 **153** / FAIL 0；降级登记 `L-57-01` ~ `L-57-08` |
+| 双远程 | `origin` = 群晖 `ssh://synology-robot/volume1/git/repos/robot-autotest.git`；`github` = `huanchen811509-silence/Robot-Autotest`；判据为三处 sha 一致 |
+
+### F.1 `v5.7.0` 与 `v5.6.0` 的关系
+
+| 项 | 内容 |
+|---|---|
+| 定位 | `v5.7.0` 是 `v5.6.0`（可见性版本）之后的**资产化与可信度版本**：把「看得见」推进到「选得准、跑得可信、查得全」 |
+| 承接 | 继续沿用 v5.6.0 的「跑完即入库」「资产派生」「部署自校验」，未回退任何既有能力 |
+| 未做 | `L-57-01`（超大选择批量派发）、`L-57-03`（报告导出与编辑器保存接证据包）、`L-57-04`（一次性凭证真实采集）建议纳入下一版 |
+| 判定 | **已授权发版（内部发布），G 门未判定、不得称 GA**；对外口径归大师 |
+
