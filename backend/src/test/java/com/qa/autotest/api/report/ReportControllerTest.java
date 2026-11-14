@@ -182,6 +182,51 @@ class ReportControllerTest {
         verify(logs).logs(7L, "RUN-1", "case.1", 0, 200);
     }
 
+    @Test
+    @DisplayName("详情：判据结论原样透出（PASS），带评估数与缺失数")
+    void detail_criteriaConclusion_pass() throws Exception {
+        when(query.detail(7L, "RUN-1")).thenReturn(withCriteria("PASS", 5, 0));
+
+        mvc.perform(get("/api/reports/RUN-1").param("projectId", "7"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.criteriaConclusion").value("PASS"))
+                .andExpect(jsonPath("$.data.criteriaEvaluated").value(5))
+                .andExpect(jsonPath("$.data.criteriaMissingCount").value(0));
+    }
+
+    @Test
+    @DisplayName("详情：未声明判据 → UNDETERMINED，失败数为 0 也不判 PASS")
+    void detail_criteriaConclusion_undetermined() throws Exception {
+        // 11 参兼容构造：没有判据结论；passCount=9 / failCount=0 是最容易被误判成 PASS 的形状
+        when(query.detail(7L, "RUN-1")).thenReturn(new ReportRecord(7L, "RUN-1", "FINISHED", true,
+                List.of(), Map.of(), 9, 0, 0,
+                Instant.parse("2026-11-06T00:00:00Z"), Instant.parse("2026-11-06T00:01:00Z")));
+
+        mvc.perform(get("/api/reports/RUN-1").param("projectId", "7"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.criteriaConclusion").value("UNDETERMINED"))
+                .andExpect(jsonPath("$.data.criteriaEvaluated").value(0));
+    }
+
+    @Test
+    @DisplayName("详情：判据判 FAIL 时，即使失败计数为 0 结论也是 FAIL")
+    void detail_criteriaConclusion_failWins() throws Exception {
+        when(query.detail(7L, "RUN-1")).thenReturn(withCriteria("FAIL", 3, 1));
+
+        mvc.perform(get("/api/reports/RUN-1").param("projectId", "7"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.criteriaConclusion").value("FAIL"))
+                .andExpect(jsonPath("$.data.criteriaMissingCount").value(1));
+    }
+
+    /** 带判据结论的记录：结论由 test_result.criteria_verdict 聚合而来，与计数解耦。 */
+    private static ReportRecord withCriteria(String conclusion, int evaluated, int missing) {
+        return new ReportRecord(7L, "RUN-1", "FINISHED", true, List.of("LINK"),
+                Map.of("DUT", "GPU-01"), 2, 1, 0,
+                Instant.parse("2026-11-06T00:00:00Z"), Instant.parse("2026-11-06T00:01:00Z"),
+                conclusion, evaluated, missing);
+    }
+
     private static ReportRecord record() {
         return new ReportRecord(7L, "RUN-1", "FINISHED", true, List.of("LINK"),
                 Map.of("DUT", "GPU-01"), 2, 1, 0,

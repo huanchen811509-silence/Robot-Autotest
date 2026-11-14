@@ -63,8 +63,33 @@ public class TestCaseService {
      * 批量请求：reject 必须带 comment，setPriority 必须带 priority，
      * setDomainTag 必须带 domainTag，setSafetyLevel 必须带 safetyLevel。
      */
+    /**
+     * 条件选择规格（v5.8.0 / FR-v5.8-02）。
+     *
+     * <p><b>为什么需要它</b>：界面上的「全选所有命中」只是视觉状态 —— 下发时只能带当前页的 ids，
+     * 于是「筛出 500 条批量删除」实际只删了当前页。这里让调用方把<b>筛选条件本身</b>交上来，
+     * 由服务端按同一套查询解析成真实 id 列表。
+     *
+     * <p><b>字段与列表查询一一对应</b>（{@code cases.page} 的 6 个维度）。故意不写成通用 Map：
+     * 传了不存在的键会被严格反序列化直接 400，而不是「以为筛了其实没筛」。
+     * {@code excludeIds} 用于「全选后手动取消勾选几条」。
+     *
+     * <p>{@code mode} 只支持 {@code filter}：ids 模式直接用 {@code ids}，不需要本对象。
+     */
+    public record CaseSelectionSpec(String mode, String keyword, String domain, String priority,
+                                    String reviewStatus, String capability, String safetyLevel,
+                                    List<Long> excludeIds) {
+    }
+
     public record BatchRequest(String action, List<Long> ids, String comment,
-                               String priority, String domainTag, String safetyLevel) {
+                               String priority, String domainTag, String safetyLevel,
+                               CaseSelectionSpec selection) {
+
+        /** 兼容 6 参写法（只有 ids 的老调用方）。 */
+        public BatchRequest(String action, List<Long> ids, String comment,
+                            String priority, String domainTag, String safetyLevel) {
+            this(action, ids, comment, priority, domainTag, safetyLevel, null);
+        }
     }
 
     /** 逐条结果：失败带稳定错误码名（NOT_FOUND / CONFLICT / INTERNAL_ERROR）。 */
@@ -76,8 +101,19 @@ public class TestCaseService {
      *
      * <p>undoToken 仅对可逆动作且确有成功条目时给出；delete 明确不可撤销，恒为 null。
      */
+    /**
+     * 批量结果。{@code resolvedCount} 是「条件解析出的 id 数」，用于前端比对
+     * 「界面上显示命中 N 条」与「服务端这次真的处理了 M 条」——两者不一致说明期间数据变了，
+     * 前端据此提示刷新，而不是假装成功。
+     */
     public record BatchResult(int total, int succeeded, int failed, List<BatchItemResult> items,
-                              String undoToken) {
+                              String undoToken, int resolvedCount) {
+
+        /** 兼容 5 参写法：非条件模式下解析数即条目数。 */
+        public BatchResult(int total, int succeeded, int failed, List<BatchItemResult> items,
+                           String undoToken) {
+            this(total, succeeded, failed, items, undoToken, total);
+        }
     }
 
     private final TestCaseRepository cases;
@@ -251,7 +287,7 @@ public class TestCaseService {
             throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
                     "未知批量动作：" + request.action());
         }
-        List<Long> ids = request.ids();
+        List<Long> ids = resolveIds(projectId, request);
         if (ids == null || ids.isEmpty()) {
             throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "ids 不能为空");
         }
@@ -294,7 +330,60 @@ public class TestCaseService {
         }
         String undoToken = undoRecorder == null || !undoable
                 ? null : undoRecorder.record(projectId, action, snapshots);
-        return new BatchResult(items.size(), succeeded, items.size() - succeeded, items, undoToken);
+        return new BatchResult(items.size(), succeeded, items.size() - succeeded, items,
+                undoToken, ids.size());
+    }
+
+    /**
+     * 把「条件选择」解析成真实 id 列表（FR-v5.8-02）。
+     *
+     * <p>三条硬规则：
+     * <ul>
+     *   <li>{@code ids} 与 {@code selection} <b>互斥</b>：同时给会 400 并点名两个字段，
+     *       不做「以谁为准」的猜测 —— 猜错就是删错数据；</li>
+     *   <li>条件命中超过批量上限 <b>直接 400</b> 并说明实际命中数，不做静默截断；</li>
+     *   <li>解析结果为空（命中 0 条或全被 {@code excludeIds} 排除）也 400，
+     *       让「点了没反应」变成一句能读的错。</li>
+     * </ul>
+     *
+     * <p>只取一页（上限 + 1）即可判定超限，不把整表读进内存。
+     */
+    private List<Long> resolveIds(long projectId, BatchRequest request) {
+        boolean hasIds = request.ids() != null && !request.ids().isEmpty();
+        boolean hasSelection = request.selection() != null;
+        if (hasIds && hasSelection) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                    "ids 与 selection 不能同时提供，请二选一");
+        }
+        if (!hasSelection) {
+            return request.ids();
+        }
+        CaseSelectionSpec sel = request.selection();
+        String mode = sel.mode() == null ? "" : sel.mode().trim();
+        if (!"filter".equals(mode)) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                    "selection.mode 仅支持 filter（ids 模式请直接用 ids）");
+        }
+        PageResult<TestCase> hit = cases.page(projectId, sel.keyword(), sel.domain(), sel.priority(),
+                sel.reviewStatus(), sel.capability(), sel.safetyLevel(),
+                PageQuery.of(1, BATCH_MAX + 1));
+        if (hit.total() > BATCH_MAX) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                    "条件命中 " + hit.total() + " 条，超过单次批量上限 " + BATCH_MAX
+                            + " 条，请缩小筛选范围后重试");
+        }
+        List<Long> exclude = sel.excludeIds() == null ? List.of() : sel.excludeIds();
+        List<Long> ids = new ArrayList<>(hit.items().size());
+        for (TestCase one : hit.items()) {
+            if (one.id() != null && !exclude.contains(one.id())) {
+                ids.add(one.id());
+            }
+        }
+        if (ids.isEmpty()) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                    "条件命中 " + hit.total() + " 条，但可执行 0 条（可能全被排除）");
+        }
+        return ids;
     }
 
     /** 用例写成功后让能力索引缓存失效：保证变更后第一次读就回源（EW32-03）。 */

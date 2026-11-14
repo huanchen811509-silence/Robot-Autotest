@@ -1077,6 +1077,15 @@ export default {
     finishedAt: 'Finished at',
     exportable: 'Exportable',
     notExportable: 'Missing metadata',
+    conclusionTitle: 'Conclusion',
+    conclusion: {
+      PASS: 'Pass',
+      FAIL: 'Fail',
+      UNDETERMINED: 'Undetermined',
+      undeterminedNote:
+        'No criteria were recorded when this report was ingested, so the conclusion cannot be determined. It is never inferred from the failure count.',
+      counts: '{evaluated} case(s) evaluated, {missing} missing criteria',
+    },
     missingValue: 'Missing',
     metadataTitle: 'Ten metadata fields',
     treeTitle: 'Suite tree',

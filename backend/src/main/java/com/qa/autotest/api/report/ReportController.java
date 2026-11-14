@@ -139,6 +139,18 @@ public class ReportController {
     }
 
     /** 报告详情。 */
+    /**
+     * 报告详情。
+     *
+     * <p><b>为什么要带判据结论（v5.8.0 / FR-v5.8-01）</b>：结论原本只在快照、导出件与视图渲染里，
+     * 详情接口不返回，界面上就没有任何一处能让人看到「这批到底算不算通过」。用户要么导出、
+     * 要么自己数 pass/fail —— 而按 failCount 反推结论正是 v5.7.0 要消除的口径。
+     * 这里直接透出 {@link ReportRecord#effectiveConclusion()}：未声明判据时恒为
+     * {@code UNDETERMINED}，**不回落**成「失败数为 0 就 PASS」。
+     *
+     * <p>同时带两个计数，让界面能区分「全都没声明判据」和「声明了但缺一条」：
+     * {@code criteriaEvaluated} 参与评估的用例数，{@code criteriaMissingCount} 判据缺失数。
+     */
     public record ReportDetailView(String runId,
                                    long projectId,
                                    String state,
@@ -147,12 +159,17 @@ public class ReportController {
                                    Map<String, String> metadata,
                                    ReportCounts counts,
                                    Instant startedAt,
-                                   Instant finishedAt) {
+                                   Instant finishedAt,
+                                   String criteriaConclusion,
+                                   int criteriaEvaluated,
+                                   int criteriaMissingCount) {
 
         static ReportDetailView from(ReportRecord record) {
             return new ReportDetailView(record.runId(), record.projectId(), record.state(),
                     record.exportable(), record.metadataMissing(), record.metadata(),
-                    ReportCounts.from(record), record.startedAt(), record.finishedAt());
+                    ReportCounts.from(record), record.startedAt(), record.finishedAt(),
+                    record.effectiveConclusion(), record.criteriaEvaluated(),
+                    record.criteriaMissingCount());
         }
     }
 

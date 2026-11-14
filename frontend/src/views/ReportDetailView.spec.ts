@@ -25,6 +25,13 @@ import ReportDetailView from '@/views/ReportDetailView.vue'
 const apiState = vi.hoisted(() => ({
   exportable: true,
   metadataMissing: [] as string[],
+  // 判据结论（FR-v5.8-01）：默认 PASS，测里按需改
+  conclusion: 'PASS',
+  evaluated: 4,
+  missing: 0,
+  // 失败数也接出来：用来证明「结论与 failCount 解耦」
+  passCount: 3,
+  failCount: 1,
 }))
 
 vi.mock('@/api/reports', async (importOriginal) => {
@@ -38,9 +45,12 @@ vi.mock('@/api/reports', async (importOriginal) => {
         state: 'finished',
         exportable: apiState.exportable,
         metadataMissing: apiState.metadataMissing,
-        passCount: 3,
-        failCount: 1,
+        passCount: apiState.passCount,
+        failCount: apiState.failCount,
         skipCount: 0,
+        criteriaConclusion: apiState.conclusion,
+        criteriaEvaluated: apiState.evaluated,
+        criteriaMissingCount: apiState.missing,
         startedAt: '2026-11-05T07:00:00+08:00',
         finishedAt: '2026-11-05T07:05:00+08:00',
         metadata: {
@@ -243,6 +253,11 @@ async function mountView(): Promise<HTMLElement> {
 beforeEach(() => {
   apiState.exportable = true
   apiState.metadataMissing = []
+  apiState.conclusion = 'PASS'
+  apiState.evaluated = 4
+  apiState.missing = 0
+  apiState.passCount = 3
+  apiState.failCount = 1
   vi.clearAllMocks()
   pinia = createPinia()
   setActivePinia(pinia)
@@ -255,6 +270,45 @@ afterEach(() => {
   app = null
   host = null
   pinia = null
+})
+
+describe('ReportDetailView 结论', () => {
+  it('有判据且 PASS：结论区显示「通过」并带评估数与缺失数', async () => {
+    apiState.conclusion = 'PASS'
+    apiState.evaluated = 4
+    apiState.missing = 0
+    const root = await mountView()
+
+    const box = root.querySelector('[data-testid="report-conclusion"]')
+    expect(box).not.toBeNull()
+    expect(box!.textContent).toContain('通过')
+    expect(box!.textContent).toContain('已评估 4 条')
+  })
+
+  it('判据 PASS 但失败数 > 0：结论仍显示「通过」——结论不按失败数翻译', async () => {
+    apiState.conclusion = 'PASS'
+    apiState.failCount = 2
+    apiState.passCount = 1
+    const root = await mountView()
+
+    const box = root.querySelector('[data-testid="report-conclusion"]')!
+    expect(box.textContent).toContain('通过')
+    expect(box.textContent).not.toContain('不通过')
+    // 计数条仍照实显示失败数（两件事互不覆盖）
+    expect(root.textContent).toContain('FAIL 2')
+  })
+
+  it('未声明判据：显示「未判定」并说明不按失败数推断', async () => {
+    apiState.conclusion = 'UNDETERMINED'
+    apiState.evaluated = 0
+    apiState.missing = 4
+    const root = await mountView()
+
+    const box = root.querySelector('[data-testid="report-conclusion"]')!
+    expect(box.textContent).toContain('未判定')
+    expect(box.textContent).toContain('不按失败数推断')
+    expect(box.textContent).not.toContain('不通过')
+  })
 })
 
 describe('ReportDetailView 元数据表', () => {

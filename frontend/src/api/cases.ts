@@ -113,13 +113,33 @@ export type BatchAction =
  * 批量请求：reject 必填 comment；setPriority 必填 priority；
  * setDomainTag 必填 domainTag；setSafetyLevel 必填 safetyLevel（人工补判 LX）。
  */
+/**
+ * 条件选择（FR-v5.8-02）：`ids` 模式下不传；`filter` 模式下由服务端按同一套查询解析成真实 id。
+ *
+ * 字段与后端 `CaseSelectionSpec` 一一对应，传了后端没有的键会被严格反序列化直接 400 ——
+ * 这正是我们要的：宁可报错，也不要「以为筛了其实没筛」。
+ */
+export interface CaseSelectionSpec {
+  mode: 'filter'
+  keyword?: string
+  domain?: string
+  priority?: string
+  reviewStatus?: string
+  capability?: string
+  safetyLevel?: string
+  /** 「全选后手动取消勾选」的用例。 */
+  excludeIds?: number[]
+}
+
 export interface BatchRequest {
   action: BatchAction
-  ids: number[]
+  /** 与 `selection` 互斥：同时给后端会 400 并点名两个字段。 */
+  ids?: number[]
   comment?: string
   priority?: string
   domainTag?: string
   safetyLevel?: string
+  selection?: CaseSelectionSpec
 }
 
 /** FR-49-28：分类批量加入结果，matched 必须等于 added（筛选条数 = 加入条数）。 */
@@ -143,6 +163,8 @@ export interface BatchResult {
   succeeded: number
   failed: number
   items: BatchItemResult[]
+  /** 条件解析出的 id 数：与界面显示命中数不一致时提示刷新。 */
+  resolvedCount?: number
 }
 
 const base = (projectId: number | string): string => `/projects/${projectId}`

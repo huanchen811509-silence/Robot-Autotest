@@ -37,6 +37,12 @@ export interface ReportListItem {
 
 export interface ReportDetail extends ReportListItem {
   metadata: Record<string, string>
+  /** 判据汇总结论（FR-v5.8-01）：PASS / FAIL / UNDETERMINED。未声明判据时恒为 UNDETERMINED。 */
+  criteriaConclusion: string
+  /** 参与判据评估的用例数。 */
+  criteriaEvaluated: number
+  /** 判据缺失的用例数。 */
+  criteriaMissingCount: number
 }
 
 export interface PageResult<T> {

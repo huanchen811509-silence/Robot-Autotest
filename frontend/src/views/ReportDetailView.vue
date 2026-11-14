@@ -57,6 +57,27 @@ const tree = ref<ReportSuiteNode | null>(null)
 const loading = ref(false)
 const error = ref<ErrorLine | null>(null)
 
+/**
+ * 结论（FR-v5.8-01）：只认判据汇总，未声明时显式「未判定」。
+ *
+ * 这里刻意**不**根据 passCount / failCount 推结论：v5.7.0 之前正是这么干的，
+ * 结果是「失败数 0 就显示通过」，而判据可能一条都没声明。
+ */
+const conclusion = computed(() => (detail.value?.criteriaConclusion ?? 'UNDETERMINED').toUpperCase())
+const conclusionTone = computed<StatusTone>(() => {
+  if (conclusion.value === 'PASS') return 'ok'
+  if (conclusion.value === 'FAIL') return 'fail'
+  return 'neutral'
+})
+const conclusionLabel = computed(() => t(`reports.conclusion.${conclusion.value}`))
+const conclusionNote = computed(() => {
+  if (conclusion.value === 'UNDETERMINED') return t('reports.conclusion.undeterminedNote')
+  return t('reports.conclusion.counts', {
+    evaluated: detail.value?.criteriaEvaluated ?? 0,
+    missing: detail.value?.criteriaMissingCount ?? 0,
+  })
+})
+
 // 速览（FR-3.1-07）：独立请求，失败不拖垮详情；数字直接来自后端聚合。
 const summary = ref<ReportSummary | null>(null)
 const summaryLoading = ref(false)
@@ -659,6 +680,14 @@ watch(granularity, () => {
           :loading="narrativeLoading"
           :error="narrativeError"
         />
+      </section>
+
+      <section class="card wide-card" data-testid="report-conclusion">
+        <div class="toolbar conclusion-row">
+          <span class="card-title">{{ t('reports.conclusionTitle') }}</span>
+          <StatusTag :label="conclusionLabel" :tone="conclusionTone" />
+          <span class="muted">{{ conclusionNote }}</span>
+        </div>
       </section>
 
       <div class="toolbar summary-bar">

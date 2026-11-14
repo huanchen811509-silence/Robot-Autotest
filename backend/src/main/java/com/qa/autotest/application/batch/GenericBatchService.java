@@ -40,16 +40,39 @@ public class GenericBatchService {
     public static final Set<String> ACTIONS = Set.of("delete", "setEnabled");
     public static final int BATCH_MAX = 200;
 
-    /** 批量请求：{@code enabled} 仅 USER + setEnabled 必填。 */
-    public record BatchRequest(String resource, String action, List<Long> ids, Boolean enabled) {
+    /**
+     * 条件选择（v5.8.0 / FR-v5.8-02）：只支持 {@code mode=filter}。
+     *
+     * <p>字段是「四类资源筛选维度的并集」，但<b>每个资源只认自己支持的字段</b>：
+     * 例如 LINK 没有 domain 维度，传了 domain 就 400，而不是当没看见 ——
+     * 「以为筛了其实没筛」比报错危险得多。
+     */
+    public record SelectionSpec(String mode, String keyword, Integer status, String domain,
+                                List<Long> excludeIds) {
+    }
+
+    /** 批量请求：{@code enabled} 仅 USER + setEnabled 必填；{@code ids} 与 {@code selection} 互斥。 */
+    public record BatchRequest(String resource, String action, List<Long> ids, Boolean enabled,
+                               SelectionSpec selection) {
+
+        /** 兼容 4 参写法（只有 ids 的老调用方）。 */
+        public BatchRequest(String resource, String action, List<Long> ids, Boolean enabled) {
+            this(resource, action, ids, enabled, null);
+        }
     }
 
     /** 逐条结果：失败带稳定错误码名。 */
     public record BatchItemResult(long id, boolean ok, String code, String message) {
     }
 
-    /** 批量结果：部分成功语义。 */
-    public record BatchResult(int total, int succeeded, int failed, List<BatchItemResult> items) {
+    /** 批量结果：部分成功语义。{@code resolvedCount} 是条件解析出的 id 数，供前端比对是否变化。 */
+    public record BatchResult(int total, int succeeded, int failed, List<BatchItemResult> items,
+                              int resolvedCount) {
+
+        /** 兼容 4 参写法：非条件模式下解析数即条目数。 */
+        public BatchResult(int total, int succeeded, int failed, List<BatchItemResult> items) {
+            this(total, succeeded, failed, items, total);
+        }
     }
 
     private final DeviceService devices;
@@ -85,8 +108,9 @@ public class GenericBatchService {
         String action = "batch." + req.resource().toLowerCase(Locale.ROOT) + "." + req.action();
         String resourceType = req.resource().toLowerCase(Locale.ROOT);
 
-        List<BatchItemResult> items = new ArrayList<>(req.ids().size());
-        for (long id : req.ids()) {
+        List<Long> ids = resolveIds(projectId, req);
+        List<BatchItemResult> items = new ArrayList<>(ids.size());
+        for (long id : ids) {
             boolean ok = false;
             String code = null;
             String message = null;
@@ -111,17 +135,22 @@ public class GenericBatchService {
             items.add(new BatchItemResult(id, ok, code, message));
         }
         int succeeded = (int) items.stream().filter(BatchItemResult::ok).count();
-        return new BatchResult(items.size(), succeeded, items.size() - succeeded, items);
+        return new BatchResult(items.size(), succeeded, items.size() - succeeded, items,
+                ids.size());
     }
 
     private void validate(BatchRequest req) {
-        if (req == null || req.ids() == null || req.ids().isEmpty()) {
-            throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "ids 不能为空");
+        if (req == null) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "请求体不能为空");
         }
-        if (req.ids().size() > BATCH_MAX) {
+        boolean hasSelection = req.selection() != null;
+        if (!hasSelection && (req.ids() == null || req.ids().isEmpty())) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "ids 不能为空（或提供 selection）");
+        }
+        if (req.ids() != null && req.ids().size() > BATCH_MAX) {
             throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "ids 超过 " + BATCH_MAX + " 条上限");
         }
-        if (req.ids().stream().anyMatch(id -> id == null || id <= 0)) {
+        if (req.ids() != null && req.ids().stream().anyMatch(id -> id == null || id <= 0)) {
             throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "ids 含非法 id");
         }
         if (req.resource() == null || !RESOURCES.contains(req.resource())) {
@@ -135,6 +164,85 @@ public class GenericBatchService {
         }
         if ("setEnabled".equals(req.action()) && req.enabled() == null) {
             throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "setEnabled 必须带 enabled");
+        }
+    }
+
+    /**
+     * 把条件选择解析成真实 id 列表（FR-v5.8-02）。
+     *
+     * <p>与用例批量同一套规则：ids / selection 互斥、命中超上限直接 400 并报出真实数字、
+     * 解析为空也 400。另外多做一件事 —— <b>按资源校验筛选字段</b>，传了不支持的维度就拒，
+     * 避免「界面上填了 domain，实际按全量执行」这种静默错。
+     */
+    private List<Long> resolveIds(long projectId, BatchRequest req) {
+        boolean hasIds = req.ids() != null && !req.ids().isEmpty();
+        boolean hasSelection = req.selection() != null;
+        if (hasIds && hasSelection) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                    "ids 与 selection 不能同时提供，请二选一");
+        }
+        if (!hasSelection) {
+            return req.ids();
+        }
+        SelectionSpec sel = req.selection();
+        String mode = sel.mode() == null ? "" : sel.mode().trim();
+        if (!"filter".equals(mode)) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                    "selection.mode 仅支持 filter（ids 模式请直接用 ids）");
+        }
+        int fetch = BATCH_MAX + 1;
+        List<Long> resolved = switch (req.resource()) {
+            case "DEVICE" -> {
+                var page = devices.page(projectId, sel.keyword(), sel.status(), sel.domain(), 1, fetch);
+                requireWithinLimit("DEVICE", page.total());
+                yield page.items().stream().map(d -> d.id()).toList();
+            }
+            case "LINK" -> {
+                rejectField("LINK", "status", sel.status());
+                rejectField("LINK", "domain", sel.domain());
+                var page = links.page(projectId, sel.keyword(), 1, fetch);
+                requireWithinLimit("LINK", page.total());
+                yield page.items().stream().map(l -> l.id()).toList();
+            }
+            case "CREDENTIAL" -> {
+                rejectField("CREDENTIAL", "keyword", sel.keyword());
+                rejectField("CREDENTIAL", "status", sel.status());
+                rejectField("CREDENTIAL", "domain", sel.domain());
+                var all = credentials.list(projectId);
+                requireWithinLimit("CREDENTIAL", all.size());
+                yield all.stream().map(c -> c.id()).toList();
+            }
+            case "USER" -> {
+                rejectField("USER", "domain", sel.domain());
+                var page = users.page(sel.keyword(), sel.status(), 1, fetch);
+                requireWithinLimit("USER", page.total());
+                yield page.items().stream().map(u -> u.id()).toList();
+            }
+            default -> throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                    "未知资源: " + req.resource());
+        };
+        List<Long> exclude = sel.excludeIds() == null ? List.of() : sel.excludeIds();
+        List<Long> ids = resolved.stream().filter(id -> id != null && !exclude.contains(id)).toList();
+        if (ids.isEmpty()) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                    "条件命中 " + resolved.size() + " 条，但可执行 0 条（可能全被排除）");
+        }
+        return ids;
+    }
+
+    private void requireWithinLimit(String resource, long total) {
+        if (total > BATCH_MAX) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                    resource + " 条件命中 " + total + " 条，超过单次批量上限 " + BATCH_MAX
+                            + " 条，请缩小筛选范围后重试");
+        }
+    }
+
+    private void rejectField(String resource, String field, Object value) {
+        boolean given = value instanceof String s ? !s.isBlank() : value != null;
+        if (given) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                    resource + " 暂不支持按 " + field + " 做条件批量，请改用 ids 或换个筛选维度");
         }
     }
 
