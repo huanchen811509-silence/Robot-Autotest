@@ -29,7 +29,7 @@
 | 真实服务·TC 级 | TC-18 `added 5/0`、TC-19 `seq_no=1..5`、TC-22 129 字符 **400**（修复前 500） | `docs/evidence/v5.7.0/api-smoke-20261114/raw/``tc-dedupe-order-length.log` |
 | 真实服务·冻结规则 | 冻结后改标题/删除均 **409「请先撤销冻结」**，改备注 200；`revoke` 后放行 | `docs/evidence/v5.7.0/api-smoke-20261114/raw/``tc-freeze-rules.log` |
 | 部署验证 | `deploy.sh --verify` **4/4 PASS**（jar commit=HEAD、进程晚于 jar、双端口健康、运行期 5.7.0） | `docs/evidence/v5.7.0/api-smoke-20261114/raw/``deploy-verify.log` |
-| 交付包 | `robot-autotest-5.7.0-0060216-linux-x64.tar.gz`，423 文件 / 49.2 MB | `scripts/package-release.sh` |
+| 交付包 | `releases/robot-autotest-5.7.0-<commit>-linux-x64.tar.gz`，423 文件 / 49.2 MB（`<commit>` 与 HEAD 同源） | `scripts/package-release.sh` |
 | TC 逐条结论 | 达成 **88** 条（含 10 条真实服务闭环）；部分达成 **4** 条；未执行 **153** 条；降级登记 **8** 项 | §三 / §五 |
 
 **总判定：本版已完成编码、自动化验证、55 步门禁全绿与真实服务 HTTP 闭环；尚未完成真机 SSH 采集、真实派发执行（需 ADR-0013 安全闸）与人工视觉走查，故仍不得对外称已交付、不得判 G 门。**
@@ -499,7 +499,7 @@ bash scripts/lint.sh && bash scripts/gates.sh
 
 ### 6.3 真实服务实测明细（本轮新增，可复跑）
 
-服务：WSL `~/robot-autotest` 构建的 jar 已部署，`deploy.sh --verify` 报 `version=5.7.0 commit=0060216`。
+服务：WSL `~/robot-autotest` 构建的 jar 已部署；`deploy.sh --verify` 实测 `version=5.7.0`、`jar commit` 与 HEAD 一致（见 `raw/deploy-verify.log`）。
 
 | 端点 | 实测 | 结论 |
 |---|---|---|
