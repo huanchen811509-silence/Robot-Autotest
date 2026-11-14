@@ -1,0 +1,66 @@
+{
+  "generatedAt": "2026-11-14T02:26:21.528Z",
+  "selfcheck": false,
+  "version": "Chrome/159.0.8144.0",
+  "about": {
+    "version": "5.6.0",
+    "found": true,
+    "releaseTitle": "v5.6.0（2026-11-14）",
+    "items": [
+      "新增全量菜单对齐（D-01 裁定）：pytest 工程与标准工程共用同一套 7 组 28 项导航，唯一增量 /pytest-workbench 并入「工作台」组首位；删除 PYTEST_SUITE_NAVIGATION，全站只剩 GLOBAL_NAVIGATION + NAVIGATION 两棵树",
+      "新增失败重试与抖动标记：retry=N 复测产物落 junit-retry-<n>.xml 且不覆盖首轮 junit；报告新增「复测次数」「抖动」两列与徽标，判定口径为「后轮通过记通过并标抖动、各轮都失败取末轮结论」",
+      "新增资产实体化：GPU / CPU / 存储由已采集的主机清单 device_host_spec.spec_json 派生进 inventory.yaml 资源池，GPU 按用例库规格表回填 model 与 vendor，不再靠人工补录",
+      "新增部署自校验 deploy.sh --verify：四条判据——构建产物 commit = HEAD、进程启动晚于 jar、:8081/:8001 双端口健康、运行期 version 与 commit 对齐"
+    ],
+    "linkText": "查看完整版本迭代",
+    "linkHref": "/changelog"
+  },
+  "changelog": {
+    "count": 25,
+    "firstTitle": "v5.6.0（2026-11-14）",
+    "headings": [
+      "v5.6.0（2026-11-14）",
+      "新增5",
+      "变更5"
+    ],
+    "bodyChars": 1557
+  },
+  "rows": [
+    {
+      "name": "关于页存在「最近更新」区块",
+      "ok": true,
+      "detail": "found=true version=5.6.0"
+    },
+    {
+      "name": "最近更新列出至少 1 条",
+      "ok": true,
+      "detail": "items=4"
+    },
+    {
+      "name": "最近更新首条版本 = 关于页显示版本",
+      "ok": true,
+      "detail": "releaseTitle=v5.6.0（2026-11-14） version=5.6.0"
+    },
+    {
+      "name": "存在「查看完整版本迭代」链接且指向 /changelog",
+      "ok": true,
+      "detail": "href=/changelog text=查看完整版本迭代"
+    },
+    {
+      "name": "版本迭代页渲染出至少 1 个版本",
+      "ok": true,
+      "detail": "count=25 first=v5.6.0（2026-11-14）"
+    },
+    {
+      "name": "版本迭代页首条版本 = 关于页显示版本",
+      "ok": true,
+      "detail": "first=v5.6.0（2026-11-14） version=5.6.0"
+    },
+    {
+      "name": "版本迭代页首条有正文内容",
+      "ok": true,
+      "detail": "bodyChars=1557"
+    }
+  ],
+  "fails": 0
+}

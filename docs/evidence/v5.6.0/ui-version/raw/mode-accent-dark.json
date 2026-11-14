@@ -1,0 +1,47 @@
+{
+  "projectMode": {
+    "project": {
+      "label": "项目",
+      "active": true,
+      "ariaPressed": "true",
+      "bg": "rgb(63, 167, 255)",
+      "color": "rgb(6, 19, 31)",
+      "weight": "600",
+      "radius": "999px",
+      "trackBg": "rgb(20, 31, 43)"
+    },
+    "global": {
+      "label": "全局",
+      "active": false,
+      "ariaPressed": "false",
+      "bg": "rgba(0, 0, 0, 0)",
+      "color": "rgb(139, 155, 176)",
+      "weight": "400",
+      "radius": "999px",
+      "trackBg": "rgb(20, 31, 43)"
+    }
+  },
+  "globalMode": {
+    "project": {
+      "label": "项目",
+      "active": false,
+      "ariaPressed": "false",
+      "bg": "rgba(0, 0, 0, 0)",
+      "color": "rgb(139, 155, 176)",
+      "weight": "400",
+      "radius": "999px",
+      "trackBg": "rgb(20, 31, 43)"
+    },
+    "global": {
+      "label": "全局",
+      "active": true,
+      "ariaPressed": "true",
+      "bg": "rgb(63, 167, 255)",
+      "color": "rgb(6, 19, 31)",
+      "weight": "600",
+      "radius": "999px",
+      "trackBg": "rgb(20, 31, 43)"
+    }
+  },
+  "shot": "/tmp/w56-mode/mode-switch.png"
+}
