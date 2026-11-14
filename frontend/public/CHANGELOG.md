@@ -14,7 +14,34 @@
 > 门禁如实 `FAILS=1`（第 13 步 CDP）。正式成件见 `docs/release/v5.0.0/`，过程件见
 > `docs/plan/v5.0.X存量打磨-归档索引-20261112.md`。
 
-## v5.0.0（2026-11-12） <!-- current -->
+## v5.6.0（2026-11-14） <!-- current -->
+
+### 新增 <!-- added -->
+- **全量菜单对齐（D-01 裁定）**：pytest 工程与标准工程共用同一套 7 组 28 项导航，唯一增量 `/pytest-workbench` 并入「工作台」组首位；删除 `PYTEST_SUITE_NAVIGATION`，全站只剩 `GLOBAL_NAVIGATION` + `NAVIGATION` 两棵树
+- **失败重试与抖动标记**：`retry=N` 复测产物落 `junit-retry-<n>.xml` 且不覆盖首轮 junit；报告新增「复测次数」「抖动」两列与徽标，判定口径为「后轮通过记通过并标抖动、各轮都失败取末轮结论」
+- **资产实体化**：GPU / CPU / 存储由已采集的主机清单 `device_host_spec.spec_json` 派生进 `inventory.yaml` 资源池，GPU 按用例库规格表回填 `model` 与 `vendor`，不再靠人工补录
+- **部署自校验 `deploy.sh --verify`**：四条判据——构建产物 commit = HEAD、进程启动晚于 jar、`:8081`/`:8001` 双端口健康、运行期 version 与 commit 对齐
+- **效果基线与 UI 冒烟**：新增 `tools/effect_metrics.py`（Top8 成功率、运行创建 P95、长列表 fps）与 `scripts/e2e-smoke.mjs`（真实浏览器 10 条端到端断言）
+
+### 变更 <!-- changed -->
+- **执行跑完即入库**：pytest 入口收尾自动写 `test_result`（`fake` 同样入库），报告页打开即有用例；异步执行用 `TenantContext.runAs` 接管身份，进度终态后移到入库完成之后
+- **报告 docx 结构归并**：由「每条用例一个二级标题」改为「二、用例明细」单表，21 条用例的二级标题从 21 个压到 2 个
+- **顶栏「全局 / 项目」选中态改为强调色实心**（`--accent` / `--accent-contrast`），未选中项补悬停反馈——模式判断不再靠读文字
+- **性能门禁不再静默跳过**：无采样数据时退出码 3 = 未判，`scripts/gates.sh` 单列 `UNJUDGED` 并计入非绿，不再把「没测」显示成「通过」
+- **API 契约快照重生成**：410 operations / 341 paths，`gen_api_contract.py --check` 与实际路由一致
+
+### 修复 <!-- fixed -->
+- **`/pytest-workbench` 整页空白**：文案里 `hostname@ip` 的 `@` 被 vue-i18n 当成链接消息语法，组件编译失败导致整页渲染中断；改写为 `{'@'}`，E2E 守住该路由
+- **执行成功但报告空白**：三处根因——pytest 入口跑完不入库、异步线程无租户上下文被判「未认证」、进度终态早于入库上报；三处一并修正
+- **环境渲染三类资产恒为空**：`HostInventoryRepository.list()` 只查摘要列、`specJson` 恒为 null，新增 `latest()` 取完整记录；`storages` 资源池不再写死为空
+- **GPU 用例 fixture 抛权限错**：`selected_targets` 与资源池四类对齐，`PytestGpuModelCatalog` 补齐 `model`/`vendor`，`IM-MIX-011` 由 ERROR 转 PASS
+
+### 破坏性变更 <!-- breaking -->
+- **新增迁移 `V11_57`**：`test_result` 增加 `retry_count`、`flaky` 两列，默认 0，旧数据无需回填
+- **pytest 执行入口行为变化**：执行结束会写 `test_result` 并在响应里返回 `notes`，此前该入口只产 junit 文件
+- **本版仅落号、不判门**：`VERSION` 记 5.6.0 作为本版交付标识；G 门未判、未对外发布，界面与文档均不得称 GA
+
+## v5.0.0（2026-11-12）
 
 ### 新增 <!-- added -->
 - **存量打磨正式落号**：B0~B4 批次收口为 `v5.0.0`，六份流程成件上移 `docs/release/v5.0.0/` 并补发布说明；`VERSION` / build-info / OpenAPI / CHANGELOG 四处同源由门禁第 23 步强制

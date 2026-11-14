@@ -191,11 +191,25 @@ async function changeProject(event: Event): Promise<void> {
   padding: 2px var(--space-3);
   border-radius: 999px;
   cursor: pointer;
+  /* 切换是高频动作：加过渡只为让「选中胶囊换位」看得清，不做动画表演 */
+  transition: background-color .16s ease, color .16s ease;
 }
 
-.app-mode-btn.is-active {
+/* 未选中项悬停给一点反馈，避免「只有选中项能点」的错觉 */
+.app-mode-btn:hover:not(.is-active) {
   background: var(--panel);
   color: var(--text);
+}
+
+/* 选中态必须是强调色实心（v5.6.0 / 大师 2026-11-14 反馈）。
+   原来只是「白底 + 正文色」，在浅色主题下与未选中项几乎只差一个阴影，
+   「我现在在全局还是项目」得靠读文字才分得清——模式错了后面每一步都错，值得一条高对比提示。
+   颜色对由 --accent / --accent-contrast 承担：浅色与深色主题都已按该配对校准过对比度，
+   这里不再引入新色值（也避开 check_colors 的硬编码色值红线）。 */
+.app-mode-btn.is-active {
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-weight: 600;
   box-shadow: var(--shadow-sm);
 }
 
