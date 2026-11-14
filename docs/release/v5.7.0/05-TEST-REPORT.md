@@ -33,8 +33,8 @@
 | 真实服务·报告 CRUD | 运行记录 影响面→PATCH→软删→详情 404→恢复 200；用户报告 建→PUT→软删→再删幂等(`deleted:false`)→恢复 | `docs/evidence/v5.7.0/api-smoke-20261114/raw/``report-crud.log` |
 | 真实服务·TC 级 | TC-18 `added 5/0`、TC-19 `seq_no=1..5`、TC-22 129 字符 **400**（修复前 500） | `docs/evidence/v5.7.0/api-smoke-20261114/raw/``tc-dedupe-order-length.log` |
 | 真实服务·冻结规则 | 冻结后改标题/删除均 **409「请先撤销冻结」**，改备注 200；`revoke` 后放行 | `docs/evidence/v5.7.0/api-smoke-20261114/raw/``tc-freeze-rules.log` |
-| 部署验证 | `deploy.sh --verify` **4/4 PASS**（jar commit=HEAD、进程晚于 jar、双端口健康、运行期 5.7.0） | `docs/evidence/v5.7.0/api-smoke-20261114/raw/``deploy-verify.log` |
-| 交付包 | `releases/robot-autotest-5.7.0-e00fe5e-linux-x64.tar.gz`，423 文件 / 49258609 字节（47.0 MiB），sha256 `5364cb019ec7ae60…`（`e00fe5e` 与 HEAD 同源） | `scripts/package-release.sh` |
+| 部署验证 | `deploy.sh --verify` **4/4 PASS**（jar commit=e00fe5e、进程晚于 jar、双端口健康、运行期 5.7.0）（`e00fe5e` 是**最后一个含代码的提交**；其后的提交只改文档与证据，所以 `git rev-parse HEAD` 会前移，属预期，不是「源码与部署不一致」） | `docs/evidence/v5.7.0/api-smoke-20261114/raw/``deploy-verify.log` |
+| 交付包 | `releases/robot-autotest-5.7.0-e00fe5e-linux-x64.tar.gz`，423 文件 / 49258609 字节（47.0 MiB），sha256 `5364cb019ec7ae60…`（包名里的 `e00fe5e` 即打包时 HEAD，（`e00fe5e` 是**最后一个含代码的提交**；其后的提交只改文档与证据，所以 `git rev-parse HEAD` 会前移，属预期，不是「源码与部署不一致」）） | `scripts/package-release.sh` |
 | TC 逐条结论 | 达成 **112** 条（含 10 条真实服务闭环 + 24 条复核回归）；部分达成 **13** 条；未执行 **155** 条；降级登记 **11** 项 | §三 / §五 |
 
 **总判定：本版已完成编码、自动化验证、56 步门禁全绿、真实服务 HTTP 闭环与五条链路的真实浏览器取证；尚未完成真机 SSH 采集、真实派发执行（需 ADR-0013 安全闸）与人工视觉走查，故仍不得对外称已交付、不得判 G 门。**
@@ -569,7 +569,7 @@ W11 只改实现与测试、没动任何闸门规则，但**门禁自己抓出�
 
 ### 6.3 真实服务实测明细（本轮新增，可复跑）
 
-服务：WSL `~/robot-autotest` 构建的 jar 已部署；`deploy.sh --verify` 实测 `version=5.7.0`、`jar commit` 与 HEAD 一致（见 `raw/deploy-verify.log`）。
+服务：WSL `~/robot-autotest` 构建的 jar 已部署；`deploy.sh --verify` 实测 `version=5.7.0`、`jar commit=e00fe5e`（见 `raw/deploy-verify.log` 末段）（`e00fe5e` 是**最后一个含代码的提交**；其后的提交只改文档与证据，所以 `git rev-parse HEAD` 会前移，属预期，不是「源码与部署不一致」）。
 
 | 端点 | 实测 | 结论 |
 |---|---|---|
