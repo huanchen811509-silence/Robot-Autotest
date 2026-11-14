@@ -688,6 +688,10 @@ watch(granularity, () => {
           <StatusTag :label="conclusionLabel" :tone="conclusionTone" />
           <span class="muted">{{ conclusionNote }}</span>
         </div>
+        <!-- W58-12：RF 侧没有框架级判据载体，判据机检只覆盖 pytest，必须写在界面上 -->
+        <p class="muted conclusion-scope" data-testid="report-conclusion-scope">
+          {{ t('reports.conclusion.scopeNote') }}
+        </p>
       </section>
 
       <div class="toolbar summary-bar">

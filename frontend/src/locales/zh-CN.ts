@@ -1102,6 +1102,7 @@ export default {
       FAIL: '不通过',
       UNDETERMINED: '未判定',
       undeterminedNote: '该报告入库时未记录判据，结论无法判定；不按失败数推断。',
+      scopeNote: '判据机检目前只覆盖 pytest 内核的报告；Robot Framework 报告不产出判据结论（v5.8.0 决策，依据见 docs/evidence/v5.8.0/rf-criteria-spike/）。',
       counts: '已评估 {evaluated} 条，判据缺失 {missing} 条',
     },
     missingValue: '缺失',

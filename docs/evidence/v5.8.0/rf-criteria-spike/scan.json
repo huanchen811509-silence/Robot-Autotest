@@ -1,0 +1,112 @@
+[
+  {
+    "file": "artifacts/tmp/pabot-smoke/output.xml",
+    "tests": 8,
+    "failed": 0,
+    "with_doc": 0,
+    "assert_kw": 0,
+    "fail_msg_structured": 0,
+    "sample_assert": "",
+    "sample_doc": "",
+    "error": ""
+  },
+  {
+    "file": "artifacts/tmp/pabot-fault/output.xml",
+    "tests": 6,
+    "failed": 0,
+    "with_doc": 0,
+    "assert_kw": 0,
+    "fail_msg_structured": 0,
+    "sample_assert": "",
+    "sample_doc": "",
+    "error": ""
+  },
+  {
+    "file": "docs/evidence/v1.0/hrd02b/artifacts/output.xml",
+    "tests": 3,
+    "failed": 1,
+    "with_doc": 0,
+    "assert_kw": 3,
+    "fail_msg_structured": 1,
+    "sample_assert": "Should Be Equal | 1 / 1",
+    "sample_doc": "",
+    "error": ""
+  },
+  {
+    "file": "docs/evidence/v1.0/rpt05b/artifacts/output.xml",
+    "tests": 3,
+    "failed": 1,
+    "with_doc": 0,
+    "assert_kw": 3,
+    "fail_msg_structured": 1,
+    "sample_assert": "Should Be Equal | 1 / 1",
+    "sample_doc": "",
+    "error": ""
+  },
+  {
+    "file": "docs/evidence/v1.0/rpt0607b/artifacts/output.xml",
+    "tests": 1,
+    "failed": 0,
+    "with_doc": 0,
+    "assert_kw": 1,
+    "fail_msg_structured": 0,
+    "sample_assert": "Should Be Equal | 1 / 1",
+    "sample_doc": "",
+    "error": ""
+  },
+  {
+    "file": "docs/evidence/v2.0/a3-rf-kernel/raw/artifacts/shard-1/output.xml",
+    "tests": 8,
+    "failed": 0,
+    "with_doc": 0,
+    "assert_kw": 0,
+    "fail_msg_structured": 0,
+    "sample_assert": "",
+    "sample_doc": "",
+    "error": ""
+  },
+  {
+    "file": "docs/evidence/v2.0/a3-rf-kernel/raw/dryrun-1/artifacts/shard-1/output.xml",
+    "tests": 8,
+    "failed": 0,
+    "with_doc": 0,
+    "assert_kw": 0,
+    "fail_msg_structured": 0,
+    "sample_assert": "",
+    "sample_doc": "",
+    "error": ""
+  },
+  {
+    "file": "docs/evidence/v2.0/a3-rf-kernel/raw/legacy-artifacts/shard-1/output.xml",
+    "tests": 17,
+    "failed": 1,
+    "with_doc": 17,
+    "assert_kw": 0,
+    "fail_msg_structured": 1,
+    "sample_assert": "",
+    "sample_doc": "1. 能读取目标CX7的PCI Vendor/Device ID及驱动绑定信息。 2. ens17np0接口存在、MAC地址有效，链路状态及协商速率有明确输出。 3. ethtool可显示当前驱动、固件版本及PCI总线地址，与目标设备一致。",
+    "error": ""
+  },
+  {
+    "file": "docs/evidence/v2.0/a8-report-chain/raw/deleted-run-artifacts/RUN-20261107142942-580000/shard-0/output.xml",
+    "tests": 2,
+    "failed": 0,
+    "with_doc": 0,
+    "assert_kw": 0,
+    "fail_msg_structured": 0,
+    "sample_assert": "",
+    "sample_doc": "",
+    "error": ""
+  },
+  {
+    "file": "docs/evidence/v2.1/SMPL-01/output.xml",
+    "tests": 6,
+    "failed": 2,
+    "with_doc": 6,
+    "assert_kw": 3,
+    "fail_msg_structured": 2,
+    "sample_assert": "Should Be Equal | ${LEFT} / ${RIGHT}",
+    "sample_doc": "最朴素的通过路径：不依赖外部资源，任何环境都应为 PASS。",
+    "error": ""
+  }
+]

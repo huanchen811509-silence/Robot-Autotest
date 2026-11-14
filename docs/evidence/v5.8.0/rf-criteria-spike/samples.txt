@@ -1,0 +1,10 @@
+artifacts/tmp/pabot-smoke/output.xml
+artifacts/tmp/pabot-fault/output.xml
+docs/evidence/v1.0/hrd02b/artifacts/output.xml
+docs/evidence/v1.0/rpt05b/artifacts/output.xml
+docs/evidence/v1.0/rpt0607b/artifacts/output.xml
+docs/evidence/v2.0/a3-rf-kernel/raw/artifacts/shard-1/output.xml
+docs/evidence/v2.0/a3-rf-kernel/raw/dryrun-1/artifacts/shard-1/output.xml
+docs/evidence/v2.0/a3-rf-kernel/raw/legacy-artifacts/shard-1/output.xml
+docs/evidence/v2.0/a8-report-chain/raw/deleted-run-artifacts/RUN-20261107142942-580000/shard-0/output.xml
+docs/evidence/v2.1/SMPL-01/output.xml

@@ -285,6 +285,16 @@ describe('ReportDetailView 结论', () => {
     expect(box!.textContent).toContain('已评估 4 条')
   })
 
+  it('结论区标注判据机检范围：RF 报告不产出判据结论（W58-12）', async () => {
+    const root = await mountView()
+
+    const scope = root.querySelector('[data-testid="report-conclusion-scope"]')
+    expect(scope).not.toBeNull()
+    // 文案必须自己说清「只覆盖 pytest」，不能靠用户去猜为什么 RF 报告恒为未判定
+    expect(scope!.textContent).toContain('pytest')
+    expect(scope!.textContent).toContain('Robot Framework')
+  })
+
   it('判据 PASS 但失败数 > 0：结论仍显示「通过」——结论不按失败数翻译', async () => {
     apiState.conclusion = 'PASS'
     apiState.failCount = 2

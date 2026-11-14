@@ -1092,6 +1092,8 @@ export default {
       UNDETERMINED: 'Undetermined',
       undeterminedNote:
         'No criteria were recorded when this report was ingested, so the conclusion cannot be determined. It is never inferred from the failure count.',
+      scopeNote:
+        'Criteria checking currently covers pytest-kernel reports only; Robot Framework reports do not produce a criteria verdict (v5.8.0 decision, see docs/evidence/v5.8.0/rf-criteria-spike/).',
       counts: '{evaluated} case(s) evaluated, {missing} missing criteria',
     },
     missingValue: 'Missing',
