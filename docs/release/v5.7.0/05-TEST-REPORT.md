@@ -20,7 +20,7 @@
 | 一次性凭证零泄漏 | `PROBE_RESULT PASS=6/6`（DB/日志/审计/响应/证据包/异常堆栈） | `tools/probe_oneshot_secret.py` |
 | i18n 守门 | 硬编码中文 0 处，zh/en 各 2824 键，键集相等 | `tools/check_i18n.py` |
 | API 契约 | 重新生成 **438 endpoints / 360 paths**，`--check` PASS | `tools/gen_api_contract.py` |
-| 文档表格 | 默认 7 份治理文档 **169 表块 / 1375 数据行** PASS；v5.7.0 目录下 8 份发布文档另测 **259 表块 / 2160 数据行** PASS | `python3 docs/evidence/v1.0/policy-20261106/check_md_tables.py`（带/不带路径） |
+| 文档表格 | 默认 7 份治理文档 **169 表块 / 1375 数据行** PASS；v5.7.0 目录下 8 份发布文档另测 **259 表块 / 2161 数据行** PASS | `python3 docs/evidence/v1.0/policy-20261106/check_md_tables.py`（带/不带路径） |
 | 门禁首轮 | `GATES_RESULT FAILS=7 UNJUDGED=0`（52 步）；7 项已按真实原因修复 | `scripts/gates.sh` |
 | **门禁最终** | **`GATES_RESULT FAILS=0 UNJUDGED=0`（56 步全 PASS）** | `scripts/gates.sh` |
 | 契约对账机检（新） | `FE_CONTRACT_RESULT PASS=40 FAIL=0 SKIP=50 UNMATCHED=18`，`--self-test` 注入假字段判红 | `tools/check_fe_contract.py` |
@@ -563,6 +563,7 @@ W11 只改实现与测试、没动任何闸门规则，但**门禁自己抓出�
 | 第 1 轮 | `FAILS=2` | `07-release_docs` / `20-api_contract` | 07：我在门禁跑第 07 步的同时正在重写 `05-TEST-REPORT.md`（35 条 TC 结果还没落盘），读到半成品；20：`GET /api/runs/{runId}`（P1-5 新增端点）没重生成契约快照 | 07 属并发写盘，重跑即过；20 跑 `gen_api_contract.py` 重新生成（`438 endpoints / 360 paths`），`--check` PASS |
 | 第 2 轮 | `FAILS=1` | `23-version_consistency` | 根 `CHANGELOG.md` 改了契约读数（437→438），但 `frontend/public/CHANGELOG.md` 没同步——版本迭代页会显示旧内容 | 同步两份 CHANGELOG；`check_version_consistency` PASS |
 | 第 3 轮 | `FAILS=0 UNJUDGED=0`（56 步全 PASS） | — | — | 干净工作树、无并发写盘 |
+| 第 4 轮 | `FAILS=0 UNJUDGED=0`（56 步全 PASS） | — | — | 对**最终提交 `05189b8`** 复跑确认（前一轮跑在提交前的工作树上）；此后仅有文档提交，按 §一 部署行的同一口径说明「jar commit 前移属预期」 |
 
 **教训（写进流程而不是写进记忆就算）**：门禁跑的过程中不要改它要读的文件——
 `07`/`08`/`09`/`20`/`23` 都读工作树，改文档或重生成快照必须等门禁结束，否则得到的是「半成品时刻」的快照式读数。
