@@ -1,6 +1,6 @@
 # v5.7.0 发布说明（RA-RN-570）
 
-**版本** `5.7.0` ｜ **日期** 2026-11-14 ｜ **构建** `HEAD`（打包时由 `scripts/package-release.sh` 写入 `MANIFEST.json`） ｜ **发布类型** 内部发布（大师授权发版，**不是** GA）
+**版本** `5.7.0` ｜ **日期** 2026-11-14 ｜ **构建** `762d2dd`（与 `MANIFEST.json` 的 `commit` 同源） ｜ **发布类型** 内部发布（大师授权发版，**不是** GA）
 
 > 本说明面向**部署方与使用方**，只讲「拿到什么、怎么升、有什么限制」。
 > 需求与验收细节见同目录 [PRD.md](./PRD.md)、[DEV-PLAN.md](./DEV-PLAN.md)、[TEST-PLAN.md](./TEST-PLAN.md)、[05-TEST-REPORT.md](./05-TEST-REPORT.md)。
@@ -100,14 +100,14 @@
 
 ## 5. 交付物与校验
 
-> 打包命令：`bash scripts/package-release.sh`；本节的读数在打包后回填，命令原文见 `docs/evidence/v5.7.0/release-20261114/raw/package-release.log`。
+> 打包命令：`bash scripts/package-release.sh`；读数取自 2026-11-14 19:44 的实际打包输出，命令原文见 `docs/evidence/v5.7.0/release-20261114/raw/package-release.log`。
 
 | 交付物 | 读数 |
 |---|---|
-| `robot-autotest-5.7.0-<commit>-linux-x64.tar.gz` | 见同目录 `releases/`（`releases/` 已 gitignore，不入库） |
-| `…tar.gz.sha256` | 见打包日志「sha256」行 |
-| `…manifest.json` | 逐文件路径 / `sha256` / 字节数，`fileCount` 与 `totalBytes` 在 `MANIFEST.json` 内 |
-| 校验命令 | `sha256sum -c robot-autotest-5.7.0-<commit>-linux-x64.tar.gz.sha256` |
+| `robot-autotest-5.7.0-762d2dd-linux-x64.tar.gz` | **49,250,159 B**（解包 59,012,910 B / **423 文件**）；`releases/` 已 gitignore，不入库 |
+| `…tar.gz.sha256` | `42147aff152e41f88500711e5f3014d3d7a797b6acfe7b2ce3328aed034b8203` |
+| `…manifest.json` | 逐文件路径 / `sha256` / 字节数，`fileCount=423`、`totalBytes=59012910` |
+| 校验命令 | `sha256sum -c robot-autotest-5.7.0-762d2dd-linux-x64.tar.gz.sha256` |
 | 包内自检 | 必需路径、脚本可执行位、无日志 / `node_modules` / `.git` / 凭据四类断言均在打包脚本内 |
 
 ## 6. 已知限制（升级前必读）

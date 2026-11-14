@@ -1,0 +1,5 @@
+INFO  VERSION=5.7.0  build-info=5.7.0
+INFO  运行期 build-info=5.7.0 (source=file)
+INFO  /api/_ping version=5.7.0
+INFO  入口托管 CHANGELOG=5.7.0
+VERSION_CONSISTENCY PASS (0 项)
