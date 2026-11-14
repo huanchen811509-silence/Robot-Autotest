@@ -1,0 +1,36 @@
+{
+  "code": 0,
+  "codeName": "OK",
+  "message": "OK",
+  "data": {
+    "runId": "EHT-REAL-1794671083499",
+    "projectId": 95,
+    "state": "finished",
+    "exportable": false,
+    "metadataMissing": [
+      "CASE_ID",
+      "QA_PROJECT",
+      "DUT",
+      "LINK",
+      "SW_BUILD",
+      "BASELINE",
+      "OPERATOR",
+      "STARTED_AT",
+      "CASE_KIND"
+    ],
+    "metadata": {
+      "RUN_ID": "EHT-REAL-1794671083499"
+    },
+    "counts": {
+      "pass": 1,
+      "fail": 0,
+      "skip": 0
+    },
+    "startedAt": "2026-11-14T15:44:43.512Z",
+    "finishedAt": "2026-11-14T15:44:53.627Z",
+    "criteriaConclusion": "PASS",
+    "criteriaEvaluated": 1,
+    "criteriaMissingCount": 0
+  },
+  "success": true
+}

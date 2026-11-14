@@ -1,0 +1,36 @@
+{
+  "code": 0,
+  "codeName": "OK",
+  "message": "OK",
+  "data": {
+    "runId": "EHT-FAKE-1794661209912",
+    "projectId": 95,
+    "state": "failed",
+    "exportable": false,
+    "metadataMissing": [
+      "CASE_ID",
+      "QA_PROJECT",
+      "DUT",
+      "LINK",
+      "SW_BUILD",
+      "BASELINE",
+      "OPERATOR",
+      "STARTED_AT",
+      "CASE_KIND"
+    ],
+    "metadata": {
+      "RUN_ID": "EHT-FAKE-1794661209912"
+    },
+    "counts": {
+      "pass": 5,
+      "fail": 4,
+      "skip": 61
+    },
+    "startedAt": "2026-11-14T13:00:09.920Z",
+    "finishedAt": "2026-11-14T13:03:49.557Z",
+    "criteriaConclusion": "UNDETERMINED",
+    "criteriaEvaluated": 70,
+    "criteriaMissingCount": 70
+  },
+  "success": true
+}

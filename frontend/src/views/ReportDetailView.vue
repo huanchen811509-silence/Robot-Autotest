@@ -660,6 +660,7 @@ watch(granularity, () => {
         :summary="summary"
         :loading="summaryLoading"
         :error="summaryError?.summary ?? ''"
+        :criteria-conclusion="detail.criteriaConclusion"
         @retry="loadSummary"
         @show-failures="scrollToFailures"
       />

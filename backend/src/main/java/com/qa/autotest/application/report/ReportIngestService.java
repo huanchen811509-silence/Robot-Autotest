@@ -203,7 +203,13 @@ public class ReportIngestService {
             // test_result 读，不落库就只能在执行页看到「复测过了」，报告里看不到。
             // junit 的 name 属性就是 pytest 的 item.name（含参数化后缀），先用它匹配；
             // 匹配不到再退到 nodeId 的 `::` 后段，避免不同 pytest 版本的命名差异漏采。
-            String criteriaPayload = criteriaText.byCaseName().get(item.name());
+            // v5.8.0 / W58-13：先按 nodeid 取——json-report 是主通道且 nodeid 唯一；
+            // junit 的 name 在参数化用例上会被截成同一串，只能当兜底。
+            String criteriaPayload = item.nodeId() == null
+                    ? null : criteriaText.byNodeId().get(item.nodeId());
+            if (criteriaPayload == null) {
+                criteriaPayload = criteriaText.byCaseName().get(item.name());
+            }
             if (criteriaPayload == null && item.nodeId() != null) {
                 int sep = item.nodeId().lastIndexOf("::");
                 if (sep > 0) {

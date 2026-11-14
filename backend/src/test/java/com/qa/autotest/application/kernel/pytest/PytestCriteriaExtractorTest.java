@@ -101,4 +101,81 @@ class PytestCriteriaExtractorTest {
         assertThat(result.byCaseName()).isEmpty();
         assertThat(result.files()).isZero();
     }
+
+    // ---- v5.8.0 / W58-13：json-report 主通道 ----
+
+    private void writeJson(String json) throws Exception {
+        Files.writeString(tempDir.resolve(PytestCriteriaExtractor.JSON_REPORT), json,
+                StandardCharsets.UTF_8);
+    }
+
+    @Test
+    @DisplayName("json-report：按 nodeid 取到 call.stdout 里的判据原文")
+    void jsonReportOutputIsExtracted() throws Exception {
+        writeJson("""
+                {"tests":[
+                  {"nodeid":"tests/nic/test_net.py::test_bw",
+                   "call":{"stdout":"CRITERIA_JSON {\\"criteria\\":[{\\"metric\\":\\"bw\\",\\"actual\\":\\"95\\",\\"passed\\":true}]}\\n"}},
+                  {"nodeid":"tests/nic/test_net.py::test_silent","call":{"stdout":""}}
+                ]}
+                """);
+
+        PytestCriteriaExtractor.Extraction result = PytestCriteriaExtractor.scan(tempDir);
+        assertThat(result.jsonFiles()).isEqualTo(1);
+        assertThat(result.byNodeId()).containsOnlyKeys("tests/nic/test_net.py::test_bw");
+        assertThat(result.byNodeId().get("tests/nic/test_net.py::test_bw")).contains("\"bw\"");
+        // junit 侧一个文件都没有：这条用例的判据只能来自 json-report。
+        assertThat(result.files()).isZero();
+        assertThat(result.byCaseName()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("json-report：setup 与 call 的 stdout 按顺序拼接")
+    void jsonReportStagesAreMerged() throws Exception {
+        writeJson("""
+                {"tests":[
+                  {"nodeid":"tests/test_x.py::test_a",
+                   "setup":{"stdout":"fixture says hello"},
+                   "call":{"stdout":"{\\"criteria\\":[]}"},
+                   "teardown":{"stdout":"  "}}
+                ]}
+                """);
+
+        PytestCriteriaExtractor.Extraction result = PytestCriteriaExtractor.scan(tempDir);
+        String text = result.byNodeId().get("tests/test_x.py::test_a");
+        assertThat(text).startsWith("fixture says hello").contains("criteria");
+        // teardown 是空白，不该多出空行/空段。
+        assertThat(text).doesNotEndWith("\n");
+        assertThat(text.split("\n")).hasSize(2);
+    }
+
+    @Test
+    @DisplayName("json-report 坏掉时退回 junit，不抛异常")
+    void brokenJsonFallsBackToJunit() throws Exception {
+        writeJson("{\"tests\": [not-json");
+        write("junit.xml", """
+                <?xml version="1.0" encoding="utf-8"?>
+                <testsuite name="pytest">
+                  <testcase name="test_ok" time="0.1">
+                    <system-out>{"criteria":[]}</system-out>
+                  </testcase>
+                </testsuite>
+                """);
+
+        PytestCriteriaExtractor.Extraction result = PytestCriteriaExtractor.scan(tempDir);
+        assertThat(result.jsonFiles()).isZero();
+        assertThat(result.byNodeId()).isEmpty();
+        assertThat(result.byCaseName()).containsKey("test_ok");
+        assertThat(result.files()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("json-report 没有 tests 数组：视作无输出，不抛异常")
+    void jsonReportWithoutTestsIsEmpty() throws Exception {
+        writeJson("{\"summary\":{\"passed\":3}}");
+
+        PytestCriteriaExtractor.Extraction result = PytestCriteriaExtractor.scan(tempDir);
+        assertThat(result.byNodeId()).isEmpty();
+        assertThat(result.jsonFiles()).isZero();
+    }
 }

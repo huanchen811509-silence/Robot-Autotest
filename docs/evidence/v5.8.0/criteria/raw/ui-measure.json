@@ -1,0 +1,142 @@
+{
+  "capturedAt": "2026-11-14T16:01:30.112Z",
+  "app": "http://localhost:8001",
+  "runId": "EHT-REAL-1794671083499",
+  "projectId": 95,
+  "row": {
+    "id": 918527,
+    "runId": "EHT-REAL-1794671083499",
+    "projectId": 95,
+    "caseId": null,
+    "caseKey": "IM-FUN-014",
+    "testVerdict": "PASS",
+    "criteriaVerdict": "PASS",
+    "criteriaMissing": null,
+    "criteriaItems": [
+      {
+        "metric": "link_speed",
+        "op": "==",
+        "threshold": "400000Mb/s",
+        "actual": "400000Mb/s",
+        "passed": true
+      },
+      {
+        "metric": "mtu",
+        "op": ">=",
+        "threshold": "1500",
+        "actual": "9000",
+        "passed": true
+      },
+      {
+        "metric": "pci_vendor_device",
+        "op": "==",
+        "threshold": "15b3:1021",
+        "actual": "15b3:1021",
+        "passed": true
+      }
+    ],
+    "source": "DB: SELECT tr.*, r.run_id, r.project_id FROM test_result tr JOIN run r ON r.id = tr.run_id WHERE r.run_id='EHT-REAL-1794671083499'",
+    "capturedAt": "2026-11-14T15:54:15.096616+00:00",
+    "rowCount": 1,
+    "criteriaVerdictRaw": "PASS"
+  },
+  "api": {
+    "criteriaConclusion": "PASS",
+    "criteriaEvaluated": 1,
+    "criteriaMissingCount": 0,
+    "counts": {
+      "pass": 1,
+      "fail": 0,
+      "skip": 0
+    },
+    "exportable": false,
+    "metadataMissing": [
+      "CASE_ID",
+      "QA_PROJECT",
+      "DUT",
+      "LINK",
+      "SW_BUILD",
+      "BASELINE",
+      "OPERATOR",
+      "STARTED_AT",
+      "CASE_KIND"
+    ]
+  },
+  "ui": {
+    "tagText": "通过",
+    "tagClass": "status-tag tone-ok",
+    "cardText": "结论 通过 已评估 1 条，判据缺失 0 条 判据机检目前只覆盖 pytest 内核的报告；Robot Framework 报告不产出判据结论（v5.8.0 决策，依据见 docs/evidence/v5.8.0/rf-criteria-spike/）。",
+    "summaryText": "通过 本轮 1 条用例：通过 1，失败 0，跳过 0 耗时 10.1秒 通过率 100.0% 总数 1 失败 0 跳过 0 风险提示 报告元数据缺失：CASE_ID、QA_PROJECT、DUT、LINK、SW_BUILD、BASELINE、OPERATOR、STARTED_AT、CASE_KIND 报告当前不可对外交付 生成于 2026/11/15 00:01:29",
+    "note": [
+      "已评估 1 条，判据缺失 0 条",
+      "判据机检目前只覆盖 pytest 内核的报告；Robot Framework 报告不产出判据结论（v5.8.0 决策，依据见 docs/evidence/v5.8.0/rf-criteria-spike/）。"
+    ]
+  },
+  "checks": [
+    {
+      "id": "row-verdict-present",
+      "ok": true,
+      "detail": "row=918527 case=IM-FUN-014 verdict=PASS→PASS"
+    },
+    {
+      "id": "api-200",
+      "ok": true,
+      "detail": "HTTP 200"
+    },
+    {
+      "id": "api-conclusion-present",
+      "ok": true,
+      "detail": "criteriaConclusion=PASS"
+    },
+    {
+      "id": "api-criteria-counts",
+      "ok": true,
+      "detail": "evaluated=1 missing=0 rows=1"
+    },
+    {
+      "id": "ui-conclusion-mounted",
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "id": "ui-run-id-visible",
+      "ok": true,
+      "detail": "EHT-REAL-1794671083499"
+    },
+    {
+      "id": "ui-conclusion-tag-nonempty",
+      "ok": true,
+      "detail": "tag=\"通过\" class=\"status-tag tone-ok\""
+    },
+    {
+      "id": "ui-no-hscroll",
+      "ok": true,
+      "detail": "scrollWidth=1440 viewport=1440"
+    },
+    {
+      "id": "ui-no-js-error",
+      "ok": true,
+      "detail": "0 exception"
+    },
+    {
+      "id": "api-equals-row",
+      "ok": true,
+      "detail": "api=PASS row=PASS"
+    },
+    {
+      "id": "ui-tag-equals-api",
+      "ok": true,
+      "detail": "ui=\"通过\" expect=\"通过\" (api=PASS)"
+    },
+    {
+      "id": "ui-note-matches-counts",
+      "ok": true,
+      "detail": "已评估 1 条，判据缺失 0 条 | 判据机检目前只覆盖 pytest 内核的报告；Robot Framework 报告不产出判据结论（v5.8.0 决策，依据见 docs/evidence/v5.8.0/rf-criteria-spike/）。"
+    },
+    {
+      "id": "ui-no-counted-verdict",
+      "ok": true,
+      "detail": "card=\"结论 通过 已评估 1 条，判据缺失 0 条 判据机检目前只覆盖 pytest 内核的报告；Robot Framework 报告不产出判据结论（v5.8.0 决策，依据见 docs\" summary=\"通过 本轮 1 条用例：通过 1，失败 0，跳过 0 耗时 10.1秒 通过率 100.0% 总数 1 失败 0 跳过 0 风险提示 报告元数据缺失：CASE_ID、QA_PROJ\""
+    }
+  ]
+}

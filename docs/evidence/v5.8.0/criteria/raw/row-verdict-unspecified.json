@@ -1,0 +1,159 @@
+{
+  "id": 918455,
+  "runId": "EHT-FAKE-1794661209912",
+  "projectId": 95,
+  "caseId": null,
+  "caseKey": "IM-FUN-020",
+  "testVerdict": "SKIP",
+  "criteriaVerdict": "MISSING",
+  "criteriaMissing": "采集异常：IllegalArgumentException / 文本中未找到判据 JSON 对象",
+  "source": "DB: SELECT tr.*, r.run_id, r.project_id FROM test_result tr JOIN run r ON r.id = tr.run_id WHERE r.run_id='EHT-FAKE-1794661209912'",
+  "capturedAt": "2026-11-14T16:01:05.597630+00:00",
+  "rowCount": 70,
+  "verdictHistogram": {
+    "MISSING": 70
+  },
+  "expectedConclusion": "UNDETERMINED",
+  "rows": [
+    {
+      "id": 918455,
+      "caseKey": "IM-FUN-020",
+      "testVerdict": "SKIP",
+      "criteriaVerdict": "MISSING",
+      "criteriaMissing": "采集异常：IllegalArgumentException / 文本中未找到判据 JSON 对象"
+    },
+    {
+      "id": 918456,
+      "caseKey": "IM-FUN-055",
+      "testVerdict": "SKIP",
+      "criteriaVerdict": "MISSING",
+      "criteriaMissing": "采集异常：IllegalArgumentException / 文本中未找到判据 JSON 对象"
+    },
+    {
+      "id": 918457,
+      "caseKey": "IM-NET-002",
+      "testVerdict": "SKIP",
+      "criteriaVerdict": "MISSING",
+      "criteriaMissing": "采集异常：IllegalArgumentException / 文本中未找到判据 JSON 对象"
+    },
+    {
+      "id": 918458,
+      "caseKey": "IM-NET-007",
+      "testVerdict": "SKIP",
+      "criteriaVerdict": "MISSING",
+      "criteriaMissing": "采集异常：IllegalArgumentException / 文本中未找到判据 JSON 对象"
+    },
+    {
+      "id": 918459,
+      "caseKey": "IM-NET-116",
+      "testVerdict": "SKIP",
+      "criteriaVerdict": "MISSING",
+      "criteriaMissing": "采集异常：IllegalArgumentException / 文本中未找到判据 JSON 对象"
+    },
+    {
+      "id": 918460,
+      "caseKey": "IM-NET-131",
+      "testVerdict": "SKIP",
+      "criteriaVerdict": "MISSING",
+      "criteriaMissing": "采集异常：IllegalArgumentException / 文本中未找到判据 JSON 对象"
+    },
+    {
+      "id": 918461,
+      "caseKey": "IM-CER-008",
+      "testVerdict": "SKIP",
+      "criteriaVerdict": "MISSING",
+      "criteriaMissing": "采集异常：IllegalArgumentException / 文本中未找到判据 JSON 对象"
+    },
+    {
+      "id": 918462,
+      "caseKey": "IM-MIX-011",
+      "testVerdict": "SKIP",
+      "criteriaVerdict": "MISSING",
+      "criteriaMissing": "采集异常：IllegalArgumentException / 文本中未找到判据 JSON 对象"
+    },
+    {
+      "id": 918463,
+      "caseKey": "IM-FUN-014",
+      "testVerdict": "SKIP",
+      "criteriaVerdict": "MISSING",
+      "criteriaMissing": "采集异常：IllegalArgumentException / 文本中未找到判据 JSON 对象"
+    },
+    {
+      "id": 918464,
+      "caseKey": "IM-FUN-018",
+      "testVerdict": "SKIP",
+      "criteriaVerdict": "MISSING",
+      "criteriaMissing": "采集异常：IllegalArgumentException / 文本中未找到判据 JSON 对象"
+    },
+    {
+      "id": 918465,
+      "caseKey": "IM-FUN-021",
+      "testVerdict": "SKIP",
+      "criteriaVerdict": "MISSING",
+      "criteriaMissing": "采集异常：IllegalArgumentException / 文本中未找到判据 JSON 对象"
+    },
+    {
+      "id": 918466,
+      "caseKey": "IM-FUN-035",
+      "testVerdict": "SKIP",
+      "criteriaVerdict": "MISSING",
+      "criteriaMissing": "采集异常：IllegalArgumentException / 文本中未找到判据 JSON 对象"
+    },
+    {
+      "id": 918467,
+      "caseKey": "IM-FUN-036",
+      "testVerdict": "SKIP",
+      "criteriaVerdict": "MISSING",
+      "criteriaMissing": "采集异常：IllegalArgumentException / 文本中未找到判据 JSON 对象"
+    },
+    {
+      "id": 918468,
+      "caseKey": "IM-FUN-037",
+      "testVerdict": "SKIP",
+      "criteriaVerdict": "MISSING",
+      "criteriaMissing": "采集异常：IllegalArgumentException / 文本中未找到判据 JSON 对象"
+    },
+    {
+      "id": 918469,
+      "caseKey": "IM-FUN-040",
+      "testVerdict": "SKIP",
+      "criteriaVerdict": "MISSING",
+      "criteriaMissing": "采集异常：IllegalArgumentException / 文本中未找到判据 JSON 对象"
+    },
+    {
+      "id": 918470,
+      "caseKey": "IM-FUN-041",
+      "testVerdict": "SKIP",
+      "criteriaVerdict": "MISSING",
+      "criteriaMissing": "采集异常：IllegalArgumentException / 文本中未找到判据 JSON 对象"
+    },
+    {
+      "id": 918471,
+      "caseKey": "IM-FUN-042",
+      "testVerdict": "SKIP",
+      "criteriaVerdict": "MISSING",
+      "criteriaMissing": "采集异常：IllegalArgumentException / 文本中未找到判据 JSON 对象"
+    },
+    {
+      "id": 918472,
+      "caseKey": "IM-FUN-043",
+      "testVerdict": "SKIP",
+      "criteriaVerdict": "MISSING",
+      "criteriaMissing": "采集异常：IllegalArgumentException / 文本中未找到判据 JSON 对象"
+    },
+    {
+      "id": 918473,
+      "caseKey": "IM-FUN-044",
+      "testVerdict": "SKIP",
+      "criteriaVerdict": "MISSING",
+      "criteriaMissing": "采集异常：IllegalArgumentException / 文本中未找到判据 JSON 对象"
+    },
+    {
+      "id": 918474,
+      "caseKey": "IM-FUN-045",
+      "testVerdict": "SKIP",
+      "criteriaVerdict": "MISSING",
+      "criteriaMissing": "采集异常：IllegalArgumentException / 文本中未找到判据 JSON 对象"
+    }
+  ]
+}

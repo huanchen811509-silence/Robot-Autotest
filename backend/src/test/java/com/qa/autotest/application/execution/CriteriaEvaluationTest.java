@@ -85,4 +85,44 @@ class CriteriaEvaluationTest {
         assertThat(result.json()).endsWith("[TRUNCATED]");
         assertThat(result.missing()).contains("64KB");
     }
+
+    // ---- v5.8.0 / W58-13：哨兵行 CRITERIA_JSON ----
+
+    @Test
+    @DisplayName("哨兵行优先：日志里出现别的花括号也不影响解析")
+    void sentinelWinsOverStrayBraces() {
+        String stdout = """
+                [明细] raw={"not":"criteria"}
+                CRITERIA_JSON {"criteria":[{"metric":"speed","op":"==","threshold":"1000",
+                "actual":"1000","passed":true}]}
+                [明细] tail={"a":1}
+                """;
+        CriteriaEvaluation.Result result = CriteriaEvaluation.evaluate(stdout);
+        assertThat(result.declared()).isTrue();
+        assertThat(result.verdict()).isEqualTo("PASS");
+        assertThat(result.json()).contains("\"speed\"");
+    }
+
+    @Test
+    @DisplayName("多次打印哨兵行时取最后一次（重跑/复测以最终事实为准）")
+    void sentinelUsesLastOccurrence() {
+        String stdout = """
+                CRITERIA_JSON {"criteria":[{"metric":"m","actual":"1","passed":false}]}
+                CRITERIA_JSON {"criteria":[{"metric":"m","actual":"1","passed":true}]}
+                """;
+        CriteriaEvaluation.Result result = CriteriaEvaluation.evaluate(stdout);
+        assertThat(result.verdict()).isEqualTo("PASS");
+    }
+
+    @Test
+    @DisplayName("哨兵后面没有 JSON 时退回旧口径，不因哨兵存在就判 MISSING")
+    void sentinelWithoutJsonFallsBack() {
+        String stdout = """
+                {"criteria":[{"metric":"m","actual":"2","passed":true}]}
+                CRITERIA_JSON (payload 丢失)
+                """;
+        CriteriaEvaluation.Result result = CriteriaEvaluation.evaluate(stdout);
+        assertThat(result.declared()).isTrue();
+        assertThat(result.verdict()).isEqualTo("PASS");
+    }
 }

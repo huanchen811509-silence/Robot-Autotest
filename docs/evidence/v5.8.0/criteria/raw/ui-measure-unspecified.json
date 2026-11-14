@@ -1,0 +1,265 @@
+{
+  "capturedAt": "2026-11-14T16:01:15.956Z",
+  "app": "http://localhost:8001",
+  "runId": "EHT-FAKE-1794661209912",
+  "projectId": 95,
+  "row": {
+    "id": 918455,
+    "runId": "EHT-FAKE-1794661209912",
+    "projectId": 95,
+    "caseId": null,
+    "caseKey": "IM-FUN-020",
+    "testVerdict": "SKIP",
+    "criteriaVerdict": "MISSING",
+    "criteriaMissing": "采集异常：IllegalArgumentException / 文本中未找到判据 JSON 对象",
+    "source": "DB: SELECT tr.*, r.run_id, r.project_id FROM test_result tr JOIN run r ON r.id = tr.run_id WHERE r.run_id='EHT-FAKE-1794661209912'",
+    "capturedAt": "2026-11-14T16:01:05.597630+00:00",
+    "rowCount": 70,
+    "verdictHistogram": {
+      "MISSING": 70
+    },
+    "expectedConclusion": "UNDETERMINED",
+    "rows": [
+      {
+        "id": 918455,
+        "caseKey": "IM-FUN-020",
+        "testVerdict": "SKIP",
+        "criteriaVerdict": "MISSING",
+        "criteriaMissing": "采集异常：IllegalArgumentException / 文本中未找到判据 JSON 对象"
+      },
+      {
+        "id": 918456,
+        "caseKey": "IM-FUN-055",
+        "testVerdict": "SKIP",
+        "criteriaVerdict": "MISSING",
+        "criteriaMissing": "采集异常：IllegalArgumentException / 文本中未找到判据 JSON 对象"
+      },
+      {
+        "id": 918457,
+        "caseKey": "IM-NET-002",
+        "testVerdict": "SKIP",
+        "criteriaVerdict": "MISSING",
+        "criteriaMissing": "采集异常：IllegalArgumentException / 文本中未找到判据 JSON 对象"
+      },
+      {
+        "id": 918458,
+        "caseKey": "IM-NET-007",
+        "testVerdict": "SKIP",
+        "criteriaVerdict": "MISSING",
+        "criteriaMissing": "采集异常：IllegalArgumentException / 文本中未找到判据 JSON 对象"
+      },
+      {
+        "id": 918459,
+        "caseKey": "IM-NET-116",
+        "testVerdict": "SKIP",
+        "criteriaVerdict": "MISSING",
+        "criteriaMissing": "采集异常：IllegalArgumentException / 文本中未找到判据 JSON 对象"
+      },
+      {
+        "id": 918460,
+        "caseKey": "IM-NET-131",
+        "testVerdict": "SKIP",
+        "criteriaVerdict": "MISSING",
+        "criteriaMissing": "采集异常：IllegalArgumentException / 文本中未找到判据 JSON 对象"
+      },
+      {
+        "id": 918461,
+        "caseKey": "IM-CER-008",
+        "testVerdict": "SKIP",
+        "criteriaVerdict": "MISSING",
+        "criteriaMissing": "采集异常：IllegalArgumentException / 文本中未找到判据 JSON 对象"
+      },
+      {
+        "id": 918462,
+        "caseKey": "IM-MIX-011",
+        "testVerdict": "SKIP",
+        "criteriaVerdict": "MISSING",
+        "criteriaMissing": "采集异常：IllegalArgumentException / 文本中未找到判据 JSON 对象"
+      },
+      {
+        "id": 918463,
+        "caseKey": "IM-FUN-014",
+        "testVerdict": "SKIP",
+        "criteriaVerdict": "MISSING",
+        "criteriaMissing": "采集异常：IllegalArgumentException / 文本中未找到判据 JSON 对象"
+      },
+      {
+        "id": 918464,
+        "caseKey": "IM-FUN-018",
+        "testVerdict": "SKIP",
+        "criteriaVerdict": "MISSING",
+        "criteriaMissing": "采集异常：IllegalArgumentException / 文本中未找到判据 JSON 对象"
+      },
+      {
+        "id": 918465,
+        "caseKey": "IM-FUN-021",
+        "testVerdict": "SKIP",
+        "criteriaVerdict": "MISSING",
+        "criteriaMissing": "采集异常：IllegalArgumentException / 文本中未找到判据 JSON 对象"
+      },
+      {
+        "id": 918466,
+        "caseKey": "IM-FUN-035",
+        "testVerdict": "SKIP",
+        "criteriaVerdict": "MISSING",
+        "criteriaMissing": "采集异常：IllegalArgumentException / 文本中未找到判据 JSON 对象"
+      },
+      {
+        "id": 918467,
+        "caseKey": "IM-FUN-036",
+        "testVerdict": "SKIP",
+        "criteriaVerdict": "MISSING",
+        "criteriaMissing": "采集异常：IllegalArgumentException / 文本中未找到判据 JSON 对象"
+      },
+      {
+        "id": 918468,
+        "caseKey": "IM-FUN-037",
+        "testVerdict": "SKIP",
+        "criteriaVerdict": "MISSING",
+        "criteriaMissing": "采集异常：IllegalArgumentException / 文本中未找到判据 JSON 对象"
+      },
+      {
+        "id": 918469,
+        "caseKey": "IM-FUN-040",
+        "testVerdict": "SKIP",
+        "criteriaVerdict": "MISSING",
+        "criteriaMissing": "采集异常：IllegalArgumentException / 文本中未找到判据 JSON 对象"
+      },
+      {
+        "id": 918470,
+        "caseKey": "IM-FUN-041",
+        "testVerdict": "SKIP",
+        "criteriaVerdict": "MISSING",
+        "criteriaMissing": "采集异常：IllegalArgumentException / 文本中未找到判据 JSON 对象"
+      },
+      {
+        "id": 918471,
+        "caseKey": "IM-FUN-042",
+        "testVerdict": "SKIP",
+        "criteriaVerdict": "MISSING",
+        "criteriaMissing": "采集异常：IllegalArgumentException / 文本中未找到判据 JSON 对象"
+      },
+      {
+        "id": 918472,
+        "caseKey": "IM-FUN-043",
+        "testVerdict": "SKIP",
+        "criteriaVerdict": "MISSING",
+        "criteriaMissing": "采集异常：IllegalArgumentException / 文本中未找到判据 JSON 对象"
+      },
+      {
+        "id": 918473,
+        "caseKey": "IM-FUN-044",
+        "testVerdict": "SKIP",
+        "criteriaVerdict": "MISSING",
+        "criteriaMissing": "采集异常：IllegalArgumentException / 文本中未找到判据 JSON 对象"
+      },
+      {
+        "id": 918474,
+        "caseKey": "IM-FUN-045",
+        "testVerdict": "SKIP",
+        "criteriaVerdict": "MISSING",
+        "criteriaMissing": "采集异常：IllegalArgumentException / 文本中未找到判据 JSON 对象"
+      }
+    ],
+    "criteriaVerdictRaw": "MISSING"
+  },
+  "api": {
+    "criteriaConclusion": "UNDETERMINED",
+    "criteriaEvaluated": 70,
+    "criteriaMissingCount": 70,
+    "counts": {
+      "pass": 5,
+      "fail": 4,
+      "skip": 61
+    },
+    "exportable": false,
+    "metadataMissing": [
+      "CASE_ID",
+      "QA_PROJECT",
+      "DUT",
+      "LINK",
+      "SW_BUILD",
+      "BASELINE",
+      "OPERATOR",
+      "STARTED_AT",
+      "CASE_KIND"
+    ]
+  },
+  "ui": {
+    "tagText": "未判定",
+    "tagClass": "status-tag tone-neutral",
+    "cardText": "结论 未判定 该报告入库时未记录判据，结论无法判定；不按失败数推断。 判据机检目前只覆盖 pytest 内核的报告；Robot Framework 报告不产出判据结论（v5.8.0 决策，依据见 docs/evidence/v5.8.0/rf-criteria-spike/）。",
+    "summaryText": "未判定 该报告入库时未记录判据，结论无法判定；不按失败数推断。 耗时 3分钟 40秒 通过率 7.1% 总数 70 失败 4 跳过 61 Top 失败项 AssertionError: assert 'gpu04@172.30.1.4' in {'gpu01@10.202.54.101': {'host': {'hostname': 'gpu01', 'management_ip': '10.202.54.101', 'username': 'inspur', 'passwo... 'cpu': {'cpu0': {'vendor': 'Intel', 'model': 'Xeon', 'core_id_mask': '0-63', 'numa_nodes': [0, 1]}}, 'vms': {}, ...}}} 1 次 连续 0 轮 · 复现率 10% KeyError: '资源定位不唯一或不存在：nic:gpu05@172.30.1.5/ens17np0；Host 内资源请使用 host-key/device-key' 1 次 连续 0 轮 · 复现率 10% KeyError: '资源定位不唯一或不存在：switch:gpu04@172.30.1.4；Host 内资源请使用 host-key/device-key' 1 次 连续 0 轮 · 复现率 10% 风险提示 报告元",
+    "note": [
+      "该报告入库时未记录判据，结论无法判定；不按失败数推断。",
+      "判据机检目前只覆盖 pytest 内核的报告；Robot Framework 报告不产出判据结论（v5.8.0 决策，依据见 docs/evidence/v5.8.0/rf-criteria-spike/）。"
+    ]
+  },
+  "checks": [
+    {
+      "id": "row-verdict-present",
+      "ok": true,
+      "detail": "row=918455 case=IM-FUN-020 verdict=MISSING→UNDETERMINED"
+    },
+    {
+      "id": "api-200",
+      "ok": true,
+      "detail": "HTTP 200"
+    },
+    {
+      "id": "api-conclusion-present",
+      "ok": true,
+      "detail": "criteriaConclusion=UNDETERMINED"
+    },
+    {
+      "id": "api-criteria-counts",
+      "ok": true,
+      "detail": "evaluated=70 missing=70 rows=70"
+    },
+    {
+      "id": "ui-conclusion-mounted",
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "id": "ui-run-id-visible",
+      "ok": true,
+      "detail": "EHT-FAKE-1794661209912"
+    },
+    {
+      "id": "ui-conclusion-tag-nonempty",
+      "ok": true,
+      "detail": "tag=\"未判定\" class=\"status-tag tone-neutral\""
+    },
+    {
+      "id": "ui-no-hscroll",
+      "ok": true,
+      "detail": "scrollWidth=1440 viewport=1440"
+    },
+    {
+      "id": "ui-no-js-error",
+      "ok": true,
+      "detail": "0 exception"
+    },
+    {
+      "id": "api-equals-row",
+      "ok": true,
+      "detail": "api=UNDETERMINED row=UNDETERMINED"
+    },
+    {
+      "id": "ui-tag-equals-api",
+      "ok": true,
+      "detail": "ui=\"未判定\" expect=\"未判定\" (api=UNDETERMINED)"
+    },
+    {
+      "id": "ui-note-matches-counts",
+      "ok": true,
+      "detail": "该报告入库时未记录判据，结论无法判定；不按失败数推断。 | 判据机检目前只覆盖 pytest 内核的报告；Robot Framework 报告不产出判据结论（v5.8.0 决策，依据见 docs/evidence/v5.8.0/rf-criteria-spike/）。"
+    },
+    {
+      "id": "ui-no-counted-verdict",
+      "ok": true,
+      "detail": "card=\"结论 未判定 该报告入库时未记录判据，结论无法判定；不按失败数推断。 判据机检目前只覆盖 pytest 内核的报告；Robot Framework 报告不产出判据结论（v5.8.0\" summary=\"未判定 该报告入库时未记录判据，结论无法判定；不按失败数推断。 耗时 3分钟 40秒 通过率 7.1% 总数 70 失败 4 跳过 61 Top 失败项 AssertionErro\""
+    }
+  ]
+}

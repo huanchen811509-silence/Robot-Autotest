@@ -2542,6 +2542,8 @@ export default {
     conclusionPassedWithSkipped: '全部通过（其中 {skipped} 条跳过）',
     conclusionFailed: '本轮 {failed} 条失败，通过率 {passRate}',
     conclusionNoData: '本轮暂无可统计的用例结果',
+    // FR-v5.8-01：有判据结论时这里只报数，结论由「结论」卡片给出
+    resultLine: '本轮 {total} 条用例：通过 {passed}，失败 {failed}，跳过 {skipped}',
     passRate: '通过率',
     total: '总数',
     failed: '失败',

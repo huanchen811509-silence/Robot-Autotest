@@ -1,0 +1,49 @@
+{
+  "id": 918527,
+  "runId": "EHT-REAL-1794671083499",
+  "projectId": 95,
+  "caseId": null,
+  "caseKey": "IM-FUN-014",
+  "testVerdict": "PASS",
+  "criteriaVerdict": "PASS",
+  "criteriaMissing": null,
+  "criteriaItems": [
+    {
+      "metric": "link_speed",
+      "op": "==",
+      "threshold": "400000Mb/s",
+      "actual": "400000Mb/s",
+      "passed": true
+    },
+    {
+      "metric": "mtu",
+      "op": ">=",
+      "threshold": "1500",
+      "actual": "9000",
+      "passed": true
+    },
+    {
+      "metric": "pci_vendor_device",
+      "op": "==",
+      "threshold": "15b3:1021",
+      "actual": "15b3:1021",
+      "passed": true
+    }
+  ],
+  "source": "DB: SELECT tr.*, r.run_id, r.project_id FROM test_result tr JOIN run r ON r.id = tr.run_id WHERE r.run_id='EHT-REAL-1794671083499'",
+  "capturedAt": "2026-11-14T16:01:39.112051+00:00",
+  "rowCount": 1,
+  "verdictHistogram": {
+    "PASS": 1
+  },
+  "expectedConclusion": "PASS",
+  "rows": [
+    {
+      "id": 918527,
+      "caseKey": "IM-FUN-014",
+      "testVerdict": "PASS",
+      "criteriaVerdict": "PASS",
+      "criteriaMissing": null
+    }
+  ]
+}

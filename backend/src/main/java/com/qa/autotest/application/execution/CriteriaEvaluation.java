@@ -24,6 +24,9 @@ public final class CriteriaEvaluation {
 
     public static final int MAX_JSON_BYTES = 64 * 1024;
 
+    /** 判据块的显式前缀：生产方（用例）用它把判据和普通日志分开，消费方只认它。 */
+    static final String SENTINEL = "CRITERIA_JSON";
+
     private static final ObjectMapper JSON = new ObjectMapper();
 
     /**
@@ -116,16 +119,25 @@ public final class CriteriaEvaluation {
     }
 
     /**
-     * 从文本里截取第一个 JSON 对象并取 {@code criteria} 数组。
-     * 找不到对象抛异常（→ MISSING）；对象里没有 criteria 返回空清单（→ 未声明）。
+     * 从文本里截取判据 JSON 对象并取 {@code criteria} 数组。
+     *
+     * <p><b>先认哨兵行</b>（v5.8.0 / W58-13）：生产方打印 {@code CRITERIA_JSON {...}} 时，
+     * 只取哨兵后面那一坨；没有哨兵才退回「第一个 {@code \{} 到最后一个 {@code \}}」的老口径。
+     * 老口径只要日志里出现过花括号就解析失败，而判据是要<b>拿来判红</b>的东西，不能靠运气。
+     *
+     * <p>找不到对象抛异常（→ MISSING）；对象里没有 criteria 返回空清单（→ 未声明）。
      */
     static List<CaseCriteria> parse(String payload) throws Exception {
-        int start = payload.indexOf('{');
-        int end = payload.lastIndexOf('}');
-        if (start < 0 || end <= start) {
-            throw new IllegalArgumentException("文本中未找到判据 JSON 对象");
+        String json = sentinelPayload(payload);
+        if (json == null) {
+            int start = payload.indexOf('{');
+            int end = payload.lastIndexOf('}');
+            if (start < 0 || end <= start) {
+                throw new IllegalArgumentException("文本中未找到判据 JSON 对象");
+            }
+            json = payload.substring(start, end + 1);
         }
-        JsonNode root = JSON.readTree(payload.substring(start, end + 1));
+        JsonNode root = JSON.readTree(json);
         JsonNode array = root.get("criteria");
         if (array == null || !array.isArray()) {
             return List.of();
@@ -138,6 +150,46 @@ public final class CriteriaEvaluation {
                     node.hasNonNull("passed") ? node.get("passed").asBoolean() : null));
         }
         return result;
+    }
+
+    /** 哨兵行 {@code CRITERIA_JSON {...}}：取<b>最后</b>一次出现，按花括号配对切出 JSON 块。 */
+    private static String sentinelPayload(String payload) {
+        int at = payload.lastIndexOf(SENTINEL);
+        if (at < 0) {
+            return null;
+        }
+        int start = payload.indexOf('{', at + SENTINEL.length());
+        if (start < 0) {
+            return null;
+        }
+        // 不能取「最后一个 }」：判据块后面常还有日志，尾部的花括号会把块切坏。
+        int depth = 0;
+        boolean inString = false;
+        boolean escaped = false;
+        for (int i = start; i < payload.length(); i++) {
+            char c = payload.charAt(i);
+            if (inString) {
+                if (escaped) {
+                    escaped = false;
+                } else if (c == '\\') {
+                    escaped = true;
+                } else if (c == '"') {
+                    inString = false;
+                }
+                continue;
+            }
+            if (c == '"') {
+                inString = true;
+            } else if (c == '{') {
+                depth++;
+            } else if (c == '}') {
+                depth--;
+                if (depth == 0) {
+                    return payload.substring(start, i + 1);
+                }
+            }
+        }
+        return null;
     }
 
     private static String text(JsonNode node, String field) {

@@ -2534,6 +2534,8 @@ export default {
     conclusionPassedWithSkipped: 'All passed ({skipped} skipped)',
     conclusionFailed: '{failed} failed, pass rate {passRate}',
     conclusionNoData: 'No case results to summarize in this run',
+    // FR-v5.8-01: with a criteria verdict this line only reports counts; the verdict lives in the conclusion card
+    resultLine: 'This run: {total} cases — {passed} passed, {failed} failed, {skipped} skipped',
     passRate: 'Pass rate',
     total: 'Total',
     failed: 'Failed',

@@ -172,8 +172,9 @@ W6 最后，且开始前 W1 ~ W5 出口判据全部满足。
 | 项 | 内容 |
 |---|---|
 | 目标 | `test_result` 出现非空 `criteria_json`，且报告详情结论与之一致 |
-| 改动面 | 零代码（发现缺口再补）；执行 1 条带判据的用例 |
+| 改动面 | ~~零代码（发现缺口再补）~~ → **实际改了 5 个文件**：`PytestCriteriaExtractor`（改读 json-report）、`ReportIngestService`（匹配顺序）、`CriteriaEvaluation`（哨兵行解析）、`ReportSummaryCard`（口径）、`ReportDetailView`（传参）。理由见 D-58-11 / D-58-12 |
 | 出口判据 | ① 执行前基线 `count=0`；② 执行后 ≥1 且 `verdict` 与声明一致；③ 页面结论 = 该行 verdict（截图）；④ 安全闸四条守卫各一条请求日志 |
+| 完成情况 | ①②③ **完成**（正反双样本，14 项断言全 PASS）；④ **未做**，登记 L-58-07 |
 | 验证命令 | `SELECT count(*) FROM test_result WHERE criteria_json IS NOT NULL;`（`DB_NAME=robot_dev`） |
 | 依赖 | W58-02（页面验收）、真机窗口 |
 
@@ -261,6 +262,8 @@ W6 最后，且开始前 W1 ~ W5 出口判据全部满足。
 |---|---|---|
 | 2026-11-14 | 首版：6 波 17 个 WBS；按「无真机三条并行线 + 真机串行线 + 收口」排布 | `PRD.md` + 大师 L 全档决策 |
 | 2026-11-14 | 追加 §12「执行进度与偏差登记」：W58-01~05 完成情况、D-58-01~03 偏差、本轮验证读数 | 提交 `f16825e` / `c1108e1` + 全量单测读数 |
+| 2026-11-14 | §12 补 W58-06~12 行、D-58-04~10；§12.2 补性能与隔离读数 | `27722fa` + `docs/evidence/v5.8.0/perf/` |
+| 2026-11-14 | §12 补 W58-13 行、D-58-11~13；W58-13「零代码」预估被实测推翻，改为 5 处改动 | `docs/evidence/v5.8.0/criteria/`（正反双样本 14 项断言） |
 
 ---
 
@@ -283,6 +286,7 @@ W6 最后，且开始前 W1 ~ W5 出口判据全部满足。
 | W58-11 | 完成 | ① 10 份逐份「有/无载体」+ 片段（`README.md` 表 + `scan.json`）② 结论明确：无框架级载体（`<doc>` 2/10、断言 3/10、结构化失败消息 4/10，均不构成稳定协议） | `docs/evidence/v5.8.0/rf-criteria-spike/`（样本清单 + 扫描脚本 + 原始读数） |
 | W58-12 | 完成（走标注分支） | ① 未实现提取（无载体）② 界面标注 `report-conclusion-scope`，spec 断言含 `pytest` 与 `Robot Framework` ③ 选择依据写在 spike `README.md` §4 与 PRD FR-11「实测结论」 | `ReportDetailView.spec.ts` 14 例 |
 | W58-08 | 完成（截图待补） | ① 台账 42 行逐条有结论，缺口 7 → 6 ② `ReportsView` 行为对齐 `TestReportsView`（编辑/软删），截图待补 ③ 前端全量 130 文件 1030 例（只增不减） | `docs/evidence/v5.8.0/list-crud-matrix.md`；`ReportsView.spec.ts` 3 例 |
+| W58-13 | 完成 ①②③，④未做（见 D-58-11~13、L-58-07） | ① 真机 `EHT-REAL-1794671083499` 1 行 `criteria_verdict=PASS`，三条判据为实测值 ② 报告接口 `criteriaConclusion=PASS / evaluated=1 / missing=0` ③ 页面标签「通过」与结论卡一致，三方比对 14 项断言全 PASS ④ 反向样本 70 行全 `MISSING` → 页面「未判定」，无「全部通过」 ⑤ 后端全量 1946 例 FAIL 0；前端相关 22 例 PASS；`vue-tsc` 无输出 | `docs/evidence/v5.8.0/criteria/`（README + 8 份原件）；`scripts/w13-criteria-ui.mjs` |
 
 ### 12.1 偏差登记
 
@@ -298,6 +302,9 @@ W6 最后，且开始前 W1 ~ W5 出口判据全部满足。
 | D-58-08 | **口径偏差（大师 2026-11-14 拍板「双口径都测」）**：预算场景「10000 行滚动 ≥50fps」在产品里不可达 | 产品把每页硬顶在 100 行（`PageQuery.MAX_SIZE = 100`，前端档位 10/20/50/100，全站没有任何列表取数超 100）。硬报一个 `rows=10000` 的产品读数就是伪造 | 分两个口径且各说清量的是什么：**product**（10000 条数据集 + 每页 100 行，真页面，决定 `status`）+ **harness**（一次性 HTML 10000 行，标注「非产品页面」，只作补充基线）。门禁 22 步改为同时判两份报告（v3.2.0 那份只覆盖 API，不含长列表） |
 | D-58-09 | **发现（非偏差）**：harness 口径 10000 行同屏只有 20.4~28.5fps，低于预算 50 | 纯静态表格一次铺 10000 个 `<tr>`，滚动时整表重排；三次独立量测 23.8 / 24.2 / 20.4 一致偏低，不是抖动 | 不改产品（当前形态下该场景不可达，也没有必要）；作为「将来若取消分页或上虚拟滚动」的前置输入登记遗留 **L-58-06** |
 | D-58-10 | **计划外修正**：`tools/perf_seed.py` 首版只写 `seed-report.json`，未归档数据集 manifest | PRD FR-v5.8-06 判据③要求 manifest 随证据归档；数据集本体在 `/tmp`，不归档等于「行数与 sha256 可复现」这句话没人能验 | 导入时自动 `cp` 成 `docs/evidence/v5.8.0/perf/dataset-manifest.json`；另：purge 后重新导入会让工程 id 变化（123 → 124），README 给的是「按 code 查 id」的命令而不是写死 id |
+| D-58-11 | **判据链断点（后端）**：W58-13 原计划「零代码」，实际提取器一根线都没通 | pytest 9.2 默认 `junit_logging` 不开，junit `<testcase>` 里**没有** `system-out`（4 份真实 run + spawn 实验全 0 段）；而 json-report 的 `tests[].{setup,call,teardown}.stdout` 确有 stdout。基线 715 行 `criteria_verdict` 非空、`criteria_json` 一条没有，就是「结论有、证据无」 | 改读 `pytest-report.json`（junit 作兼容回退）；另修 `CriteriaEvaluation.parse` 的切块方式：原来是「首个 `{` 到最后一个 `}`」，日志里有花括号就整段失败，改为 `CRITERIA_JSON` 哨兵行 + 花括号配对（支持字符串内转义）。补 8 例提取器单测 / 9 例评估单测 |
+| D-58-12 | **口径冲突（前端）**：报告速览卡按 `failed == 0` 推「通过 / 全部通过」，与结论卡片的判据口径同屏打架 | 一条用例可以 `verdict=PASS` 而 `criteria_verdict=MISSING`，于是同一屏上速览说「全部通过」、结论卡说「未判定」——读者无从判断该信哪个。这正是 FR-v5.8-01 要消除的口径，却残留在另一个组件里 | `ReportSummaryCard` 改为：有判据时标签用 `/reports/conclusion/*` 同一套文案、正文**只报数**；判据缺失显式「未判定」+「不按失败数推断」。加 3 条 spec 锁住，其中「判据 FAIL 但失败数为 0 → 不通过」是防回退的关键一条 |
+| D-58-13 | **取证坑（非偏差）**：首次取证时结论卡片整张不渲染，`grep report-conclusion frontend/dist/assets/*.js` 无结果 | `frontend/dist` 是 21:46 构建的，`ReportDetailView.vue` 22:53 已改——源码对、界面不对。门禁与单测都发现不了这种假象 | 取证前必须 `npm run build`；`ui-conclusion-mounted` 断言就是为了把「产物过期」挡成红而不是「跳过」 |
 
 ### 12.2 本轮验证读数（2026-11-14）
 
@@ -311,3 +318,11 @@ W6 最后，且开始前 W1 ~ W5 出口判据全部满足。
 | 数据集可复现 | `--scale standard` 两次独立生成 `contentHash` 相同（`59824208438adcd7…`），且与 v3.2.0 历史数据集逐字节一致 |
 | 数据隔离 | `robot_dev`：既有工程 13→13、既有用例 2491→2491；压测工程 1 个（`PERF-LONGLIST` id=124，10000 条），数据集 `cases.csv` sha256 `272bdb09…` |
 | 性能门禁 | `check_perf_budget --require` 两份报告均 PASS（v3.2.0 API 段 + v5.8.0 长列表段） |
+| 判据入库（W58-13） | `test_result` 715 → 718 行；`criteria_json IS NOT NULL` **0 → 1**；`criteria_verdict IS NOT NULL` 70 → 73 |
+| 判据样本（真机） | `EHT-REAL-1794671083499` / `IM-FUN-014`：`criteria_verdict=PASS`，`link_speed 400000Mb/s`、`mtu 9000`、`pci_vendor_device 15b3:1021` 三条全 `passed=true` |
+| 报告结论（接口） | `GET /api/reports/EHT-REAL-1794671083499?projectId=95` → `criteriaConclusion=PASS`、`criteriaEvaluated=1`、`criteriaMissingCount=0`；`exportable=false`（`metadataMissing` 9 项，见 L-58-08） |
+| 报告结论（界面） | 结论卡「通过 · 已评估 1 条，判据缺失 0 条」；速览卡「通过 · 本轮 1 条用例：通过 1，失败 0，跳过 0」；两处均无「全部通过」 |
+| 反向实证（判据全缺失） | `EHT-FAKE-1794661209912` 70 行全 `MISSING`、通过率 7.1% → 两处均「未判定」；`ui-no-counted-verdict` PASS |
+| 界面取证断言数 | 正向 14 项 / 反向 14 项，全 PASS（`W13_CRITERIA_UI PASS`）；`ui-no-js-error` 0 exception |
+| 后端单测（W58-13 后） | `Tests run: 1946, Failures: 0, Errors: 0, Skipped: 4`，BUILD SUCCESS（较本节首行 1934 再 +12，来自提取器 4 例 + 评估 3 例 + 既有其他） |
+| 前端相关单测 | `ReportSummaryCard.spec` 8 例 + `ReportDetailView.spec` 14 例，共 22 例 PASS；`vue-tsc --noEmit` 无输出 |

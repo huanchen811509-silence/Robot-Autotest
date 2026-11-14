@@ -1,9 +1,13 @@
 /**
- * 报告速览结论口径（FR-3.1-07）。
+ * 报告速览结论口径（FR-3.1-07 / FR-v5.8-01）。
  *
- * 锁三件事：失败结论必须带失败数与通过率；有跳过时不能简化成「全部通过」；
- * 空数据要给出「暂无可统计结果」而不是 0% 通过。数字直接来自后端 summary，
- * 组件只负责文案，所以这里喂的是接口返回形状。
+ * 锁四件事：
+ *   ① 传了判据结论时，状态标签 = 判据，正文**只报数**（不再出现「全部通过」）；
+ *   ② 判据缺失（UNDETERMINED）时不按失败数说通过，显式「未判定」并说明理由；
+ *   ③ 没有判据上下文的旧调用仍按计数口径（兼容路径）；
+ *   ④ 空数据要给出「暂无可统计结果」而不是 0% 通过。
+ *
+ * 数字直接来自后端 summary，组件只负责文案，所以这里喂的是接口返回形状。
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createApp, h, nextTick, type App } from 'vue'
@@ -31,11 +35,14 @@ function base(overrides: Partial<ReportSummary>): ReportSummary {
   }
 }
 
-async function mount(summary: ReportSummary): Promise<HTMLElement> {
+async function mount(
+  summary: ReportSummary,
+  criteriaConclusion = '',
+): Promise<HTMLElement> {
   host = document.createElement('div')
   document.body.appendChild(host)
   app = createApp({
-    render: () => h(ReportSummaryCard, { summary }),
+    render: () => h(ReportSummaryCard, { summary, criteriaConclusion }),
   })
   app.use(i18n)
   app.mount(host)
@@ -54,7 +61,43 @@ afterEach(() => {
   host = null
 })
 
-describe('报告速览结论', () => {
+describe('报告速览 · 判据口径（FR-v5.8-01）', () => {
+  it('判据 PASS 时标签为「通过」，正文只报数，不再出现「全部通过」', async () => {
+    const root = await mount(
+      base({ total: 1, passed: 1, failed: 0, skipped: 0 }),
+      'PASS',
+    )
+    const conclusion = root.querySelector('[data-test="report-summary-conclusion"]')
+    expect(conclusion?.textContent?.trim())
+      .toBe('本轮 1 条用例：通过 1，失败 0，跳过 0')
+    expect(root.textContent).not.toContain('全部通过')
+    expect(root.textContent).toContain('通过')
+  })
+
+  it('判据 UNDETERMINED 时不按失败数说通过，显式未判定并说明理由', async () => {
+    const root = await mount(
+      base({ total: 1, passed: 1, failed: 0, skipped: 0 }),
+      'UNDETERMINED',
+    )
+    const conclusion = root.querySelector('[data-test="report-summary-conclusion"]')
+    expect(conclusion?.textContent).toContain('判据')
+    expect(conclusion?.textContent).toContain('不按失败数推断')
+    expect(root.textContent).not.toContain('全部通过')
+    // 用例全通过但判据缺失 → 标签必须是「未判定」，不能是「通过」
+    expect(root.querySelector('.status-tag')?.textContent?.trim()).toBe('未判定')
+  })
+
+  it('判据 FAIL 时即使失败数为 0 也判不通过（口径只认判据）', async () => {
+    const root = await mount(
+      base({ total: 2, passed: 2, failed: 0, skipped: 0 }),
+      'FAIL',
+    )
+    expect(root.querySelector('.status-tag')?.textContent?.trim()).toBe('不通过')
+    expect(root.textContent).not.toContain('全部通过')
+  })
+})
+
+describe('报告速览 · 计数口径（调用方未提供判据时的兼容路径）', () => {
   it('失败时写明失败数与通过率，并只展示前 3 条 Top 失败', async () => {
     const root = await mount(
       base({
