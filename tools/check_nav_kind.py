@@ -44,8 +44,9 @@ ROUTER = ROOT / "frontend" / "src" / "router" / "index.ts"
 #   global-cases-sets（/g/case-sets）与 global-projects-new（/g/projects/new）。
 # v5.9.0 / W59-14~19：全局侧栏新增「用户与权限」一级菜单 4 叶
 #   （/g/iam/roles、/g/iam/groups、/g/iam/users、/g/iam/projects），41 → 44。
+# v5.10.0 / W60-15：全局「模板」组新增「模板向导」1 叶（/g/templates/new），44 → 45。
 # 基线随真实菜单增减同步，不是放宽断言：孤儿叶子、路径格式、kind 三项仍逐条判。
-EXPECTED_LEAVES = 44
+EXPECTED_LEAVES = 45
 
 PATH_RE = re.compile(r"path:\s*['\"](/[^'\"]*)['\"]")
 

@@ -18,13 +18,20 @@
 --   - `TPL` 是模板自动编号的兜底前缀（`ProjectTemplateService.generateCode`），一并入表，
 --     否则模板向导「从注册表选前缀」的选择列表里就缺了默认项。
 
+-- 主键用代理自增 id + code 唯一键：与全库口径一致（gate 12-db_audit 要求「主键是单列 id」），
+-- 业务唯一性仍由 uk_project_code_prefix_code 保证，不靠主键兼任两件事。
 CREATE TABLE IF NOT EXISTS `project_code_prefix` (
+    `id`         BIGINT      NOT NULL AUTO_INCREMENT,
     `code`       VARCHAR(8)  NOT NULL COMMENT '编码前缀，大写字母数字，2~8 位',
     `meaning`    VARCHAR(64) NOT NULL COMMENT '业务含义（人可读，例：接口自动化）',
     `owner_id`   BIGINT      DEFAULT NULL COMMENT '登记人；存量回填行为 NULL',
     `builtin`    TINYINT(1)  NOT NULL DEFAULT 0 COMMENT '1=系统兜底前缀，不可删',
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    PRIMARY KEY (`code`)
+    `created_by` BIGINT      DEFAULT NULL,
+    `updated_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+    `updated_by` BIGINT      DEFAULT NULL,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_project_code_prefix_code` (`code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='项目/模板编码前缀注册表（v5.10.0）';
 
 -- A1. 存量前缀：来自项目编码

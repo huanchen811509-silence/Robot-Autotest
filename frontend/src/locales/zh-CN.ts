@@ -35,7 +35,7 @@ export default {
     ops: '运维监控',
     changelog: '版本迭代',
     switchAccount: '切换账号',
-    newProject: '新建项目',
+    newProject: '项目向导',
   },
   templateWizard: {
     nav: '模板向导',
@@ -81,7 +81,7 @@ export default {
     created: '模板已创建',
   },
   projectWizard: {
-    title: '创建项目',
+    title: '项目向导',
     subtitle: '五步建立一个可运行的项目；模板只提供默认值，创建后仍可修改。',
     toWorkbench: '返回工作台',
     stepNav: '创建步骤',
@@ -427,7 +427,7 @@ export default {
     envAnalysis: '采集记录分析',
     envConnections: '连接与拓扑',
     // v4.3.0 / FR-v4.3-01：侧栏独立叶子，与 accountMenu.newProject 同一文案口径。
-    newProject: '新建项目',
+    newProject: '项目向导',
     mntPrinciples: '维护原则',
     mntRecords: '恢复记录',
     mntRecover: '只读找回',
@@ -3162,7 +3162,7 @@ export default {
 
   w57: {
     nav: {
-      newProject: '新建项目',
+      newProject: '项目向导',
       globalCaseSets: '全局用例集',
     },
     caseCategoryTree: {
@@ -3370,7 +3370,7 @@ export default {
       hint: '按一级 / 二级分类浏览公共用例；展开二级分类可查看其用例。',
     },
     globalProjects: {
-      newProject: '新建项目',
+      newProject: '项目向导',
     },
     projectWizard: {
       contentConflict: '以下用例集已被删除，请返回内容步移除后再试：{names}',

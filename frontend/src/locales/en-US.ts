@@ -31,7 +31,7 @@ export default {
     ops: 'Operations',
     changelog: 'Release history',
     switchAccount: 'Switch account',
-    newProject: 'New project',
+    newProject: 'Project wizard',
   },
   templateWizard: {
     nav: 'Template wizard',
@@ -77,7 +77,7 @@ export default {
     created: 'Template created',
   },
   projectWizard: {
-    title: 'Create project',
+    title: 'Project wizard',
     subtitle: 'Five steps to a runnable project; templates only set defaults and remain editable.',
     toWorkbench: 'Back to workbench',
     stepNav: 'Wizard steps',
@@ -421,7 +421,7 @@ export default {
     envAnalysis: 'Collection record analysis',
     envConnections: 'Connections & topology',
     // v4.3.0 / FR-v4.3-01: standalone sidebar leaf, same wording as accountMenu.newProject.
-    newProject: 'New project',
+    newProject: 'Project wizard',
     mntPrinciples: 'Maintenance principles',
     mntRecords: 'Recovery records',
     mntRecover: 'Read-only recovery',
@@ -3152,7 +3152,7 @@ export default {
 
   w57: {
     nav: {
-      newProject: 'Create project',
+      newProject: 'Project wizard',
       globalCaseSets: 'Global case sets',
     },
     caseCategoryTree: {
@@ -3360,7 +3360,7 @@ export default {
       hint: 'Browse public cases by L1 / L2 category; expand an L2 category to view its cases.',
     },
     globalProjects: {
-      newProject: 'Create project',
+      newProject: 'Project wizard',
     },
     projectWizard: {
       contentConflict: 'The following case sets were deleted, please return to the content step and remove them before retrying: {names}',
