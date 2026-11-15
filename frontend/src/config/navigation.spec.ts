@@ -628,12 +628,15 @@ describe('W57-09 全局新增叶子', () => {
   const projects = GLOBAL_NAVIGATION.find((node) => node.key === 'global-projects') as NavGroup
   const casesGroup = GLOBAL_NAVIGATION.find((node) => node.key === 'global-cases') as NavGroup
 
-  it('全局「公共用例」组新增 global-cases-sets 叶，路径与 alsoMatch 正确', () => {
+  it('全局「公共用例」组新增 global-cases-sets 叶，路径精确且不再有详情路由 alsoMatch', () => {
     const leaf = casesGroup.children.find((child) => child.key === 'global-cases-sets') as NavLeaf
     expect(leaf).toBeTruthy()
     expect(leaf.path).toBe('/g/case-sets')
-    expect(leaf.alsoMatch).toEqual(['/g/case-sets/'])
-    // 详情页靠 alsoMatch 点亮父项
+    // v5.11.0 / FR-v5.11-08：成员详情改在页内 DetailDock 展开，`/g/case-sets/:id`
+    // 路由已下架；没有这条路由，就不该再有 alsoMatch 去点亮一个打不开的地址。
+    expect(leaf.alsoMatch).toBeUndefined()
+    // 子路径仍点亮本叶：`isLeafActive` 对叶子的子路径本来就是前缀命中，与 alsoMatch 无关。
+    // 这条断言的用处是锁住「别再为详情页加一条指向已删路由的 alsoMatch」。
     expect(isLeafActive(leaf, { path: '/g/case-sets/12' })).toBe(true)
   })
 
@@ -648,8 +651,8 @@ describe('W57-09 全局新增叶子', () => {
     )).toBe(false)
   })
 
-  it('三个新路由都能被路由表解析到真实页面（菜单不指向 404）', () => {
-    for (const path of ['/g/case-sets', '/g/case-sets/12', '/g/projects/new']) {
+  it('新路由都能被路由表解析到真实页面（菜单不指向 404）', () => {
+    for (const path of ['/g/case-sets', '/g/projects/new']) {
       const name = router.resolve(path).matched.at(-1)?.name
       expect(name, path + ' 没有命中路由').toBeTruthy()
       expect(name).not.toBe('not-found')
@@ -716,12 +719,10 @@ describe('W59-13 命中唯一性：任一时刻每组最多一个二级项高亮
       ['global', '/g/assets', { tab: 'credentials' }, 'global-assets-credentials'],
       ['global', '/g/assets', {}, 'global-assets-devices'],
       ['global', '/g/assets/12', {}, 'global-assets-devices'],
-      ['global', '/g/case-sets/12', {}, 'global-cases-sets'],
       ['global', '/g/templates', { kind: 'custom' }, 'global-templates-custom'],
       ['project', '/cases', {}, 'cases-list'],
       ['project', '/cases/sets', {}, 'cases-sets'],
       ['project', '/cases/sets/12', {}, 'cases-sets'],
-      ['project', '/cases/board', {}, 'cases-board'],
       ['project', '/reports/templates', {}, 'execution-report-templates'],
       ['project', '/plans/graph', {}, 'execution-plans'],
       ['project', '/assets', { tab: 'links' }, 'assets-links'],

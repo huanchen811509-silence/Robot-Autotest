@@ -5,7 +5,7 @@
  * 三类来源（公共库本体 / 项目用例 / 同步副本）共用同一份
  * `CaseDetailView` 字段契约，按 `source` 走对应 API，只做展示、从不做写操作。
  * 六组（标识 / 分类 / 内容 / 执行 / 溯源 / 版本）覆盖参考用例表 14 列基线；
- * 源表无值或库无此列一律显式显示「源表无此列」，绝不留下空白单元格。
+ * 空值一律显式显示「源表无值」，绝不留下空白单元格——「没有值」与「没取到」是两件事。
  *
  * 新 i18n 键交付在 docs/evidence/opt-20261111/i18n/frontend-views.json，
  * 由学徒统一合并进语言包；组件内只用这些键，不内联中文文案。
@@ -13,6 +13,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { caseDetailApi, type CaseDetailSource, type CaseDetailView } from '@/api/caseDetail'
+import CaseScriptLink from '@/components/CaseScriptLink.vue'
 
 /**
  * `source` 给默认值 'project' 的原因：项目用例行内展开（CasesView.vue，不在本批可改范围）
@@ -34,6 +35,8 @@ interface FieldRow {
   display: string
   testId: string
   masked?: boolean
+  /** 多行值（v5.11.0：测试步骤逐条列出，不压成一行字符串）。 */
+  lines?: string[]
 }
 interface FieldGroup {
   key: string
@@ -41,16 +44,34 @@ interface FieldGroup {
   rows: FieldRow[]
 }
 
-/** 空值 / 缺列统一收敛成占位文案，保证「空白单元格数 = 0」。 */
+/** 空值统一收敛成占位文案，保证「空白单元格数 = 0」。 */
 function text(value: string | number | boolean | null | undefined): string {
-  if (value === null || value === undefined || value === '') return t("caseDetail.missingColumn")
+  if (value === null || value === undefined || value === '') return t('caseDetail.emptyValue')
   if (typeof value === 'boolean') return value ? t("caseDetail.yes") : t("caseDetail.no")
   return String(value)
 }
 
-function missingColumn(): string {
-  return t("caseDetail.missingColumn")
+/** 占位文案：字段没有值。与「步骤没有记录」（noSteps）是两件事，不能混用。 */
+function emptyValue(): string {
+  return t('caseDetail.emptyValue')
 }
+
+/** 所属提示（FR-v5.11-06）：全局库与项目库是物理隔离的一批行，不是共享数据。 */
+const ownershipText = computed(() =>
+  props.source === 'global' ? t('w61.ownership.global') : t('w61.ownership.project'),
+)
+
+/** 步骤：有就逐条列，没有就明说「无步骤记录」——与「源表无值」是两件事。 */
+const stepLines = computed<string[]>(() =>
+  (detail.value?.steps ?? []).map(
+    (step) =>
+      `${step.stepNo}. ${step.action}${step.expectation ? ` → ${step.expectation}` : ''}`,
+  ),
+)
+
+const stepsDisplay = computed(() =>
+  stepLines.value.length ? t('caseDetail.stepsCount', { count: stepLines.value.length }) : t('caseDetail.noSteps'),
+)
 
 const groups = computed<FieldGroup[]>(() => {
   const d = detail.value
@@ -68,15 +89,23 @@ const groups = computed<FieldGroup[]>(() => {
       key: "caseDetail.group.category", testId: 'category', rows: [
         { labelKey: "caseDetail.field.categoryL1", display: text(d.categoryL1), testId: 'categoryL1' },
         { labelKey: "caseDetail.field.categoryL2", display: text(d.categoryL2), testId: 'categoryL2' },
-        { labelKey: "caseDetail.field.caseKind", display: missingColumn(), testId: 'caseKind' },
+        { labelKey: "caseDetail.field.caseKind", display: text(d.caseKind), testId: 'caseKind' },
         { labelKey: "caseDetail.field.safetyLevel", display: text(d.safetyLevel), testId: 'safetyLevel' },
       ],
     },
     {
+      // v5.11.0 / FR-v5.11-04：这三项以前一律显示占位文案（把「没取到」写成了「缺列」），
+      // 而 test_case.precondition / expected 与 test_case_step 一直都在库里。
+      // 现在一律取真值，缺值显示「源表无值」，绝不谎报缺列。
       key: "caseDetail.group.content", testId: 'content', rows: [
-        { labelKey: "caseDetail.field.precondition", display: missingColumn(), testId: 'precondition' },
-        { labelKey: "caseDetail.field.steps", display: missingColumn(), testId: 'steps' },
-        { labelKey: "caseDetail.field.expected", display: missingColumn(), testId: 'expected' },
+        { labelKey: "caseDetail.field.precondition", display: text(d.precondition), testId: 'precondition' },
+        {
+          labelKey: "caseDetail.field.steps",
+          display: stepsDisplay.value,
+          testId: 'steps',
+          lines: stepLines.value,
+        },
+        { labelKey: "caseDetail.field.expected", display: text(d.expected), testId: 'expected' },
         { labelKey: "caseDetail.field.testResource", display: text(d.testResource), testId: 'testResource' },
       ],
     },
@@ -143,6 +172,23 @@ watch([() => props.caseId, () => props.source, () => props.projectId], () => voi
     </p>
 
     <template v-else-if="detail">
+      <!-- 所属提示（FR-v5.11-06）：静默一行，不用点开 -->
+      <p class="case-detail-owner" data-testid="case-detail-ownership">{{ ownershipText }}</p>
+
+      <!-- 脚本行（FR-v5.11-05）：路径 + nodeId + 校验状态，与列表/用例集同源 -->
+      <div class="case-detail-script" data-testid="case-detail-script">
+        <span class="case-detail-script-label">{{ t('w61.script.column') }}</span>
+        <CaseScriptLink
+          :script-path="detail.scriptPath ?? null"
+          :script-name="detail.scriptName ?? null"
+          :binding-state="detail.bindingState ?? null"
+          full
+        />
+        <code v-if="detail.scriptNodeId" class="case-detail-node" data-testid="case-detail-node-id">
+          {{ detail.scriptNodeId }}
+        </code>
+      </div>
+
       <!-- 副本专属徽章：来源 external_id / 同步作业号 / 本地覆盖 / 来源徽章 -->
       <div v-if="source === 'copy'" class="case-detail-copy" data-testid="copy-badges">
         <span class="badge" data-testid="copy-external-id">
@@ -176,9 +222,17 @@ watch([() => props.caseId, () => props.source, () => props.projectId], () => voi
             <dt class="case-detail-label">{{ t(row.labelKey) }}</dt>
             <dd
               class="case-detail-value"
-              :class="{ 'is-missing': row.display === missingColumn() }"
+              :class="{ 'is-missing': row.display === emptyValue() }"
               :data-key-masked="row.masked ? 'keyMaskedCredential' : undefined"
-            >{{ row.display }}</dd>
+            >
+              <template v-if="row.lines && row.lines.length">
+                <span class="case-detail-steps-count">{{ row.display }}</span>
+                <ol class="case-detail-steps">
+                  <li v-for="(line, index) in row.lines" :key="index">{{ line }}</li>
+                </ol>
+              </template>
+              <template v-else>{{ row.display }}</template>
+            </dd>
           </div>
         </dl>
       </section>
@@ -201,6 +255,40 @@ watch([() => props.caseId, () => props.source, () => props.projectId], () => voi
 }
 .case-detail-error {
   color: var(--fail);
+}
+.case-detail-owner {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+.case-detail-script {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border);
+}
+.case-detail-script-label {
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+}
+.case-detail-node {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+.case-detail-steps {
+  margin: var(--space-1) 0 0;
+  padding-left: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.case-detail-steps-count {
+  color: var(--text-muted);
+  font-size: var(--font-size-xs);
 }
 .case-detail-copy {
   display: flex;

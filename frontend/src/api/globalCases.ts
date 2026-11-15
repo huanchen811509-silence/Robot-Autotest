@@ -3,7 +3,18 @@
 import { request, requestBlob, requestMultipart, toQuery } from './http'
 import type { PageResult } from './iam'
 
-export interface GlobalCaseRow {
+/** 脚本三件套（v5.11.0 / FR-v5.11-05）：由后端算，前端只展示与复制。 */
+export interface CaseScriptFields {
+  scriptPath?: string | null
+  scriptName?: string | null
+  scriptNodeId?: string | null
+  /** BOUND_VERIFIED / BOUND_UNVERIFIED / UNBOUND / NOT_APPLICABLE */
+  bindingState?: string | null
+  otherScriptCount?: number
+  scriptAbsoluteSource?: boolean
+}
+
+export interface GlobalCaseRow extends CaseScriptFields {
   id: number
   caseCode: string
   externalId: string | null
@@ -94,6 +105,8 @@ export const globalCaseApi = {
     categoryL1?: string
     categoryL2?: string
     lifecycleStatus?: string
+    /** v5.11.0 / FR-v5.11-02：中栏「未分类」节点（与 categoryL1/L2 互斥）。 */
+    uncategorized?: boolean
     page?: number
     size?: number
   }) {

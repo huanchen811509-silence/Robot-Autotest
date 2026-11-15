@@ -141,8 +141,9 @@ const projectSettingsChildren: NavLeaf[] = PROJECT_SETTINGS_NAV.map((item) => ({
  * 都带 query，所以页面必须在无 query / 非法值时 `router.replace` 到默认值，
  * 否则 `isLeafActive` 的严格比较会让两个叶子都不亮（见 PRD §4.2 与 R-50-08）。
  *
- * 详情页（`/g/cases/:id`、`/g/assets/:id`、`/g/templates/:id`）走 `alsoMatch` 点亮父项，
- * 不计入叶数。
+ * 详情页（`/g/assets/:id`、`/g/templates/:id`）走 `alsoMatch` 点亮父项，不计入叶数。
+ * v5.11.0 / FR-v5.11-08：`/g/cases/:id` 与 `/g/case-sets/:id` 已下架，成员/用例详情改在
+ * 列表页内展开（`?detail=<id>`），因此这两条不再需要 `alsoMatch`。
  */
 export const GLOBAL_NAVIGATION: NavNode[] = [
   {
@@ -193,7 +194,6 @@ export const GLOBAL_NAVIGATION: NavNode[] = [
         labelKey: 'menu.globalCasesList',
         icon: 'cases',
         path: '/g/cases',
-        alsoMatch: ['/g/cases/'],
         defaultOf: true,
       },
       {
@@ -205,12 +205,13 @@ export const GLOBAL_NAVIGATION: NavNode[] = [
         query: { view: 'imports' },
       },
       {
-        // W57-09：全局用例集二级入口；详情页 `/g/case-sets/:id` 靠 alsoMatch 点亮父项。
+        // W57-09：全局用例集二级入口。
+        // v5.11.0 / FR-v5.11-08：成员详情改在页内展开（`?detail=<id>`），
+        // `/g/case-sets/:id` 路由已删，故本叶不再需要 alsoMatch。
         key: 'global-cases-sets',
         labelKey: 'w57.nav.globalCaseSets',
         icon: 'cases',
         path: '/g/case-sets',
-        alsoMatch: ['/g/case-sets/'],
       },
     ],
   },
@@ -465,8 +466,8 @@ export const NAVIGATION: NavNode[] = [
         icon: 'cases',
         path: '/cases',
         alsoMatch: ['/editor', '/viewer'],
-        // v5.9.0 / FR-v5.9-01：`/cases/sets` 与 `/cases/board` 是同级叶子，靠「精确 path
-        // 优先于前缀」+ 本项的默认叶子身份消歧；不再需要手写 exclude。
+        // v5.9.0 / FR-v5.9-01：`/cases/sets` 是同级叶子，靠「精确 path 优先于前缀」
+        // + 本项的默认叶子身份消歧；不再需要手写 exclude。
         defaultOf: true,
       },
       {
@@ -476,13 +477,6 @@ export const NAVIGATION: NavNode[] = [
         path: '/cases/sets',
         // 集合详情 `/cases/sets/:id` 点亮本项而不是「用例清单」。
         alsoMatch: ['/cases/sets/'],
-      },
-      {
-        // MENU-03：测试总表看板（历史 / 当前双计数），挂在「用例」组下。
-        key: 'cases-board',
-        labelKey: 'menu.casesBoard',
-        icon: 'reports',
-        path: '/cases/board',
       },
     ],
   },

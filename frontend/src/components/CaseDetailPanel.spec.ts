@@ -1,12 +1,12 @@
 /**
  * CaseDetailPanel 统一契约回归（v4.9.2 / OPT-02 / FR-49-07~09）。
  *
- * 判据：六组字段、≥12 项可见、源表无此列显式占位（空白单元格 0）、
+ * 判据：六组字段、≥12 项可见、源表无值显式占位（空白单元格 0）、
  * 副本徽章与掩码凭据、按 source 分派 API、详情模块只读（无写接口）。
  *
  * API 用 vi.mock 隔离，绝不发真实请求。测试用 i18n 以 flatJson 注入
- * docs/evidence/opt-20261111/i18n/frontend-views.json 中的键，使「源表无此列」
- * 等占位文案可被真实断言（学徒尚未把新键合并进 zh-CN.ts / en-US.ts）。
+ * docs/evidence/opt-20261111/i18n/frontend-views.json 中的键，使「源表无值」
+ * 等占位文案可被真实断言。
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createApp, nextTick, type App } from 'vue'
@@ -19,7 +19,9 @@ vi.mock('@/api/caseDetail', () => ({ caseDetailApi: { get } }))
 
 /** 与证据 JSON 的 zh-CN 取值一致；flatJson:true 让点路径键可直接命中。 */
 const ZH: Record<string, string> = {
-  'caseDetail.missingColumn': '源表无此列',
+  'caseDetail.emptyValue': '源表无值',
+  'caseDetail.noSteps': '无步骤记录',
+  'caseDetail.stepsCount': '{count} 条步骤',
   'caseDetail.yes': '是',
   'caseDetail.no': '否',
   'caseDetail.loading': '正在加载用例详情…',
@@ -175,17 +177,22 @@ describe('CaseDetailPanel 六组字段与可见基线（FR-49-07）', () => {
   })
 })
 
-describe('CaseDetailPanel 源表无此列显式占位（FR-49-07）', () => {
-  it('bSideCommand 为 null 与库无此列的 4 项都显示「源表无此列」，不留空白', async () => {
+describe('CaseDetailPanel 源表无值显式占位（FR-49-07）', () => {
+  it('空值项显示「源表无值」、步骤缺省显示「无步骤记录」，都不留空白', async () => {
     const root = await mountPanel({ caseId: 42, source: 'global' })
 
-    const missing = ['bSideCommand', 'caseKind', 'precondition', 'steps', 'expected']
+    const missing = ['bSideCommand', 'caseKind', 'precondition', 'expected']
     for (const key of missing) {
       const cell = pick(root, `case-field-${key}`).querySelector('.case-detail-value')!
-      expect(cell.textContent!.trim()).toBe('源表无此列')
+      expect(cell.textContent!.trim()).toBe('源表无值')
       expect(cell.classList.contains('is-missing')).toBe(true)
     }
-    expect(root.querySelectorAll('.case-detail-value.is-missing').length).toBeGreaterThanOrEqual(5)
+    // v5.11.0 / FR-v5.11-04：步骤没有记录 ≠ 字段没有值，文案必须分开。
+    const stepsCell = pick(root, 'case-field-steps').querySelector('.case-detail-value')!
+    expect(stepsCell.textContent!.trim()).toBe('无步骤记录')
+    expect(stepsCell.classList.contains('is-missing')).toBe(false)
+    // 恰 4 项：v5.11.0 起 steps 走「无步骤记录」分支，不再计入 is-missing（原为 5）。
+    expect(root.querySelectorAll('.case-detail-value.is-missing').length).toBe(4)
   })
 
   it('localOverride 布尔显示「否」，不退化成空字符串', async () => {

@@ -3,7 +3,20 @@
 import { request, requestMultipart, toQuery } from './http'
 import type { PageResult } from './iam'
 
-export interface TestCase {
+/** 脚本三件套（v5.11.0 / FR-v5.11-05）：列表/成员行共用，后端算好再下发。 */
+export interface CaseScriptFields {
+  // 全部可选：老响应（v5.11 之前）没有这些键，历史测试的构造字面量也不必逐个补齐
+  scriptPath?: string | null
+  scriptName?: string | null
+  scriptNodeId?: string | null
+  /** BOUND_VERIFIED / BOUND_UNVERIFIED / UNBOUND / NOT_APPLICABLE */
+  bindingState?: string | null
+  scriptKernel?: string | null
+  otherScriptCount?: number
+  scriptAbsoluteSource?: boolean
+}
+
+export interface TestCase extends CaseScriptFields {
   id: number
   projectId: number
   caseCode: string
@@ -169,6 +182,12 @@ export interface BatchResult {
 
 const base = (projectId: number | string): string => `/projects/${projectId}`
 
+export interface CaseImpact {
+  setRefs: number
+  scriptBindings: number
+  runResults: number
+}
+
 export const caseApi = {
   page(projectId: number, params: {
     keyword?: string
@@ -184,6 +203,13 @@ export const caseApi = {
   },
   get(projectId: number, id: number) {
     return request<CaseDetail>(`${base(projectId)}/cases/${id}`)
+  },
+  /**
+   * 删除影响面（v5.11.0 / FR-v5.11-07）：三个数字**只用于确认弹窗**。
+   * 与删除拦截不是一回事 —— 拦截看脚本绑定，用例集引用删除时会级联移出。
+   */
+  impact(projectId: number, id: number) {
+    return request<CaseImpact>(`${base(projectId)}/cases/${id}/impact`)
   },
   create(projectId: number, body: CaseCommand) {
     return request<CaseDetail>(`${base(projectId)}/cases`, {

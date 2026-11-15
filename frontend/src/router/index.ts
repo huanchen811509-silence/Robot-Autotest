@@ -38,7 +38,6 @@ export function canEnterGlobalMode(role: string | null | undefined): boolean {
  * router-view 渲染空内容，不影响其余路由与守卫。
  * -------------------------------------------------------------------------- */
 const OPTIONAL_VIEWS = import.meta.glob<Component>([
-  '../views/global/GlobalCaseDetailView.vue',
   '../views/global/GlobalAssetDetailView.vue',
   '../views/AssetDetailView.vue',
   '../views/global/TemplateWorkbenchView.vue',
@@ -331,13 +330,10 @@ const router = createRouter({
       name: 'eht-result-split',
       component: () => import('@/views/eht/EhtResultSplitView.vue'),
     },
-    // ===== v2.2 / M2 只读页与看板（MENU-02 / MENU-03 / MENU-04 / MENU-05）=====
-    {
-      // MENU-03：测试总表看板，挂在「用例」组下。
-      path: '/cases/board',
-      name: 'case-board',
-      component: () => import('@/views/CaseBoardView.vue'),
-    },
+    // ===== v2.2 / M2 只读页（MENU-02 / MENU-04 / MENU-05）=====
+    // v5.11.0 / FR-v5.11-08：原 MENU-03「测试总表看板」(`/cases/board`) 已下架——
+    // 该页 `rows` 恒为 `[]`（全文无赋值），是没有数据来源的空壳页；留着等于让用户
+    // 点进一个永远「0 条」的页面，比没有入口更糟。
     {
       path: '/environment/overview',
       name: 'environment-overview',
@@ -425,15 +421,11 @@ const router = createRouter({
       component: () => import('@/views/global/GlobalCasesView.vue'),
     },
     {
-      // W57-09：全局用例集列表与详情（详情页复用同一视图，按 :id 定位成员）。
+      // W57-09：全局用例集列表。
+      // v5.11.0 / FR-v5.11-08：成员详情改在页内 `DetailDock` 展开（`?detail=<id>`），
+      // 原 `/g/case-sets/:id` 孤儿路由（全仓无 push / RouterLink 指向）已删除。
       path: '/g/case-sets',
       name: 'global-case-sets',
-      meta: { global: true },
-      component: () => import('@/views/global/GlobalCaseSetsView.vue'),
-    },
-    {
-      path: '/g/case-sets/:id',
-      name: 'global-case-sets-detail',
       meta: { global: true },
       component: () => import('@/views/global/GlobalCaseSetsView.vue'),
     },
@@ -523,12 +515,6 @@ const router = createRouter({
     },
     // 同批次其他 Agent 创建的视图：一律用 import.meta.glob 懒加载动态 import。
     // 文件暂不存在时 loader 为 undefined（渲染空内容），落地后自动生效。
-    {
-      path: '/g/cases/:id',                 // @/views/global/GlobalCaseDetailView.vue
-      name: 'global-case-detail',
-      meta: { global: true },
-      component: optionalView('../views/global/GlobalCaseDetailView.vue'),
-    },
     {
       path: '/g/assets/:id',                // @/views/global/GlobalAssetDetailView.vue
       name: 'global-asset-detail',

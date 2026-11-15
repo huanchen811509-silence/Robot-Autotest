@@ -26,7 +26,12 @@ import {
 } from '@/api/globalCases'
 import type { PageResult } from '@/api/iam'
 import DataTable from '@/components/DataTable.vue'
-import CaseCategoryTree from '@/components/CaseCategoryTree.vue'
+import CaseCategoryNav, { type CategorySelection } from '@/components/CaseCategoryNav.vue'
+import CaseDetailPanel from '@/components/CaseDetailPanel.vue'
+import CaseScriptLink from '@/components/CaseScriptLink.vue'
+import DetailDock from '@/components/DetailDock.vue'
+import { useDetailDock } from '@/composables/useDetailDock'
+import { globalGroupedApi, type GroupedCase } from '@/api/platformCaseSets'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -34,17 +39,25 @@ const router = useRouter()
 const auth = useAuthStore()
 
 /**
- * W57-11：列表 / 分类归组切换只增删 URL 上的 `group=1`，**其余筛选参数原样保留**。
- * 归组视图复用 CaseCategoryTree（默认展开到二级、单分类 >200 显示「前 200 / 共 N」）。
+ * v5.11.0 / FR-v5.11-02/03：**只留一个视图**——中栏两级分类 + 右表 + 表格下方详情。
+ * 原来的「列表 / 分类归组」切换（`?group=1`）已删除：同一批数据两种看法只会让人切来切去。
+ *
+ * URL 三态（FR-02 判据 6）：`l1`/`l2`（分类）、`uncategorized`（未分类）、`detail`（选中行），
+ * 加上既有的 `keyword`/`lifecycleStatus`/`page`，复制链接即可复现同一屏。
  */
-const grouped = computed(() => route.query.group === '1')
+const category = ref<CategorySelection>({
+  l1: typeof route.query.l1 === 'string' ? route.query.l1 : '',
+  l2: typeof route.query.l2 === 'string' ? route.query.l2 : '',
+  uncategorized: route.query.uncategorized === '1',
+})
+const groups = ref<GroupedCase[]>([])
+/** 全部用例数：仅在按分类筛选后才需要（不筛时就是 total 本身，省一次请求）。 */
+const allTotal = ref(0)
 
-function setGrouped(on: boolean): void {
-  const query: LocationQueryRaw = { ...route.query }
-  if (on) query.group = '1'
-  else delete query.group
-  void router.replace({ query })
-}
+const { selected: detailId, isOpen: detailOpen, toggle: toggleDetail, close: closeDetail } =
+  useDetailDock({
+    initial: typeof route.query.detail === 'string' ? route.query.detail : null,
+  })
 
 /**
  * 当前视图：`cases`（默认）/ `imports`。
@@ -60,25 +73,15 @@ const rows = ref<GlobalCaseRow[]>([])
 const total = ref(0)
 const page = ref(1)
 const size = 20
-const keyword = ref('')
-const categoryL1 = ref('')
+const keyword = ref(
+  typeof route.query.keyword === 'string' ? route.query.keyword : '',
+)
 const lifecycleStatus = ref('')
+const categoryL1 = computed(() => (category.value.uncategorized ? '' : category.value.l1))
+const categoryL2 = computed(() => (category.value.uncategorized ? '' : category.value.l2))
 const loading = ref(false)
 const failed = ref('')
 const categories = ref<CaseCategoryRow[]>([])
-
-const categoryL1Options = computed(() => categories.value.filter((item) => item.level === 1))
-const categoryL2Options = computed(() =>
-  categories.value.filter(
-    (item) => item.level === 2 && item.parentId === parentIdOf(categoryL1.value),
-  ),
-)
-const categoryL2 = ref('')
-
-function parentIdOf(name: string): number | null {
-  if (!name) return null
-  return categoryL1Options.value.find((item) => item.name === name)?.id ?? null
-}
 
 const canWrite = computed(() => auth.isAdmin)
 
@@ -91,6 +94,7 @@ async function load() {
       categoryL1: categoryL1.value,
       categoryL2: categoryL2.value,
       lifecycleStatus: lifecycleStatus.value,
+      uncategorized: category.value.uncategorized || undefined,
       page: page.value,
       size,
     })
@@ -111,21 +115,89 @@ async function loadCategories() {
   }
 }
 
-function onCategoryL1Change() {
-  categoryL2.value = ''
+/**
+ * 把当前三态写回 URL。只写自己管的几个键，其余（view 等）原样保留 ——
+ * 否则从「导入记录」切回来时 `?view=imports` 会被抹掉又弹回清单，看着像页面在抽风。
+ */
+function syncQuery(): void {
+  const query: LocationQueryRaw = { ...route.query }
+  const put = (key: string, value: string | undefined): void => {
+    if (value) query[key] = value
+    else delete query[key]
+  }
+  put('l1', category.value.l1 || undefined)
+  put('l2', category.value.l2 || undefined)
+  put('uncategorized', category.value.uncategorized ? '1' : undefined)
+  put('detail', detailId.value || undefined)
+  put('keyword', keyword.value || undefined)
+  put('page', page.value > 1 ? String(page.value) : undefined)
+  void router.replace({ query })
+}
+
+/** 全部用例数：只有按分类筛过才需要，避免每次进页多打一次接口。 */
+async function ensureAllTotal(): Promise<void> {
+  if (allTotal.value) return
+  try {
+    const first = await globalCaseApi.page({ page: 1, size: 1 })
+    allTotal.value = first.total
+  } catch {
+    allTotal.value = total.value
+  }
+}
+
+async function onCategoryChange(next: CategorySelection): Promise<void> {
+  category.value = next
   page.value = 1
-  void load()
+  // 换分类时收起详情：留着上一个分类的行，读起来像「筛出来的结果里有它」
+  closeDetail()
+  await ensureAllTotal()
+  syncQuery()
+  await load()
+}
+
+async function loadGroups(): Promise<void> {
+  try {
+    groups.value = await globalGroupedApi.grouped()
+  } catch {
+    groups.value = []
+  }
 }
 
 function onFilterChange() {
   page.value = 1
+  syncQuery()
   void load()
 }
 
 function goPage(next: number) {
   const max = Math.max(1, Math.ceil(total.value / size))
   page.value = Math.min(max, Math.max(1, next))
+  syncQuery()
   void load()
+}
+
+const detailRow = computed(
+  () => rows.value.find((row) => String(row.id) === detailId.value) ?? null,
+)
+const detailTitle = computed(() =>
+  detailRow.value
+    ? `${detailRow.value.externalId || detailRow.value.caseCode} ${detailRow.value.title}`
+    : '',
+)
+
+/** 行点击：同一行再点收起，换行原地替换（详情区实例恒为 1）。 */
+function selectRow(row: GlobalCaseRow): void {
+  toggleDetail(row.id)
+  syncQuery()
+}
+
+function rowProps(row: GlobalCaseRow): Record<string, unknown> {
+  return {
+    style: 'cursor: pointer',
+    'data-case-row': String(row.id),
+    'aria-selected': String(row.id) === detailId.value ? 'true' : 'false',
+    onClick: () => selectRow(row),
+  }
 }
 
 /* ------------------------------------------------------------ 表格列定义 */
@@ -139,6 +211,20 @@ const columns = computed<DataTableColumns<GlobalCaseRow>>(() => {
       render: (row) => row.externalId || row.caseCode,
     },
     { title: t('global.colTitle'), key: 'title', minWidth: 220 },
+    {
+      // v5.11.0 / FR-v5.11-05：脚本列默认显示（文件名由后端算），可隐藏由列设置管
+      title: t('w61.script.column'),
+      key: 'script',
+      width: 200,
+      render: (row) =>
+        h(CaseScriptLink, {
+          scriptPath: row.scriptPath ?? null,
+          scriptName: row.scriptName ?? null,
+          bindingState: row.bindingState ?? null,
+          otherScriptCount: row.otherScriptCount ?? 0,
+          absoluteSource: row.scriptAbsoluteSource ?? false,
+        }),
+    },
     {
       title: t('global.colCategory'),
       key: 'categoryL1',
@@ -335,6 +421,8 @@ watch(view, (next) => {
 
 onMounted(async () => {
   await loadCategories()
+  // 中栏分类树与右表并行拉：树慢不该拖住首屏列表
+  void loadGroups()
   if (view.value === 'imports') {
     await loadBatches()
   } else {
@@ -360,49 +448,15 @@ onMounted(async () => {
       </div>
     </header>
 
-    <!-- W57-11：列表 / 分类归组切换。独立容器，不进 .page-actions（避免打乱既有写按钮索引） -->
-    <div class="view-switch" data-testid="view-switch">
-      <button
-        type="button"
-        class="view-btn"
-        :class="{ active: !grouped }"
-        :aria-pressed="!grouped"
-        data-testid="view-list"
-        @click="setGrouped(false)"
-      >{{ t('w57.globalCases.list') }}</button>
-      <button
-        type="button"
-        class="view-btn"
-        :class="{ active: grouped }"
-        :aria-pressed="grouped"
-        data-testid="view-grouped"
-        @click="setGrouped(true)"
-      >{{ t('w57.globalCases.grouped') }}</button>
-    </div>
-
-    <!-- 用例清单分支 -->
-    <div v-if="view === 'cases' && !grouped" class="cases-layout">
-      <aside class="cases-sidebar">
-        <h2 class="sidebar-title">{{ t('global.categories') }}</h2>
-        <button
-          class="category-item"
-          :class="{ active: categoryL1 === '' }"
-          @click="((categoryL1 = ''), (categoryL2 = ''), onFilterChange())"
-        >
-          {{ t('global.allCategories') }}
-          <span class="count">{{ total }}</span>
-        </button>
-        <button
-          v-for="item in categoryL1Options"
-          :key="item.id"
-          class="category-item"
-          :class="{ active: categoryL1 === item.name }"
-          @click="((categoryL1 = item.name), onCategoryL1Change())"
-        >
-          {{ item.name }}
-          <span class="count">{{ item.caseCount }}</span>
-        </button>
-      </aside>
+    <!-- 用例清单分支（v5.11.0 / FR-v5.11-02）：中栏两级分类 + 右工作区 + 表格下方详情 -->
+    <div v-if="view === 'cases'" class="cases-layout" data-testid="cases-layout">
+      <CaseCategoryNav
+        :model-value="category"
+        :groups="groups"
+        :all-count="allTotal || total"
+        :active-count="total"
+        @update:model-value="onCategoryChange"
+      />
 
       <div class="cases-main">
         <div class="filters">
@@ -412,12 +466,6 @@ onMounted(async () => {
             :placeholder="t('global.searchPlaceholder')"
             @keyup.enter="onFilterChange"
           />
-          <select v-model="categoryL2" class="select" @change="onFilterChange">
-            <option value="">{{ t('global.allCategoriesL2') }}</option>
-            <option v-for="item in categoryL2Options" :key="item.id" :value="item.name">
-              {{ item.name }}
-            </option>
-          </select>
           <select v-model="lifecycleStatus" class="select" @change="onFilterChange">
             <option value="">{{ t('global.allLifecycle') }}</option>
             <option value="active">{{ t('global.lifecycleActive') }}</option>
@@ -427,16 +475,28 @@ onMounted(async () => {
 
         <p v-if="failed" class="error">{{ failed }}</p>
 
-        <div data-testid="cases-grid">
-          <DataTable
-            :columns="columns"
-            :data="rows"
-            :loading="loading"
-            :row-key="(row: GlobalCaseRow) => row.id"
-            :error="Boolean(failed)"
-            :empty-title="t('global.empty')"
-            :max-height="520"
-          />
+        <div class="list-area" data-testid="cases-list-area">
+          <div data-testid="cases-grid">
+            <DataTable
+              :columns="columns"
+              :data="rows"
+              :loading="loading"
+              :row-key="(row: GlobalCaseRow) => row.id"
+              :row-props="rowProps"
+              :error="Boolean(failed)"
+              :empty-title="t('global.empty')"
+              :max-height="420"
+            />
+          </div>
+
+          <!-- 详情就在表格正下方（不是弹窗 / 抽屉 / 跳页），与表格同宽 -->
+          <DetailDock :open="detailOpen" :title="detailTitle" @close="closeDetail">
+            <CaseDetailPanel
+              v-if="detailId"
+              source="global"
+              :case-id="detailId"
+            />
+          </DetailDock>
         </div>
 
         <div class="pager">
@@ -453,12 +513,6 @@ onMounted(async () => {
           </button>
         </div>
       </div>
-    </div>
-
-    <!-- 分类归组分支（W57-11）：默认折叠到二级，单分类 >200 显示「前 200 / 共 N」 -->
-    <div v-else-if="view === 'cases'" class="grouped-pane" data-testid="grouped-view">
-      <p class="muted">{{ t('w57.globalCases.hint') }}</p>
-      <CaseCategoryTree :selectable="false" />
     </div>
 
     <!-- 导入记录分支（v4.11.0 从折叠块提级） -->

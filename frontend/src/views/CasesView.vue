@@ -28,6 +28,9 @@ import { executionApi, type BlockedCase, type SafetyPrecheck } from '@/api/execu
 import DataTable from '@/components/DataTable.vue'
 import { useListPageSize, type PageSize } from '@/composables/useListPageSize'
 import CaseDetailPanel from '@/components/CaseDetailPanel.vue'
+import CaseScriptLink from '@/components/CaseScriptLink.vue'
+import DetailDock from '@/components/DetailDock.vue'
+import { useDetailDock } from '@/composables/useDetailDock'
 import SelectionBar from '@/components/SelectionBar.vue'
 import ErrorLineView from '@/components/ErrorLine.vue'
 import StatusTag from '@/components/StatusTag.vue'
@@ -356,6 +359,8 @@ const blockedCodes = computed(() =>
 const CASE_COLUMN_KEYS = [
   'caseCode',
   'title',
+  // v5.11.0 / FR-v5.11-05：脚本列（默认显示，可在列设置里隐藏）
+  'script',
   'priority',
   'safetyLevel',
   'reviewStatus',
@@ -367,6 +372,7 @@ type CaseColumnKey = (typeof CASE_COLUMN_KEYS)[number]
 const CASE_COLUMN_LABELS: Record<CaseColumnKey, () => string> = {
   caseCode: () => t('cases.caseCode'),
   title: () => t('cases.title'),
+  script: () => t('w61.script.column'),
   priority: () => t('cases.priority'),
   safetyLevel: () => t('cases.safetyLevel'),
   reviewStatus: () => t('cases.status'),
@@ -579,6 +585,19 @@ const dataColumns = computed<Record<CaseColumnKey, DataTableColumns<TestCase>[nu
     minWidth: 220,
     ellipsis: { tooltip: true },
   },
+  script: {
+    title: t('w61.script.column'),
+    key: 'script',
+    width: 190,
+    render: (row) =>
+      h(CaseScriptLink, {
+        scriptPath: row.scriptPath ?? null,
+        scriptName: row.scriptName ?? null,
+        bindingState: row.bindingState ?? null,
+        otherScriptCount: row.otherScriptCount ?? 0,
+        absoluteSource: row.scriptAbsoluteSource ?? false,
+      }),
+  },
   priority: {
     title: t('cases.priority'),
     key: 'priority',
@@ -620,13 +639,8 @@ const dataColumns = computed<Record<CaseColumnKey, DataTableColumns<TestCase>[nu
 }))
 
 const columns = computed<DataTableColumns<TestCase>>(() => [
-  {
-    // W0.8 / N14：行内展开详情（前置条件/步骤/预期），按需拉 GET /cases/{id}。
-    type: 'expand',
-    width: 32,
-    renderExpand: (row) =>
-      h(CaseDetailPanel, { projectId: projectId.value, caseId: row.id }),
-  },
+  // v5.11.0 / FR-v5.11-01/02：行内 `expand` 已删除，详情统一走表格下方的 DetailDock。
+  // 两套详情形态并存时，用户永远要先想「这次该点哪个箭头」。
   {
     key: 'selection',
     width: 36,
@@ -1016,9 +1030,51 @@ async function act(action: () => Promise<unknown>): Promise<void> {
   }
 }
 
+const { selected: detailId, isOpen: detailOpen, toggle: toggleDetail, close: closeDetail } =
+  useDetailDock()
+
+const detailRow = computed(() => cases.value.find((row) => String(row.id) === detailId.value) ?? null)
+const detailTitle = computed(() =>
+  detailRow.value ? `${detailRow.value.caseCode} ${detailRow.value.title}` : '',
+)
+
+function selectRow(row: TestCase): void {
+  toggleDetail(row.id)
+}
+
+function rowProps(row: TestCase): Record<string, unknown> {
+  return {
+    style: 'cursor: pointer',
+    'data-case-row': String(row.id),
+    'aria-selected': String(row.id) === detailId.value ? 'true' : 'false',
+    onClick: () => selectRow(row),
+  }
+}
+
+/**
+ * 删除（v5.11.0 / FR-v5.11-07）：先拿影响面再问。
+ *
+ * 影响面读取失败**不阻断**删除（用户要删的是这条用例，不是去看报表），
+ * 但必须把「读不到」说清楚，不能默默给一个全 0 的假数字。
+ */
 async function removeCase(item: TestCase): Promise<void> {
-  if (!(await confirmAction(t('common.confirmDelete'), { tone: 'danger' }))) return
+  let summary = t('w61.impact.unknown')
+  try {
+    const impact = await caseApi.impact(projectId.value, item.id)
+    summary = [
+      `${t('w61.impact.title')}：`,
+      `${t('w61.impact.setRefs')} ${impact.setRefs} · `,
+      `${t('w61.impact.scriptBindings')} ${impact.scriptBindings} · `,
+      `${t('w61.impact.runResults')} ${impact.runResults}`,
+      `\n${t('w61.impact.cascadeNote')}`,
+    ].join('')
+  } catch {
+    // 保留 unknown 文案
+  }
+  const question = `${t('w61.impact.confirm')}\n${summary}`
+  if (!(await confirmAction(question, { tone: 'danger' }))) return
   await act(() => caseApi.remove(projectId.value, item.id))
+  if (detailId.value === String(item.id)) closeDetail()
 }
 
 function pickFile(event: Event): void {
@@ -1435,19 +1491,31 @@ async function runCommit(): Promise<void> {
       <ErrorLineView v-if="runError" :error="runError" />
     </div>
 
-    <div class="list-fill">
-      <DataTable
-        :columns="columns"
-        :data="cases"
-        :loading="loading"
-        :row-key="(row: TestCase) => row.id"
-        :empty-title="t('common.noData')"
-        :empty-description="projectId ? undefined : t('overview.noProject')"
-        empty-icon="cases"
-        :error="Boolean(error)"
-        :empty-illustration="keyword ? 'no-result' : 'no-data'"
-        flex-height
-      />
+    <div class="list-area">
+      <div class="list-fill">
+        <DataTable
+          :columns="columns"
+          :data="cases"
+          :loading="loading"
+          :row-key="(row: TestCase) => row.id"
+          :row-props="rowProps"
+          :empty-title="t('common.noData')"
+          :empty-description="projectId ? undefined : t('overview.noProject')"
+          empty-icon="cases"
+          :error="Boolean(error)"
+          :empty-illustration="keyword ? 'no-result' : 'no-data'"
+          flex-height
+        />
+      </div>
+
+      <!-- 详情固定在表格正下方（FR-v5.11-01）：不是弹窗、不是抽屉、不跳页 -->
+      <DetailDock :open="detailOpen" :title="detailTitle" @close="closeDetail">
+        <CaseDetailPanel
+          v-if="detailId"
+          :project-id="projectId"
+          :case-id="detailId"
+        />
+      </DetailDock>
     </div>
 
     <NPagination
@@ -1475,6 +1543,13 @@ async function runCommit(): Promise<void> {
 </template>
 
 <style scoped>
+/* 表格 + 详情停靠的纵向容器：表格吃掉剩余高度，详情按内容高度贴在下面 */
+.list-area {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
 /* 操作列多个 text 按钮并排：h() 渲染的节点拿不到 scoped 类，用 :deep 兜 */
 :deep(.row-actions) {
   display: flex;

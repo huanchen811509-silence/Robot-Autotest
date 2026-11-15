@@ -33,6 +33,26 @@ export interface CaseDetailView {
   sourceBadge: string | null
   /** 凭据只回掩码（后端恒为 "****"），绝不出现明文口令。 */
   keyMaskedCredential: string | null
+  /**
+   * v5.11.0 / FR-v5.11-04：内容三列取真值。
+   * 此前这三项在前端一律显示占位文案，而 test_case 与 test_case_step 一直都在。
+   */
+  caseKind?: string | null
+  precondition?: string | null
+  expected?: string | null
+  steps?: CaseStepView[]
+  /** v5.11.0 / FR-v5.11-05：脚本三件套（与列表同源，逐字相同）。 */
+  scriptPath?: string | null
+  scriptName?: string | null
+  /** pytest nodeid：详情里和路径一起显示，便于直接定位到函数。 */
+  scriptNodeId?: string | null
+  bindingState?: string | null
+}
+
+export interface CaseStepView {
+  stepNo: number
+  action: string
+  expectation: string | null
 }
 
 export type CaseDetailSource = 'global' | 'project' | 'copy'
