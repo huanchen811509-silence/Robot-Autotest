@@ -142,20 +142,36 @@ export interface CreateDevicePayload {
   domainTag?: string
 }
 
+/** W62-14：批量删逐条结果；conflicted 只统计「被项目引用」的条数。 */
+export interface GlobalAssetBatchDeleteResult {
+  deleted: number
+  conflicted: number
+  items: { id: number; deleted: boolean; reason: string; projects: string[] }[]
+}
+
 export const globalAssetApi = {
   list(params: { type?: string; keyword?: string; availability?: string }) {
     return request<GlobalAssetRow[]>(`/global/assets${toQuery(params)}`)
   },
   /**
-   * 改显示名（v5.9.0 / W59-20）。
+   * 改显示名 / 管理 IP（v5.9.0 W59-20 → v5.12.0 W62-12）。
    *
-   * 只改 name：型号、序列号、管理 IP 由采集与导入回写，手工改会在下次采集被覆盖，
-   * 变成「界面一套、设备一套」。显示名是纯人工标注，也是列表里唯一需要就地纠正的东西。
+   * 不传 managementIp 时只改 name，5.9 老调用方行为完全不变；传了才写事实列，
+   * 且只有 DEVICE 类型允许。保存后由页面重拉列表，以服务端为准。
    */
-  rename(type: string, id: number, name: string) {
-    return request<{ name: string }>(`/global/assets/${type}/${id}`, {
+  rename(type: string, id: number, name: string, managementIp?: string) {
+    const body: Record<string, string> = { name }
+    if (managementIp !== undefined) body.managementIp = managementIp
+    return request<{ name: string; managementIp?: string }>(`/global/assets/${type}/${id}`, {
       method: 'PUT',
-      body: JSON.stringify({ name }),
+      body: JSON.stringify(body),
+    })
+  },
+  /** W62-14：逐条返回成功 / 409（含引用项目名），不因一条被引用整批失败。 */
+  batchDelete(type: string, ids: number[]) {
+    return request<GlobalAssetBatchDeleteResult>('/global/assets/batch-delete', {
+      method: 'POST',
+      body: JSON.stringify({ type, ids }),
     })
   },
   references(type: string, id: number) {

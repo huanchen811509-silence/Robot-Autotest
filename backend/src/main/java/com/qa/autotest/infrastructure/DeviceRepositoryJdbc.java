@@ -321,6 +321,18 @@ public class DeviceRepositoryJdbc implements DeviceRepository {
     }
 
     @Override
+    public List<String> linkNamesByPort(long projectId, long portId) {
+        String sql = """
+                SELECT l.name FROM link l
+                 WHERE (l.a_port_id = ? OR l.b_port_id = ?)
+                   AND l.project_id = ?
+                 ORDER BY l.name
+                """;
+        TenantGuard.requireProjectScope(sql, "link");
+        return jdbc.queryForList(sql, String.class, portId, portId, projectId);
+    }
+
+    @Override
     public boolean portNameExists(long projectId, long deviceId, String portName, Long excludeId) {
         String sql = """
                 SELECT COUNT(*) FROM device_port dp JOIN device d ON d.id = dp.device_id

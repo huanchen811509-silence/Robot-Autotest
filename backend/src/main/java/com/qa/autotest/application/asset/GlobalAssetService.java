@@ -987,15 +987,23 @@ public class GlobalAssetService {
 
     /** 删除公共资产：被项目引用时 409（不泄露引用项目名，只给数量）。 */
     /**
-     * 改公共资产的显示名（v5.9.0 / W59-20，台账里 {@code /g/assets} 缺的 U）。
+     * 编辑公共资产（W62-12）：显示名必填，管理 IP 可选且只对 DEVICE 生效。
      *
-     * <p><b>只改 name</b>：型号、序列号、管理 IP 这些是采集/导入回写的事实列，
-     * 手工改会和下次采集打架，出现「界面一套、设备一套」。显示名是纯人工标注，改了不会被覆盖，
-     * 也正是用户在列表里唯一需要就地纠正的东西。
+     * <p>5.9 的 {@code rename} 只允许改 name，理由是「采集会覆盖事实列」。本版按 PRD
+     * FR-v5.12-09 放开 managementIp：**不传就不改**（旧调用方行为完全不变），
+     * 传了才写，并在审计里留下 ip= 前缀便于追溯谁手工改过事实列。
      */
+    public record AssetUpdate(String name, String managementIp) {
+    }
+
+    /** 5.9 旧入口：只改名，委托给 update，行为不变。 */
     public String rename(String type, long id, String name) {
+        return update(type, id, name, null).name();
+    }
+
+    public AssetUpdate update(String type, long id, String name, String managementIp) {
         requireAdmin();
-        String normalized = type == null ? "" : type.trim().toUpperCase(Locale.ROOT);
+        String normalized = type == null ? "" : type.trim().toUpperCase(java.util.Locale.ROOT);
         String trimmed = name == null ? "" : name.trim();
         if (trimmed.isEmpty()) {
             throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "资产名称不能为空");
@@ -1003,11 +1011,24 @@ public class GlobalAssetService {
         if (trimmed.length() > 128) {
             throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "资产名称不能超过 128 个字符");
         }
+        String ip = managementIp == null ? null : managementIp.trim();
+        if (ip != null && ip.isEmpty()) ip = null;
+        if (ip != null && ip.length() > 64) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "管理 IP 不能超过 64 个字符");
+        }
+        if (ip != null && !"DEVICE".equals(normalized)) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "管理 IP 只适用于设备资产");
+        }
         int updated = switch (normalized) {
-            case "DEVICE" -> jdbc.update("""
-                    UPDATE device SET name = ?, updated_by = ?
-                     WHERE id = ? AND owner_scope = 'PLATFORM'
-                    """, trimmed, TenantContext.userId(), id);
+            case "DEVICE" -> ip == null
+                    ? jdbc.update("""
+                            UPDATE device SET name = ?, updated_by = ?
+                             WHERE id = ? AND owner_scope = 'PLATFORM'
+                            """, trimmed, TenantContext.userId(), id)
+                    : jdbc.update("""
+                            UPDATE device SET name = ?, management_ip = ?, updated_by = ?
+                             WHERE id = ? AND owner_scope = 'PLATFORM'
+                            """, trimmed, ip, TenantContext.userId(), id);
             case "CREDENTIAL" -> jdbc.update("""
                     UPDATE credential SET name = ?, updated_by = ?
                      WHERE id = ? AND owner_scope = 'PLATFORM'
@@ -1022,18 +1043,82 @@ public class GlobalAssetService {
         if (updated == 0) {
             throw new BusinessException(ErrorCode.NOT_FOUND, "资产不存在或不是公共资产");
         }
-        audit.record("global.asset.rename", normalized.toLowerCase(Locale.ROOT),
-                String.valueOf(id), "name=" + trimmed);
-        return trimmed;
+        audit.record("global.asset.rename", normalized.toLowerCase(java.util.Locale.ROOT),
+                String.valueOf(id), "name=" + trimmed + (ip == null ? "" : ",ip=" + ip));
+        return new AssetUpdate(trimmed, ip);
+    }
+
+    /** 引用该公共资产的项目名（409 文案点名用，W62-14）。 */
+    private List<String> referenceProjectNames(String normalized, long id) {
+        return jdbc.queryForList("""
+                SELECT p.name FROM project_asset pa JOIN project p ON p.id = pa.project_id
+                 WHERE pa.asset_type = ? AND pa.asset_id = ? ORDER BY p.name
+                """, String.class, normalized, id);
+    }
+
+    public record BatchDeleteItem(long id, boolean deleted, String reason, List<String> projects) {
+    }
+
+    /** conflicted 只统计「被项目引用」的条数；NOT_FOUND 单独看 items，不混入冲突数。 */
+    public record BatchDeleteResult(int deleted, int conflicted, List<BatchDeleteItem> items) {
+    }
+
+    /**
+     * W62-14：管理员批量删。逐条判定，被引用的那条返 CONFLICT 并点名项目，
+     * 其余继续删，不会因为一条卡住整批（与「一次删 3 台，1 台被引用」的判据一致）。
+     */
+    public BatchDeleteResult batchDelete(String type, List<Long> ids) {
+        requireAdmin();
+        if (ids == null || ids.isEmpty()) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "批量删除列表不能为空");
+        }
+        String normalized = type == null ? "" : type.trim().toUpperCase(java.util.Locale.ROOT);
+        if (!java.util.Set.of("DEVICE", "CREDENTIAL", "LINK").contains(normalized)) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "不支持的资产类型：" + type);
+        }
+        List<BatchDeleteItem> items = new java.util.ArrayList<>();
+        int deleted = 0;
+        int conflicted = 0;
+        for (Long id : ids) {
+            if (id == null) continue;
+            List<String> names = referenceProjectNames(normalized, id);
+            if (!names.isEmpty()) {
+                conflicted++;
+                items.add(new BatchDeleteItem(id, false, "CONFLICT", names));
+                continue;
+            }
+            int n = deleteOne(normalized, id);
+            if (n == 0) {
+                items.add(new BatchDeleteItem(id, false, "NOT_FOUND", List.of()));
+            } else {
+                items.add(new BatchDeleteItem(id, true, "", List.of()));
+                deleted++;
+            }
+        }
+        audit.record("global.asset.batch-delete", normalized.toLowerCase(java.util.Locale.ROOT),
+                "-", "deleted=" + deleted);
+        return new BatchDeleteResult(deleted, conflicted, items);
+    }
+
+    private int deleteOne(String normalized, long id) {
+        return switch (normalized) {
+            case "DEVICE" -> jdbc.update(
+                    "DELETE FROM device WHERE id = ? AND owner_scope = 'PLATFORM'", id);
+            case "CREDENTIAL" -> jdbc.update(
+                    "DELETE FROM credential WHERE id = ? AND owner_scope = 'PLATFORM'", id);
+            case "LINK" -> jdbc.update(
+                    "DELETE FROM link WHERE id = ? AND owner_scope = 'PLATFORM'", id);
+            default -> 0;
+        };
     }
 
     public void delete(String type, long id) {
         requireAdmin();
         String normalized = type.trim().toUpperCase(Locale.ROOT);
-        int refs = projectAssets.referenceCount(normalized, id);
-        if (refs > 0) {
+        List<String> names = referenceProjectNames(normalized, id);
+        if (!names.isEmpty()) {
             throw new BusinessException(ErrorCode.CONFLICT,
-                    "公共资产被 " + refs + " 个项目引用，不可删除；请先解除引用");
+                    "公共资产被项目引用，不可删除：" + String.join("、", names) + "；请先解除引用");
         }
         int deleted = switch (normalized) {
             case "DEVICE" -> jdbc.update("DELETE FROM device WHERE id = ? AND owner_scope = 'PLATFORM'", id);

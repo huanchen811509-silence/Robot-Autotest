@@ -133,6 +133,13 @@ export const deviceApi = {
   remove(projectId: number, id: number) {
     return request<void>(`${base(projectId)}/devices/${id}`, { method: 'DELETE' })
   },
+  /** W62-12：项目侧设备编辑（后端 PUT 早已存在，前端此前只接了 create）。 */
+  update(projectId: number, id: number, body: DeviceCommand) {
+    return request<Device>(`${base(projectId)}/devices/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    })
+  },
   ports(projectId: number, id: number) {
     return request<DevicePort[]>(`${base(projectId)}/devices/${id}/ports`)
   },
@@ -141,6 +148,16 @@ export const deviceApi = {
       method: 'POST',
       body: JSON.stringify(body),
     })
+  },
+  /** W62-13：端口改 / 删入口（后端已有，被链路引用时返回 409 并点名）。 */
+  updatePort(projectId: number, portId: number, body: PortCommand) {
+    return request<DevicePort>(`${base(projectId)}/ports/${portId}`, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    })
+  },
+  deletePort(projectId: number, portId: number) {
+    return request<void>(`${base(projectId)}/ports/${portId}`, { method: 'DELETE' })
   },
 }
 

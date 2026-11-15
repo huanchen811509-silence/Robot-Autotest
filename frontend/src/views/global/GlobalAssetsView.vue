@@ -13,7 +13,7 @@ import { confirmAction } from '@/composables/useConfirm'
  */
 import { computed, h, onMounted, ref, watch } from 'vue'
 import AssetWorkspace from '@/components/AssetWorkspace.vue'
-import { visibleTabs } from '@/config/assetWorkspaceMatrix'
+import { isVisible, visibleTabs } from '@/config/assetWorkspaceMatrix'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { NButton, type DataTableColumns } from 'naive-ui'
@@ -89,6 +89,7 @@ async function load() {
 
 function switchType(next: AssetTab) {
   type.value = next
+  selectedAssetIds.value = []
   // 页签点击与侧栏选中态必须同步：先改 URL，再由 watch 生效（避免两套状态源）。
   const target = TYPE_TO_TAB[next]
   if (route.query.tab !== target) {
@@ -113,8 +114,49 @@ watch(
 
 const renaming = ref<GlobalAssetRow | null>(null)
 const renameValue = ref('')
+const renameIp = ref('')
 const renameBusy = ref(false)
 const renameError = ref('')
+
+/** W62-14：批量删是否可用由差异矩阵唯一决定，不在页面里另写一份 scope 判断。 */
+const BATCH_DELETE_ENABLED = isVisible('global', 'action.batchDelete')
+const selectedAssetIds = ref<number[]>([])
+const batchBusy = ref(false)
+const batchMessage = ref('')
+
+function toggleAssetSelection(id: number, checked: boolean): void {
+  const next = new Set(selectedAssetIds.value)
+  if (checked) next.add(id)
+  else next.delete(id)
+  selectedAssetIds.value = [...next]
+}
+
+async function batchDeleteAssets(): Promise<void> {
+  const ids = [...selectedAssetIds.value]
+  if (ids.length === 0 || batchBusy.value) return
+  if (!(await confirmAction(t('w62.batchDeleteConfirm', { count: ids.length }), {
+      tone: 'danger',
+    })))
+    return
+  batchBusy.value = true
+  batchMessage.value = ''
+  try {
+    const result = await globalAssetApi.batchDelete(type.value, ids)
+    const conflicts = result.items.filter((item) => !item.deleted && item.reason === 'CONFLICT')
+    const projects = [...new Set(conflicts.flatMap((item) => item.projects))]
+    batchMessage.value = t('w62.batchDeleteResult', {
+      deleted: result.deleted,
+      conflicted: result.conflicted,
+      projects: projects.length ? projects.join(', ') : t('w62.batchDeleteNoConflict'),
+    })
+    selectedAssetIds.value = []
+    await load()
+  } catch (error) {
+    batchMessage.value = error instanceof Error ? error.message : t('global.loadFailed')
+  } finally {
+    batchBusy.value = false
+  }
+}
 
 const columns = computed<DataTableColumns<GlobalAssetRow>>(() => {
   const cols: DataTableColumns<GlobalAssetRow> = [
@@ -145,6 +187,21 @@ const columns = computed<DataTableColumns<GlobalAssetRow>>(() => {
     })
   }
   cols.push({ title: t('global.assetRefs'), key: 'referenceCount', width: 100 })
+  if (canWrite.value && BATCH_DELETE_ENABLED) {
+    cols.push({
+      title: '',
+      key: 'selection',
+      width: 46,
+      render: (row) =>
+        h('input', {
+          type: 'checkbox',
+          checked: selectedAssetIds.value.includes(row.id),
+          'data-testid': `asset-check-${row.id}`,
+          onChange: (event: Event) =>
+            toggleAssetSelection(row.id, (event.target as HTMLInputElement).checked),
+        }),
+    })
+  }
   if (canWrite.value) {
     cols.push({
       title: t('global.colActions'),
@@ -571,6 +628,7 @@ async function exportAssets() {
 function openRename(row: GlobalAssetRow): void {
   renaming.value = row
   renameValue.value = row.name
+  renameIp.value = row.managementIp ?? ''
   renameError.value = ''
 }
 
@@ -580,7 +638,13 @@ async function submitRename(): Promise<void> {
   renameError.value = ''
   renameBusy.value = true
   try {
-    await globalAssetApi.rename(row.assetType, row.id, renameValue.value)
+    const ip = renameIp.value.trim()
+    // 没动管理 IP 就保持 5.9 的三参调用（不碰事实列），改了才把 IP 透传给 W62-12 的新 PUT
+    if (row.assetType === 'DEVICE' && ip !== (row.managementIp ?? '')) {
+      await globalAssetApi.rename(row.assetType, row.id, renameValue.value, ip)
+    } else {
+      await globalAssetApi.rename(row.assetType, row.id, renameValue.value)
+    }
     renaming.value = null
     await load()
   } catch (error) {
@@ -673,6 +737,21 @@ onMounted(() => {
     </div>
 
     <p v-if="failed" class="error">{{ failed }}</p>
+
+    <div v-if="canWrite && BATCH_DELETE_ENABLED" class="selection-bar" data-testid="global-batch-bar">
+      <span data-testid="global-batch-count">
+        {{ t('w62.assetSelectedCount', { count: selectedAssetIds.length }) }}
+      </span>
+      <button
+        class="btn"
+        :disabled="selectedAssetIds.length === 0 || batchBusy"
+        data-testid="global-batch-delete"
+        @click="batchDeleteAssets"
+      >
+        {{ t('w62.batchDelete') }}
+      </button>
+    </div>
+    <p v-if="batchMessage" class="muted" data-testid="global-batch-result">{{ batchMessage }}</p>
 
     <!-- W62-09：与项目侧共用同一个 AssetWorkspace；矩阵过滤掉 project 独有列 -->
     <AssetWorkspace
@@ -909,6 +988,10 @@ onMounted(() => {
         <label class="field">
           <span>{{ t('global.assetFieldName') }} *</span>
           <input v-model="renameValue" class="input" data-testid="asset-rename-input" />
+        </label>
+        <label v-if="renaming.assetType === 'DEVICE'" class="field">
+          <span>{{ t('global.assetIp') }}</span>
+          <input v-model="renameIp" class="input" data-testid="asset-rename-ip" />
         </label>
         <p v-if="renameError" class="error">{{ renameError }}</p>
         <div class="modal-actions">

@@ -233,6 +233,12 @@ public class DeviceService {
         DevicePort existing = devices.findPort(projectId, portId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "端口不存在"));
         requireOwnedPort(projectId, existing);
+        // W62-13：先问「谁引用着」，被引用就 409 点名；不能让外键把它变成 500
+        List<String> linked = devices.linkNamesByPort(projectId, portId);
+        if (!linked.isEmpty()) {
+            throw new BusinessException(ErrorCode.CONFLICT,
+                    "端口被链路引用，不能删除：" + String.join("、", linked) + "；请先解除引用");
+        }
         devices.deletePort(projectId, portId);
         audit.record("device.port-delete", "device_port", String.valueOf(portId), "");
         publishAssetChanged(projectId, "DEVICE", existing.deviceId());

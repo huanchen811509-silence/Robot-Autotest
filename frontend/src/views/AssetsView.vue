@@ -225,6 +225,10 @@ const portsDeviceId = ref<number | null>(null)
 const portsDevice = computed(() => devices.value.find((d) => d.id === portsDeviceId.value) ?? null)
 const ports = ref<DevicePort[]>([])
 const showForm = ref(false)
+/** W62-12 / W62-13：同一张行内表单承载「新增」与「编辑」，不另开弹窗。 */
+const editingDeviceId = ref<number | null>(null)
+const editingPortId = ref<number | null>(null)
+const portDeleteError = ref('')
 
 const deviceForm = reactive({
   name: '',
@@ -425,6 +429,14 @@ const deviceColumns = computed<DataTableColumns<Device>>(() => [
     render: (row) => row.managementIp || EMPTY,
   },
   {
+    // W62-11：项目资产页必须能一眼分辨「自己私有」与「平台共享且已授权」。
+    // 列名与差异矩阵的 col.source 对齐，不允许页面自己再写一套 scope 判断。
+    title: t('w62.sourceColumn'),
+    key: 'source',
+    width: 160,
+    render: (row) => (isPlatformAsset(row) ? t('w62.sourcePlatform') : t('w62.sourceProject')),
+  },
+  {
     title: t('assets.device.domain'),
     key: 'domainTag',
     width: 110,
@@ -453,6 +465,17 @@ const deviceColumns = computed<DataTableColumns<Device>>(() => [
                 ? t('assets.device.hidePorts')
                 : t('assets.device.ports'),
           },
+        ),
+        h(
+          NButton,
+          {
+            text: true,
+            size: 'small',
+            disabled: platform,
+            'data-testid': `device-edit-${row.id}`,
+            onClick: () => openDeviceEdit(row),
+          },
+          { default: () => t('w62.editDevice') },
         ),
         platform
           ? h(
@@ -674,6 +697,35 @@ const portColumns = computed<DataTableColumns<DevicePort>>(() => [
     width: 130,
     render: (row) => row.speedGbps ?? EMPTY,
   },
+  {
+    title: t('common.actions'),
+    key: 'actions',
+    width: 160,
+    render: (row) =>
+      h('span', { class: 'row-actions' }, [
+        h(
+          NButton,
+          {
+            text: true,
+            size: 'small',
+            'data-testid': `port-edit-${row.id}`,
+            onClick: () => openPortEdit(row),
+          },
+          { default: () => t('w62.editPort') },
+        ),
+        h(
+          NButton,
+          {
+            text: true,
+            type: 'error',
+            size: 'small',
+            'data-testid': `port-delete-${row.id}`,
+            onClick: () => void deletePort(row),
+          },
+          { default: () => t('w62.deletePort') },
+        ),
+      ]),
+  },
 ])
 
 async function load(): Promise<void> {
@@ -815,6 +867,31 @@ async function unreferenceAsset(type: PlatformAssetType, id: number): Promise<vo
   }
 }
 
+function openDeviceEdit(row: Device): void {
+  showForm.value = true
+  editingDeviceId.value = row.id
+  deviceForm.name = row.name ?? ''
+  deviceForm.deviceType = row.deviceType ?? ''
+  deviceForm.model = row.model ?? ''
+  deviceForm.vendor = row.vendor ?? ''
+  deviceForm.serialNo = row.serialNo ?? ''
+  deviceForm.managementIp = row.managementIp ?? ''
+  deviceForm.location = row.location ?? ''
+  deviceForm.domainTag = row.domainTag ?? ''
+}
+
+function cancelDeviceEdit(): void {
+  editingDeviceId.value = null
+  deviceForm.name = ''
+  deviceForm.deviceType = ''
+  deviceForm.model = ''
+  deviceForm.vendor = ''
+  deviceForm.serialNo = ''
+  deviceForm.managementIp = ''
+  deviceForm.location = ''
+  deviceForm.domainTag = ''
+}
+
 async function createDevice(): Promise<void> {
   error.value = null
   message.value = ''
@@ -823,14 +900,15 @@ async function createDevice(): Promise<void> {
     return
   }
   try {
-    await deviceApi.create(projectId.value, {
-      ...deviceForm,
-      name: deviceForm.name.trim(),
-      enabled: true,
-    })
+    const command = { ...deviceForm, name: deviceForm.name.trim(), enabled: true }
+    if (editingDeviceId.value !== null) {
+      await deviceApi.update(projectId.value, editingDeviceId.value, command)
+    } else {
+      await deviceApi.create(projectId.value, command)
+    }
     message.value = t('common.saved')
     showForm.value = false
-    deviceForm.name = ''
+    cancelDeviceEdit()
     await load()
   } catch (e) {
     error.value = localizeError(e)
@@ -868,7 +946,42 @@ async function togglePorts(device: Device): Promise<void> {
   }
 }
 
-async function addPort(): Promise<void> {
+function openPortEdit(row: DevicePort): void {
+  editingPortId.value = row.id
+  portForm.portName = row.portName ?? ''
+  portForm.portType = row.portType ?? ''
+  portForm.speedGbps = row.speedGbps ?? null
+  portForm.nicName = row.nicName ?? ''
+  portForm.nicIndex = row.nicIndex ?? null
+  portDeleteError.value = ''
+}
+
+function cancelPortEdit(): void {
+  editingPortId.value = null
+  portForm.portName = ''
+  portForm.portType = ''
+  portForm.speedGbps = null
+  portForm.nicName = ''
+  portForm.nicIndex = null
+}
+
+async function deletePort(row: DevicePort): Promise<void> {
+  if (!(await confirmAction(t('w62.deletePortConfirm', { name: row.portName }), {
+      tone: 'danger',
+    })))
+    return
+  portDeleteError.value = ''
+  try {
+    await deviceApi.deletePort(projectId.value, row.id)
+    if (editingPortId.value === row.id) cancelPortEdit()
+    ports.value = await deviceApi.ports(projectId.value, portsDeviceId.value!)
+  } catch (e) {
+    // 409 文案由后端点名引用链路；前端只负责把它显示出来，不改成模糊的「删除失败」
+    portDeleteError.value = localizeError(e).summary
+  }
+}
+
+async function submitPort(): Promise<void> {
   const deviceId = portsDeviceId.value
   if (!deviceId) return
   error.value = null
@@ -877,16 +990,20 @@ async function addPort(): Promise<void> {
     return
   }
   try {
-    await deviceApi.addPort(projectId.value, deviceId, {
+    const command = {
       portName: portForm.portName.trim(),
       portType: portForm.portType,
       speedGbps: portForm.speedGbps,
       nicName: portForm.nicName.trim() || null,
       nicIndex: portForm.nicIndex,
-    })
-    portForm.portName = ''
-    portForm.nicName = ''
-    portForm.nicIndex = null
+    }
+    if (editingPortId.value !== null) {
+      await deviceApi.updatePort(projectId.value, editingPortId.value, command)
+    } else {
+      await deviceApi.addPort(projectId.value, deviceId, command)
+    }
+    cancelPortEdit()
+    portDeleteError.value = ''
     ports.value = await deviceApi.ports(projectId.value, deviceId)
   } catch (e) {
     error.value = localizeError(e)
@@ -1124,7 +1241,12 @@ async function forceRelease(lease: LeaseView): Promise<void> {
       <NButton type="primary" attr-type="submit">{{ t('assets.share.reference') }}</NButton>
     </form>
 
-    <form v-if="showForm && tab === 'devices'" class="inline-form" @submit.prevent="createDevice">
+    <form
+      v-if="showForm && tab === 'devices'"
+      class="inline-form"
+      data-testid="device-form"
+      @submit.prevent="createDevice"
+    >
       <NInput v-model:value="deviceForm.name" style="width: 180px" :placeholder="t('assets.device.name')" />
       <NInput v-model:value="deviceForm.deviceType" style="width: 120px" :placeholder="t('assets.device.type')" />
       <NInput v-model:value="deviceForm.model" style="width: 140px" :placeholder="t('assets.device.model')" />
@@ -1137,7 +1259,10 @@ async function forceRelease(lease: LeaseView): Promise<void> {
       />
       <NInput v-model:value="deviceForm.location" style="width: 140px" :placeholder="t('assets.device.location')" />
       <NInput v-model:value="deviceForm.domainTag" style="width: 140px" :placeholder="t('assets.device.domain')" />
-      <NButton type="primary" attr-type="submit">{{ t('common.save') }}</NButton>
+      <NButton type="primary" attr-type="submit">
+        {{ editingDeviceId ? t('w62.saveDevice') : t('common.save') }}
+      </NButton>
+      <NButton v-if="editingDeviceId" @click="cancelDeviceEdit">{{ t('w62.cancelEdit') }}</NButton>
     </form>
 
     <form v-if="showForm && tab === 'links'" class="inline-form" @submit.prevent="createLink">
@@ -1242,7 +1367,8 @@ async function forceRelease(lease: LeaseView): Promise<void> {
           <p class="muted port-empty">{{ t('common.noData') }}</p>
         </template>
       </DataTable>
-      <form class="inline-form port-form" @submit.prevent="addPort">
+      <p v-if="portDeleteError" class="error" data-testid="port-delete-error">{{ portDeleteError }}</p>
+    <form class="inline-form port-form" @submit.prevent="submitPort">
         <NInput v-model:value="portForm.portName" style="width: 180px" :placeholder="t('assets.port.name')" />
         <NInput v-model:value="portForm.portType" style="width: 140px" :placeholder="t('assets.port.type')" />
         <NInputNumber
@@ -1264,7 +1390,10 @@ async function forceRelease(lease: LeaseView): Promise<void> {
           :show-button="false"
           :placeholder="t('assets.port.nicIndex')"
         />
-        <NButton attr-type="submit">{{ t('common.add') }}</NButton>
+        <NButton attr-type="submit">
+          {{ editingPortId ? t('w62.savePort') : t('common.add') }}
+        </NButton>
+        <NButton v-if="editingPortId" @click="cancelPortEdit">{{ t('w62.cancelEdit') }}</NButton>
       </form>
     </div>
 

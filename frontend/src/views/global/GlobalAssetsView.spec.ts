@@ -16,6 +16,7 @@ import { i18n } from '@/locales'
 import { useAuthStore } from '@/stores/auth'
 import GlobalAssetsView from '@/views/global/GlobalAssetsView.vue'
 import { globalAssetApi } from '@/api/globalAssets'
+import { useConfirmHost } from '@/composables/useConfirm'
 
 vi.mock('@/api/globalAssets', () => ({
   globalAssetApi: {
@@ -30,6 +31,7 @@ vi.mock('@/api/globalAssets', () => ({
     unreference: vi.fn(),
     remove: vi.fn(),
     rename: vi.fn(async (_type: string, _id: number, name: string) => ({ name })),
+    batchDelete: vi.fn(),
     credentialDevices: vi.fn(),
     collectByCredential: vi.fn(),
     createDevice: vi.fn(),
@@ -494,5 +496,87 @@ describe('GlobalAssetsView 改名（W59-20）', () => {
     // 保存后重拉：以服务端为准，不就地改 row.name（否则搜索/排序命中的副本会不一致）
     expect(list).toHaveBeenCalled()
     expect(root.querySelector('[data-testid="asset-rename-input"]')).toBeNull()
+  })
+})
+
+describe('GlobalAssetsView W62-12 编辑管理 IP', () => {
+  it('IP 变化时才把第 4 参透传给 PUT，保存后重拉列表', async () => {
+    const root = await mountView()
+    root.querySelector<HTMLButtonElement>('[data-testid="rename-101"]')!.click()
+    await nextTick()
+
+    const ip = root.querySelector<HTMLInputElement>('[data-testid="asset-rename-ip"]')!
+    expect(ip.value).toBe('10.0.0.11')
+    ip.value = '10.0.0.99'
+    ip.dispatchEvent(new Event('input'))
+    await nextTick()
+
+    list.mockClear()
+    root.querySelector<HTMLButtonElement>('[data-testid="asset-rename-submit"]')!.click()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    await nextTick()
+
+    expect(globalAssetApi.rename).toHaveBeenCalledWith('DEVICE', 101, 'leaf-01', '10.0.0.99')
+    expect(list).toHaveBeenCalled()
+  })
+
+  it('凭据行不渲染管理 IP 输入框（后端只允许 DEVICE 写事实列）', async () => {
+    routerState.route = reactive({ query: { tab: 'credentials' }, path: '/g/assets' })
+    const root = await mountView()
+    root.querySelector<HTMLButtonElement>('[data-testid="rename-201"]')!.click()
+    await nextTick()
+    expect(root.querySelector('[data-testid="asset-rename-ip"]')).toBeNull()
+  })
+})
+
+describe('GlobalAssetsView W62-14 批量删', () => {
+  it('未选中时按钮 disabled；勾选后计数为 1 且可用', async () => {
+    const root = await mountView()
+    const btn = root.querySelector<HTMLButtonElement>('[data-testid="global-batch-delete"]')!
+    expect(btn.disabled).toBe(true)
+
+    root.querySelector<HTMLInputElement>('[data-testid="asset-check-101"]')!.click()
+    await nextTick()
+    expect(root.querySelector('[data-testid="global-batch-count"]')!.textContent).toContain('1')
+    expect(root.querySelector<HTMLButtonElement>('[data-testid="global-batch-delete"]')!.disabled)
+      .toBe(false)
+  })
+
+  it('确认后逐条返回：2 成功 1 冲突，结果里点名引用项目', async () => {
+    vi.mocked(globalAssetApi.batchDelete).mockResolvedValue({
+      deleted: 2,
+      conflicted: 1,
+      items: [
+        { id: 1, deleted: true, reason: '', projects: [] },
+        { id: 2, deleted: false, reason: 'CONFLICT', projects: ['项目甲', '项目乙'] },
+        { id: 3, deleted: true, reason: '', projects: [] },
+      ],
+    })
+    const root = await mountView()
+    root.querySelector<HTMLInputElement>('[data-testid="asset-check-101"]')!.click()
+    await nextTick()
+    root.querySelector<HTMLButtonElement>('[data-testid="global-batch-delete"]')!.click()
+    await nextTick()
+    useConfirmHost().settle(true)
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    await nextTick()
+
+    expect(globalAssetApi.batchDelete).toHaveBeenCalledWith('DEVICE', [101])
+    const result = root.querySelector('[data-testid="global-batch-result"]')!.textContent!
+    expect(result).toContain('项目甲')
+    expect(result).toContain('项目乙')
+    expect(result).toContain('2')
+  })
+
+  it('取消确认：不调用批量删接口', async () => {
+    const root = await mountView()
+    root.querySelector<HTMLInputElement>('[data-testid="asset-check-101"]')!.click()
+    await nextTick()
+    root.querySelector<HTMLButtonElement>('[data-testid="global-batch-delete"]')!.click()
+    await nextTick()
+    useConfirmHost().settle(false)
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    await nextTick()
+    expect(globalAssetApi.batchDelete).not.toHaveBeenCalled()
   })
 })

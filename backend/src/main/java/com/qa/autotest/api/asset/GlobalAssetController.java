@@ -42,8 +42,15 @@ public class GlobalAssetController {
         this.service = service;
     }
 
-    /** 改名入参。 */
-    public record RenameRequest(String name) {
+    /** 编辑入参（W62-12 增 managementIp；1 参构造器保留给 5.9 老调用方）。 */
+    public record RenameRequest(String name, String managementIp) {
+        public RenameRequest(String name) {
+            this(name, null);
+        }
+    }
+
+    /** W62-14：批量删入参。 */
+    public record BatchDeleteRequest(String type, List<Long> ids) {
     }
 
     @GetMapping
@@ -150,8 +157,20 @@ public class GlobalAssetController {
     public ApiResponse<Map<String, String>> rename(@PathVariable String type,
                                                    @PathVariable long id,
                                                    @RequestBody RenameRequest body) {
-        String saved = service.rename(type, id, body == null ? null : body.name());
-        return ApiResponse.ok(Map.of("name", saved));
+        GlobalAssetService.AssetUpdate saved = service.update(type, id,
+                body == null ? null : body.name(), body == null ? null : body.managementIp());
+        Map<String, String> out = new java.util.LinkedHashMap<>();
+        out.put("name", saved.name());
+        if (saved.managementIp() != null) out.put("managementIp", saved.managementIp());
+        return ApiResponse.ok(out);
+    }
+
+    /** W62-14：逐条返回成功 / 409（含引用项目名），不因一条被引用而整批失败。 */
+    @PostMapping("/batch-delete")
+    public ApiResponse<GlobalAssetService.BatchDeleteResult> batchDelete(
+            @RequestBody BatchDeleteRequest body) {
+        return ApiResponse.ok(service.batchDelete(
+                body == null ? null : body.type(), body == null ? null : body.ids()));
     }
 
     @DeleteMapping("/{type}/{id}")

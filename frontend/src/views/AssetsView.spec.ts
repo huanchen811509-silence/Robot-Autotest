@@ -15,7 +15,7 @@ import { i18n } from '@/locales'
 import { useAuthStore } from '@/stores/auth'
 import { executionApi } from '@/api/execution'
 import { useConfirmHost } from '@/composables/useConfirm'
-import { linkApi, type Link } from '@/api/asset'
+import { deviceApi, linkApi, type Link } from '@/api/asset'
 import AssetsView from '@/views/AssetsView.vue'
 
 // 工厂内写死数据（vi.mock 提升到 import 之前，引用外部 const 会 TDZ）
@@ -66,6 +66,9 @@ vi.mock('@/api/asset', () => ({
     ]),
     create: vi.fn(),
     remove: vi.fn(),
+    update: vi.fn(),
+    updatePort: vi.fn(),
+    deletePort: vi.fn(),
     addPort: vi.fn(),
   },
   linkApi: {
@@ -560,5 +563,91 @@ describe('AssetsView 凭据页', () => {
 
     // 搜不到就必须真的空掉：留着旧行等于「输入了但没反应」
     expect(root.textContent).not.toContain('dut-root')
+  })
+})
+
+describe('AssetsView W62-11/12/13 授权来源与端口 CRUD', () => {
+  function submit(form: HTMLFormElement): void {
+    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
+  }
+
+  it('私有设备「来源」列标注本项目', async () => {
+    const root = await mountView()
+    expect(root.textContent).toContain(i18n.global.t('w62.sourceProject'))
+  })
+
+  it('平台共享资产标注「公共资产（已授权）」', async () => {
+    vi.mocked(deviceApi.page).mockResolvedValueOnce({
+      items: [{ id: 9, projectId: 99, name: 'SHARED-1' }],
+      total: 1,
+      page: 1,
+      size: 10,
+    } as never)
+    const root = await mountView()
+    expect(root.textContent).toContain('SHARED-1')
+    expect(root.textContent).toContain(i18n.global.t('w62.sourcePlatform'))
+  })
+
+  it('点设备编辑 → 提交走 update 而不是 create', async () => {
+    const root = await mountView()
+    root.querySelector<HTMLButtonElement>('[data-testid="device-edit-1"]')!.click()
+    await nextTick()
+    const form = root.querySelector<HTMLFormElement>('[data-testid="device-form"]')!
+    expect(form.textContent).toContain(i18n.global.t('w62.saveDevice'))
+    submit(form)
+    await flush()
+
+    expect(deviceApi.update).toHaveBeenCalledWith(
+      1,
+      1,
+      expect.objectContaining({ name: 'DUT-A', managementIp: '10.0.0.1' }),
+    )
+    expect(deviceApi.create).not.toHaveBeenCalled()
+  })
+
+  it('点端口编辑 → 表单带出原值 → 提交走 updatePort', async () => {
+    const root = await mountView()
+    clickByText(root, i18n.global.t('assets.device.ports'))
+    await flush()
+    root.querySelector<HTMLButtonElement>('[data-testid="port-edit-11"]')!.click()
+    await nextTick()
+    const form = root.querySelector<HTMLFormElement>('form.port-form')!
+    submit(form)
+    await flush()
+
+    expect(deviceApi.updatePort).toHaveBeenCalledWith(
+      1,
+      11,
+      expect.objectContaining({ portName: 'eth0' }),
+    )
+    expect(deviceApi.addPort).not.toHaveBeenCalled()
+  })
+
+  it('删被引用端口：409 文案点名链路，不是笼统的「删除失败」', async () => {
+    vi.mocked(deviceApi.deletePort).mockRejectedValueOnce(
+      new Error('端口被链路引用，不能删除：上联-A；请先解除引用'),
+    )
+    const root = await mountView()
+    clickByText(root, i18n.global.t('assets.device.ports'))
+    await flush()
+    root.querySelector<HTMLButtonElement>('[data-testid="port-delete-11"]')!.click()
+    await nextTick()
+    useConfirmHost().settle(true)
+    await flush()
+
+    const line = root.querySelector('[data-testid="port-delete-error"]')!.textContent!
+    expect(line).toContain('上联-A')
+    expect(line).toContain('请先解除引用')
+  })
+
+  it('取消删除确认：不调用删除接口', async () => {
+    const root = await mountView()
+    clickByText(root, i18n.global.t('assets.device.ports'))
+    await flush()
+    root.querySelector<HTMLButtonElement>('[data-testid="port-delete-11"]')!.click()
+    await nextTick()
+    useConfirmHost().settle(false)
+    await flush()
+    expect(deviceApi.deletePort).not.toHaveBeenCalled()
   })
 })

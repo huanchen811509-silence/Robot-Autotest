@@ -38,6 +38,14 @@ public interface DeviceRepository {
 
     void deletePort(long projectId, long portId);
 
+    /**
+     * 引用该端口的链路名（W62-13：删除被引用端口要 409 并点名，不能落到 500）。
+     * default 空实现让既有测试桩零改动；真实查询在 Jdbc 实现里。
+     */
+    default List<String> linkNamesByPort(long projectId, long portId) {
+        return List.of();
+    }
+
     boolean portNameExists(long projectId, long deviceId, String portName, Long excludeId);
 
     /** 项目中已使用的技术域标签（设备侧）。 */
