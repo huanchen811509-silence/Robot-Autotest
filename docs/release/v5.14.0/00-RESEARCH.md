@@ -111,3 +111,15 @@
 | R-32 | `ReportLifecycleService.deleteTestReport` 对 `state=FROZEN` 抛 `409 CONFLICT`「请先撤销冻结」，`ReportLifecycleServiceTest:166/179` 钉住；后端冻结保护不是缺口 | `ReportLifecycleService.java:240`、`ReportLifecycleServiceTest.java` |
 | R-33 | `TestReportsView.vue` 勾选列对**所有**行渲染 `NCheckbox`，冻结件仍可勾选；`batchDelete()` 原样把选中集合送进删除请求 | `frontend/src/views/TestReportsView.vue:223`、`batchDelete()` |
 | R-34 | `ReportTemplateRepositoryJdbc.find` 用 `project_id IN (?, 0)` 让平台级模板可见；`create` 权限是 `EXECUTION:UPDATE`；`requireEditable` 禁改平台级模板；`ReportTemplatesView.select()` 会清空 `notice` | `ReportTemplateRepositoryJdbc.java:79`、`ReportTemplateService.java`、`ReportTemplatesView.vue:268` |
+
+
+---
+
+## 附：W7 开工后补充事实（R-35 ~ R-38，2026-11-15）
+
+| # | 事实 | 证据 |
+|---|---|---|
+| R-35 | 运行期 jar 必须重建并与 HEAD 同 sha，否则新端点全是旧行为 | `deploy.sh --verify` 四判据；W7 部署两次，commit 3c58d35 与 b663345 各对齐一次 |
+| R-36 | `app_user` 才是用户表，夹具账号是 `qa-e2e-admin` / `qa-e2e-viewer` / `qa-e2e-engineer` 等 | `SHOW COLUMNS FROM app_user`；W7 补充探针用 qa-e2e-viewer 取到三处真实 403 |
+| R-37 | `PrintReportService.issue` 的 external 模式先过 metadata 十项门禁；全库仅 12 个 run 是 exportable=1 | `w56-24-retry-2` 缺 STARTED_AT 导致 400；`EHT-REAL-L1-20261113-220422-01` 可正常签发 |
+| R-38 | `test_report.snapshot_html` 与导出件不是同一份数据：导出走字段视图与模板裁剪 | 10MB 快照导出 html 仍只有 772 字节；W64-18 分级采样 |

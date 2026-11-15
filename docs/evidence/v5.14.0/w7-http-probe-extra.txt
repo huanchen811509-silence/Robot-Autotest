@@ -1,0 +1,22 @@
+v5.14.0 W7 补充 HTTP + DB 探针
+HEAD=b663345
+TIME=2026-11-15 22:13:01
+PASS=14 FAIL=0 PARTIAL=0 TOTAL=14
+------------------------------------------------------------------------
+[PASS] 管理员登录 :: HTTP=200
+[PASS] TC-01 全站「对外报告」0 命中 :: hits=0
+[PASS] TC-27 exportBlob 有真实消费者 :: lines=10
+[PASS] TC-41 迁移后无 NULL kernel :: NULL_rows=0
+[PASS] TC-05 v5.13 收口 commit 上「对外报告」有命中（回放） :: hits=1 sample=efbcf37:frontend/src/locales/zh-CN.ts:396:    externalReports: '对外报告',
+[PASS] RF 真样本测试报告创建 :: HTTP=200 run=RUN-20261115030052-fb0000 id=26
+[PASS] TC-46 RF sections kernel=robot :: kernel=robot
+[PASS] TC-46 RF 快照写明「不适用」而非空判据列 :: bytes=1214 notApplicable=True
+[PASS] TC-22/TC-40 历史报告快照零回归（平铺 dl、hash 不变） :: hash=82e410cd0ea9 bytes=1976
+[PASS] TC-54 副本改成功且不影响平台源 :: updateHTTP=200 copyName=W7-EXTRA-COPY srcFields=9 afterFields=9 payloadFields=9 err=
+[PASS] 3 条临时 run 准备完毕 :: inserted=3
+[PASS] TC-48 批量删 3 条 + 影响面回报 :: HTTP=200 deleted=3 failed=0 impact={'testReportExportCount': 0, 'runArtifactCount': 0} dbSoftDeleted=3
+[PASS] TC-51 软删后列表不再出现这 3 条 :: response_contains_temp_run=False
+[PASS] TC-31/35/55 非管理员三处写操作被拒 :: account=qa-e2e-viewer settings=403 printToken=403 copy=403
+
+[还原]
+temp_reports=1; temp_copies=1; temp_runs=3; leftover_reports=0; leftover_runs=0

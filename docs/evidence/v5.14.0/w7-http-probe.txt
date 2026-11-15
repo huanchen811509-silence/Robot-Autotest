@@ -1,0 +1,57 @@
+v5.14.0 W7 真实 HTTP + DB 主探针（部署后执行）
+HEAD=b663345  BASE=http://127.0.0.1:8081  TIME=2026-11-15 22:08:02
+样本：临时测试报告 / 项目模板副本 / 项目设置 / 大快照，finally 逐项还原
+PASS=43 FAIL=0 TOTAL=43
+------------------------------------------------------------------------
+[PASS] 登录取得 Bearer token :: HTTP=200
+[PASS] 运行期 build-info commit == HEAD :: HTTP=200 runtime=b663345 head=b663345
+[PASS] 后端健康探针 :: HTTP=200
+[PASS] 执行报告列表返回 suiteCount 字段 :: HTTP=200 rows=5 values=[None, None, None]
+[PASS] 历史 run 的 suiteCount 为 null（不是 0） :: 口径：NULL=历史未采集，界面显示「—」
+[PASS] 执行报告详情返回 suiteCount 字段 :: HTTP=200 suiteCount=None
+[PASS] 项目 digest 端点可达（套件数同源展示） :: HTTP=200 digestKeys=['coverage', 'generatedAt', 'passRateTrend', 'projectId', 'recentReports', 'topFailedCases', 'windowDays']
+[PASS] DB run.suite_count 列存在且历史行不回填 :: col=['suite_count', 'int'] NULL_rows=543
+[PASS] GET /{id}/snapshot 返回只读 HTML 快照 :: HTTP=200 bytes=1976 frozen=False
+[PASS] 快照 hash 与状态随通道返回 :: hash=82e410cd0ea9 state=DRAFT
+[PASS] 服务端清洗后快照不含脚本/危险协议 :: hit=[]
+[PASS] GET /{id} 仍是字段视图（与快照通道分离） :: HTTP=200
+[PASS] 测试报告导出 HTML 返回真实文件 :: HTTP=200 bytes=1495 ctype=text/html;charset=UTF-8
+[PASS] 测试报告导出 PDF 返回真实文件 :: HTTP=200 bytes=1501 ctype=application/pdf
+[PASS] 测试报告导出 DOCX 返回真实文件 :: HTTP=200 bytes=2659 ctype=application/vnd.openxmlformats-officedocument.wordprocessing
+[PASS] 测试报告导出 XLSX 返回真实文件 :: HTTP=200 bytes=4069 ctype=application/vnd.openxmlformats-officedocument.spreadsheetml.
+[PASS] 执行报告打印 token 真实发放（exportable run） :: HTTP=200 run=EHT-REAL-L1-20261113-220422-01 keys=['expiresAt', 'mode', 'printUrl', 'token']
+[PASS] 打印 token 一次性：首次可读、重放被拒 :: first=200 replay=400 msg=打印链接无效或已过期，请重新发起导出
+[PASS] metadata 缺失 run 对外打印被拒且点名缺项 :: HTTP=400 missing=['STARTED_AT']
+[PASS] 对内打印不受对外 metadata 门禁影响 :: HTTP=200
+[PASS] report.auto_generate 写入链打通（W3 真实缺口） :: HTTP=200 before=false after=true
+[PASS] report.auto_generate 非 boolean 被拒 :: HTTP=400 msg=report.auto_generate 只能是 true / false
+[PASS] fields(robot) = 21 项标准 RF 字段不变 :: HTTP=200 count=21
+[PASS] fields(pytest) = 26 项且含 EF 专属字段 :: HTTP=200 count=26 missing=[]
+[PASS] 非法 kernel 被拒（严格校验） :: HTTP=400
+[PASS] 模板列表透出 kernel 且 EHT-PYTEST 为 pytest :: HTTP=200 templates=[(1, 'robot'), (8, 'pytest')]
+[PASS] TemplateRef 回退可见：kernel / templateSource 查询期透出 :: HTTP=200 keys=['fieldKeys', 'id', 'kernel', 'name', 'templateSource', 'version'] source=PLATFORM_FALLBACK
+[PASS] DB EHT-PYTEST 9 字段 / 平台 DEFAULT 21 字段 :: eht=9 default=21
+[PASS] 创建 pytest 真样本测试报告（三段式生成入口） :: HTTP=200 id=24 msg=OK
+[PASS] pytest 快照含三段式 section 与目录锚点 :: HTTP=200 sections=['conclusion', 'evidence', 'appendix'] anchor=True bytes=6791
+[PASS] GET /{id}/sections 四态之和 == 用例总数 :: HTTP=200 kernel=pytest total=70 sum=70
+[PASS] 未定项点名非空（无 NULL nodeRef） :: rows=20 sample=[{'nodeRef': 'IM-FUN-020', 'reason': '采集异常：IllegalArgumentException / 文本中未找到判据 JSON 对象'}]
+[PASS] 证据路径为相对路径（不泄漏部署目录） :: rows=50 absolute=[]
+[PASS] 差异字段存在且无基线不假报新增失败 :: hasBaseline=True newFail=4
+[PASS] 三段式 metadata 十项清单齐备且真值同源 :: keys=1 required=10 present=['RUN_ID']
+[PASS] 附录对缺失 metadata 项显式写「未提供」 :: HTML 含未提供=True
+[PASS] 临时报告冻结成功（状态机真实流转） :: HTTP=200 state=FROZEN
+[PASS] 冻结测试报告删除被拒 409 且文案点名 :: HTTP=409 msg=已冻结，请先解冻
+[PASS] 复制平台模板为项目模板（真实 HTTP） :: HTTP=200 id=11 name=EHT-PYTEST-副本
+[PASS] 副本字段逐项复制且平台源不变 :: copyFields=9 srcFields=9 src=0|EHT-PYTEST|pytest
+[PASS] 10MB 快照 GET 服务端耗时采样 :: snapshot 1MB: HTTP=200 secs=0.234 bytes=1048587 rss_delta_kb=616 | snapshot 4MB: HTTP=200 secs=0.732 bytes=4194315 rss_delta_kb=148 | snapshot 10MB: HTTP=200 secs=1.570 bytes=10485771 rss_delta_kb=12544
+[PASS] W64-18 判据：10MB 快照 GET 服务端耗时 <= 3s :: 10MB secs=1.570（判据 <=3.0；超出即如实判红）
+[PASS] 大快照导出真实耗时/内存采样 :: export html(10MB snapshot): HTTP=200 secs=0.358 bytes=772 rss_delta_kb=49516
+
+[W64-18 性能分级采样]
+snapshot 1MB: HTTP=200 secs=0.234 bytes=1048587 rss_delta_kb=616
+snapshot 4MB: HTTP=200 secs=0.732 bytes=4194315 rss_delta_kb=148
+snapshot 10MB: HTTP=200 secs=1.570 bytes=10485771 rss_delta_kb=12544
+export html(10MB snapshot): HTTP=200 secs=0.358 bytes=772 rss_delta_kb=49516
+
+[还原]
+test_report=24 deleted=ok; test_report_audit=ok; template_copy=11 deleted=ok; template_copy_row=ok; setting_restored=false HTTP=200; big_snapshot_drop=with report row; leftover_w7_reports=0

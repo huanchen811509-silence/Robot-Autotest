@@ -425,3 +425,25 @@ docs/evidence/v5.14.0/
 
 **仍待 W7（如实登记）**：重建 jar + 重启后真实 HTTP（`/{id}/copy` 逐字段比对、非管理员 403、
 冻结批量删 409、3 条执行报告影响面）、真视口截图、全量门禁 `bash scripts/gates.sh`。
+
+
+---
+
+## 16. W7 实测结果（最终落定）
+
+| 来源 | 结果 |
+|---|---|
+| 首轮主探针 | PASS=36 FAIL=3 TOTAL=39，判红留痕不隐去（`w7-http-probe-first-run.txt`） |
+| 修复后主探针 | PASS=43 FAIL=0 TOTAL=43（`w7-http-probe.txt`） |
+| 补充探针 | PASS=14 FAIL=0 PARTIAL=0 TOTAL=14（`w7-http-probe-extra.txt`） |
+| 模板分级探针 | PASS=6 FAIL=0 TOTAL=6（`w7-template-probe.txt`） |
+| 门禁 | GATES_RESULT FAILS=0 UNJUDGED=0 |
+| 六份产物 | 从 `_draft/v5.14.0/` 迁入 `docs/release/v5.14.0/`，补 `05-TEST-REPORT.md` |
+
+**W7 补测的既有遗留项**：真实 HTTP 四格式导出、打印 token 一次性与 metadata 防线、
+`report.auto_generate` 写入链、模板四级回退三类真样本、三段式 70 用例四态平衡、
+冻结 409、复制模板逐字段与改副本不影响源、非管理员三处 403、3 条真实批量软删与分页、
+10MB 快照与导出性能分级。
+
+**仍未取得**（如实登记，逐条见 `05-TEST-REPORT.md` §5）：真视口逐 TC 截图、
+真实库 R1/R2/R3 入库三样本、PDF/DOCX 外部解析、≥50MB 导出样本、自动生成真实执行触发。

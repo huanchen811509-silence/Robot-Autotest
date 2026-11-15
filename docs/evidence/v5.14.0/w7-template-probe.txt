@@ -1,0 +1,14 @@
+v5.14.0 W7 模板四级回退真实 HTTP 探针（TC-36 / 37 / 38）
+HEAD=b663345
+TIME=2026-11-15 22:15:03
+PASS=6 FAIL=0 TOTAL=6
+------------------------------------------------------------------------
+[PASS] 登录 :: HTTP=200
+[PASS] pytest 真样本报告创建 :: HTTP=200 run=EHT-REAL-1794671083499 id=28
+[PASS] TC-36 pytest 命中 EHT 预置（9 字段 + kernel=pytest + 来源可见） :: HTTP=200 fields=9 name=EHT-PYTEST kernel=pytest source=PLATFORM_KERNEL_MATCH
+[PASS] robot 真样本报告创建 :: HTTP=200 run=RUN-20261115030052-fb0000 id=29
+[PASS] TC-37 标准 RF 行为不变（21 字段 + kernel=robot） :: HTTP=200 fields=21 name=DEFAULT source=PLATFORM_KERNEL_MATCH
+[PASS] TC-38 历史报告回退到通用模板且来源可见（不误报内核匹配） :: HTTP=200 source=PLATFORM_FALLBACK kernel=robot
+
+[还原]
+temp_reports=2 leftover_W7_TPL=0

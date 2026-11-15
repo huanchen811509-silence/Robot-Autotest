@@ -224,6 +224,6 @@ iframe {
   min-height: 560px;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-sm);
-  background: #fff;
+  background: var(--panel);
 }
 </style>
