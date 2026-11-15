@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, h, ref, watch } from 'vue'
+import { computed, h, nextTick, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
@@ -54,6 +54,9 @@ const runId = computed(() => String(route.params.runId ?? ''))
 
 const detail = ref<ReportDetail | null>(null)
 const tree = ref<ReportSuiteNode | null>(null)
+/** v5.14.0 / W64-04：?suite= 深链目标与提示。 */
+const highlightSuite = ref('')
+const suiteNotice = ref('')
 const loading = ref(false)
 const error = ref<ErrorLine | null>(null)
 
@@ -139,6 +142,32 @@ function metadataMissing(key: string): boolean {
   return metadataValue(key).trim().length === 0
 }
 
+/**
+ * v5.14.0 / W64-04：?suite= 深链。
+ * - suite=all：列表「套件数」入口，展开并标记全部一级套件；
+ * - suite=<一级套件名>：可粘贴的精确深链，定位、高亮并滚动；
+ * - 非法参数：给人话提示，页面照常加载，不白屏、不 500。
+ */
+async function focusSuite(): Promise<void> {
+  suiteNotice.value = ''
+  highlightSuite.value = ''
+  const raw = String(route.query?.suite ?? '').trim()
+  if (!raw || !tree.value) return
+  const names = tree.value.suites.map((suite) => suite.name)
+  if (raw !== 'all' && !names.includes(raw)) {
+    suiteNotice.value = t('reports.suiteNotFound', { name: raw })
+    return
+  }
+  highlightSuite.value = raw
+  await nextTick()
+  document
+    .querySelector<HTMLElement>('[data-suite-target="true"]')
+    ?.scrollIntoView?.({ block: 'center' })
+  suiteNotice.value = raw === 'all'
+    ? t('reports.suiteAllExpanded', { count: names.length })
+    : t('reports.suiteFocused', { name: raw })
+}
+
 async function loadAll(): Promise<void> {
   error.value = null
   if (!projectId.value || !runId.value) {
@@ -157,6 +186,7 @@ async function loadAll(): Promise<void> {
     ])
     detail.value = d
     tree.value = tr
+    await focusSuite()
     await loadPassRate()
     await loadExports()
   } catch (e) {
@@ -887,7 +917,16 @@ watch(granularity, () => {
           </NCheckbox>
         </div>
 
-        <SuiteTree v-if="tree" :node="tree" :depth="0" @open-logs="openLogs" />
+        <p v-if="suiteNotice" class="muted" data-testid="suite-deeplink-notice">
+          {{ suiteNotice }}
+        </p>
+        <SuiteTree
+          v-if="tree"
+          :node="tree"
+          :depth="0"
+          :highlight="highlightSuite || undefined"
+          @open-logs="openLogs"
+        />
         <p v-else class="muted">{{ t('reports.treeEmpty') }}</p>
 
         <div v-if="logOpen" class="log-panel">

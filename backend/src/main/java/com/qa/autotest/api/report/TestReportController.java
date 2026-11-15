@@ -72,6 +72,19 @@ public class TestReportController {
     }
 
     /**
+     * 只读 HTML 快照通道（v5.14.0 / W64-05）。
+     *
+     * <p>与 {@link #render} 分开：render 给的是字段 Map（供列表/导出），这里给的是
+     * 冻结时落库并清洗过的 HTML（供详情页 iframe）。前端必须用
+     * {@code sandbox=""}（不含 {@code allow-same-origin} / {@code allow-scripts}）。
+     */
+    @GetMapping("/{id}/snapshot")
+    public ApiResponse<TestReportService.SnapshotView> snapshot(@PathVariable long id) {
+        access.requireProjectAccess(reports.find(id).projectId());
+        return ApiResponse.ok(reports.snapshotView(id));
+    }
+
+    /**
      * 报告冻结时绑定的模板（TPLX-02）。
      *
      * <p>刻意单独开一个只读接口而不是塞进渲染结果：渲染结果受 C5 白名单自检保护，

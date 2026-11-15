@@ -19,6 +19,12 @@ import { useAuthStore } from '@/stores/auth'
 import { testReportsApi, type TestReportItem } from '@/api/testReports'
 import TestReportsView from '@/views/TestReportsView.vue'
 
+// v5.14.0 / W64-05：列表标题列接了 router.push（进详情页），视图级 spec 需要路由桩。
+vi.mock('vue-router', () => ({
+  useRoute: () => ({ query: {}, params: {} }),
+  useRouter: () => ({ push: vi.fn() }),
+}))
+
 /**
  * `RunPicker` 桩：一个按钮，点下去同时派发 `update:modelValue` 与 `select`。
  *

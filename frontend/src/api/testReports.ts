@@ -29,8 +29,24 @@ export interface TestReportExportItem {
 
 /** 导出文件名全平台统一，避免后端 Content-Disposition 与前端另存名不一致。 */
 export function exportFileName(id: number, format: string): string {
-  const ext = ['html', 'pdf', 'docx'].includes(format.toLowerCase()) ? format.toLowerCase() : 'html'
+  // v5.14.0 / W64-07：后端实际支持四格式（含 xlsx），前端不得再写死三种。
+  const ext = ['html', 'pdf', 'docx', 'xlsx'].includes(format.toLowerCase()) ? format.toLowerCase() : 'html'
   return `report-${id}.${ext}`
+}
+
+/**
+ * v5.14.0 / W64-05：只读 HTML 快照视图。
+ * `html` 已由服务端 ReportHtmlSanitizer 清洗；前端仍必须用 iframe sandbox 兜第二层。
+ */
+export interface TestReportSnapshot {
+  html: string
+  hash: string | null
+  state: string
+  title: string
+  /** 已冻结：预览以冻结快照为准，模板后续变更不影响。 */
+  frozen: boolean
+  /** false = 历史脏数据没有 snapshot_html，详情页显示可解释的空态。 */
+  hasSnapshot: boolean
 }
 
 export const testReportsApi = {
@@ -66,6 +82,8 @@ export const testReportsApi = {
     }),
   freeze: (id: number) =>
     request<TestReportItem>(`/test-reports/${id}/freeze`, { method: 'POST' }),
+  snapshot: (id: number) =>
+    request<TestReportSnapshot>(`/test-reports/${id}/snapshot`),
   render: (id: number, external = true) =>
     request<Record<string, unknown>>(`/test-reports/${id}?external=${external}`),
   exportBlob: (id: number, format: string) =>

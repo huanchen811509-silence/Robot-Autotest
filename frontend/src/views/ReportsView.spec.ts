@@ -241,3 +241,23 @@ describe('ReportsView 套件数列（v5.14.0 / W64-03）', () => {
     expect(root.querySelector('[data-testid="suite-count-RUN-002"]')).toBeNull()
   })
 })
+
+
+describe('ReportsView 套件数深链（v5.14.0 / W64-04）', () => {
+  it('点套件数带 suite=all 进详情；历史 NULL 不给链接', async () => {
+    const root = await mountView()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    await nextTick()
+
+    const link = root.querySelector<HTMLElement>('[data-testid="suite-link-RUN-001"]')
+    expect(link).not.toBeNull()
+    link!.click()
+    await nextTick()
+    expect(routerMock.push).toHaveBeenCalledWith({
+      name: 'report-detail',
+      params: { runId: 'RUN-001' },
+      query: { suite: 'all' },
+    })
+    expect(root.querySelector('[data-testid="suite-link-RUN-002"]')).toBeNull()
+  })
+})

@@ -23823,6 +23823,52 @@
         ]
       }
     },
+    "/api/test-reports/{id}/snapshot": {
+      "get": {
+        "operationId": "TestReportController.snapshot",
+        "tags": [
+          "report"
+        ],
+        "responses": {
+          "200": {
+            "description": "统一信封；业务错误码见 ErrorCode",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ]
+      }
+    },
     "/api/test-reports/{id}/template": {
       "get": {
         "operationId": "TestReportController.template",

@@ -102,7 +102,20 @@ const columns = computed<DataTableColumns<ReportListItem>>(() => [
     render: (row) =>
       row.suiteCount == null
         ? h('span', { class: 'muted', 'data-testid': `suite-unknown-${row.runId}` }, '—')
-        : h('span', { class: 'mono', 'data-testid': `suite-count-${row.runId}` }, String(row.suiteCount)),
+        : h(
+            NButton,
+            {
+              text: true,
+              type: 'primary',
+              'data-testid': `suite-link-${row.runId}`,
+              onClick: () => openSuites(row.runId),
+            },
+            {
+              default: () =>
+                h('span', { class: 'mono', 'data-testid': `suite-count-${row.runId}` },
+                  String(row.suiteCount)),
+            },
+          ),
   },
   { title: t('reports.startedAt'), key: 'startedAt', width: 190, render: (row) => row.startedAt || '—' },
   {
@@ -190,6 +203,11 @@ function turnPage(next: number): void {
 
 function openReport(runId: string): void {
   void router.push({ name: 'report-detail', params: { runId } })
+}
+
+/** v5.14.0 / W64-04：套件数列是入口，不是静态数字。suite=all = 展开全部一级套件。 */
+function openSuites(runId: string): void {
+  void router.push({ name: 'report-detail', params: { runId }, query: { suite: 'all' } })
 }
 
 /**

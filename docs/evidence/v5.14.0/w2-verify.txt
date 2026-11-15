@@ -1,0 +1,38 @@
+v5.14.0 / W2 真实验证读数（WSL ~/robot-autotest）
+时间：2026-11-15 GMT+8
+
+[1] 后端单测
+  mvn -o -B -Dtest=ReportHtmlSanitizerTest,TestReportServiceTest,TestReportControllerTest,CaseKeyPathTest,SuiteCountTest test
+    -> Tests run: 15, Failures: 0, Errors: 0, Skipped: 0 / BUILD SUCCESS
+  ReportHtmlSanitizerTest 4 例：空值 / script 块与 on* 属性 / javascript: 与 data: 协议 /
+    保留 dl-dt-dd 与 h1-table 报告标记、去 iframe-style。
+
+[2] 前端
+  python3 tools/check_i18n.py   -> [1/5] zh-CN 3112 / en-US 3112
+                                  [3/5] 255 文件，硬编码中文 0 处
+                                  [RESULT] 通过（5/5）
+  npx vue-tsc --noEmit         -> 0 error
+  npx vitest run ReportsView.spec.ts TestReportsView.spec.ts
+                TestReportDetailView.spec.ts ReportDetailView.spec.ts
+    -> Test Files 4 passed (4) / Tests 39 passed (39)
+    ReportsView 7（含新增深链断言）/ ReportDetailView 14 /
+    TestReportsView 16 / TestReportDetailView 2
+
+[3] 契约与机检
+  python3 tools/gen_api_contract.py         -> endpoints=457 paths=375
+  python3 tools/gen_api_contract.py --check -> PASS
+  openapi.json 含 /api/test-reports/{id}/snapshot -> 1 处
+  python3 tools/check_dto_columns.py        -> PASS
+  python3 tools/check_tables.py             -> PASS（68 处数据网格走壳，原生 table 仅白名单 3 文件）
+
+[4] 新增文件
+  backend/.../application/report/ReportHtmlSanitizer.java
+  backend/.../application/report/ReportHtmlSanitizerTest.java
+  frontend/src/views/TestReportDetailView.vue
+  frontend/src/views/TestReportDetailView.spec.ts
+  新增端点：GET /api/test-reports/{id}/snapshot（TestReportService.SnapshotView）
+  新增路由：/test-reports/:id（name=test-report-detail）
+
+[5] 未执行（如实登记）
+  后端 jar 未重建 / 服务未重启，因此真实 HTTP + DB 探针留 W7；
+  真视口截图、iframe 内容 >1000 字符实测、冻结前后 hash 比对、10MB/50MB 性能采样均未取。

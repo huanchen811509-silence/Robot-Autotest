@@ -301,3 +301,24 @@ docs/evidence/v5.14.0/
 |---|---|---|
 | 2026-11-15 | 首版：55 TC 覆盖 11 FR | `PRD.md` + `DEV-PLAN.md` |
 | 2026-11-15 | 开工前修订判据 9 处、登记 W1 实测 5 项、明确真实优先口径 | `01-ASSESSMENT.md` §6、W1 命令输出 |
+
+
+---
+
+## 11. W2 实测结果（滚动）
+
+| TC | 方式 | 结果 | 证据 |
+|---|---|---|---|
+| TC-v5.14-11 | `UT`+`DOM` | PASS（口径修订后） | 点套件数 → `router.push({name:'report-detail', query:{suite:'all'}})`；`ReportsView.spec.ts` 断言 |
+| TC-v5.14-13 | `UT` | PARTIAL | 非法 path 的人话提示已在 `focusSuite()` 实现，但**未跑真视口 / 真实请求**，留到 W7 探针 |
+| TC-v5.14-14 | `MECH` | PASS（代码层） | `?suite=<一级套件名>` 深链可独立解析、不依赖列表页状态；真浏览器粘贴留 W7 |
+| TC-v5.14-15 | `MECH` | PASS | 未新增页面路由：只加 `/test-reports/:id`（W64-05），执行报告详情复用 `ReportDetailView` |
+| TC-v5.14-16 | `UT`+`DOM` | PASS（部分） | `TestReportDetailView.spec.ts` 断言 iframe `srcdoc` 含快照内容；真视口截图 / 长度 >1000 未取，标 PARTIAL |
+| TC-v5.14-17/18 | `UT` | PASS（口径修订后） | DRAFT 显示「冻结报告」接既有 freeze；无快照显示可解释空态，两条 spec |
+| TC-v5.14-20 | `DOM` | PASS | `sandbox=""`，断言不含 `allow-same-origin` / `allow-scripts` |
+| TC-v5.14-21 | `UT` | PASS（部分） | 列表标题列 `open-test-report-{id}` 进详情、详情「返回列表」按钮；网络日志留 W7 |
+| TC-v5.14-22 | `UT` | PARTIAL | 冻结快照语义由 `ReportSnapshotService` 保证，前后 hash 比对留 W7 真实探针 |
+| NFR-06（清洗） | `UT` | PASS | `ReportHtmlSanitizerTest` 4 例：去 script 块 / 去 on* 属性 / 阻断危险协议 / 保留报告标记 |
+
+**W2 合计**：新增机检/单测 `ReportHtmlSanitizerTest 4`、`TestReportDetailView.spec 2`、`ReportsView.spec +1`；
+全量相关回归 `39 例 PASS`。未跑到的 UI 截图、真实 HTTP、性能采样一律不预填。

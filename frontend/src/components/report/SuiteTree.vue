@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { ReportCaseNode, ReportSuiteNode } from '@/api/reports'
 import StatusTag from '@/components/StatusTag.vue'
@@ -40,12 +40,24 @@ import KeywordSteps from './KeywordSteps.vue'
 const props = defineProps<{
   node: ReportSuiteNode
   depth: number
+  /** v5.14.0 / W64-04：深链目标；'all' = 展开并标记全部一级套件。 */
+  highlight?: string
 }>()
 
 const emit = defineEmits<{ (event: 'open-logs', caseKey: string): void }>()
 
 const { t } = useI18n()
-const open = ref(props.depth === 0)
+/** 深链命中时默认展开该节点；'all' 展开到一级，避免用户还要手点一次。 */
+const open = ref(
+  props.depth === 0
+    || (props.highlight === 'all' && props.depth <= 1)
+    || (!!props.highlight && props.highlight !== 'all' && props.highlight === props.node.name),
+)
+const isTarget = computed(() => {
+  if (!props.highlight) return false
+  if (props.highlight === 'all') return props.depth === 1
+  return props.node.name === props.highlight
+})
 const expanded = ref<Set<string>>(new Set())
 /** 已展开全文的命令行（按 caseKey）。 */
 const cmdExpanded = ref<Set<string>>(new Set())
@@ -159,7 +171,11 @@ function sourceLabel(source: string | null): string {
 
 <template>
   <div class="suite" :class="{ nested: depth > 0 }">
-    <div class="suite-head">
+    <div
+      class="suite-head"
+      :class="{ 'is-target': isTarget }"
+      :data-suite-target="isTarget ? 'true' : undefined"
+    >
       <button class="tree-toggle" type="button" :data-suite-name="node.name" @click="toggleSuite">
         <span class="caret">{{ open ? '▾' : '▸' }}</span>
         <span class="suite-name">{{ node.name }}</span>
@@ -260,6 +276,7 @@ function sourceLabel(source: string | null): string {
         :key="child.name"
         :node="child"
         :depth="depth + 1"
+        :highlight="highlight"
         @open-logs="(caseKey: string) => emit('open-logs', caseKey)"
       />
     </div>
@@ -273,6 +290,11 @@ function sourceLabel(source: string | null): string {
   margin-left: 18px;
   border-left: 1px dashed var(--border-strong);
   padding-left: 10px;
+}
+
+.suite-head.is-target {
+  background: var(--surface-2);
+  border-radius: 6px;
 }
 
 .suite-head,

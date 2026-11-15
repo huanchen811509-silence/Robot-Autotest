@@ -14,6 +14,7 @@
  */
 import { computed, h, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 import { NButton, NCheckbox, NInput, NModal, type DataTableColumns } from 'naive-ui'
 import DataTable from '@/components/DataTable.vue'
 import ListScaffold from '@/components/ListScaffold.vue'
@@ -30,6 +31,7 @@ import type { ExecutionRun } from '@/api/execution'
 import { formatDateTime } from '@/utils/format'
 
 const { t } = useI18n()
+const router = useRouter()
 const auth = useAuthStore()
 const rows = ref<TestReportItem[]>([])
 const loading = ref(false)
@@ -225,7 +227,24 @@ const columns = computed<DataTableColumns<TestReportItem>>(() => [
         'aria-label': t('w57.testReports.selectRow', { title: row.title }),
       }),
   },
-  { title: t('testReports.colTitle'), key: 'title', minWidth: 160 },
+  {
+    title: t('testReports.colTitle'),
+    key: 'title',
+    minWidth: 160,
+    // v5.14.0 / W64-05：列表点标题进详情。此前「能建不能看」——没有任何入口。
+    render: (row) =>
+      h(
+        NButton,
+        {
+          text: true,
+          type: 'primary',
+          size: 'small',
+          'data-testid': `open-test-report-${row.id}`,
+          onClick: () => void router.push({ name: 'test-report-detail', params: { id: row.id } }),
+        },
+        { default: () => row.title },
+      ),
+  },
   { title: t('testReports.colRun'), key: 'runId', minWidth: 160 },
   {
     title: t('testReports.colSource'),

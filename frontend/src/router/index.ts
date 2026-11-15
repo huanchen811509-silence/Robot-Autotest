@@ -185,6 +185,13 @@ const router = createRouter({
       component: () => import('@/views/TestReportsView.vue'),
     },
     {
+      // v5.14.0 / W64-05：测试报告详情页（只读快照预览）。放在列表之后，
+      // 精确路径 /test-reports 不会被 :id 抢走。
+      path: '/test-reports/:id',
+      name: 'test-report-detail',
+      component: () => import('@/views/TestReportDetailView.vue'),
+    },
+    {
       path: '/admin',
       name: 'admin',
       component: () => import('@/views/AdminView.vue'),

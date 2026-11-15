@@ -152,6 +152,30 @@ public class TestReportService {
     }
 
     /**
+     * 只读 HTML 快照视图（v5.14.0 / W64-05 / FR-v5.14-04）。
+     *
+     * <p>原有 {@code GET /api/test-reports/{id}} 只返回字段 Map，前端拿不到
+     * {@code snapshot_html}，所以「能建不能看」。这里**不复用 render**（render 是字段视图、
+     * 受白名单自检保护），而是单独开一条只读通道：直接读冻结时落库的 HTML，
+     * 经 {@link ReportHtmlSanitizer} 清洗后交给 {@code iframe sandbox}。
+     *
+     * <p>刻意不从当前模板重新渲染：冻结件必须与当时打印的一致。无快照（历史脏数据）
+     * 返回 {@code hasSnapshot=false} 而不是抛异常，让详情页显示可解释的空态。
+     */
+    public record SnapshotView(String html, String hash, String state, String title,
+                               boolean frozen, boolean hasSnapshot) {
+    }
+
+    public SnapshotView snapshotView(long id) {
+        TestReport report = find(id);
+        String raw = report.snapshotHtml();
+        boolean has = raw != null && !raw.isBlank();
+        return new SnapshotView(has ? ReportHtmlSanitizer.sanitize(raw) : "",
+                report.snapshotHash(), report.state().name(), report.title(),
+                report.frozenAt() != null, has);
+    }
+
+    /**
      * 导出。
      *
      * <p>字段顺序与标题都来自快照内模板，所以「先冻结、后改模板、再导出」拿到的仍是

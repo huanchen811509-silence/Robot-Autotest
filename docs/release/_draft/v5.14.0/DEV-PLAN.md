@@ -326,3 +326,24 @@ W4 与 W2/W3 改动面不重叠可并行；W5 必须在 W4 之后（要用 kerne
 |---|---|---|
 | 2026-11-15 | 首版：7 波 19 WBS | `PRD.md` v5.14.0 + 评估 04 |
 | 2026-11-15 | 开工前重定义 WBS 内容、修正 W64-19 门禁命令、登记 W1 完成与偏差 | `01-ASSESSMENT.md`、W1 真实命令输出 |
+
+
+---
+
+## 14. W2 实际完成（W64-04 ~ W64-06）
+
+| WBS | 完成内容 | 验收读数 |
+|---|---|---|
+| W64-04 | `ReportsView` 套件数列改为入口（`?suite=all`）；`ReportDetailView.focusSuite()` 支持 `all` / 精确一级套件名 / 非法参数提示；`SuiteTree` 加 `highlight` 控制默认展开与 `data-suite-target` 高亮，滚动到可视区 | `ReportsView.spec.ts` 7/7、`ReportDetailView.spec.ts` 14/14；`vue-tsc` 0 error |
+| W64-05 | 新增 `GET /api/test-reports/{id}/snapshot`（`TestReportService.SnapshotView`）；`ReportHtmlSanitizer` 服务端清洗；新增 `TestReportDetailView.vue` + 路由 `/test-reports/:id` + 列表标题入口；`iframe sandbox=""` | `ReportHtmlSanitizerTest` 4 例；`TestReportDetailView.spec.ts` 2 例；契约 `457/375` `--check` PASS |
+| W64-06 | 按 R-10 重定义：DRAFT 已有快照，页面给「冻结报告」接既有 `POST /{id}/freeze`；`hasSnapshot=false` 只给可解释空态，不摆假按钮 | 前端 spec 2/2；`TestReportsView.spec.ts` 16/16 零回归 |
+
+### 14.1 W2 偏差登记
+
+| # | 偏差 | 原因 |
+|---|---|---|
+| B-4 | 草案 W64-05「新增 `GET /api/test-reports/{id}`」未做 | R-9：端点已在契约内且返回字段 Map；真实缺口是 HTML 通道，新增的是 `/{id}/snapshot` |
+| B-5 | 草案 W64-06「草稿态 + 生成快照按钮」未做 | R-10：创建 DRAFT 即物化快照；按真实状态机改为冻结接线 |
+| B-6 | 列表深链只带 `suite=all`，不带具体套件名 | 列表 DTO 只有 `suiteCount` 一个数字，没有套件名列表；精确 `?suite=<name>` 作为可粘贴深链独立支持（TC-14）。若为此给列表加 `suiteNames` 会引入第二套真值，得不偿失 |
+| B-7 | 左栏锚点当前只有「报告内容 / 快照信息」两项 | R-14：`snapshot_html` 仍是字段 `<dl>`，没有结论/证据/附录分节；三段式分节锚点留 W64-14 改生成器后补 |
+| B-8 | 本波未做真实 HTTP 探针 | 后端 jar 未重建；按版本纪律统一在 W7 重建 + 重启后跑两轮真实探针，此处不冒充 |
