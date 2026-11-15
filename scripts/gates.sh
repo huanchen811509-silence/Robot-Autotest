@@ -492,6 +492,11 @@ run 56 fe_contract "python3 tools/check_fe_contract.py && python3 tools/check_fe
 #    （防止声明表自我膨胀成「万能表」）。自证方式是真注入一个无来源字段判红、还原判绿。
 run 57 dto_columns "python3 tools/check_dto_columns.py && python3 tools/check_dto_columns.py --self-test"
 
+# 58 运维护栏与审计（v5.16.0 / FR-v5.16-10）：四条硬护栏 + 每个写端点都过权限闸并落审计。
+#    判据是源码 / 迁移的静态事实，不跑真实备份或恢复；负向自证由两个脚本各自的
+#    --self-check / --self-test 提供，证据见 docs/evidence/v5.16.0/w7-*.txt。
+run 58 ops_guardrails "python3 tools/check_ops_guardrails.py && python3 tools/check_ops_audit.py"
+
 printf '\nGATES_RESULT FAILS=%s UNJUDGED=%s\n' "$FAILS" "${UNJUDGED:-0}"
 
 exit "$FAILS"

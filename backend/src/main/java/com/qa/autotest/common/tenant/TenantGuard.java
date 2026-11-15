@@ -66,7 +66,9 @@ public final class TenantGuard {
             // v5.15.0：设备快照两表都带 project_id，按项目隔离。
             "device_snapshot", "device_snapshot_item",
             // v5.15.0：探针包两表带 project_id（0=平台预置），查询按项目条件收口。
-            "probe_pack", "probe_pack_command");
+            "probe_pack", "probe_pack_command",
+            // v5.16.0：运维任务表带 project_id，按项目隔离。
+            "ops_task");
 
     private TenantGuard() {
     }

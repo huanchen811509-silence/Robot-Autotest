@@ -531,17 +531,23 @@ export const NAVIGATION: NavNode[] = [
     ],
   },
   {
-    // v2.2 / MENU-01 + MENU-04：维护与恢复（3 个只读二级页）。
-    key: 'maintenance',
-    labelKey: 'menu.maintenance',
+    // v5.16.0 / FR-v5.16-01 / D-7：维护与恢复升为「运维」一级。
+    // 总纲 D-7 已拍板「独立一级」：运维属管理域，与 D-3 同构，不并入系统设置
+    // （并进去会把设置组撑到 10 项）。项目树仍是 7 组 —— 本组占原 maintenance 的位置，
+    // 不是「在第 8 位再加一个组」，所以 `NAVIGATION).toHaveLength(7)` 不变。
+    // 原三个只读页（原则 / 恢复记录 / 只读找回）按 W66-13 处置：内容并入下面四页，
+    // 组件仍被复用嵌入，旧深链在路由里重定向到新位置。
+    key: 'ops',
+    labelKey: 'menu.ops',
     icon: 'audit',
     children: [
-      { key: 'maintenance-principles', labelKey: 'menu.mntPrinciples', icon: 'info', path: '/maintenance/principles' },
-      { key: 'maintenance-records', labelKey: 'menu.mntRecords', icon: 'database', path: '/maintenance/records' },
-      { key: 'maintenance-recover', labelKey: 'menu.mntRecover', icon: 'search', path: '/maintenance/recover' },
+      { key: 'ops-health', labelKey: 'menu.opsHealth', icon: 'info', path: '/ops/health' },
+      { key: 'ops-backup', labelKey: 'menu.opsBackup', icon: 'database', path: '/ops/backup' },
+      { key: 'ops-archive', labelKey: 'menu.opsArchive', icon: 'search', path: '/ops/archive' },
+      { key: 'ops-upgrade', labelKey: 'menu.opsUpgrade', icon: 'download', path: '/ops/upgrade' },
       {
-        // v4.9.0 / FR-v4.9-01：存量同步。挂在「维护与恢复」下，不新增一级菜单。
-        key: 'maintenance-sync',
+        // v4.9.0 / FR-v4.9-01：存量同步。v5.16.0 起挂在「运维」组（原维护组同位置）。
+        key: 'ops-sync',
         labelKey: 'menu.mntSync',
         icon: 'download',
         path: '/sync',

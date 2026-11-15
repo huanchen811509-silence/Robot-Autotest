@@ -1,0 +1,45 @@
+# v5.16.0 W7 首轮真实探针（判红留痕，未修复前）
+
+后端 http://127.0.0.1:8081 / 项目 126 / 库 robot_dev
+运行时间：2026-11-15 23:57 前后（W7 首次全量探针）
+
+PASS  登录取得 Bearer token :: HTTP=200
+PASS  健康总览四块指标齐备 :: HTTP=200 blocks=['service', 'database', 'disk', 'recentCollect']
+PASS  磁盘档位是真实枚举 :: level=OK
+PASS  数据库表数与库内实测一致 :: api=115 db=115
+PASS  数据库容量有真实读数 :: sizeMb=38
+FAIL  L1 事实七项有真实值 :: HTTP=200 version=None root=/home/evergreen/robot-autotest/backend
+PASS  版本一致性口径可判 :: manifest=None
+PASS  备份清单条数 = 目录文件数 :: api=0 disk=0
+PASS  备份 SHA 三态可取（目录为空，空清单不编造） :: rows=0
+PASS  任务创建默认 dryRun=true（不传也不写真） :: HTTP=200 dryRun=True id=0
+PASS  预演返回计划步骤 :: plan=['PRECHECK', 'EXECUTE', 'VERIFY']
+FAIL  任务历史可查且刷新后仍在 :: HTTP=200 ids=[]
+FAIL  中止后落库为 ABORTED :: HTTP=404 db=
+PASS  超租对账端点可跑 :: HTTP=200 swept=0
+PASS  非 _it 演练库被拒且点名 :: HTTP=400 msg=恢复演练只允许以 _it 结尾的演练库：targetDb=robot_dev 被拒
+PASS  _it 演练库放行并给命令 :: HTTP=200 cmd=bash scripts/ops/db-migrate.sh (DRILL_TARGET_DB=robot_it)
+PASS  源库 vs 演练库比对可跑 :: HTTP=200 compared=10 consistent=False mismatched=10
+FAIL  比对动作落审计行 :: before=0 after=0
+PASS  比对拒绝非 _it 目标库 :: HTTP=400
+PASS  预检三类结构齐备 :: HTTP=200 passed=True kinds=['MIGRATION']
+PASS  预检不改状态（版本不变） :: version=5.7.0
+PASS  不存在的交付包被点名为 PACKAGE :: HTTP=200 kinds=['MIGRATION', 'PACKAGE']
+PASS  审计输出 who/when/result/duration :: HTTP=200 rows=0 keys=[]
+PASS  四条护栏自述齐备 :: HTTP=200 keys=[...]
+PASS  非管理员不能创建运维任务（403） :: HTTP=403 login=200
+CLEANUP probe_tasks_deleted=ok; leftover_probe_tasks=0
+PROBE_RESULT PASS=21 FAIL=4 TOTAL=25
+
+## 判红归类（均按产品缺陷处理，不改判据）
+
+1. `L1 事实七项有真实值` —— `appHome()` 直接把 `user.dir` 当安装根，
+   而部署是从 `backend/` 起进程，于是 `VERSION` 读成 null、`installRoot` 指向 `backend/`。
+   修：`user.dir` 以 `backend` 结尾且父目录有 `VERSION` 时上跳一级。
+2. `任务历史可查且刷新后仍在` / `任务创建 id=0` / `比对动作落审计行 before=0 after=0` ——
+   三处同源：`create(..., dryRun=true)` 直接返回 `taskId=0` 且不落库，
+   于是「谁预演过备份」在审计里查不到（违反 P4 全量审计）。
+   修：dry-run 也插一行审计（只到 PRECHECK，标记 `DRY_RUN`），业务仍零写入。
+3. `中止后落库为 ABORTED` —— 上一条的连带：任务不存在所以 404。
+   修完落库后，探针自身还有一处选样错误：拿「已完成」任务去中止，
+   实际返回 409 是**正确**行为。已改为「已完成任务 409」+「RUNNING 夹具中止落 ABORTED」两条判据。

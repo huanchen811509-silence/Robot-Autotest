@@ -34,11 +34,21 @@ function source(file: string): string {
 }
 
 describe('FR-v3.11-03 维护与恢复 3 页', () => {
-  it('3 条路由都解析到真实页面（不落到 not-found）', () => {
-    for (const [path, name] of ROUTES) {
-      const matched = router.resolve(path).matched.at(-1)?.name
-      expect(matched, path).toBe(name)
-      expect(matched).not.toBe('not-found')
+  it('3 条旧深链重定向到运维四页（不留 404）', () => {
+    // v5.16.0 / W66-13：三页内容并入「运维」一级，旧深链改 redirect。
+    // `router.resolve()` 不跟随 redirect（返回原记录、matched 为空），
+    // 所以判据要看路由记录本身的 `redirect`，不能看解析结果的 name。
+    const expected: Record<string, string> = {
+      '/maintenance/principles': '/ops/upgrade',
+      '/maintenance/records': '/ops/archive',
+      '/maintenance/recover': '/ops/backup',
+    }
+    const records = router.getRoutes()
+    for (const [path] of ROUTES) {
+      const record = records.find((item) => item.path === path)
+      expect(record, path).toBeTruthy()
+      expect(record?.redirect, path).toBe(expected[path])
+      expect(records.some((item) => item.name === 'not-found' && item.path === path)).toBe(false)
     }
   })
 
@@ -96,12 +106,18 @@ describe('FR-v3.11-03 维护与恢复 3 页', () => {
     expect(isRecoveryAction('auth.login')).toBe(false)
   })
 
-  it('「维护与恢复」一级分组含 3 个二级项，路径与路由一致', () => {
-    const group = NAVIGATION.find((node) => node.key === 'maintenance') as NavGroup
+  it('原「维护与恢复」组已升为「运维」一级，三页内容并入四页', () => {
+    // D-7：项目树第 6 组由 maintenance 升为 ops（7 组不变）。
+    expect(NAVIGATION.some((node) => node.key === 'maintenance')).toBe(false)
+    const group = NAVIGATION.find((node) => node.key === 'ops') as NavGroup
     expect(group).toBeTruthy()
     expect(isGroup(group)).toBe(true)
-    expect(group.children.length).toBeGreaterThanOrEqual(3)
     const paths = group.children.map((child) => child.path)
-    for (const [path] of ROUTES) expect(paths, path).toContain(path)
+    expect(paths).toContain('/ops/health')
+    expect(paths).toContain('/ops/backup')
+    expect(paths).toContain('/ops/archive')
+    expect(paths).toContain('/ops/upgrade')
+    // 旧三条深链不再作为菜单叶子出现（已由路由重定向承接）。
+    for (const [path] of ROUTES) expect(paths, path).not.toContain(path)
   })
 })

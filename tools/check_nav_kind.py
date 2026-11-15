@@ -48,7 +48,7 @@ ROUTER = ROOT / "frontend" / "src" / "router" / "index.ts"
 # v5.11.0 / W61-07：下架空壳页「测试总表看板」cases-board（/cases/board），45 → 44。
 # 基线随真实菜单增减同步，不是放宽断言：孤儿叶子、路径格式、kind 三项仍逐条判。
 # v5.15.0 / W65-14：环境组 6 叶收敛为 4 叶（prepare / analysis 旧深链改 redirect），44 → 42。
-EXPECTED_LEAVES = 42
+EXPECTED_LEAVES = 43  # v5.16.0 / FR-v5.16-08：维护组 4 叶 → 5 叶（四页运维 + 存量同步）
 
 PATH_RE = re.compile(r"path:\s*['\"](/[^'\"]*)['\"]")
 

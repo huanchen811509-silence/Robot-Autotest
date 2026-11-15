@@ -1,0 +1,68 @@
+# v5.16.0 各波次验证读数（W1 ~ W6）
+
+> 本文件是**命令读数汇总**，不是 HTTP 探针。真实链路证据在 `w7-*.txt`。
+> 记录目的：让每个波次的编译 / 迁移 / 契约读数可复核，而不是只在对话里说过。
+
+## W1 任务化框架（W66-01 ~ 03）
+
+| 项 | 命令 | 读数 |
+|---|---|---|
+| 后端编译 | `cd backend && mvn -B -q test-compile` | `COMPILE_OK` |
+| 单测 | `mvn -B -q test -Dtest=OpsTaskServiceTest` | `Tests run: 4, Failures: 0`（dry-run 审计行 + 三阶段 + 库名守卫 + 中止/对账） |
+| 迁移 | `bash scripts/db-migrate.sh` | `V11_78__v5_16_ops_task.sql` 应用成功 |
+| 库体检 | `bash scripts/db-audit.sh` | `db-audit: PASS`（7 条判据全 OK） |
+| 契约 | `python3 tools/gen_api_contract.py` | `endpoints=481 paths=398` |
+
+## W2 控制台骨架与护栏机检（W66-04 ~ 05、17 ~ 19）
+
+| 项 | 命令 | 读数 |
+|---|---|---|
+| 护栏机检 | `python3 tools/check_ops_guardrails.py` | `RESULT PASS`（12 条判据） |
+| 护栏负向自证 | `python3 tools/check_ops_guardrails.py --self-check` | 12 条逐条注入判红，干净副本判绿 |
+| 审计机检 | `python3 tools/check_ops_audit.py` | `RESULT PASS`（5 写端点 / 5 审计要素） |
+| 审计负向自证 | `python3 tools/check_ops_audit.py --self-test` | 3 注入（权限闸 / 审计调用 / 列名）全判红 |
+| 前端类型 | `cd frontend && npx vue-tsc --noEmit` | `TSC_OK` |
+| 导航基线 | `python3 tools/check_navigation.py` | `全局 6 组 / 20 叶`、`项目 7 组 / 28 叶` |
+| 叶子基线 | `python3 tools/check_nav_kind.py` | `叶子数 = 基线 43` |
+
+## W3 健康与只读事实（W66-06 ~ 07）
+
+| 项 | 命令 | 读数 |
+|---|---|---|
+| 后端编译 | `mvn -B -q test-compile` | `COMPILE_OK` |
+| 健康端点 | 见 `w7-http-probe.txt` | 六类齐备；`sizeMb=38`、`tables=115` 与库内一致 |
+| 事实端点 | 见 `w7-http-probe.txt` | `version=5.7.0`、`installRoot=/home/evergreen/robot-autotest` |
+
+## W4 备份与演练（W66-08 ~ 11）
+
+| 项 | 命令 | 读数 |
+|---|---|---|
+| 备份 dry-run | `bash scripts/ops/backup.sh --dry-run` | `rc=0`，`backups/*.gz` 数 `0 → 0`（零写入） |
+| SHA 三态 | 见 `w7-http-probe-extra.txt` | `VERIFIED / MISMATCH / MISSING` 一次取齐 |
+| 清单条数 | 见 `w7-http-probe-extra.txt` | `api=3 disk=3` |
+| 演练守卫 | 见 `w7-http-probe.txt` | 非 `_it` → `HTTP=400` 且点名；`robot_it` → `HTTP=200` |
+| 比对 | 见 `w7-http-probe.txt` | `compared=10 consistent=False mismatched=10`（演练库与源库确有差异） |
+
+## W5 归档与维护页处置（W66-12 ~ 13）
+
+| 项 | 命令 | 读数 |
+|---|---|---|
+| 归档预演 | 见 `w7-http-probe-extra.txt` | `run 543 → 543`（零写入） |
+| 路由重定向 | `npx vitest run src/views/maintenance/pages.spec.ts` | 7 例 PASS（三条旧深链 `redirect` 断言） |
+| 语言包 | `python3 tools/check_i18n.py` | `zh-CN 3252 键 / en-US 3252 键`，键集相等 |
+
+## W6 升级预检与演练（W66-14 ~ 16）
+
+| 项 | 命令 | 读数 |
+|---|---|---|
+| 预检结构 | 见 `w7-http-probe.txt` | `passed=True`、`issues=[...]`、`packagePresent` 可判 |
+| 包缺失点名 | 见 `w7-http-probe.txt` | `packagePath=/tmp/nope.tar.gz` → `kinds=['PACKAGE']` |
+| 预检只读 | 见 `w7-http-probe.txt` | 预检前后 `VERSION` 均 `5.7.0` |
+| 契约终值 | `python3 tools/gen_api_contract.py --check` | `484 endpoints / 401 paths`，`PASS` |
+
+## 口径说明
+
+- 表数在 W1 记 `114`、终态记 `115`：W1 之后 `ops_task` 的索引与视图统计口径由
+  `information_schema` 计一次，`db-audit` 与 `db/schema-contract.json` 两处一致即为准，
+  不以单次 `COUNT(*)` 读数为判据。
+- 本文件只汇总**命令读数**；「真实链路」一律以 `w7-*.txt` 与 `w8-gates-final.log` 为准。

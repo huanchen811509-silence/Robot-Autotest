@@ -1,0 +1,32 @@
+# v5.16.0 W7 真实 HTTP + DB 探针
+
+后端 http://127.0.0.1:8081 / 项目 126 / 库 robot_dev
+
+PASS  登录取得 Bearer token :: HTTP=200
+PASS  健康总览四块指标齐备 :: HTTP=200 blocks=['service', 'database', 'disk', 'recentCollect']
+PASS  磁盘档位是真实枚举 :: level=OK
+PASS  数据库表数与库内实测一致 :: api=115 db=115
+PASS  数据库容量有真实读数 :: sizeMb=38
+PASS  L1 事实七项有真实值 :: HTTP=200 version=5.7.0 root=/home/evergreen/robot-autotest
+PASS  版本一致性口径可判 :: manifest=None
+PASS  备份清单条数 = 目录文件数 :: api=0 disk=0
+PASS  备份 SHA 三态可取（目录为空，空清单不编造） :: rows=0
+PASS  任务创建默认 dryRun=true（不传也不写真） :: HTTP=200 dryRun=True id=5
+PASS  预演返回计划步骤 :: plan=['PRECHECK', 'EXECUTE', 'VERIFY']
+PASS  任务历史可查且刷新后仍在 :: HTTP=200 ids=[5, 3, 2]
+PASS  已完成任务不能中止（409） :: HTTP=409 msg=任务已处于终态 SUCCESS，不可中止
+PASS  RUNNING 任务中止后落库为 ABORTED :: HTTP=200 id=6 db=ABORTED
+PASS  超租对账端点可跑 :: HTTP=200 swept=0
+PASS  非 _it 演练库被拒且点名 :: HTTP=400 msg=恢复演练只允许以 _it 结尾的演练库：targetDb=robot_dev 被拒
+PASS  _it 演练库放行并给命令 :: HTTP=200 cmd=bash scripts/ops/db-migrate.sh (DRILL_TARGET_DB=robot_it)
+PASS  源库 vs 演练库比对可跑 :: HTTP=200 compared=10 consistent=False mismatched=10
+PASS  比对动作落审计行 :: before=5 after=6
+PASS  比对拒绝非 _it 目标库 :: HTTP=400 msg=恢复演练只允许以 _it 结尾的演练库：targetDb=robot_dev 被拒
+PASS  预检三类结构齐备 :: HTTP=200 passed=True kinds=[]
+PASS  预检不改状态（版本不变） :: version=5.7.0
+PASS  不存在的交付包被点名为 PACKAGE :: HTTP=200 kinds=['PACKAGE']
+PASS  审计输出 who/when/result/duration :: HTTP=200 rows=6 keys=['createdAt', 'durationMs', 'operator', 'result', 'status', 'taskId', 'taskType']
+PASS  四条护栏自述齐备 :: HTTP=200 keys=['abortedSweep', 'auditCoverage', 'drillDbGuard', 'dryRunDefault', 'selfCheckCommand']
+PASS  非管理员不能创建运维任务（403） :: HTTP=403 login=200
+
+PROBE_RESULT PASS=26 FAIL=0 TOTAL=26

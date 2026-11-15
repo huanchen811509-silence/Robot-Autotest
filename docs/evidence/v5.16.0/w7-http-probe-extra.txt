@@ -1,0 +1,11 @@
+# v5.16.0 W7 补充探针（P1 零写入 / SHA 三态 / 库名闸 / 任务详情 / 归档预演）
+
+PASS  登录取得 Bearer token :: HTTP=200
+PASS  backup.sh 默认 dry-run 且零写入 :: rc=0 files 0->0 tail=[ops] dry-run：未创建任何文件。确认后加 --apply。
+PASS  SHA 三态真实判定（VERIFIED / MISMATCH / MISSING） :: HTTP=200 states={'w516-probe-ok.sql.gz': 'VERIFIED', 'w516-probe-bad.sql.gz': 'MISMATCH', 'w516-probe-nomanifest.sql.gz': 'MISSING'}
+PASS  清单条数 = 目录文件数（含临时样本） :: api=3 disk=3
+PASS  非法库名被拒（不拼进 SQL） :: HTTP=400 msg=源库名不合法：robot_dev;DROP
+PASS  任务详情可查且阶段可读 :: HTTP=200 phase=DONE
+PASS  归档预演零写入（run 行数不变） :: HTTP=200 run 543->543
+
+PROBE_RESULT PASS=7 FAIL=0 TOTAL=7

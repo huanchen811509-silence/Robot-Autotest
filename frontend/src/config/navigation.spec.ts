@@ -118,7 +118,7 @@ describe('v2.0 六域 IA 与能力驱动过滤（NAV-01 / FR-v2.0-07、08）', (
   it('v2.3 / FR-UI-01：一级恰好 7 组，顺序按「日常闭环 → 支撑域」，层级不超过 2', () => {
     expect(NAVIGATION).toHaveLength(7)
     expect(NAVIGATION.map((node) => node.key)).toEqual([
-      'workbench', 'execution', 'cases', 'assets', 'environment', 'maintenance', 'settings',
+      'workbench', 'execution', 'cases', 'assets', 'environment', 'ops', 'settings',
     ])
     for (const node of NAVIGATION) {
       if (isGroup(node)) {
@@ -372,9 +372,10 @@ describe('v2.3 菜单 IA 与执行/报告合并', () => {
     // v4.11.0：项目侧「用户管理」是新的只读页（仅当前用户和关联项目），词条也换了
     expect(settings.children.find((c) => c.key === 'settings-me')?.labelKey)
       .toBe('menu.settingsUsersMe')
-    const maintenance = byKey('maintenance') as NavGroup
-    expect(maintenance.children.find((c) => c.key === 'maintenance-principles')?.labelKey)
-      .toBe('menu.mntPrinciples')
+    // v5.16.0 / D-7：维护组升为「运维」一级，首个叶子是「健康总览」。
+    const ops = byKey('ops') as NavGroup
+    expect(ops.children.find((c) => c.key === 'ops-health')?.labelKey)
+      .toBe('menu.opsHealth')
     const environment = byKey('environment') as NavGroup
     expect(environment.children.find((c) => c.key === 'environment-overview')?.labelKey)
       .toBe('menu.envOverview')
@@ -446,8 +447,9 @@ describe('v4.11.0 全局菜单两级化', () => {
     ])
     // v5.9.0 / FR-v5.9-04：新增 iam 组 4 叶（角色/用户组/用户/项目关联）；
     // 同时「系统设置 → 用户管理」迁出（`/g/admin` 改为重定向），故设置组 6→5。
-    // v5.10.0 / FR-v5.10-05：模板组新增「模板向导」叶（3），合计
-    // 3 + 3 + 2 + 3 + 4 + 5 = 20（v5.9 时 19 条，PRD 起草写 20 是旧入口口径，见 TEST-PLAN §8.3）。
+    // v5.10.0 / FR-v5.10-05：模板组新增「模板向导」叶（3）；
+    // v5.16.0 / FR-v5.16-08：运维四页挂在**项目树**「维护与恢复」组，
+    // 全局侧栏仍是 6 组 / 20 叶，本条断言不变（不新增一级菜单）。
     expect(globalGroups().map((group) => group.children.length)).toEqual([3, 3, 2, 3, 4, 5])
     expect(globalLeaves()).toHaveLength(20)
     for (const group of globalGroups()) {
@@ -569,7 +571,7 @@ describe('navTreeFor：全量菜单（v5.6.0 / FR-v5.6-01、02）', () => {
     const paths = pathsOf(navTreeFor('project', 'pytest-suite'))
     // v5.6.0 之前这里是六个 `not.toBe(true)` 的禁止断言；现在反过来要求必须存在。
     // 依据：pytest 工程同样要先配台架（设备/凭据/环境）才能跑，藏起来等于把前置条件藏起来。
-    const required = ['/assets', '/environment', '/maintenance', '/nodes', '/plans', '/sync']
+    const required = ['/assets', '/environment', '/ops', '/nodes', '/plans', '/sync']
     for (const prefix of required) {
       const hit = paths.some((path) => path === prefix || path.startsWith(prefix + '/'))
       expect(hit, '全量菜单下应出现 ' + prefix + '（当前叶子：' + paths.join(', ') + '）').toBe(true)

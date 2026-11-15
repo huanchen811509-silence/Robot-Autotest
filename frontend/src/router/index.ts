@@ -375,20 +375,31 @@ const router = createRouter({
       component: () => import('@/views/environment/ConnectionsView.vue'),
       meta: { capability: 'asset:read' },
     },
+    // v5.16.0 / FR-v5.16-08：维护三只读页并入运维四页，旧深链一律重定向，不留 404。
+    // 内容没有删：原则并入「升级与演练」，恢复记录并入「归档与清理」，
+    // 只读找回并入「备份与恢复」的「找历史数据」区块。
+    { path: '/maintenance/principles', redirect: '/ops/upgrade' },
+    { path: '/maintenance/records', redirect: '/ops/archive' },
+    { path: '/maintenance/recover', redirect: '/ops/backup' },
     {
-      path: '/maintenance/principles',
-      name: 'maintenance-principles',
-      component: () => import('@/views/maintenance/ExecutionPrinciplesView.vue'),
+      path: '/ops/health',
+      name: 'ops-health',
+      component: () => import('@/views/ops/OpsHealthView.vue'),
     },
     {
-      path: '/maintenance/records',
-      name: 'maintenance-records',
-      component: () => import('@/views/maintenance/RecoveryRecordsView.vue'),
+      path: '/ops/backup',
+      name: 'ops-backup',
+      component: () => import('@/views/ops/OpsBackupView.vue'),
     },
     {
-      path: '/maintenance/recover',
-      name: 'maintenance-recover',
-      component: () => import('@/views/maintenance/ReadOnlyRecoverView.vue'),
+      path: '/ops/archive',
+      name: 'ops-archive',
+      component: () => import('@/views/ops/OpsArchiveView.vue'),
+    },
+    {
+      path: '/ops/upgrade',
+      name: 'ops-upgrade',
+      component: () => import('@/views/ops/OpsUpgradeView.vue'),
     },
     {
       // MENU-05：性能基线 3 个只读页，独立路由（不新增一级菜单）。

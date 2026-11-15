@@ -312,3 +312,60 @@ W7 必须在 W4/W6 之后（护栏是给真实动作上的）。
 | 日期 | 修订 | 依据 |
 |---|---|---|
 | 2026-11-15 | 首版：8 波 21 个 WBS；任务化先行；D-7 作为 W66-04 开工门控 | `PRD.md` v5.16.0 + 评估 05 §二 + 白泽调研 §8.5/§8.6 |
+
+
+---
+
+## 附：W0 开工前修订记录
+
+| 位置 | 原文失真点 | 订正 |
+|---|---|---|
+| 全篇 `psql "$DB_URL" -c ...` | 数据库不是 PostgreSQL | 改 `mysql -e` / `db_exec` / `bash scripts/db-migrate.sh`；不引入 `DB_URL` |
+| `V11_78` 表结构 | 被写成既有 `ops_task` | 标为本期新造，参照 `V11_28 workspace_job` 的 `active_lock` 与审计四列 |
+| `GET /api/ops/backups` 等 8 端点 | 被写成接线 | `/api/ops/*` 全无，明确为新增端点，同步 openapi.json |
+| `W66-14` 升级命令 | `scripts/update.sh` 路径不存在 | 改 `scripts/ops/update.sh`，非交互需 `--yes`，交互须输入 `UPDATE` |
+| `W66-04` 菜单 D-7「6→7」 | 混淆 GLOBAL 与 PROJECT 两棵树 | 本版不新增一级菜单，控制台挂 `/admin/ops`；`PROJECT_EXPECTED` 与叶数基线不动 |
+| `W66-18/19` `--self-test` | 门禁 31/32 用 `--self-check` | 新机检参数统一写 `--self-check` |
+| `confirmReal` 归属 | 挂在 `RunLaunchController` 上 | 实为 `PytestNicRunController` 的 400 闸；RunLaunch 的 409 是摘要不一致 |
+| 前端行数引用 | `ArchiveCenterView.vue(240)` / `ProjectSyncView.vue 385` | 实测 291 / 387 |
+
+**新增 W0 出口判据**：`00-RESEARCH.md` 与 `01-ASSESSMENT.md` 落盘、三份草案追加修订记录、
+五份文档齐 `check_md_tables.py` PASS，才允许进入 W1 编码。
+
+## 14. W7 实测与偏差（W66-17 ~ W66-21）
+
+| WBS | 计划 | 实际 | 偏差原因 |
+|---|---|---|---|
+| W66-04 | 新增一级「运维」+ 4 二级 | 项目树第 6 组升为「运维」，5 叶（四页 + 同步）；项目树仍 7 组，全局仍 6 组 | 按总纲 D-7「独立一级」落地 |
+| W66-05 | 任务历史 + 日志查看/下载 | 备份与恢复页含任务历史表、日志展开、`.log` 下载 | 与备份动作同页，避免再开一页 |
+| W66-06 | 六类指标 | 六类齐备（服务 / DB / 磁盘 / 最近采集 / 最近备份 / 最近体检） | — |
+| W66-07 | L1 七项事实 | 七项齐备；`MANIFEST` 缺失时显式「不可比」 | 本地无 `dist/MANIFEST.json` |
+| W66-08 | `backup.sh` 补 manifest | 追加 `write_manifest()`，逐文件落 `.sha256` | 只追加，备份逻辑零改动 |
+| W66-09 | 备份清单 + 新建备份 | 清单真实；新建只到预演 | 未对生产库跑 `--apply` |
+| W66-10 | 演练到 `_it` | 守卫 + 放行 + 落审计；真实恢复未执行 | `robot_it` 与源库有 10 表差异，恢复会掩盖差异 |
+| W66-11 | 比对报告 | 10 张关键表逐表比对，差异点名 | 差异如实呈现，不修数据 |
+| W66-12 | 归档迁入 | `/ops/archive`，旧 `/admin/archive` 重定向 | 预演零写入实证 |
+| W66-13 | 维护三页处置 | 三页组件复用嵌入 + 旧深链重定向 | 未逐条走查截图 |
+| W66-14 | 升级预检 | 三类判据（磁盘 / 包 / 迁移） | 磁盘低阈值未构造 |
+| W66-15 | 四阶段演练 | 命令生成 + 说明；`update-drill.sh` 未真跑 | 避免动生产编排 |
+| W66-16 | 命令生成器与边界 | 按钮禁用 + 可复制命令 + 三条边界文案 | — |
+| W66-17 | 四条硬护栏 | P1~P4 各有实证；dry-run 改为落审计行 | 真缺陷：原实现 dry-run 零行，与 P4 冲突 |
+| W66-18 | `check_ops_guardrails` | 12 条判据 + 逐条注入判红 | — |
+| W66-19 | 审计覆盖机检 | 新增 `tools/check_ops_audit.py`，5 写端点 / 3 注入 | 抓到 2 个写端点未落审计 |
+| W66-20 | 契约与脚本 diff | 契约 `484/401`；`update.sh` 零改动 | — |
+| W66-21 | 门禁 + 文档 | 门禁 `FAILS=0`；六份迁入 | — |
+
+### 14.1 W7 修的真实缺陷
+
+| 编号 | 缺陷 | 判据 | 修复 |
+|---|---|---|---|
+| B-39 | `appHome()` 用 `user.dir`，读到 `backend/` 当安装根 | 首轮 `version=None / installRoot=.../backend` | 上跳一级；`VERSION` 恢复为 `5.7.0` |
+| B-40 | dry-run 不落审计行，违反 P4 | 首轮 `ids=[] / before=0 after=0` | dry-run 插一行（PRECHECK → SUCCESS，标 `DRY_RUN`） |
+| B-41 | 演练与比对未落 `ops_task` | `check_ops_audit` 判红 2 条 | 两处补 `tasks.create(...)`，守卫拒绝时不落 |
+| B-42 | 备份清单扫 `var/backups`，真实目录是 `backups/` | 代码比对 `common.sh:43` | 路径改为 `<root>/backups` |
+
+### 14.2 新增门禁步
+
+| 步号 | 名称 | 判据 |
+|---|---|---|
+| 58 | `ops_guardrails` | `check_ops_guardrails.py`（12 条）+ `check_ops_audit.py`（5 写端点 / 5 审计要素） |

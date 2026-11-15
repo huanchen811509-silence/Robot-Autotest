@@ -1,0 +1,53 @@
+# v5.16.0 W7 机检负向自证
+
+$ python3 tools/check_ops_guardrails.py
+[ops-guardrails] 四条硬护栏 / 12 条静态判据
+  OK   P1 backup 默认 dry-run
+  OK   P1 purge 双护栏
+  OK   P1 update 默认 dry-run
+  OK   P1 任务端点 dryRun 缺省 true
+  OK   P2 恢复演练库名守卫
+  OK   P2 守卫实现只认 _it
+  OK   P3 迁移含 ABORTED 状态
+  OK   P3 任务服务含 ABORTED 与 sweep
+  OK   P3 仓储超时对账写 ABORTED
+  OK   P4 审计四列
+  OK   P4 租户守卫
+  OK   P4 互斥锁
+RESULT PASS 四条硬护栏均有源码事实（12 条判据）
+exit=0
+
+$ python3 tools/check_ops_guardrails.py --self-check
+[ops-guardrails] 四条硬护栏 / 12 条静态判据
+  SELFCHECK 干净副本: PASS（判绿）
+  SELFCHECK P1 backup 默认 dry-run: RED（符合预期）
+  SELFCHECK P1 purge 双护栏: RED（符合预期）
+  SELFCHECK P1 update 默认 dry-run: RED（符合预期）
+  SELFCHECK P1 任务端点 dryRun 缺省 true: RED（符合预期）
+  SELFCHECK P2 恢复演练库名守卫: RED（符合预期）
+  SELFCHECK P2 守卫实现只认 _it: RED（符合预期）
+  SELFCHECK P3 迁移含 ABORTED 状态: RED（符合预期）
+  SELFCHECK P3 任务服务含 ABORTED 与 sweep: RED（符合预期）
+  SELFCHECK P3 仓储超时对账写 ABORTED: RED（符合预期）
+  SELFCHECK P4 审计四列: RED（符合预期）
+  SELFCHECK P4 租户守卫: RED（符合预期）
+  SELFCHECK P4 互斥锁: RED（符合预期）
+SELFCHECK_RESULT FAILS=0
+exit=0
+
+$ python3 tools/check_ops_audit.py
+[ops-audit] 运维动作审计覆盖 / 写端点 5 条
+  OK   写端点全部过权限闸并落审计
+  OK   审计五要素齐全（who/when/what/result/duration）
+RESULT PASS 审计覆盖完整
+exit=0
+
+$ python3 tools/check_ops_audit.py --self-test
+[ops-audit] 运维动作审计覆盖 / 写端点 5 条
+  SELFCHECK 干净副本: PASS（判绿）
+  SELFCHECK 抹掉权限闸: RED（符合预期）
+  SELFCHECK 抹掉审计调用: RED（符合预期）
+  SELFCHECK 改列名: RED（符合预期）
+SELFCHECK_RESULT FAILS=0
+exit=0
+

@@ -64,3 +64,41 @@ if [[ -d "$WS_DIR" ]]; then
 else
   log "工作区目录不存在，跳过归档：$WS_DIR"
 fi
+
+
+# ---------------------------------------------------------------------------
+# v5.16.0 / FR-v5.16-06（W66-08）：备份清单。
+# **只追加**：上面任何备份逻辑一行未改，这里只做「把已有产物说出清单 + 落 .sha256」。
+# 清单条目数由目录里 *.gz 决定（不按脚本自己的变量数数）；SHA-256 用 sha_of 实算，
+# 与 `sha256sum` 逐字节一致；没有清单的旧备份由后端回退到实时计算，不判红。
+# ---------------------------------------------------------------------------
+write_manifest() {
+  local dir="$1"
+  local out="$dir/backup-manifest.json"
+  local tmp="$out.tmp"
+  local first=1
+  local f name size sha
+  {
+    printf '{\n  "generatedAt": "%s",\n  "items": [\n' "$(date '+%Y-%m-%dT%H:%M:%S%z')"
+    shopt -s nullglob
+    for f in "$dir"/*.gz; do
+      name="$(basename "$f")"
+      size="$(wc -c < "$f" | tr -d ' ')"
+      sha="$(sha_of "$f")"
+      printf '%s\n' "$sha" > "$f.sha256"
+      if [[ "$first" == "1" ]]; then
+        first=0
+      else
+        printf ',\n'
+      fi
+      printf '    {"file": "%s", "sizeBytes": %s, "sha256": "%s", "verified": "VERIFIED"}' \
+        "$name" "$size" "$sha"
+    done
+    shopt -u nullglob
+    printf '\n  ]\n}\n'
+  } > "$tmp"
+  mv "$tmp" "$out"
+  printf 'MANIFEST PASS file=%s items=%s\n' "$out" "$(grep -c '"file":' "$out" || true)"
+}
+
+write_manifest "$BACKUP_DIR"
