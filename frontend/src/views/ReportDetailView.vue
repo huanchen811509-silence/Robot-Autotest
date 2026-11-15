@@ -403,6 +403,24 @@ async function loadPassRate(): Promise<void> {
   }
 }
 
+/**
+ * v5.14.0 / W64-08：打印页 /reports/:runId/print 与一次性 token 端点早已交付（R-8），
+ * 这里只补调用方。token 由后端签发（10 分钟、仅一次），不复用、不落前端存储。
+ */
+const printError = ref('')
+
+async function openPrint(): Promise<void> {
+  printError.value = ''
+  try {
+    const issued = await reportsApi.issuePrintToken(runId.value, projectId.value)
+    const url = issued.printUrl
+      || `/reports/${encodeURIComponent(runId.value)}/print?token=${encodeURIComponent(issued.token)}`
+    window.open(url, '_blank')
+  } catch (e) {
+    printError.value = localizeError(e).summary || t('reports.printOpenFailed')
+  }
+}
+
 function openRun(targetRunId: string): void {
   if (!targetRunId || targetRunId === runId.value) return
   void router.push({ name: 'report-detail', params: { runId: targetRunId } })
@@ -915,7 +933,11 @@ watch(granularity, () => {
           <NCheckbox :checked="showCompare" @update:checked="toggleCompare">
             {{ t('reports.compare.toggle') }}
           </NCheckbox>
+          <NButton size="small" data-testid="open-print" @click="openPrint">
+            {{ t('reports.printOpen') }}
+          </NButton>
         </div>
+        <p v-if="printError" class="text-fail" data-testid="print-error">{{ printError }}</p>
 
         <p v-if="suiteNotice" class="muted" data-testid="suite-deeplink-notice">
           {{ suiteNotice }}

@@ -49,6 +49,8 @@ const projectFields = [
   { key: 'kernel.default', label: 'settings.defaultKernel', kind: 'enum' },
   { key: 'execution.timeoutSeconds', label: 'settings.projectTimeout', kind: 'number' },
   { key: 'case.tagSet', label: 'settings.tagSet', kind: 'text' },
+  // v5.14.0 / W64-09：后端判定逻辑早就读这个键，写入白名单本版才补齐。
+  { key: 'report.auto_generate', label: 'settings.autoGenerate', kind: 'boolean' },
 ] as const
 
 async function load(): Promise<void> {
@@ -173,6 +175,15 @@ watch(projectId, load)
           <select v-if="field.kind === 'enum'" v-model="project[field.key]" :disabled="!projectId">
             <option value="robot">robot</option>
             <option value="pytest">pytest</option>
+          </select>
+          <select
+            v-else-if="field.kind === 'boolean'"
+            v-model="project[field.key]"
+            :disabled="!projectId"
+            :data-testid="`project-setting-${field.key}`"
+          >
+            <option value="true">true</option>
+            <option value="false">false</option>
           </select>
           <input
             v-else

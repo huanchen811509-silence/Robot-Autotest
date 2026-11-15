@@ -57,3 +57,20 @@
 | 日期 | 修订 | 依据 |
 |---|---|---|
 | 2026-11-15 | 首版：16 条实测事实 + 5 条推断 + 5 条未核实项；核掉「批量删 / 打印页 / 草稿态 / 详情端点需新增」四类过期假设 | commit `efbcf37` 源码与契约快照，只读核实 |
+
+
+---
+
+## 6. W3 补充实测事实（开工后取证）
+
+| # | 事实（三档标注） | 证据 |
+|---|---|---|
+| R-17 | [已核实] `ReportAutoGenerator.KEY_ENABLED="report.auto_generate"` 读取走 `ProjectSettingRepository.findAll(projectId,"report.")`（剥前缀得到 `auto_generate`），而设置页 PUT 走 `SystemSettingService.putProject`；该类的 `PROJECT_KEYS` 白名单**不含**此键，写入必被 `validateProject` 以 400 拒绝 | `ReportAutoGenerator.java:47,163`；`SystemSettingService.java:34-50,146-149`；W3 `SystemSettingAutoGenerateTest` |
+| R-18 | [已核实] 后端导出四格式与前端旧口径不一致的确切位置：`ReportExportService.extension()` 白名单为 html/pdf/docx/xlsx；`api/testReports.ts:32` 原写死三种；`api/reports.ts` 的 `ReportExportFormat` 类型只有 pdf/docx（那是**执行报告导出**，与测试报告导出是两个对象，不要混为一谈） | `ReportExportService.java:163-178`；`api/reports.ts:210`；W3 补丁 |
+| R-19 | [已核实] 打印页 `ReportPrintView.vue` 通过 `route.query.token` 调 `reportsApi.printData(runId, token)`，路由 `/reports/:runId/print` 标 `public`；缺的只是 `POST /api/reports/{runId}/print-token` 的调用方 | `ReportPrintView.vue:89-108`；`ReportExportController.java:56-63`；`api/reports.ts:408` |
+
+## 7. 修订记录（补充）
+
+| 日期 | 修订 | 依据 |
+|---|---|---|
+| 2026-11-15 | 补 R-17 ~ R-19：W3 开工后读到的写入侧白名单、四格式确切位置、打印页 token 链路 | commit `4cfc94c` 源码 + W3 单测 |

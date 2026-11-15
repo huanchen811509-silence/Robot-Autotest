@@ -15,6 +15,7 @@ import { useI18n } from 'vue-i18n'
 import { NButton } from 'naive-ui'
 import { testReportsApi, type TestReportSnapshot } from '@/api/testReports'
 import ErrorLineView from '@/components/ErrorLine.vue'
+import ReportExportBar from '@/components/ReportExportBar.vue'
 import { localizeError, type ErrorLine } from '@/utils/errors'
 
 const { t } = useI18n()
@@ -73,6 +74,7 @@ watch(id, () => void load(), { immediate: true })
       <NButton quaternary data-testid="back-to-list" @click="back">
         {{ t('testReports.backToList') }}
       </NButton>
+      <ReportExportBar :report-id="id" />
     </div>
 
     <ErrorLineView v-if="error" :error="error" />

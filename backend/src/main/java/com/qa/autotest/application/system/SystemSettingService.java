@@ -34,6 +34,16 @@ public class SystemSettingService {
     public static final String P_DEFAULT_KERNEL = "kernel.default";
     public static final String P_TIMEOUT = "execution.timeoutSeconds";
     public static final String P_TAG_SET = "case.tagSet";
+    /**
+     * v5.14.0 / W64-09：自动生成测试报告开关。
+     *
+     * <p>判据逻辑（{@code ReportAutoGenerator.decide}）早就在读
+     * {@code ProjectSettingRepository.findAll(projectId, "report.")} 里的
+     * {@code auto_generate}，但**写入侧的白名单没有这个键**——设置页就算加了开关，
+     * PUT 也会被 {@link #validateProject} 以「不支持的项目设置键」拒掉（400）。
+     * 所以本版不是「只缺 UI」，而是要把键补进白名单、默认值与校验分支。
+     */
+    public static final String P_REPORT_AUTO_GENERATE = "report.auto_generate";
 
     private static final Map<String, String> PLATFORM_DEFAULTS = Map.of(
             K_MAX_PARALLEL, "4",
@@ -44,7 +54,9 @@ public class SystemSettingService {
     private static final Map<String, String> PROJECT_DEFAULTS = Map.of(
             P_DEFAULT_KERNEL, "robot",
             P_TIMEOUT, "1800",
-            P_TAG_SET, "");
+            P_TAG_SET, "",
+            // 默认关闭：升级后不能悄悄改变既有项目的执行产物数量。
+            P_REPORT_AUTO_GENERATE, "false");
 
     private static final Set<String> PLATFORM_KEYS = PLATFORM_DEFAULTS.keySet();
     private static final Set<String> PROJECT_KEYS = PROJECT_DEFAULTS.keySet();
@@ -160,6 +172,12 @@ public class SystemSettingService {
                 if (value.length() > MAX_VALUE_LENGTH) {
                     throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
                             "case.tagSet 超长（上限 " + MAX_VALUE_LENGTH + "）");
+                }
+            }
+            case P_REPORT_AUTO_GENERATE -> {
+                if (!"true".equals(value) && !"false".equals(value)) {
+                    throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                            "report.auto_generate 只能是 true / false");
                 }
             }
             default -> throw new BusinessException(ErrorCode.INVALID_ARGUMENT,

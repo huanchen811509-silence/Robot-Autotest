@@ -95,6 +95,7 @@ beforeEach(() => {
     'kernel.default': 'robot',
     'execution.timeoutSeconds': '900',
     'case.tagSet': 'smoke',
+    'report.auto_generate': 'false',
   })
   pinia = createPinia()
   setActivePinia(pinia)
@@ -165,7 +166,15 @@ describe('SettingsView 项目语义（/settings）', () => {
 
     expect(root.querySelector('h1')?.textContent).toContain('系统设置')
     expect(fields(root, 'platform-settings-panel')).toHaveLength(5)
-    expect(fields(root, 'project-settings-panel')).toHaveLength(3)
+    // v5.14.0 / W64-09：项目段从 3 项变 4 项（新增自动生成测试报告开关）。
+    expect(fields(root, 'project-settings-panel')).toHaveLength(4)
+    const autoGenerate = root.querySelector<HTMLSelectElement>(
+      '[data-testid="project-setting-report.auto_generate"]',
+    )
+    expect(autoGenerate).not.toBeNull()
+    expect(Array.from(autoGenerate!.options).map((option) => option.value)).toEqual([
+      'true', 'false',
+    ])
     expect(project).toHaveBeenCalledWith(1)
     expect(root.textContent).toContain('默认执行内核')
     expect(root.innerHTML).toContain('pytest')

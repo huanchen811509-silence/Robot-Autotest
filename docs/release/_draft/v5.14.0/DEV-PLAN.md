@@ -347,3 +347,23 @@ W4 与 W2/W3 改动面不重叠可并行；W5 必须在 W4 之后（要用 kerne
 | B-6 | 列表深链只带 `suite=all`，不带具体套件名 | 列表 DTO 只有 `suiteCount` 一个数字，没有套件名列表；精确 `?suite=<name>` 作为可粘贴深链独立支持（TC-14）。若为此给列表加 `suiteNames` 会引入第二套真值，得不偿失 |
 | B-7 | 左栏锚点当前只有「报告内容 / 快照信息」两项 | R-14：`snapshot_html` 仍是字段 `<dl>`，没有结论/证据/附录分节；三段式分节锚点留 W64-14 改生成器后补 |
 | B-8 | 本波未做真实 HTTP 探针 | 后端 jar 未重建；按版本纪律统一在 W7 重建 + 重启后跑两轮真实探针，此处不冒充 |
+
+
+---
+
+## 15. W3 实际完成（W64-07 ~ W64-09）
+
+| WBS | 完成内容 | 验收读数 |
+|---|---|---|
+| W64-07 | `ReportExportBar.vue` 单一实现，四格式 html/pdf/docx/xlsx 与后端 `ReportExportService.extension()` 同源；列表行（含冻结态）与详情页都接上；`exportFileName` 补 xlsx；`exportBlob` 不再是零消费者 | `ReportExportBar.spec.ts` 3 例；`vue-tsc` 0 error |
+| W64-08 | `reportsApi.issuePrintToken` 封装 + 执行报告详情页「打印」按钮；复用既有 `/reports/:runId/print?token=`，不新建页面；失败给人话提示 | `ReportDetailView.spec.ts` 14/14 零回归；真实 token 请求留 W7 |
+| W64-09 | 发现并补真实缺口：`SystemSettingService` 项目设置白名单原**不含** `report.auto_generate`，只加 UI 会被 400 拒；补键、默认值 `false`、boolean 校验分支；设置页加 boolean select | `SystemSettingAutoGenerateTest` 3 例、`SystemSettingServiceTest` 5 例、`ReportAutoGeneratorTest` 11 例全绿；`SettingsView.spec.ts` 项数断言按真实变更更新为 4 |
+
+### 15.1 W3 偏差登记
+
+| # | 偏差 | 原因 |
+|---|---|---|
+| B-9 | R-15「后端已有，只缺 UI」不准确 | `ReportAutoGenerator` 读的是 `ProjectSettingRepository.findAll(projectId,"report.")`，而设置页 PUT 走 `SystemSettingService.putProject` 白名单；该键不在白名单，写入必被拒。本版补的是**写入链**，不是纯接线 |
+| B-10 | 列表页导出用共用组件而非「下拉」 | `NSelect`/`NDropdown` 在 DataTable 单元格里会引入 teleport 与虚拟层，happy-dom 下不可测；用原生 `<select>` + 按钮，四格式可见可选，行为等价 |
+| B-11 | 默认 `report.auto_generate=false` | 升级后不能悄悄改变既有项目的执行产物数量；默认值与「开关默认关」一致 |
+| B-12 | 导出件能否打开（PDF 页数 / DOCX 可解析）、打印 token 一次性真实请求、非管理员 403 | 未部署新 jar，属 `FILE`/`HTTP` 证据，留 W7 真实探针，不冒充 |

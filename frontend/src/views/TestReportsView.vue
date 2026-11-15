@@ -24,6 +24,7 @@ import { useTableFilters, type TableFilterColumn } from '@/composables/useTableF
 import { listCrudApi } from '@/api/listCrud'
 import RunPicker from '@/components/RunPicker.vue'
 import CaseSetPicker from '@/components/CaseSetPicker.vue'
+import ReportExportBar from '@/components/ReportExportBar.vue'
 import { useAuthStore } from '@/stores/auth'
 import { testReportsApi, type TestReportItem } from '@/api/testReports'
 import type { TestSet } from '@/api/cases'
@@ -263,9 +264,13 @@ const columns = computed<DataTableColumns<TestReportItem>>(() => [
   {
     title: t('w57.testReports.colActions'),
     key: 'actions',
-    width: 220,
+    width: 320,
     render: (row) => {
-      if (isFrozen(row)) return h('span', { class: 'muted' }, t('w57.testReports.frozenHint'))
+      // v5.14.0 / W64-07：冻结件才是正式交付物，导出入口不能只给草稿。
+      if (isFrozen(row)) return h('span', { class: 'row-actions' }, [
+        h('span', { class: 'muted' }, t('w57.testReports.frozenHint')),
+        h(ReportExportBar, { reportId: row.id }),
+      ])
       if (deletedIds.value.has(row.id)) {
         return h(
           NButton,
@@ -284,6 +289,7 @@ const columns = computed<DataTableColumns<TestReportItem>>(() => [
           { text: true, type: 'error', size: 'small', onClick: () => askDelete([row.id]) },
           { default: () => t('w57.testReports.softDelete') },
         ),
+        h(ReportExportBar, { reportId: row.id }),
       ])
     },
   },

@@ -322,3 +322,25 @@ docs/evidence/v5.14.0/
 
 **W2 合计**：新增机检/单测 `ReportHtmlSanitizerTest 4`、`TestReportDetailView.spec 2`、`ReportsView.spec +1`；
 全量相关回归 `39 例 PASS`。未跑到的 UI 截图、真实 HTTP、性能采样一律不预填。
+
+
+---
+
+## 12. W3 实测结果（滚动）
+
+| TC | 方式 | 结果 | 证据 |
+|---|---|---|---|
+| TC-v5.14-23 | `UT` | PARTIAL | 四格式下拉与 `exportBlob` 调用由 `ReportExportBar.spec.ts` 断言；**导出件实体未取**，留 W7 |
+| TC-v5.14-24 | `UT` | PASS | `exportFileName(id, format)` 产出 `report-{id}.{ext}`，不含路径分隔符；四格式 ext 与后端一致 |
+| TC-v5.14-26 | `UT` | PASS | 导出失败显示人话提示、不产生空文件（spec 第 3 例） |
+| TC-v5.14-27 | `MECH` | PASS | `exportBlob` 有真实调用点（`ReportExportBar`），列表 / 详情共用一份 |
+| TC-v5.14-28 | `MECH` | PARTIAL | 打印按钮与 `issuePrintToken` 接线完成；真窗口打开留 W7 |
+| TC-v5.14-29/31 | `HTTP` | 未执行 | token 一次性 / 未授权 403 属真实请求证据，留 W7 探针 |
+| TC-v5.14-30 | `MECH` | PASS（既有） | `ReportPrintView.vue` 无导航与按钮的白底 A4 打印样式 5.7 已交付，本版不改 |
+| TC-v5.14-32 | `UT` | PASS | `SystemSettingAutoGenerateTest` 打服务层写入口：可写 `true`、默认 `false`、非 boolean 被拒 |
+| TC-v5.14-33/34 | `HTTP`/`DB` | 未执行 | 开启/关闭后跑真实执行看自动报告前缀，留 W7 |
+| TC-v5.14-35 | `HTTP` | 未执行 | 非管理员改开关 403，留 W7 |
+| 回归 | `UT` | PASS | 后端 19 例；前端 6 文件 47 例中 1 例为**预期真实变更**（设置项 3→4），已按新事实更新断言 |
+
+**W3 合计**：新增 `ReportExportBar.spec 3`、`SystemSettingAutoGenerateTest 3`；
+`check_i18n.py` 5/5（3118 键）、`vue-tsc` 0 error。

@@ -404,6 +404,21 @@ export const reportsApi = {
     )
   },
 
+  /**
+   * v5.14.0 / W64-08：发放一次性打印 token。
+   * 打印页路由 /reports/:runId/print 与取数接口早就存在（R-8），缺的只是调用方。
+   */
+  issuePrintToken(
+    runId: string,
+    projectId: number,
+    mode: ReportExportMode = 'external',
+  ): Promise<IssuedPrintToken> {
+    return request<IssuedPrintToken>(
+      `/reports/${encodeURIComponent(runId)}/print-token${toQuery({ projectId, mode })}`,
+      { method: 'POST' },
+    )
+  },
+
   /** 打印页取数：token 一次性，失败时抛 ApiError（打印页展示中文提示）。 */
   printData(runId: string, token: string): Promise<ReportPrintData> {
     return request<ReportPrintData>(

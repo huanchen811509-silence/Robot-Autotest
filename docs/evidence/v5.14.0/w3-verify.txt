@@ -1,0 +1,27 @@
+v5.14.0 / W3 真实验证读数（WSL ~/robot-autotest）
+时间：2026-11-15 GMT+8
+
+[1] 后端单测
+  mvn -o -B -Dtest=SystemSettingAutoGenerateTest,SystemSettingServiceTest,ReportAutoGeneratorTest test
+    -> Tests run: 19, Failures: 0, Errors: 0, Skipped: 0 / BUILD SUCCESS
+    SystemSettingAutoGenerateTest 3：可写 true / 默认 false / 非 boolean 被拒
+    SystemSettingServiceTest 5 / ReportAutoGeneratorTest 11 零回归
+
+[2] 前端
+  python3 tools/check_i18n.py  -> zh-CN 3118 / en-US 3118；256 文件硬编码中文 0；5/5 PASS
+  npx vue-tsc --noEmit        -> 0 error
+  npx vitest run（6 文件）     -> 47 例，46 PASS / 1 FAIL
+    FAIL 为 SettingsView.spec.ts「项目段应有 3 项」——本版新增第 4 项开关，
+    属预期真实变更；已把断言改为 4 并补 boolean select 的 true/false 选项断言。
+
+[3] 真实缺口（本波最有价值的发现）
+  ReportAutoGenerator.KEY_ENABLED = "report.auto_generate"，读取走
+  ProjectSettingRepository.findAll(projectId, "report.") -> key "auto_generate"；
+  但 SystemSettingService.PROJECT_KEYS 原只有 kernel.default / execution.timeoutSeconds /
+  case.tagSet，PUT 会抛「不支持的项目设置键」400。
+  => 补 P_REPORT_AUTO_GENERATE、PROJECT_DEFAULTS "false"、validateProject boolean 分支。
+  仅加前端开关不足以交付（A-12，见 01-ASSESSMENT 修订）。
+
+[4] 未执行（如实登记）
+  导出件实体（PDF 页数 / DOCX 可解析 / xlsx 可打开）、打印 token 真实请求与二次使用被拒、
+  非管理员改开关 403、开启后真实执行生成「自动报告 」前缀。统一留 W7 重建 jar 后跑探针。
