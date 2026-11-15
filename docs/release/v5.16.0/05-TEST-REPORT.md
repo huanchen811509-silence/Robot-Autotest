@@ -132,6 +132,12 @@
 
 ## 8. 收口说明
 
-- 本版**未** bump `VERSION`、未打 tag、未 push、未同步群晖 —— 按大师规矩留到 5.9~5.16 统一收口。
-- 收口提交：5.16 W8 收口。
-- 门禁共 57 步（新增第 58 步 `ops_guardrails`），判据 `FAILS=0 UNJUDGED=0`。
+- 大师 2026-11-15 拍板：版本号取 **5.16.0**（对齐最后一版），收口全做。
+- `VERSION` 5.7.0 → **5.16.0**；`check_version_consistency` 五处同源 PASS
+  （VERSION / build-info / 运行期 build-info / `/api/_ping` / 入口托管 CHANGELOG）。
+- 交付包：`robot-autotest-5.16.0-9fe354c-linux-x64.tar.gz`（466 文件 / 49.5 MB，
+  sha256 `6ef1ff4b…86f794`），门禁第 30 步校验 MANIFEST 与包内清单一致。
+- 收口提交：见 `git log --oneline -1`（bump 提交 `9fe354c`）。
+- 门禁共 57 步（含新增第 58 步 `ops_guardrails`），发版复核判据 **`FAILS=0 UNJUDGED=0`**。
+- 历史交付包（4.10.0 ~ 5.7.0）已移入 `releases/archive/`：门禁第 30 步按字典序取
+  `releases/*.tar.gz` 的最大者，`5.7.0` 会盖住 `5.16.0`，归档后判据才指向当版包。
