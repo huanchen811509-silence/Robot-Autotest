@@ -12,6 +12,8 @@ import { confirmAction } from '@/composables/useConfirm'
  * **不在这里重复一份类型映射** —— 两处映射迟早分叉，分了叉用户看到的就是「有按钮但采不到」。
  */
 import { computed, h, onMounted, ref, watch } from 'vue'
+import AssetWorkspace from '@/components/AssetWorkspace.vue'
+import { visibleTabs } from '@/config/assetWorkspaceMatrix'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { NButton, type DataTableColumns } from 'naive-ui'
@@ -36,6 +38,13 @@ const router = useRouter()
 const auth = useAuthStore()
 
 type AssetTab = 'DEVICE' | 'CREDENTIAL'
+/** W62-08：global 只有 2 个页签，由矩阵决定；页面不得再硬编码第三份清单。 */
+const GLOBAL_TABS = visibleTabs('global').map(
+  (row) => (row.key === 'tab.devices' ? 'DEVICE' : 'CREDENTIAL') as AssetTab,
+)
+function tabVisible(next: AssetTab): boolean {
+  return GLOBAL_TABS.includes(next)
+}
 
 /** URL 用复数小写词表（与项目模式 `/assets?tab=devices` 一致），接口用枚举名。 */
 const TAB_TO_TYPE: Record<string, AssetTab> = { devices: 'DEVICE', credentials: 'CREDENTIAL' }
@@ -636,10 +645,11 @@ onMounted(() => {
     </header>
 
     <div class="tabs">
-      <button class="tab" :class="{ active: type === 'DEVICE' }" @click="switchType('DEVICE')">
+      <button v-if="tabVisible('DEVICE')" class="tab" :class="{ active: type === 'DEVICE' }" @click="switchType('DEVICE')">
         {{ t('global.assetDevice') }}
       </button>
       <button
+        v-if="tabVisible('CREDENTIAL')"
         class="tab"
         :class="{ active: type === 'CREDENTIAL' }"
         @click="switchType('CREDENTIAL')"
@@ -664,17 +674,17 @@ onMounted(() => {
 
     <p v-if="failed" class="error">{{ failed }}</p>
 
-    <div data-testid="assets-grid">
-      <DataTable
-        :columns="columns"
-        :data="rows"
-        :loading="loading"
-        :row-key="(row: GlobalAssetRow) => row.id"
-        :error="Boolean(failed)"
-        :empty-title="t('global.empty')"
-        :max-height="560"
-      />
-    </div>
+    <!-- W62-09：与项目侧共用同一个 AssetWorkspace；矩阵过滤掉 project 独有列 -->
+    <AssetWorkspace
+      scope="global"
+      :columns="columns"
+      :rows="rows"
+      :row-key="(row: GlobalAssetRow) => row.id"
+      :loading="loading"
+      :error="Boolean(failed)"
+      :empty-title="t('global.empty')"
+      :max-height="560"
+    />
 
     <div v-if="importOpen" class="modal-mask" @click.self="importOpen = false">
       <div class="modal">

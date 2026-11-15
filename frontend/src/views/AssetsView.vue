@@ -32,6 +32,8 @@ import ErrorLineView from '@/components/ErrorLine.vue'
 import StatusTag from '@/components/StatusTag.vue'
 import { localizeError, type ErrorLine } from '@/utils/errors'
 import { EMPTY } from '@/utils/format'
+import AssetWorkspace from '@/components/AssetWorkspace.vue'
+import { visibleTabs } from '@/config/assetWorkspaceMatrix'
 import { batchApi, type BatchResource } from '@/api/batch'
 import SelectionBar from '@/components/SelectionBar.vue'
 import { useBatchAction } from '@/composables/useBatchAction'
@@ -40,7 +42,14 @@ import { confirmAction } from '@/composables/useConfirm'
 import type { StatusTone } from '@/utils/statusLabels'
 
 type Tab = 'devices' | 'links' | 'credentials' | 'leases'
-const TABS: Tab[] = ['devices', 'links', 'credentials', 'leases']
+/** W62-08：页签清单由差异矩阵唯一决定（project 4 个），页面不再另写一份。 */
+const TABS: Tab[] = visibleTabs('project').map(
+  (row) => row.key.replace(/^tab\./, '') as Tab,
+)
+/** 设备与凭证表共用一份 rowKey（工作台只有一份表格实现）。 */
+function assetRowKey(row: Device | Credential): number {
+  return row.id
+}
 
 const { t } = useI18n()
 const auth = useAuthStore()
@@ -1199,21 +1208,21 @@ async function forceRelease(lease: LeaseView): Promise<void> {
       <span class="muted">{{ t('assets.credential.noEcho') }}</span>
     </form>
 
-    <div class="list-fill">
-      <DataTable
-        v-if="tab === 'devices'"
-        :columns="deviceColumns"
-        :data="devices"
-        :loading="loading"
-        :row-key="(row: Device) => row.id"
-        :empty-title="t('common.noData')"
-        :empty-description="projectId ? undefined : t('overview.noProject')"
-        empty-icon="boxes"
-        :error="Boolean(error)"
-        :empty-illustration="keyword ? 'no-result' : 'no-data'"
-        flex-height
-      />
-    </div>
+    <!-- W62-09：设备表与凭证表都改用同一个 AssetWorkspace（唯一一份表格实现） -->
+    <AssetWorkspace
+      v-if="tab === 'devices'"
+      scope="project"
+      :columns="deviceColumns"
+      :rows="devices"
+      :row-key="assetRowKey"
+      :loading="loading"
+      :error="Boolean(error)"
+      :empty-title="t('common.noData')"
+      :empty-description="projectId ? undefined : t('overview.noProject')"
+      empty-icon="boxes"
+      :empty-illustration="keyword ? 'no-result' : 'no-data'"
+      flex-height
+    />
 
     <div v-if="tab === 'devices' && portsDevice" class="card port-card">
       <div class="port-head">
@@ -1300,21 +1309,20 @@ async function forceRelease(lease: LeaseView): Promise<void> {
       </div>
     </div>
 
-    <div class="list-fill">
-      <DataTable
-        v-if="tab === 'credentials'"
-        :columns="credentialColumns"
-        :data="credentialRows"
-        :loading="loading"
-        :row-key="(row: Credential) => row.id"
-        :empty-title="t('common.noData')"
-        :empty-description="projectId ? undefined : t('overview.noProject')"
-        empty-icon="boxes"
-        :error="Boolean(error)"
-        :empty-illustration="keyword ? 'no-result' : 'no-data'"
-        flex-height
-      />
-    </div>
+    <AssetWorkspace
+      v-if="tab === 'credentials'"
+      scope="project"
+      :columns="credentialColumns"
+      :rows="credentialRows"
+      :row-key="assetRowKey"
+      :loading="loading"
+      :error="Boolean(error)"
+      :empty-title="t('common.noData')"
+      :empty-description="projectId ? undefined : t('overview.noProject')"
+      empty-icon="boxes"
+      :empty-illustration="keyword ? 'no-result' : 'no-data'"
+      flex-height
+    />
 
     <!--
       租约只读（FR-v0.4-09）：搜索框与「新建」在这一页无意义——后端没有关键词参数，
