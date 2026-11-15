@@ -27,6 +27,8 @@ export interface ReportTemplate {
   platform: boolean
   fields: ReportTemplateField[]
   createdAt: string
+  /** v5.14.0 / W64-10：适用内核 robot / pytest / any；旧后端无此字段时按 robot 显示。 */
+  kernel?: string
 }
 
 export interface ReportTemplateFieldPayload {
@@ -39,6 +41,8 @@ export interface ReportTemplatePayload {
   name: string
   description?: string | null
   fields: ReportTemplateFieldPayload[]
+  /** 不传 = robot（旧客户端行为不变）。 */
+  kernel?: string
 }
 
 export const reportTemplateApi = {
@@ -46,9 +50,9 @@ export const reportTemplateApi = {
     return request<ReportTemplate[]>(`/report-templates${toQuery({ projectId })}`)
   },
 
-  /** 可选字段（C5 白名单顺序）。 */
-  fields(): Promise<string[]> {
-    return request<string[]>('/report-templates/fields')
+  /** 可选字段（C5 白名单顺序）；传 kernel=pytest 会额外拿到 5 项专属字段。 */
+  fields(kernel?: string): Promise<string[]> {
+    return request<string[]>(`/report-templates/fields${toQuery({ kernel })}`)
   },
 
   create(payload: ReportTemplatePayload): Promise<ReportTemplate> {

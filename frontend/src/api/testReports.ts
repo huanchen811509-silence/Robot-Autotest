@@ -49,6 +49,20 @@ export interface TestReportSnapshot {
   hasSnapshot: boolean
 }
 
+/**
+ * v5.14.0 / W64-11：模板回指元信息。字段清单仍来自冻结快照，
+ * kernel / templateSource 是查询期补充，供界面判断「当前使用通用模板」。
+ */
+export interface TestReportTemplateRef {
+  id: number | null
+  version: number | null
+  name: string | null
+  fieldKeys: string[]
+  kernel: string | null
+  /** PROJECT_KERNEL_MATCH / PLATFORM_KERNEL_MATCH / PLATFORM_ANY / PLATFORM_FALLBACK */
+  templateSource: string | null
+}
+
 export const testReportsApi = {
   list: (projectId: number) =>
     request<TestReportItem[]>(`/test-reports?projectId=${projectId}`),
@@ -84,6 +98,8 @@ export const testReportsApi = {
     request<TestReportItem>(`/test-reports/${id}/freeze`, { method: 'POST' }),
   snapshot: (id: number) =>
     request<TestReportSnapshot>(`/test-reports/${id}/snapshot`),
+  template: (id: number) =>
+    request<TestReportTemplateRef>(`/test-reports/${id}/template`),
   render: (id: number, external = true) =>
     request<Record<string, unknown>>(`/test-reports/${id}?external=${external}`),
   exportBlob: (id: number, format: string) =>

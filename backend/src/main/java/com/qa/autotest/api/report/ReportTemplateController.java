@@ -37,10 +37,10 @@ public class ReportTemplateController {
         return ApiResponse.ok(templates.list(projectId));
     }
 
-    /** 可选字段清单（C5 白名单顺序）。 */
+    /** 可选字段清单（C5 白名单顺序；v5.14.0 起可按 kernel 取专属字段）。 */
     @GetMapping("/fields")
-    public ApiResponse<List<String>> fields() {
-        return ApiResponse.ok(templates.selectableFields());
+    public ApiResponse<List<String>> fields(@RequestParam(required = false) String kernel) {
+        return ApiResponse.ok(templates.selectableFields(kernel));
     }
 
     @GetMapping("/{id}")
@@ -75,7 +75,7 @@ public class ReportTemplateController {
     }
 
     public record TemplateRequest(Long projectId, String name, String description,
-                                  List<FieldRequest> fields) {
+                                  List<FieldRequest> fields, String kernel) {
 
         ReportTemplateService.TemplateCommand toCommand() {
             List<ReportTemplateService.FieldCommand> mapped = fields == null ? List.of()
@@ -84,7 +84,7 @@ public class ReportTemplateController {
                                     : new ReportTemplateService.FieldCommand(f.fieldKey(), f.titleOverride()))
                             .toList();
             return new ReportTemplateService.TemplateCommand(
-                    projectId == null ? 0L : projectId, name, description, mapped);
+                    projectId == null ? 0L : projectId, name, description, mapped, kernel);
         }
     }
 }

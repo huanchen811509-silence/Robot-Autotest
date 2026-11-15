@@ -2,6 +2,7 @@ package com.qa.autotest.domain.report;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * 报告模板（TPLX-01，v2.1）：一份「对外报告该有哪些字段、按什么顺序、叫什么名字」的配置。
@@ -17,10 +18,47 @@ import java.util.List;
  */
 public record ReportTemplate(long id, long projectId, String name, String description,
                              int version, boolean isDefault,
-                             List<Field> fields, Long createdBy, Instant createdAt) {
+                             List<Field> fields, Long createdBy, Instant createdAt,
+                             /** v5.14.0：适用内核 robot / pytest / any。 */
+                             String kernel) {
+
+    public ReportTemplate {
+        kernel = normalizeKernel(kernel);
+    }
+
+    /** 兼容 v5.14.0 之前的 9 参写法：存量模板一律按 robot 处理，行为不变。 */
+    public ReportTemplate(long id, long projectId, String name, String description,
+                          int version, boolean isDefault, List<Field> fields,
+                          Long createdBy, Instant createdAt) {
+        this(id, projectId, name, description, version, isDefault, fields,
+                createdBy, createdAt, KERNEL_ROBOT);
+    }
 
     /** 模板里的一项字段：key + 顺序 + 可选的自定义标题。 */
     public record Field(String fieldKey, int sortOrder, String titleOverride) {
+    }
+
+    public static final String KERNEL_ROBOT = "robot";
+    public static final String KERNEL_PYTEST = "pytest";
+    public static final String KERNEL_ANY = "any";
+
+    /** 归一化并兜底：读库遇到历史脏值时不让它变成「第五种内核」。 */
+    public static String normalizeKernel(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return KERNEL_ROBOT;
+        }
+        String value = raw.trim().toLowerCase(Locale.ROOT);
+        return value.equals(KERNEL_ROBOT) || value.equals(KERNEL_PYTEST)
+                || value.equals(KERNEL_ANY) ? value : KERNEL_ROBOT;
+    }
+
+    public static boolean validKernel(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return false;
+        }
+        String value = raw.trim().toLowerCase(Locale.ROOT);
+        return value.equals(KERNEL_ROBOT) || value.equals(KERNEL_PYTEST)
+                || value.equals(KERNEL_ANY);
     }
 
     /** 平台级模板的 project_id 约定值。 */

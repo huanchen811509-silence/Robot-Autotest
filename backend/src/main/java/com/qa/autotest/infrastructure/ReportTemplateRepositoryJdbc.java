@@ -1,5 +1,6 @@
 package com.qa.autotest.infrastructure;
 
+import com.qa.autotest.application.report.TemplateSelection;
 import com.qa.autotest.application.repository.ReportTemplateRepository;
 import com.qa.autotest.common.tenant.TenantGuard;
 import com.qa.autotest.domain.report.ReportTemplate;
@@ -28,10 +29,12 @@ public class ReportTemplateRepositoryJdbc implements ReportTemplateRepository {
             rs.getBoolean("is_default"),
             List.of(),
             rs.getObject("created_by") == null ? null : rs.getLong("created_by"),
-            JdbcSupport.instant(rs.getTimestamp("created_at")));
+            JdbcSupport.instant(rs.getTimestamp("created_at")),
+            rs.getString("kernel"));
 
     private static final String SELECT = """
-            SELECT id, project_id, name, description, version, is_default, created_by, created_at
+            SELECT id, project_id, name, description, version, is_default, kernel,
+                   created_by, created_at
               FROM report_template
             """;
 
@@ -43,8 +46,8 @@ public class ReportTemplateRepositoryJdbc implements ReportTemplateRepository {
             """;
 
     private static final String INSERT = """
-            INSERT INTO report_template (project_id, name, description, version, is_default)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO report_template (project_id, name, description, version, is_default, kernel)
+            VALUES (?, ?, ?, ?, ?, ?)
             """;
 
     private static final String INSERT_FIELD = """
@@ -104,6 +107,7 @@ public class ReportTemplateRepositoryJdbc implements ReportTemplateRepository {
             ps.setString(3, draft.description());
             ps.setInt(4, draft.version());
             ps.setBoolean(5, draft.isDefault());
+            ps.setString(6, draft.kernel());
             return ps;
         }, holder);
         Number key = holder.getKey();
@@ -155,6 +159,51 @@ public class ReportTemplateRepositoryJdbc implements ReportTemplateRepository {
         return jdbc.query(sql, MAPPER, projectId).stream().findFirst().map(this::withFields);
     }
 
+    /**
+     * v5.14.0 / W64-11：四级回退。
+     * ① 本项目默认且 kernel 匹配 → ② 平台默认且 kernel 匹配 → ③ 平台默认 any → ④ 任意平台默认。
+     *
+     * <p>run 的内核从 {@code run.kernel} 直接读（V11_17 已有该列），不在报告侧另猜；
+     * 查不到该 run 时按 robot 处理，与迁移前行为一致。分级顺序与静态
+     * {@link #rank} 一一对应，单测锁死，避免 SQL 与文档各说一套。
+     */
+    @Override
+    public Optional<ReportTemplate> findDefaultForRun(long projectId, String runId) {
+        String kernel = runKernel(projectId, runId);
+        String sql = SELECT + """
+                 WHERE project_id IN (?, 0) AND is_default = 1
+                 ORDER BY CASE
+                            WHEN project_id = ? AND kernel = ? THEN 0
+                            WHEN project_id = 0 AND kernel = ? THEN 1
+                            WHEN project_id = 0 AND kernel = 'any' THEN 2
+                            ELSE 3
+                          END, id ASC
+                 LIMIT 1
+                """;
+        TenantGuard.requireProjectScope(sql, "report_template");
+        return jdbc.query(sql, MAPPER, projectId, projectId, kernel, kernel)
+                .stream().findFirst().map(this::withFields);
+    }
+
+    @Override
+    public String runKernel(long projectId, String runId) {
+        String sql = "SELECT kernel FROM run WHERE project_id = ? AND run_id = ? LIMIT 1";
+        TenantGuard.requireProjectScope(sql, "run");
+        List<String> found = jdbc.query(sql, (rs, n) -> rs.getString(1), projectId, runId);
+        return found.isEmpty() || found.get(0) == null || found.get(0).isBlank()
+                ? ReportTemplate.KERNEL_ROBOT
+                : found.get(0).trim().toLowerCase(java.util.Locale.ROOT);
+    }
+
+    /**
+     * 分级排序的唯一真值在 {@link TemplateSelection}；这里保留 public 入口供单测锁死
+     * 「SQL CASE 与单一真值一致」，避免基础设施层另写一套排序。
+     */
+    public static int rank(long templateProjectId, String templateKernel, long projectId,
+                           String runKernel) {
+        return TemplateSelection.rank(templateProjectId, templateKernel, projectId, runKernel);
+    }
+
     @Override
     public void markDefault(long projectId, long id) {
         // 只清**本项目**的默认标记，绝不能连平台级（project_id = 0）一起清：
@@ -179,6 +228,6 @@ public class ReportTemplateRepositoryJdbc implements ReportTemplateRepository {
                 template.projectId(), template.id());
         return new ReportTemplate(template.id(), template.projectId(), template.name(),
                 template.description(), template.version(), template.isDefault(), fields,
-                template.createdBy(), template.createdAt());
+                template.createdBy(), template.createdAt(), template.kernel());
     }
 }

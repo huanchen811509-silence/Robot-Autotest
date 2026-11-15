@@ -74,3 +74,14 @@
 | 日期 | 修订 | 依据 |
 |---|---|---|
 | 2026-11-15 | 补 R-17 ~ R-19：W3 开工后读到的写入侧白名单、四格式确切位置、打印页 token 链路 | commit `4cfc94c` 源码 + W3 单测 |
+
+
+---
+
+## 附：W4 实测补记（R-20 ~ R-22，2026-11-15）
+
+| # | 事实 | 证据来源 |
+|---|---|---|
+| R-20 | `V11_74` 真实迁移可执行：`kernel varchar(32) NOT NULL DEFAULT 'robot'`；`flyway_schema_history` 最新 `11.74/11.73/11.68`；存量行无 NULL；EHT-PYTEST 9 字段且 `INSERT IGNORE` 重放幂等；平台 DEFAULT 仍 21 字段；业务表数 109 | `w4-verify.txt` [4]（`bash scripts/db-migrate.sh` + mysql CLI） |
+| R-21 | `run` 表真实内核分布 `robot:496 / pytest:47`；四级回退 SELECT+CASE 在真实库上按 kernel 正确分流（robot→DEFAULT、pytest→EHT-PYTEST），项目 7 与平台项目 88 各一组 | `w4-verify.txt` [5]（`w4_sql_probe.py`） |
+| R-22 | `TestReportService.template()` 原本只从快照读 `TemplateRef(id,version,name,fieldKeys)`；快照 JSON 里**没有** run kernel，也没有「选择落在哪一级」。故 `templateSource` 只能作查询期元信息，不能从快照复原 | `ReportSnapshotService.templateNode` / `ReportRecord` 字段清单 |

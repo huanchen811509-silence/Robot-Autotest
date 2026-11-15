@@ -44,8 +44,21 @@ public class ReportViewRenderer {
         this.mapper = mapper;
     }
 
-    /** 快照里记的模板回指（TPLX-02）：给页面显示「这份报告是按哪个模板第几版冻结的」。 */
-    public record TemplateRef(Long id, Integer version, String name, List<String> fieldKeys) {
+    /**
+     * 快照里记的模板回指（TPLX-02）：给页面显示「这份报告是按哪个模板第几版冻结的」。
+     *
+     * <p>v5.14.0 / W64-11 追加两项**查询期元信息**：{@code kernel} 是模板内核，
+     * {@code templateSource} 是四级回退落在哪一级，供界面判断「当前使用通用模板」。
+     * 它们不是报告字段，不进 C5 白名单、不进快照 JSON、不影响 snapshot_hash；
+     * 历史快照（没有模板回指）两项为 null，界面不提示，行为与迁移前一致。
+     */
+    public record TemplateRef(Long id, Integer version, String name, List<String> fieldKeys,
+                              String kernel, String templateSource) {
+
+        /** 兼容 TPLX-02 的 4 参写法：历史 / 未绑定模板一律不带元信息。 */
+        public TemplateRef(Long id, Integer version, String name, List<String> fieldKeys) {
+            this(id, version, name, fieldKeys, null, null);
+        }
 
         public boolean bound() {
             return id != null;

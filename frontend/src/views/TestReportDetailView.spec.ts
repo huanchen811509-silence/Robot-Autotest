@@ -17,6 +17,7 @@ vi.mock('@/api/testReports', () => ({
   testReportsApi: {
     snapshot: vi.fn(),
     freeze: vi.fn(async () => ({})),
+    template: vi.fn(),
   },
 }))
 
@@ -41,7 +42,13 @@ function mountView() {
 beforeEach(() => {
   vi.mocked(testReportsApi.snapshot).mockReset()
   vi.mocked(testReportsApi.snapshot).mockResolvedValue(frozen)
+  vi.mocked(testReportsApi.template).mockReset()
+  vi.mocked(testReportsApi.template).mockResolvedValue({
+    id: 8, version: 1, name: 'EHT-PYTEST', fieldKeys: [],
+    kernel: 'pytest', templateSource: 'PLATFORM_KERNEL_MATCH',
+  })
   document.body.innerHTML = ''
+
 })
 
 describe('TestReportDetailView 快照预览（v5.14.0 / W64-05）', () => {
@@ -56,6 +63,23 @@ describe('TestReportDetailView 快照预览（v5.14.0 / W64-05）', () => {
     expect(frame!.getAttribute('srcdoc')).toContain('Test Report')
     expect(testReportsApi.snapshot).toHaveBeenCalledWith(7)
     expect(root.querySelector('[data-testid="frozen-hint"]')).not.toBeNull()
+    // 命中内核模板时不该误报「通用模板」；模板名与内核要看得见。
+    expect(root.querySelector('[data-testid="generic-template-hint"]')).toBeNull()
+    expect(root.textContent).toContain('EHT-PYTEST')
+    expect(root.textContent).toContain('pytest')
+  })
+
+  it('回退到通用模板时界面明确提示（FR-v5.14-08 判据 3）', async () => {
+    vi.mocked(testReportsApi.template).mockResolvedValueOnce({
+      id: 1, version: 1, name: 'DEFAULT', fieldKeys: [],
+      kernel: 'robot', templateSource: 'PLATFORM_FALLBACK',
+    })
+    const root = mountView()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    await nextTick()
+    expect(root.querySelector('[data-testid="generic-template-hint"]')).not.toBeNull()
+    expect(root.textContent).toContain('DEFAULT')
+    expect(testReportsApi.template).toHaveBeenCalledWith(7)
   })
 
   it('DRAFT 显示冻结动作；无快照显示可解释空态而不是假按钮', async () => {

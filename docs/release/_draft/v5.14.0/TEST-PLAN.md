@@ -344,3 +344,34 @@ docs/evidence/v5.14.0/
 
 **W3 合计**：新增 `ReportExportBar.spec 3`、`SystemSettingAutoGenerateTest 3`；
 `check_i18n.py` 5/5（3118 键）、`vue-tsc` 0 error。
+
+
+---
+
+## 13. W4 实测结果（滚动）
+
+| TC | 方式 | 结果 | 证据 |
+|---|---|---|---|
+| TC-v5.14-36 | `UT`+`DB` | PARTIAL | EHT 预置模板与四级 rank 已由单测覆盖；「新建报告取到 EHT 模板」的真实响应 + DB 读数留 W7 探针（后端 jar 未重建） |
+| TC-v5.14-37 | `UT` | PASS | `EXTERNAL_ORDER` 恒 21 项、robot/any 可选 21 项，标准 RF 字段数不变 |
+| TC-v5.14-38 | `UT` | PASS | `rank()` 四级顺序断言；`any` 分支有独立样本 |
+| TC-v5.14-39 | `UT` | PASS | `nodeId` / `criteriaConclusion` / `artifactPath` 在允许集合内可引用；`notAField` 被拒；未知 kernel 不扩展 |
+| TC-v5.14-41 | `DB` | PARTIAL | 迁移文件已写、待迁移演练与 `GROUP BY kernel` 读数，见 `w4-verify.txt` |
+| FR-08 判据 1 | `MECH` | 口径修订 | `test_report` 无 `template_id` 列，改断言 `GET /api/test-reports/{id}/template` 的 `TemplateRef`（R-16 / D-7），W7 探针执行 |
+
+**W4 合计**：新增 `ReportTemplateKernelTest` 5 例；既有模板服务 / 冻结回归全绿；契约因 `GET /fields?kernel=` 与请求/响应新增字段需重生成。
+
+
+### 13.1 W4 实测补记（迁移与回退可见，滚动）
+
+| TC | 方式 | 结果 | 证据 |
+|---|---|---|---|
+| TC-v5.14-41 | `DB` | **PASS** | `V11_74` 真实迁移：`11.74/11.73/11.68`、`GROUP BY kernel` 无 NULL、EHT 9 字段、幂等重放不增行、DEFAULT 仍 21 字段、表数 109 |
+| FR-08 判据 2 | `DB` | **PASS（DB 侧）** | 平台 DEFAULT 字段数 21、kernel=robot；`project=7 kernel=robot` 的四级回退 SQL 命中 DEFAULT |
+| FR-08 判据 3 | `UT`+`FE` | **PASS（实现侧）** | `TemplateSelection.generic()` 只在 `PLATFORM_ANY`/`PLATFORM_FALLBACK` 为真；详情页 3 例含回退提示断言；真视口截图仍留 W7 |
+| FR-08 判据 6 | `DB` | **PASS** | `SELECT kernel,COUNT(*) ... GROUP BY kernel` → `robot:1 ; pytest:1`，无 NULL |
+
+**W4 合计补正**：后端 `ReportTemplateKernelTest` 6 例 + `ReportTemplateServiceTest` 11 例 + `ReportTemplateFreezeTest` 7 例（23 例）；
+前端 `ReportTemplatesView.spec.ts` 9 例 + `TestReportDetailView.spec.ts` 3 例；契约 `457/375 --check PASS`；
+`check_dto_columns.py` / `check_tables.py` / `check_md_tables.py` 全 PASS；`vue-tsc` 0 error；`check_i18n.py` 5/5。
+真实 HTTP 端点探针、真视口截图、v5.13 反向回放仍留 W7。

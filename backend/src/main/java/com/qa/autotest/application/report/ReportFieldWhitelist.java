@@ -1,10 +1,13 @@
 package com.qa.autotest.application.report;
 
+import com.qa.autotest.domain.report.ReportTemplate;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * C5 对外报告字段白名单（{@code docs/plan/C5-对外报告字段白名单-20261106.md} §2）——**唯一真源**。
@@ -34,8 +37,31 @@ public final class ReportFieldWhitelist {
             "projectName", "swBuild", "caseKind", "startedAt", "finishedAt",
             "disclaimer", "watermark");
 
-    /** 允许出对外视图的全部字段（21 项，与文档 §2 逐项一致）。 */
-    public static final Set<String> EXTERNAL_FIELDS = Set.copyOf(EXTERNAL_ORDER);
+    /**
+     * v5.14.0 / W64-12：pytest 专属字段。
+     *
+     * <p>刻意**不并入** {@link #EXTERNAL_ORDER}：那份列表同时是默认渲染顺序与平台
+     * DEFAULT 模板的字段集，加一项就会让所有标准 RF 报告的导出多一列（判据 2 要求
+     * 「行为不变、字段数不变」）。这里只扩「允许集合」，顺序仍由模板自己决定。
+     */
+    public static final List<String> PYTEST_ORDER = List.of(
+            "criteriaConclusion", "nodeId", "paramId", "junitMessage", "artifactPath");
+
+    /** 允许出对外视图的全部字段 = 通用 21 项 + pytest 专属 5 项，仍是唯一真源。 */
+    public static final Set<String> EXTERNAL_FIELDS = Set.copyOf(
+            Stream.concat(EXTERNAL_ORDER.stream(), PYTEST_ORDER.stream()).toList());
+
+    /**
+     * 界面可选字段按内核分组：robot / any 给通用 21 项，pytest 额外给 5 项专属字段。
+     * 未知内核不给任何扩展（默认拒绝），避免「随便传个 kernel 就放开字段」。
+     */
+    public static List<String> selectable(String kernel) {
+        if (ReportTemplate.KERNEL_PYTEST.equalsIgnoreCase(kernel)) {
+            return List.copyOf(Stream.concat(EXTERNAL_ORDER.stream(),
+                    PYTEST_ORDER.stream()).toList());
+        }
+        return EXTERNAL_ORDER;
+    }
 
     /**
      * 模板里不可删除的字段。

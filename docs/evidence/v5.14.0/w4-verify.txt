@@ -1,0 +1,76 @@
+v5.14.0 / W4 真实验证读数（WSL ~/robot-autotest）
+时间：2026-11-15 GMT+8
+（迁移演练与四级回退 SQL 探针已在 W4 真实执行；仅真实 HTTP 端点探针留 W7 统一补测。）
+
+[1] 迁移文件
+  db/migration/V11_74__report_template_kernel.sql
+  db/down/V11_74__report_template_kernel.down.sql
+  设计：ADD COLUMN kernel VARCHAR(32) NOT NULL DEFAULT 'robot'（存量自动回填，无 NULL）；
+        INSERT IGNORE 平台模板 EHT-PYTEST（kernel=pytest, is_default=1, 9 字段）幂等种子。
+
+[2] 单测
+  ReportTemplateKernelTest 5 例：
+    - 通用顺序恒 21 项（判据 2「RF 行为不变」）
+    - pytest 26 项、专属字段可引用、未列字段默认拒绝、未知内核不扩展
+    - kernel 归一化与严格校验（非法值抛 BusinessException）
+    - 9 参兼容构造器仍返回 robot
+    - rank() 四级 0/1/2/3 严格有序
+  ReportTemplateServiceTest / ReportTemplateFreezeTest / ReportTemplateRepositoryJdbc 回归。
+
+[3] 契约
+  GET /api/report-templates/fields 新增可选 kernel；
+  TemplateRequest / ReportTemplateView 新增 kernel 字段。
+  端点数不变，快照需重生成后 --check。
+
+[4] W4 真实迁移演练（bash scripts/db-migrate.sh + mysql CLI 读数）
+  SHOW COLUMNS report_template LIKE 'kernel'  -> varchar(32) NOT NULL DEFAULT 'robot'
+  flyway_schema_history 最新三条              -> 11.74 / 11.73 / 11.68
+  SELECT kernel,COUNT(*) GROUP BY kernel      -> robot:1 ; pytest:1（无 NULL）
+  平台模板                                    -> 1|DEFAULT|robot|1 ; 8|EHT-PYTEST|pytest|1
+  EHT-PYTEST 字段数 / 顺序                    -> 9；0..8 = reportId,title,version,frozenAt,
+                                                 conclusion,passCount,failCount,disclaimer,watermark
+  幂等重放两条 INSERT IGNORE                  -> 模板仍 1 份 / 字段仍 9 行
+  平台 DEFAULT 字段数                         -> 21（判据 2：标准 RF 字段数不变）
+  业务表数（排除 flyway_schema_history）      -> 109；down 文件 present
+
+[5] W4 四级回退 SQL 真实库探针（把 JDBC 里那条 SELECT+CASE 原样在 MySQL 跑）
+  run 内核分布                                -> robot:496 ; pytest:47
+  project=7  kernel=robot                     -> 1|0|DEFAULT|robot|1
+  project=7  kernel=pytest                    -> 8|0|EHT-PYTEST|pytest|1
+  project=88 kernel=robot                     -> 1|0|DEFAULT|robot|1
+  project=88 kernel=pytest                    -> 8|0|EHT-PYTEST|pytest|1
+  断言：robot 回落 DEFAULT、pytest 命中 EHT-PYTEST，两组均 PASS
+
+[6] W4 收尾波（W64-11「回退可见」）
+  TemplateRef 追加 kernel / templateSource 两项查询期元信息（不进快照 JSON、不改 hash）；
+  TemplateSelection 作四级 rank/source 的单一真值，JDBC rank() 委托它；
+  GET /api/test-reports/{id}/template 现场按 run.kernel 与模板 kernel 算来源；
+  TestReportDetailView 显示模板名 / 内核，PLATFORM_ANY|PLATFORM_FALLBACK 时显示通用模板提示。
+
+[7] 待 W7 补测（如实登记）
+  - 真实 HTTP：pytest 工程冻结报告取到 EHT-PYTEST 模板（断言 TemplateRef，不是 template_id 列）
+  - 真实 HTTP：标准 RF 工程仍取 DEFAULT、字段数 21
+  - 真视口截图：模板页 kernel 标签与「当前使用通用模板」提示
+
+[8] W4 收尾波验证读数（含 W64-11「回退可见」）
+  后端  ReportTemplateKernelTest 6 / ReportTemplateServiceTest 11 /
+        ReportTemplateFreezeTest 7 = 24 例，errors=0 failures=0
+  前端  ReportTemplatesView.spec.ts 9 + TestReportDetailView.spec.ts 3 = 12 例 PASS
+  i18n  zh-CN 3121 / en-US 3121，[1..5/5] 通过；vue-tsc --noEmit 0 error
+  契约  endpoints=457 paths=375，--check PASS（本波只改响应字段与查询参数，端点数不变）
+  机检  check_dto_columns.py PASS；check_tables.py PASS（68 处数据网格走壳）；
+        check_md_tables.py 5 份 / 109 表格块 / 687 数据行 PASS；
+        db-audit.sh PASS（业务表数 109，审计四列 / 主键 / 时间列 / 字符集全 OK）
+
+[9] 契约工具口径限制（如实登记，不冒充已验证）
+  python3 tools/gen_api_contract.py 只按 controller 签名生成 path/method，
+  不展开 ReportViewRenderer.TemplateRef 的 record 组件：openapi.json 里
+  `templateSource` 命中 0 处、`kernel` 命中 31 处（来自其它既有 DTO）。
+  结论：`--check PASS` 只证明端点集合一致，**不证明新增响应字段已被契约覆盖**；
+  kernel / templateSource 的真实响应值由 W7 真实 HTTP 端点探针断言。
+
+[10] 最终仍待 W7（如实登记）
+  - 重建 jar + 重启后端后跑真实 HTTP：pytest 报告 TemplateRef 取到 EHT-PYTEST、
+    robot 报告仍取 DEFAULT、字段数 9 / 21、templateSource 分级值
+  - 真视口截图：模板页 kernel 标签、详情页「当前使用通用模板」提示
+  - 全量门禁 bash scripts/gates.sh -> GATES_RESULT FAILS=0 UNJUDGED=0

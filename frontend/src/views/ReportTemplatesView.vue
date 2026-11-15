@@ -480,7 +480,9 @@ onMounted(load)
             </button>
             <span v-if="template.platform" class="tag">{{ t('reportTemplates.platformTag') }}</span>
             <span v-if="template.isDefault" class="tag">{{ t('reportTemplates.defaultTag') }}</span>
-            <span class="muted count">v{{ template.version }} · {{ template.fields.length }}</span>
+            <span class="muted count">
+              v{{ template.version }} · {{ template.fields.length }} · {{ template.kernel || 'robot' }}
+            </span>
           </li>
         </ul>
         <button class="btn" type="button" data-testid="new-template" @click="startNew">

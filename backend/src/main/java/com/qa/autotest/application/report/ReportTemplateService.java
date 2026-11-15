@@ -41,7 +41,21 @@ public class ReportTemplateService {
 
     /** 提交给服务的模板内容：字段顺序 = 列表顺序，`sortOrder` 由服务端重排。 */
     public record TemplateCommand(long projectId, String name, String description,
-                                  List<FieldCommand> fields) {
+                                  List<FieldCommand> fields, String kernel) {
+
+        /** 兼容 v5.14.0 之前的 4 参写法（旧客户端不传 kernel → robot）。 */
+        public TemplateCommand(long projectId, String name, String description,
+                               List<FieldCommand> fields) {
+            this(projectId, name, description, fields, ReportTemplate.KERNEL_ROBOT);
+        }
+    }
+
+    /** kernel 只允许三个值；非法值显式 400，不静默回落成 robot（默认拒绝）。 */
+    public static String requireKernel(String raw) {
+        if (!ReportTemplate.validKernel(raw)) {
+            throw bad("kernel 只能是 robot / pytest / any: " + raw);
+        }
+        return ReportTemplate.normalizeKernel(raw);
     }
 
     public record FieldCommand(String fieldKey, String titleOverride) {
@@ -58,7 +72,12 @@ public class ReportTemplateService {
      * 内联了就是第二份白名单，白名单收紧时界面还能选到已禁用的字段。
      */
     public List<String> selectableFields() {
-        return ReportFieldWhitelist.EXTERNAL_ORDER;
+        return selectableFields(ReportTemplate.KERNEL_ROBOT);
+    }
+
+    /** v5.14.0 / W64-12：按内核给可选字段，仍只来自 ReportFieldWhitelist 一个真源。 */
+    public List<String> selectableFields(String kernel) {
+        return ReportFieldWhitelist.selectable(kernel);
     }
 
     public ReportTemplateView get(long projectId, long id) {
@@ -76,6 +95,7 @@ public class ReportTemplateService {
         String name = requireName(command.name());
         String description = normalizeDescription(command.description());
         List<ReportTemplate.Field> fields = normalizeFields(command.fields());
+        String kernel = requireKernel(command.kernel());
 
         Optional<ReportTemplate> sameName = templates.findByName(projectId, name);
         if (sameName.isPresent()) {
@@ -83,14 +103,14 @@ public class ReportTemplateService {
         }
 
         ReportTemplate draft = new ReportTemplate(0L, projectId, name, description, 1,
-                false, fields, null, null);
+                false, fields, null, null, kernel);
         long id = templates.insert(draft, null);
         // 必须显式写字段：`insert` 只落主表一行（字段是另一张表）。
         // 漏这一步时单测仍然全绿——伪仓储把 draft.fields 一起存了，把 bug 盖住了；
         // 是 TPLX-01 的真实 HTTP 验收（TPLX01-05「字段数=0」）把它抓出来的。
         templates.replaceFields(projectId, id, fields, null);
         audit.record("REPORT_TEMPLATE_CREATE", "report_template", String.valueOf(id),
-                "name=" + name + "; fields=" + fields.size());
+                "name=" + name + "; fields=" + fields.size() + "; kernel=" + kernel);
         return ReportTemplateView.of(require(projectId, id));
     }
 

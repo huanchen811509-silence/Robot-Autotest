@@ -10,7 +10,7 @@ import java.util.List;
  */
 public record ReportTemplateView(long id, long projectId, String name, String description,
                                  int version, boolean isDefault, boolean platform,
-                                 List<FieldView> fields, String createdAt) {
+                                 List<FieldView> fields, String createdAt, String kernel) {
 
     /** 一项字段：key 给机器用，title 给界面用（自定义标题优先）。 */
     public record FieldView(String fieldKey, int sortOrder, String titleOverride) {
@@ -28,6 +28,7 @@ public record ReportTemplateView(long id, long projectId, String name, String de
                 template.fields().stream()
                         .map(f -> new FieldView(f.fieldKey(), f.sortOrder(), f.titleOverride()))
                         .toList(),
-                template.createdAt() == null ? "" : template.createdAt().toString());
+                template.createdAt() == null ? "" : template.createdAt().toString(),
+                template.kernel());
     }
 }

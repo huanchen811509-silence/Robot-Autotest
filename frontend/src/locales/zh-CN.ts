@@ -1894,6 +1894,10 @@ export default {
     stateLabel: '状态',
     hashLabel: '快照哈希',
     frozenHint: '已冻结，预览以冻结快照为准；后续修改模板不影响本报告',
+    templateLabel: '使用模板',
+    templateKernelLabel: '模板内核',
+    genericTemplateHint: '当前使用通用模板（本项目无匹配内核模板），可应用 EHT 预置模板',
+
     freezeAction: '冻结报告',
     snapshotMissing: '该报告没有快照（历史数据），无法预览',
     openDetail: '查看',

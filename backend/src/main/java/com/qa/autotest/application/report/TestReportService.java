@@ -95,7 +95,7 @@ public class TestReportService {
                                       Long caseSetId, String title) {
         int version = repository.maxVersion(projectId, runId) + 1;
         ReportSnapshot snapshot = snapshots.build(queries.detail(projectId, runId), version,
-                defaultTemplate(projectId));
+                defaultTemplate(projectId, runId));
         long id = repository.insert(projectId, runId, sourceType, caseSetId,
                 title == null || title.isBlank() ? "报告 " + runId : title, version, snapshot);
         repository.audit(id, "CREATE", null, ReportState.DRAFT.name(), null);
@@ -119,7 +119,7 @@ public class TestReportService {
         int version = repository.maxVersion(report.projectId(), report.runId()) + 1;
         ReportSnapshot snapshot = snapshots.build(
                 queries.detail(report.projectId(), report.runId()), version,
-                defaultTemplate(report.projectId()));
+                defaultTemplate(report.projectId(), report.runId()));
         repository.freeze(id, snapshot);
         repository.audit(id, "FREEZE", report.state().name(), ReportState.FROZEN.name(), null);
         return find(id);
@@ -146,9 +146,27 @@ public class TestReportService {
                 ReportExportService.WATERMARK);
     }
 
-    /** 报告是按哪个模板第几版冻结的；历史快照没有模板回指时 `bound=false`。 */
+    /**
+     * 报告是按哪个模板第几版冻结的；历史快照没有模板回指时 {@code bound=false}。
+     *
+     * <p>v5.14.0 / W64-11：字段清单仍**只从快照读**（TPLX-02 冻结纪律），
+     * 但补两项查询期元信息：模板 kernel 与四级回退结果。平台模板只读、项目模板的
+     * kernel 创建后不可改（B-15），所以现场推断不会让历史报告漂移；模板若已被删除，
+     * 原样返回快照回指，不编造来源。
+     */
     public ReportViewRenderer.TemplateRef template(long id) {
-        return renderer.templateRef(snapshotOf(find(id)));
+        TestReport report = find(id);
+        ReportViewRenderer.TemplateRef ref = renderer.templateRef(snapshotOf(report));
+        if (!ref.bound()) {
+            return ref;
+        }
+        return templates.find(report.projectId(), ref.id())
+                .map(t -> new ReportViewRenderer.TemplateRef(
+                        ref.id(), ref.version(), ref.name(), ref.fieldKeys(), t.kernel(),
+                        TemplateSelection.source(TemplateSelection.rank(
+                                t.projectId(), t.kernel(), report.projectId(),
+                                templates.runKernel(report.projectId(), report.runId())))))
+                .orElse(ref);
     }
 
     /**
@@ -214,9 +232,13 @@ public class TestReportService {
                 report.snapshotHash(), report.version(), report.sourceSummary());
     }
 
-    /** 未指定模板一律回落 DEFAULT（项目级默认 → 平台级内置），都没有时按全量白名单渲染。 */
-    private ReportTemplate defaultTemplate(long projectId) {
-        return templates.findDefault(projectId).orElse(null);
+    /**
+     * v5.14.0 / W64-11：按该 run 的内核做分级模板选择（项目 kernel 匹配 → 平台 kernel
+     * 匹配 → 平台 any → 任意平台默认）。接口用 default 方法回落旧的两级实现，
+     * 所以既有伪仓储 / 单测不受影响；真实 JDBC 实现会覆盖它。
+     */
+    private ReportTemplate defaultTemplate(long projectId, String runId) {
+        return templates.findDefaultForRun(projectId, runId).orElse(null);
     }
 
     private static void require(boolean condition, String message) {

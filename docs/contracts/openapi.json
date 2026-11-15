@@ -21163,7 +21163,17 @@
           "409": {
             "$ref": "#/components/responses/BusinessError"
           }
-        }
+        },
+        "parameters": [
+          {
+            "name": "kernel",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
       }
     },
     "/api/report-templates/{id}": {

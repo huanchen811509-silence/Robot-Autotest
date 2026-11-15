@@ -39,6 +39,25 @@ public interface ReportTemplateRepository {
     Optional<ReportTemplate> findDefault(long projectId);
 
     /**
+     * v5.14.0 / W64-11：按该 run 的内核做分级默认模板选择。
+     *
+     * <p>用 {@code default} 方法回落旧口径，是为了不让所有既有伪仓储 / mock 被迫实现新方法：
+     * 真实 JDBC 实现会覆盖它并按 kernel 分级，测试里的伪仓储仍走原来的两级回退。
+     */
+    default Optional<ReportTemplate> findDefaultForRun(long projectId, String runId) {
+        return findDefault(projectId);
+    }
+
+    /**
+     * v5.14.0 / W64-11：该 run 的内核（{@code run.kernel}）。报告详情要把「这次模板
+     * 选择落在四级里的哪一级」透出给界面，需要这个事实；查不到按 robot 兜底，
+     * 与迁移前行为一致。default 回落同样是为了不打破既有伪仓储。
+     */
+    default String runKernel(long projectId, String runId) {
+        return ReportTemplate.KERNEL_ROBOT;
+    }
+
+    /**
      * 把某模板设为默认：只清**本项目**的默认标记再置位，平台级（{@code project_id = 0}）的
      * 默认标记不动——它是所有项目的全局回落值，不能被单个项目的操作顺手清掉。
      */

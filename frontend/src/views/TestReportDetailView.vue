@@ -13,7 +13,7 @@ import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { NButton } from 'naive-ui'
-import { testReportsApi, type TestReportSnapshot } from '@/api/testReports'
+import { testReportsApi, type TestReportSnapshot, type TestReportTemplateRef } from '@/api/testReports'
 import ErrorLineView from '@/components/ErrorLine.vue'
 import ReportExportBar from '@/components/ReportExportBar.vue'
 import { localizeError, type ErrorLine } from '@/utils/errors'
@@ -24,6 +24,11 @@ const router = useRouter()
 
 const id = computed(() => Number(route.params.id ?? 0))
 const snapshot = ref<TestReportSnapshot | null>(null)
+const templateRef = ref<TestReportTemplateRef | null>(null)
+const genericTemplate = computed(
+  () => !!templateRef.value
+    && ['PLATFORM_ANY', 'PLATFORM_FALLBACK'].includes(templateRef.value.templateSource ?? ''),
+)
 const loading = ref(false)
 const error = ref<ErrorLine | null>(null)
 const freezing = ref(false)
@@ -31,6 +36,7 @@ const freezing = ref(false)
 async function load(): Promise<void> {
   error.value = null
   snapshot.value = null
+  templateRef.value = null
   if (!id.value) return
   loading.value = true
   try {
@@ -39,6 +45,12 @@ async function load(): Promise<void> {
     error.value = localizeError(e)
   } finally {
     loading.value = false
+  }
+  // 模板回指是元信息补充：它失败不该让整份报告预览打不开，静默降级即可。
+  try {
+    templateRef.value = await testReportsApi.template(id.value)
+  } catch {
+    templateRef.value = null
   }
 }
 
@@ -96,7 +108,14 @@ watch(id, () => void load(), { immediate: true })
             <dd>{{ snapshot.state }}</dd>
             <dt>{{ t('testReports.hashLabel') }}</dt>
             <dd class="mono">{{ snapshot.hash || '—' }}</dd>
+            <dt>{{ t('testReports.templateLabel') }}</dt>
+            <dd>{{ templateRef?.name || '—' }}</dd>
+            <dt>{{ t('testReports.templateKernelLabel') }}</dt>
+            <dd>{{ templateRef?.kernel || '—' }}</dd>
           </dl>
+          <p v-if="genericTemplate" class="muted" data-testid="generic-template-hint">
+            {{ t('testReports.genericTemplateHint') }}
+          </p>
           <p v-if="snapshot.frozen" class="muted" data-testid="frozen-hint">
             {{ t('testReports.frozenHint') }}
           </p>

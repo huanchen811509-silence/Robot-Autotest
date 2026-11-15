@@ -1882,6 +1882,10 @@ export default {
     stateLabel: 'State',
     hashLabel: 'Snapshot hash',
     frozenHint: 'Frozen — preview uses the frozen snapshot; later template edits do not apply',
+    templateLabel: 'Template',
+    templateKernelLabel: 'Kernel',
+    genericTemplateHint: 'Using a generic template (no kernel-matched template); apply the EHT preset',
+
     freezeAction: 'Freeze report',
     snapshotMissing: 'This report has no snapshot (legacy data), preview unavailable',
     openDetail: 'View',

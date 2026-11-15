@@ -367,3 +367,42 @@ W4 与 W2/W3 改动面不重叠可并行；W5 必须在 W4 之后（要用 kerne
 | B-10 | 列表页导出用共用组件而非「下拉」 | `NSelect`/`NDropdown` 在 DataTable 单元格里会引入 teleport 与虚拟层，happy-dom 下不可测；用原生 `<select>` + 按钮，四格式可见可选，行为等价 |
 | B-11 | 默认 `report.auto_generate=false` | 升级后不能悄悄改变既有项目的执行产物数量；默认值与「开关默认关」一致 |
 | B-12 | 导出件能否打开（PDF 页数 / DOCX 可解析）、打印 token 一次性真实请求、非管理员 403 | 未部署新 jar，属 `FILE`/`HTTP` 证据，留 W7 真实探针，不冒充 |
+
+
+---
+
+## 16. W4 实际完成（W64-10 ~ W64-13）
+
+| WBS | 完成内容 | 验收读数 |
+|---|---|---|
+| W64-10 | `V11_74` 加 `report_template.kernel`（NOT NULL DEFAULT 'robot'）+ `.down.sql`；`ReportTemplate` 加第 10 参并保留 9 参兼容构造器；MAPPER / SELECT / INSERT / withFields 全链路带 kernel | 迁移后 `GROUP BY kernel` 无 NULL；旧 `new ReportTemplate(...9 参)` 调用零改动 |
+| W64-11 | `ReportTemplateRepository.findDefaultForRun` 用 **default 方法**回落旧两级实现（旧伪仓储 / mock 不受影响）；JDBC 覆盖实现，从 `run.kernel` 取内核，SQL CASE 四级回退；`rank()` 静态方法作单一真值 | `ReportTemplateKernelTest.fourFallbackLevelsAreStrictlyOrdered` 四级各一条 |
+| W64-12 | `ReportFieldWhitelist` 仍是**一个类**：新增 `PYTEST_ORDER` 5 项并入 `EXTERNAL_FIELDS`（允许集合），**不并入** `EXTERNAL_ORDER`（默认顺序 / 平台 DEFAULT 字段集保持 21 项）；`selectable(kernel)` 按维度给清单；`GET /fields?kernel=` 开放 | 单测：robot/any 21 项、pytest 26 项、未知内核默认拒绝；`allows()` 仍默认拒绝 |
+| W64-13 | 迁移幂等种子 `EHT-PYTEST`（9 字段 = 6 必填 + 结论 + 两计数，`INSERT IGNORE` + 唯一键）；`TemplateRequest/TemplateCommand` 带 kernel 且严格校验；`ReportTemplateView` 透出 kernel；前端类型与模板卡片显示 | 单测 5 例；`ReportTemplateServiceTest` / `ReportTemplateFreezeTest` 回归 |
+
+### 16.1 W4 偏差登记
+
+| # | 偏差 | 原因 |
+|---|---|---|
+| B-13 | 草案「四级回退从零补」改为「两级扩到四级」 | R-12：项目默认 → 平台 DEFAULT 已存在；本版只加 kernel 匹配与 any 分支 |
+| B-14 | EF 专属字段**不进** `EXTERNAL_ORDER` | 该列表同时决定默认渲染顺序与平台 DEFAULT 字段集，加一项会让所有标准 RF 报告多一列，直接违反 FR-08 判据 2 |
+| B-15 | 内核绑定创建时定，`update` 不改 kernel | 已冻结报告的快照回指的是模板 id + version；中途换内核会让「当时按哪个内核出的报告」不可追溯 |
+| B-16 | `findDefaultForRun` 用接口 default 方法 | 全库有多处伪仓储直接 `implements ReportTemplateRepository`；加抽象方法会一次性打破全部测试，default 回落让旧链路零改动 |
+| B-17 | 前端只加 kernel 显示 / 可选参数，未做分组筛选 UI | 判据 3「回退到通用模板要可见」目前由列表卡片 kernel 标签 + 后端 `TemplateRef` 承担；界面提示语留 W7 真实探针后按证据补齐 |
+
+
+### 16.2 W4 收尾波：W64-11「回退可见」做实
+
+| 项 | 内容 |
+|---|---|
+| 触发 | W64-11 出口判据 ②「回到 `any` 时界面有提示」与 FR-08 判据 3 属 **P0**，B-17 把它留到 W7 会导致收口时判 FAIL |
+| 实现 | 新建 `TemplateSelection`（application 层）作四级 rank/source 的单一真值；`ReportTemplateRepository.runKernel` 用 default 方法回落；`TemplateRef` 追加 `kernel` / `templateSource` **查询期元信息**；`TestReportDetailView` 显示模板名与内核，回退时给「当前使用通用模板」提示 |
+| 边界 | **不写进快照 JSON**：快照是冻结事实，字段集合与 `snapshot_hash` 由 TPLX-02 保护；加一个界面提示不该改所有历史报告的 hash。平台模板只读、项目模板 kernel 创建后不可改（B-15），现场推断不漂移 |
+| 验收 | 后端 `TemplateSelection` 6 例断言（含「RF/EHT 命中不误报、内核不匹配才提示」）；前端详情页 3 例；真实库四级回退 SQL 探针 4 组 |
+
+### 16.3 W4 偏差补记
+
+| # | 偏差 | 原因 |
+|---|---|---|
+| B-18 | B-17 的「界面提示语留 W7」提前到 W4 落地 | P0 判据不能等到收口波才补；实现只增元信息与一个提示条，不动冻结快照 |
+| B-19 | `templateSource` 未写进 `snapshot_json`，而是查询期由 `/template` 端点算 | 写进快照会让每份历史报告的 hash 变化，且「选择落在哪一级」是展示元信息不是报告字段 |
