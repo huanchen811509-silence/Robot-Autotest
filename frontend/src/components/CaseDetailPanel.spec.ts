@@ -40,6 +40,9 @@ const ZH: Record<string, string> = {
   'caseDetail.field.categoryL2': '二级分类',
   'caseDetail.field.caseKind': '用例分类',
   'caseDetail.field.safetyLevel': '安全级',
+  'caseDetail.field.domainTag': '技术域',
+  'caseDetail.field.reviewStatus': '评审状态',
+  'caseDetail.field.capability': '能力维度',
   'caseDetail.field.precondition': '预置条件',
   'caseDetail.field.steps': '测试步骤',
   'caseDetail.field.expected': '预期结果',
@@ -60,6 +63,19 @@ const ZH: Record<string, string> = {
   'caseDetail.copy.syncJobId': 'sync_job.id',
   'caseDetail.copy.localOverride': 'local_override',
   'caseDetail.copy.sourceBadge': 'sourceBadge',
+  // v5.11.0：详情面板顶部「所属」行与脚本行同样走 i18n，缺键会让 intlify 刷一堆噪音
+  'w61.ownership.project': '所属：本项目（修改不影响全局用例库）',
+  'w61.ownership.global': '所属：全局用例库（所有项目可见）',
+  'w61.script.column': '脚本',
+  'w61.script.unbound': '未绑定脚本',
+  'w61.script.notApplicable': '不适用',
+  'w61.script.notApplicableWhy': 'RF 用例暂不展示脚本路径（无关联列）',
+  'w61.script.verified': '已校验',
+  'w61.script.unverified': '已绑定未校验',
+  'w61.script.more': '另有 {count} 个内核的脚本',
+  'w61.script.absoluteNote': '原始值为绝对路径，已截断为仓库内相对段',
+  'w61.script.copied': '已复制',
+  'w61.script.copyFailed': '复制失败',
 }
 
 const testI18n = createI18n({
@@ -92,6 +108,10 @@ const detail: CaseDetailView = {
   localOverride: false,
   sourceBadge: 'global',
   keyMaskedCredential: '****',
+  // v5.11.0 / FR-v5.11-04：项目用例表的三列必须能落到详情里（原来 DTO 里根本没有）
+  domainTag: 'rdma',
+  reviewStatus: 'approved',
+  capability: 'roce-connectivity',
 }
 
 let app: App | null = null
@@ -147,17 +167,17 @@ describe('CaseDetailPanel 六组字段与可见基线（FR-49-07）', () => {
     expect(get).toHaveBeenCalledWith({ source: 'global', caseId: '42', projectId: null })
   })
 
-  it('渲染 6 组、24 项字段（≥12 项可见），且空白单元格数为 0', async () => {
+  it('渲染 6 组、27 项字段（≥12 项可见），且空白单元格数为 0', async () => {
     const root = await mountPanel({ caseId: 42, source: 'global' })
 
     const groups = root.querySelectorAll('[data-testid^="case-group-"]')
     const fields = root.querySelectorAll('[data-testid^="case-field-"]')
     expect(groups.length).toBe(6)
     expect(fields.length).toBeGreaterThanOrEqual(12)
-    expect(fields.length).toBe(24)
+    expect(fields.length).toBe(27)
 
     const values = [...root.querySelectorAll('.case-detail-value')]
-    expect(values.length).toBe(24)
+    expect(values.length).toBe(27)
     const blanks = values.filter((cell) => cell.textContent!.trim() === '')
     expect(blanks).toHaveLength(0)
 

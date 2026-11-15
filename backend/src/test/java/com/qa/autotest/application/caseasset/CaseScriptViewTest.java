@@ -16,10 +16,13 @@ class CaseScriptViewTest {
     @Test
     @DisplayName("相对路径原样保留，文件名取末段（不剥扩展名）")
     void keepsRelativePath() {
-        CaseScriptView view = CaseScriptView.bound("cases/net/roce_bw.py", true, "pytest", 0);
+        CaseScriptView view = CaseScriptView.bound("cases/net/roce_bw.py",
+                "cases/net/roce_bw.py::test_roce_bw", true, "pytest", 0);
 
         assertThat(view.scriptPath()).isEqualTo("cases/net/roce_bw.py");
         assertThat(view.scriptName()).isEqualTo("roce_bw.py");
+        // nodeId 原样透传：详情里要能直接定位到函数，截断或改写都会指错地方
+        assertThat(view.nodeId()).isEqualTo("cases/net/roce_bw.py::test_roce_bw");
         assertThat(view.bindingState()).isEqualTo(CaseScriptView.BOUND_VERIFIED);
         assertThat(view.absoluteSource()).isFalse();
     }
@@ -27,7 +30,8 @@ class CaseScriptViewTest {
     @Test
     @DisplayName("未校验的绑定显示 BOUND_UNVERIFIED（不是已校验）")
     void unverifiedBinding() {
-        CaseScriptView view = CaseScriptView.bound("tests/test_a.py", false, "pytest", 0);
+        CaseScriptView view = CaseScriptView.bound("tests/test_a.py",
+                "tests/test_a.py::test_a", false, "pytest", 0);
 
         assertThat(view.bindingState()).isEqualTo(CaseScriptView.BOUND_UNVERIFIED);
     }
@@ -36,7 +40,7 @@ class CaseScriptViewTest {
     @DisplayName("POSIX 绝对路径从仓库根段截断，且标记 absoluteSource")
     void truncatesPosixAbsolutePath() {
         CaseScriptView view = CaseScriptView.bound("/home/ci/robot-autotest/tests/nic/test_bw.py",
-                true, "pytest", 0);
+                "tests/nic/test_bw.py::test_bw", true, "pytest", 0);
 
         assertThat(view.scriptPath()).isEqualTo("tests/nic/test_bw.py");
         assertThat(view.scriptName()).isEqualTo("test_bw.py");
@@ -55,7 +59,8 @@ class CaseScriptViewTest {
     @Test
     @DisplayName("绝对路径里找不到仓库根段：去掉前缀照实返回，仍标记 absoluteSource")
     void keepsTailWhenNoRepoRoot() {
-        CaseScriptView view = CaseScriptView.bound("/opt/ci/adhoc.py", false, "pytest", 0);
+        CaseScriptView view = CaseScriptView.bound("/opt/ci/adhoc.py",
+                "adhoc.py::test_adhoc", false, "pytest", 0);
 
         assertThat(view.scriptPath()).isEqualTo("opt/ci/adhoc.py");
         assertThat(view.absoluteSource()).isTrue();

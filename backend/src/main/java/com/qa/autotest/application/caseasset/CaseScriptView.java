@@ -11,13 +11,15 @@ package com.qa.autotest.application.caseasset;
  * <p><b>不造假的路径</b>：RF 用例当前没有 {@code test_case ↔ 脚本} 的关联列，
  * 显示 {@link #NOT_APPLICABLE} 而不是去猜一条最像的路径——猜出来的路径比没有更危险。
  *
+ * @param nodeId           pytest nodeid（详情里和路径一起显示，便于直接定位函数）
  * @param bindingState     BOUND_VERIFIED / BOUND_UNVERIFIED / UNBOUND / NOT_APPLICABLE
  * @param kernel           实际命中的内核（未绑定时为项目内核）
  * @param otherScriptCount 除首选绑定外还有几条（多内核场景，UI 折叠为「+N」）
  * @param absoluteSource   原始值是否为绝对路径（历史脏数据；已截断为仓库内相对段）
  */
-public record CaseScriptView(String scriptPath, String scriptName, String bindingState,
-                             String kernel, int otherScriptCount, boolean absoluteSource) {
+public record CaseScriptView(String scriptPath, String scriptName, String nodeId,
+                             String bindingState, String kernel, int otherScriptCount,
+                             boolean absoluteSource) {
 
     /** 已绑定且经人工校验。 */
     public static final String BOUND_VERIFIED = "BOUND_VERIFIED";
@@ -37,7 +39,7 @@ public record CaseScriptView(String scriptPath, String scriptName, String bindin
     /** 空绑定的两种形态：支持脚本 → 未绑定；不支持 → 不适用。 */
     public static CaseScriptView empty(String kernel) {
         String state = supportsScript(kernel) ? UNBOUND : NOT_APPLICABLE;
-        return new CaseScriptView(null, null, state, kernel, 0, false);
+        return new CaseScriptView(null, null, null, state, kernel, 0, false);
     }
 
     public static boolean supportsScript(String kernel) {
@@ -45,12 +47,12 @@ public record CaseScriptView(String scriptPath, String scriptName, String bindin
     }
 
     /** 绑定行 → 展示视图；{@code path} / {@code verified} 来自 {@code case_script_binding}。 */
-    public static CaseScriptView bound(String rawPath, boolean verified, String kernel,
-                                       int otherScriptCount) {
+    public static CaseScriptView bound(String rawPath, String nodeId, boolean verified,
+                                       String kernel, int otherScriptCount) {
         boolean absolute = isAbsolute(rawPath);
         String relative = normalizeRelative(rawPath);
         String state = verified ? BOUND_VERIFIED : BOUND_UNVERIFIED;
-        return new CaseScriptView(relative, fileNameOf(relative), state, kernel,
+        return new CaseScriptView(relative, fileNameOf(relative), nodeId, state, kernel,
                 otherScriptCount, absolute);
     }
 

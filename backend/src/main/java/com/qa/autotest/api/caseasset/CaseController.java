@@ -138,7 +138,8 @@ public class CaseController {
                         .map(step -> new GlobalCaseService.StepView(step.stepNo(), step.action(),
                                 step.expectation()))
                         .toList(),
-                null, null, "UNBOUND"));
+                null, null, null,
+                tc.domainTag(), tc.reviewStatus(), tc.capability(), "UNBOUND"));
     }
 
     @PostMapping("/cases")

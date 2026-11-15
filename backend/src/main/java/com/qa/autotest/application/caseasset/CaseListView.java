@@ -16,8 +16,8 @@ public record CaseListView(long id, long projectId, String caseCode, String titl
                            String expected, String domainTag, String reviewStatus,
                            String source, String capability, String description,
                            String safetyLevel,
-                           String scriptPath, String scriptName, String bindingState,
-                           String scriptKernel, int otherScriptCount,
+                           String scriptPath, String scriptName, String scriptNodeId,
+                           String bindingState, String scriptKernel, int otherScriptCount,
                            boolean scriptAbsoluteSource) {
 
     public static CaseListView of(TestCase testCase, CaseScriptView script) {
@@ -29,8 +29,8 @@ public record CaseListView(long id, long projectId, String caseCode, String titl
                 testCase.precondition(), testCase.expected(), testCase.domainTag(),
                 testCase.reviewStatus(), testCase.source(), testCase.capability(),
                 testCase.description(), testCase.safetyLevel(),
-                view.scriptPath(), view.scriptName(), view.bindingState(), view.kernel(),
-                view.otherScriptCount(), view.absoluteSource());
+                view.scriptPath(), view.scriptName(), view.nodeId(), view.bindingState(),
+                view.kernel(), view.otherScriptCount(), view.absoluteSource());
     }
 
     /** 无脚本解析服务时（老装配 / 单测）的纯投影：脚本字段全部为「不适用」。 */

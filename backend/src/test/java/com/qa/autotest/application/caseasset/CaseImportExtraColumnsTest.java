@@ -99,7 +99,10 @@ class CaseImportExtraColumnsTest {
                 // v5.11.0：内容三列 + 步骤 + 脚本三件套
                 "功能", "预置条件", "期望结果",
                 java.util.List.of(new GlobalCaseService.StepView(1, "动作", "预期")),
-                "cases/net/roce_bw.py", "roce_bw.py", "BOUND_VERIFIED");
+                "cases/net/roce_bw.py", "roce_bw.py", "tests/net/test_bw.py::test_bw",
+                "BOUND_VERIFIED",
+                // v5.11.0 / FR-v5.11-04：项目用例表三列（信息幂等，详情必须带）
+                "rdma", "approved", "roce-connectivity");
         ObjectMapper mapper = new ObjectMapper();
         String json = mapper.writeValueAsString(view);
         String lower = json.toLowerCase(Locale.ROOT);

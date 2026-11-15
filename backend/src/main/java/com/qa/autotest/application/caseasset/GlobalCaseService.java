@@ -61,8 +61,9 @@ public class GlobalCaseService {
                                 String categoryL1, String categoryL2, String priority,
                                 String safetyLevel, String lifecycleStatus, int versionNo,
                                 String sourceSheet, String contentSha,
-                                String scriptPath, String scriptName, String bindingState,
-                                int otherScriptCount, boolean scriptAbsoluteSource) {
+                                String scriptPath, String scriptName, String scriptNodeId,
+                                String bindingState, int otherScriptCount,
+                                boolean scriptAbsoluteSource) {
     }
 
     /** 用例步骤（v5.11.0 / W61-08）：详情取真值，不再显示「源表无此列」。 */
@@ -106,7 +107,10 @@ public class GlobalCaseService {
             String keyMaskedCredential,
             // v5.11.0 追加：内容三列 + 步骤 + 脚本三件套（追加在尾部，既有位置参数不变）
             String caseKind, String precondition, String expected, List<StepView> steps,
-            String scriptPath, String scriptName, String bindingState) {
+            String scriptPath, String scriptName, String scriptNodeId, String bindingState,
+            // v5.11.0 / FR-v5.11-04：项目用例表的这三列在库里一直都在（V2_3__case_fields.sql），
+            // 详情 DTO 一直没带它们，导致「表格列 ⊆ 详情字段」这条不变量事实上是假的。
+            String domainTag, String reviewStatus, String capability) {
     }
 
     /** OPT-07 / FR-49-28：全选一级 / 全选二级 / 跨表交集三种筛选共用条件。 */
@@ -207,7 +211,7 @@ public class GlobalCaseService {
                         rs.getString("priority"), rs.getString("safety_level"),
                         rs.getString("lifecycle_status"), rs.getInt("version_no"),
                         rs.getString("source_sheet"), rs.getString("content_sha"),
-                        null, null, CaseScriptView.UNBOUND, 0, false),
+                        null, null, null, CaseScriptView.UNBOUND, 0, false),
                 listArgs.toArray());
         return new PageResult<>(withScript(rows), total == null ? 0 : total, safePage, safeSize);
     }
@@ -250,8 +254,8 @@ public class GlobalCaseService {
             out.add(new GlobalCaseRow(row.id(), row.caseCode(), row.externalId(), row.title(),
                     row.categoryL1(), row.categoryL2(), row.priority(), row.safetyLevel(),
                     row.lifecycleStatus(), row.versionNo(), row.sourceSheet(), row.contentSha(),
-                    script.scriptPath(), script.scriptName(), script.bindingState(),
-                    script.otherScriptCount(), script.absoluteSource()));
+                    script.scriptPath(), script.scriptName(), script.nodeId(),
+                    script.bindingState(), script.otherScriptCount(), script.absoluteSource()));
         }
         return out;
     }
@@ -261,7 +265,8 @@ public class GlobalCaseService {
                 SELECT id, case_code, external_id, title, category_l1, category_l2, priority,
                        safety_level, lifecycle_status, version_no, source_sheet, content_sha,
                        a_side_command, b_side_command, switch_config, test_result, test_resource,
-                       case_kind, precondition, expected, source
+                       case_kind, precondition, expected, source,
+                       domain_tag, review_status, capability
                   FROM test_case WHERE id = ? AND project_id = ?
                 """, caseId, projectId);
         if (rows.isEmpty()) {
@@ -297,7 +302,9 @@ public class GlobalCaseService {
                 text(r.get("test_resource")),
                 syncJobId, localOverride, badge, "****",
                 text(r.get("case_kind")), text(r.get("precondition")), text(r.get("expected")),
-                steps, script.scriptPath(), script.scriptName(), script.bindingState());
+                steps, script.scriptPath(), script.scriptName(), script.nodeId(),
+                script.bindingState(),
+                text(r.get("domain_tag")), text(r.get("review_status")), text(r.get("capability")));
     }
 
     // ---------------------------------------------------------------- 分类

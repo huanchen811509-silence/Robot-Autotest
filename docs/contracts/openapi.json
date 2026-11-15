@@ -6512,6 +6512,14 @@
               "format": "int64",
               "default": 20
             }
+          },
+          {
+            "name": "uncategorized",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
           }
         ]
       }
@@ -13603,6 +13611,61 @@
       },
       "delete": {
         "operationId": "CaseController.delete",
+        "tags": [
+          "caseasset"
+        ],
+        "responses": {
+          "200": {
+            "description": "统一信封；业务错误码见 ErrorCode",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ]
+      }
+    },
+    "/api/projects/{projectId}/cases/{id}/impact": {
+      "get": {
+        "operationId": "CaseController.impact",
         "tags": [
           "caseasset"
         ],

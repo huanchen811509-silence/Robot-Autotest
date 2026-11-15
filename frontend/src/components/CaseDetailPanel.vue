@@ -91,6 +91,8 @@ const groups = computed<FieldGroup[]>(() => {
         { labelKey: "caseDetail.field.categoryL2", display: text(d.categoryL2), testId: 'categoryL2' },
         { labelKey: "caseDetail.field.caseKind", display: text(d.caseKind), testId: 'caseKind' },
         { labelKey: "caseDetail.field.safetyLevel", display: text(d.safetyLevel), testId: 'safetyLevel' },
+        // v5.11.0 / FR-v5.11-04：用例表格有这三列，详情就必须有——否则「幂等」只是口号。
+        { labelKey: "caseDetail.field.domainTag", display: text(d.domainTag), testId: 'domainTag' },
       ],
     },
     {
@@ -115,6 +117,8 @@ const groups = computed<FieldGroup[]>(() => {
         { labelKey: "caseDetail.field.bSideCommand", display: text(d.bSideCommand), testId: 'bSideCommand' },
         { labelKey: "caseDetail.field.switchConfig", display: text(d.switchConfig), testId: 'switchConfig' },
         { labelKey: "caseDetail.field.testResult", display: text(d.testResult), testId: 'testResult' },
+        { labelKey: "caseDetail.field.reviewStatus", display: text(d.reviewStatus), testId: 'reviewStatus' },
+        { labelKey: "caseDetail.field.capability", display: text(d.capability), testId: 'capability' },
       ],
     },
     {

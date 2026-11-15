@@ -92,8 +92,8 @@ public class CaseScriptLookup {
             }
         }
         int others = Math.max(0, own.size() - 1);
-        return CaseScriptView.bound(chosen.scriptPath(), chosen.verified(), chosen.kernel(),
-                others);
+        return CaseScriptView.bound(chosen.scriptPath(), chosen.nodeId(), chosen.verified(),
+                chosen.kernel(), others);
     }
 
     private static int compareId(CaseScriptBinding left, CaseScriptBinding right) {

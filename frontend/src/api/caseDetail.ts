@@ -47,6 +47,13 @@ export interface CaseDetailView {
   /** pytest nodeid：详情里和路径一起显示，便于直接定位到函数。 */
   scriptNodeId?: string | null
   bindingState?: string | null
+  /**
+   * v5.11.0 / FR-v5.11-04：项目用例表的这三列用于信息幂等——
+   * 表格里出现的列，详情里必须能找到同名字段。
+   */
+  domainTag?: string | null
+  reviewStatus?: string | null
+  capability?: string | null
 }
 
 export interface CaseStepView {

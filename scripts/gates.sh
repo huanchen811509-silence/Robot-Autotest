@@ -12,8 +12,9 @@
 #   19 证据完整性（v2.2 CLOS-02：output.xml metadata 六必填 + 三处单测基线只增不减
 #      + AI 契约机检（AI-06：零 prompt 文件开关 / 零硬编码凭据 / 零 L4-L5 自动提交））
 #
-# 本脚本共 55 步（01–36 判据不动，41–48 为 v5.1–v5.4 新增，49–52 为 EHT P2 新增，
-# 53–55 为 v5.7.0 W57-46 新增，只增不删）：01–17 为 run 步，
+# 本脚本共 57 步（01–36 判据不动，41–48 为 v5.1–v5.4 新增，49–52 为 EHT P2 新增，
+# 53–55 为 v5.7.0 W57-46 新增，56 为 v5.7.0 W11 复核修复，57 为 v5.11.0 W61-10 新增，
+# 只增不删）：01–17 为 run 步，
 # 18 为末尾 structure_selfcheck 内联块，19 为证据完整性 run 步，
 # 20–23 为 v3.2.0 的契约 / 包体 / 性能预算 / 版本一致性门禁。
 # 24–27 为 v3.3.0+v3.4.0 的 AI 评测 / 安全扫描 / 容量+备份演练 / i18n+对比度门禁。
@@ -107,6 +108,8 @@ check_structure() {
   grep -qE '^run 50 eht_binding_evidence ' "$file" || { echo "STRUCT_FAIL 缺少步骤 50 eht_binding_evidence"; bad=1; }
   grep -qE '^run 51 eht_case_ui ' "$file" || { echo "STRUCT_FAIL 缺少步骤 51 eht_case_ui"; bad=1; }
   grep -qE '^run 52 eht_pages_live ' "$file" || { echo "STRUCT_FAIL 缺少步骤 52 eht_pages_live"; bad=1; }
+  # 57 为 v5.11.0 新增（DTO 与表结构一致性），同样只增不删。
+  grep -qE '^run 57 dto_columns ' "$file" || { echo "STRUCT_FAIL 缺少步骤 57 dto_columns"; bad=1; }
   return "$bad"
 
 }
@@ -482,6 +485,12 @@ run 55 oneshot_secret "python3 tools/probe_oneshot_secret.py"
 #    回放 1beea30 能判红 P0-3（caseId）；自证方式是真注入错误字段判红、还原判绿。
 #    覆盖边界：view 里传给 api 函数的额外字段抓不到（由后端 ignoreUnknown=false 兜底）。
 run 56 fe_contract "python3 tools/check_fe_contract.py && python3 tools/check_fe_contract.py --self-test"
+
+# ---- v5.11.0 信息幂等新增段（57）----------------------------------------
+# 57 DTO 字段 ↔ 表结构一致性（FR-v5.11-04 / W61-10）：详情 / 列表 DTO 的每个字段要么是
+#    test_case 的真实列，要么在 DERIVED 里写明来源与算法；DERIVED 也不许声明不存在的字段
+#    （防止声明表自我膨胀成「万能表」）。自证方式是真注入一个无来源字段判红、还原判绿。
+run 57 dto_columns "python3 tools/check_dto_columns.py && python3 tools/check_dto_columns.py --self-test"
 
 printf '\nGATES_RESULT FAILS=%s UNJUDGED=%s\n' "$FAILS" "${UNJUDGED:-0}"
 
