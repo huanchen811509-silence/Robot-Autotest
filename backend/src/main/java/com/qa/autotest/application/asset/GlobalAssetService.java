@@ -166,10 +166,12 @@ public class GlobalAssetService {
     private final SecretCipher cipher;
     private final ObjectMapper mapper;
 
+    private final CredentialVerificationService verifications;
+
     public GlobalAssetService(JdbcTemplate jdbc, AccessControlService access, AuditService audit,
                               ProjectAssetRepository projectAssets, PlatformProjectService platform,
                               HostInventoryService hostInventory, SecretCipher cipher,
-                              ObjectMapper mapper) {
+                              ObjectMapper mapper, CredentialVerificationService verifications) {
         this.jdbc = jdbc;
         this.access = access;
         this.audit = audit;
@@ -178,6 +180,7 @@ public class GlobalAssetService {
         this.hostInventory = hostInventory;
         this.cipher = cipher;
         this.mapper = mapper;
+        this.verifications = verifications;
     }
 
     private void requireWrite() {
@@ -538,18 +541,48 @@ public class GlobalAssetService {
             throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "该设备没有管理 IP，无法采集");
         }
         long platformId = platform.id();
-        if (credentialId != null) {
-            ensurePlatformCredentialReference(platformId, credentialId);
+        Long usedCredentialId = credentialId;
+        if (usedCredentialId != null) {
+            ensurePlatformCredentialReference(platformId, usedCredentialId);
         }
-        HostInventoryRecord record = hostInventory.collect(platformId, host, deviceId,
-                TenantContext.userId(), username, credentialId, confirmed);
-        jdbc.update("UPDATE device SET last_checked_at = NOW(3), updated_by = ? WHERE id = ?",
-                TenantContext.userId(), deviceId);
-        audit.record("global.asset.collect", "device", String.valueOf(deviceId),
-                "hostInventory=" + record.id() + " status=" + record.status());
-        return new CollectResult(deviceId, host, record.status(),
-                record.collectedAt() == null ? null : record.collectedAt().toString(),
-                record.nicCount(), record.rocePorts(), record.roceMaxGbps());
+        try {
+            HostInventoryRecord record = hostInventory.collect(platformId, host, deviceId,
+                    TenantContext.userId(), username, usedCredentialId, confirmed);
+            jdbc.update("UPDATE device SET last_checked_at = NOW(3), updated_by = ? WHERE id = ?",
+                    TenantContext.userId(), deviceId);
+            recordCollectFact(deviceId, usedCredentialId, record.status(), null);
+            audit.record("global.asset.collect", "device", String.valueOf(deviceId),
+                    "hostInventory=" + record.id() + " status=" + record.status());
+            return new CollectResult(deviceId, host, record.status(),
+                    record.collectedAt() == null ? null : record.collectedAt().toString(),
+                    record.nicCount(), record.rocePorts(), record.roceMaxGbps());
+        } catch (RuntimeException ex) {
+            recordCollectFact(deviceId, usedCredentialId, null, ex);
+            throw ex;
+        }
+    }
+
+    /**
+     * 采集结果 → 一条验证事实（v5.13.0 / W63-03、04）。
+     *
+     * <p>写事实失败不能把已经落库的采集结果变成 500，也不能盖掉原始采集异常：
+     * 这里吞掉写事实异常并留 WARN，由审计/日志追；采集本身该成功还是成功、该失败还是失败。
+     */
+    private void recordCollectFact(long deviceId, Long usedCredentialId, String status,
+                                   RuntimeException failure) {
+        if (usedCredentialId == null || verifications == null) {
+            return;
+        }
+        try {
+            boolean ok = failure == null && status != null
+                    && !"FAILED".equalsIgnoreCase(status);
+            String kind = failure == null ? null
+                    : CredentialVerificationService.collectFailureKind(failure);
+            verifications.recordCollectResult(deviceId, usedCredentialId, "MGMT", ok, kind);
+        } catch (RuntimeException ex) {
+            LOG.warn("采集验证事实写入失败 deviceId={} credentialId={}",
+                    deviceId, usedCredentialId, ex);
+        }
     }
 
     /** 平台项目对自己库里的凭据也要有一条引用，采集取密码时才能通过可见性校验。 */

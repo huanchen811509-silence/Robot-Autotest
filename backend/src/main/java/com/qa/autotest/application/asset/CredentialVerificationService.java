@@ -49,6 +49,14 @@ public class CredentialVerificationService {
     /** options 超过 50 条时截断，并支持 keyword 服务端搜索。 */
     private static final int OPTIONS_LIMIT = 50;
 
+    /**
+     * v5.13.0 / FR-v5.13-02：V11_64 没有 source 列，而 NFR-v5.13-01 要求零新增表。
+     * 因此来源以 detail 的稳定前缀表达，DB 侧可用 {@code detail LIKE 'source=COLLECT%'} 区分；
+     * 后续若真要加列，只需把前缀换成列值，查询口径不变。
+     */
+    public static final String SOURCE_COLLECT = "COLLECT";
+    public static final String SOURCE_VERIFY = "VERIFY";
+
     private static final String SQL_DEVICE_TARGET = """
             SELECT management_ip, management_ip_alt, bmc_address, bmc_address_alt
               FROM device WHERE id = ?
@@ -144,7 +152,8 @@ public class CredentialVerificationService {
         }
         long durationMs = Math.min((System.nanoTime() - start) / 1_000_000L, PROBE_TIMEOUT_MS);
         String kind = outcome.success() ? null : outcome.failureKind();
-        String detail = safeDetail(normalized, outcome, durationMs, target);
+        String detail = "source=" + SOURCE_VERIFY + "; "
+                + safeDetail(normalized, outcome, durationMs, target);
 
         insertVerification(credId, assetId, normalized, outcome.success(), kind,
                 durationMs, detail);
@@ -181,13 +190,55 @@ public class CredentialVerificationService {
      * 形成「哪条口令真能连上这台设备」的闭环。不写任何明文。
      */
     public void recordFromCollect(long deviceId, long credentialId, String channel) {
+        recordCollectResult(deviceId, credentialId, channel, true, null);
+    }
+
+    /**
+     * 采集结果统一落事实（v5.13.0 / W63-03、04）：成功与失败<b>都写一行</b>，
+     * 失败带 failure_kind；只有成功才回填 device_check.credential_id，
+     * 否则「错误密码也算了已验证」会形成假的 READY 状态。
+     *
+     * <p>detail 只写分类码与来源，绝不写异常原文（可能夹带口令/IP）。
+     */
+    public void recordCollectResult(long deviceId, long credentialId, String channel,
+                                    boolean success, String failureKind) {
         String normalized = normalizeChannel(channel);
-        insertVerification(credentialId, deviceId, normalized, true, null, 0L,
-                "source=collect; channel=" + normalized);
-        execute(SQL_UPDATE_DEVICE_CHECK,
-                Arrays.asList(credentialId, TenantContext.userId(), deviceId));
+        String detail = "source=" + SOURCE_COLLECT + "; channel=" + normalized
+                + "; result=" + (success ? "SUCCESS" : "FAILED")
+                + "; kind=" + (failureKind == null ? "-" : failureKind);
+        insertVerification(credentialId, deviceId, normalized, success,
+                success ? null : failureKind, 0L, detail);
+        if (success) {
+            execute(SQL_UPDATE_DEVICE_CHECK,
+                    Arrays.asList(credentialId, TenantContext.userId(), deviceId));
+        }
         audit.record("credential.verify.collect", "credential", String.valueOf(credentialId),
-                "deviceId=" + deviceId + "; channel=" + normalized + "; source=collect");
+                "deviceId=" + deviceId + "; channel=" + normalized
+                        + "; source=" + SOURCE_COLLECT
+                        + "; result=" + (success ? "SUCCESS" : "FAILED")
+                        + "; kind=" + (failureKind == null ? "-" : failureKind));
+    }
+
+    /**
+     * 采集异常 → V11_64 的四种 failure_kind。只按异常<b>分类词</b>判断，
+     * 不取异常正文（正文可能含口令、私钥、命令回显）。
+     */
+    public static String collectFailureKind(RuntimeException ex) {
+        String message = ex == null || ex.getMessage() == null
+                ? "" : ex.getMessage().toLowerCase(Locale.ROOT);
+        if (message.contains("auth") || message.contains("password")
+                || message.contains("denied") || message.contains("认证")) {
+            return "AUTH";
+        }
+        if (message.contains("timeout") || message.contains("超时")) {
+            return "TIMEOUT";
+        }
+        if (message.contains("unreachable") || message.contains("no route")
+                || message.contains("connect") || message.contains("连接")) {
+            return "UNREACHABLE";
+        }
+        // 「命令不受支持」在 V11_64 没有独立枚举，归入 REJECTED（登记为 L-63-04 粗分）
+        return "REJECTED";
     }
 
     // ---------------------------------------------------------------- 凭据下拉 options

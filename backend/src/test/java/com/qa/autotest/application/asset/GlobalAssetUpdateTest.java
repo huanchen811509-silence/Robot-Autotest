@@ -49,7 +49,7 @@ class GlobalAssetUpdateTest {
         service = new GlobalAssetService(jdbc, access, mock(AuditService.class),
                 mock(ProjectAssetRepository.class), mock(PlatformProjectService.class),
                 mock(HostInventoryService.class), mock(SecretCipher.class),
-                new ObjectMapper());
+                new ObjectMapper(), mock(CredentialVerificationService.class));
         TenantContext.set(1L, "tester", null);
     }
 
