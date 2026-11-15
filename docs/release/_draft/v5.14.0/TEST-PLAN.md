@@ -253,3 +253,51 @@ docs/evidence/v5.14.0/
 | 日期 | 修订 | 依据 |
 |---|---|---|
 | 2026-11-15 | 首版：55 条 TC 覆盖 11 条 FR；新增 `FILE` 方式（导出件）；套件数要求 ≥3 样本一致 | `PRD.md` v5.14.0 + `DEV-PLAN.md` |
+
+
+---
+
+## 10. 开工前判据修订与 W1 实测（依据 01-ASSESSMENT）
+
+> TC 编号 01 ~ 55 **一个不改、不删、不补号**（机检 `detect_prefix` 只认连续编号）。
+> 只把被实测推翻的期望改到能取证的位置；未跑到的仍留空，不预填通过。
+
+### 10.1 判据修订表
+
+| TC | 原期望（草案） | 修订后期望 | 依据 |
+|---|---|---|---|
+| TC-01 | 全站 grep「对外报告」= 0 | 限定 `frontend/src`（含注释 / spec）= 0；历史 docs / CHANGELOG 不在扫描范围 | U-4、PRD §13.2 |
+| TC-03 | 英文词条 `Test reports` 等同步 | 菜单 `Execution reports` / `Test reports`、跳转 `View test reports` 三处一致 | W64-01 实现 |
+| TC-07 | 三处列表显示套件数 | **两处**：`/reports` 与项目看板 digest；`/test-reports` 是另一对象不加列 | DEV-PLAN B-1 |
+| TC-17/18 | 草稿态「尚未生成快照」+ 生成按钮 | 改为「冻结动作接线」+ 历史脏数据空态；DRAFT 创建即物化快照 | R-10 |
+| TC-23 | HTML/PDF/DOCX 三格式 | 四格式（含 xlsx），先统一前后端格式口径 | R-11 |
+| TC-28 | 打开 `/print?token=` | 复用 `/reports/:runId/print?token=` | R-8 |
+| TC-36 | 断言 `templateId` | 断言 `GET /api/test-reports/{id}/template` 的 `TemplateRef` | R-16 |
+| TC-48~51 | 开发后验证批量删 | **回归验证** 5.9 既有链路 + 删除文案统一，不重写 | R-7 |
+| §7 门禁 | `check_gates.py` | 唯一门禁 `bash scripts/gates.sh`，判据 `GATES_RESULT FAILS=0 UNJUDGED=0` | 5.12/5.13 踩坑 |
+
+### 10.2 W1 已按 TC 方式跑过的结果
+
+| TC | 方式 | 结果 | 证据 |
+|---|---|---|---|
+| TC-v5.14-01 | `MECH` | PASS | `grep -rn "对外报告" frontend/src \| wc -l` = 0 |
+| TC-v5.14-03 | `MECH` | PASS | `check_i18n.py` 5/5；zh-CN 3099 键 / en-US 3099 键，键集相等、硬编码中文 0 |
+| TC-v5.14-09 | `UT` | PASS | `SuiteCountTest` 三组样本（RF 单 / RF 多 / pytest 混合）断言树一级节点数 = 落列值 |
+| TC-v5.14-08 | `DB` | PASS（准备态） | 543 条历史 `run.suite_count IS NULL`，界面代码对这些行渲染「—」而非 0 |
+| TC-v5.14-41 | `DB` | PASS（迁移口径） | `V11_73` 落列后 `flyway_schema_history` 最新 `11.73 / 11.68`；`db-audit.sh` PASS，业务表数 109 |
+| 其余 TC | — | 未执行 | 不预填 |
+
+### 10.3 真实优先口径
+
+| 未取得 | 处理 |
+|---|---|
+| 真视口截图（TC-02/04/07/11~14/16~22 等） | 留 `PARTIAL`，不用单测冒充实测 |
+| 10MB 快照 / 50MB 导出采样（NFR-04/05） | 无采样环境，如实标「未测」 |
+| 两次真实执行的差异样本（TC-47） | 造不出则标「未执行」，不许伪造 run |
+
+### 10.4 修订记录
+
+| 日期 | 修订 | 依据 |
+|---|---|---|
+| 2026-11-15 | 首版：55 TC 覆盖 11 FR | `PRD.md` + `DEV-PLAN.md` |
+| 2026-11-15 | 开工前修订判据 9 处、登记 W1 实测 5 项、明确真实优先口径 | `01-ASSESSMENT.md` §6、W1 命令输出 |

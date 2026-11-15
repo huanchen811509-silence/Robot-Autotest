@@ -20,6 +20,7 @@ public class ReportDigestRepositoryJdbc implements ReportDigestRepository {
 
     private static final String RECENT_REPORTS = """
             SELECT r.run_id, r.run_status, r.finished_at, r.started_at, r.enqueued_at, r.total_tests,
+                   r.suite_count,
                    (SELECT COUNT(*) FROM test_result t WHERE t.run_id = r.id AND t.verdict = 'PASS') AS case_pass,
                    (SELECT COUNT(*) FROM test_result t WHERE t.run_id = r.id AND t.verdict = 'FAIL') AS case_fail,
                    (SELECT COUNT(*) FROM test_result t WHERE t.run_id = r.id AND t.verdict = 'SKIP') AS case_skip
@@ -94,7 +95,8 @@ public class ReportDigestRepositoryJdbc implements ReportDigestRepository {
                     rs.getString("run_status"),
                     JdbcSupport.instant(rs.getTimestamp("finished_at")),
                     total, pass, fail, skip,
-                    ReportDigest.passRateBp(pass, fail, skip));
+                    ReportDigest.passRateBp(pass, fail, skip),
+                    rs.getObject("suite_count", Integer.class));
         }, projectId, limit);
     }
 

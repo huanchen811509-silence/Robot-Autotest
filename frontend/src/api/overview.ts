@@ -93,6 +93,8 @@ export interface DigestReportRow {
   skip: number
   /** 基点；null = 该运行没有用例明细，显示「—」而不是 0%。 */
   passRateBp: number | null
+  /** v5.14.0 / W64-03：与执行报告列表同源的 run.suite_count。 */
+  suiteCount?: number | null
 }
 
 export interface DigestFailedCase {

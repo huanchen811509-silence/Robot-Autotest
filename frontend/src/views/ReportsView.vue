@@ -93,6 +93,17 @@ const columns = computed<DataTableColumns<ReportListItem>>(() => [
         h('span', { class: 'muted' }, String(row.skipCount)),
       ]),
   },
+  {
+    title: t('reports.suiteCount'),
+    key: 'suiteCount',
+    width: 110,
+    // v5.14.0 / W64-03：NULL 是「历史 run 未采集」，0 是「确认没有子套件」，
+    // 两者必须可区分。W64-04 会把这列渲染成 ?suite= 深链。
+    render: (row) =>
+      row.suiteCount == null
+        ? h('span', { class: 'muted', 'data-testid': `suite-unknown-${row.runId}` }, '—')
+        : h('span', { class: 'mono', 'data-testid': `suite-count-${row.runId}` }, String(row.suiteCount)),
+  },
   { title: t('reports.startedAt'), key: 'startedAt', width: 190, render: (row) => row.startedAt || '—' },
   {
     title: t('reports.exportable'),

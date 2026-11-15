@@ -35,10 +35,14 @@ public final class MetadataOverlay {
             return record;
         }
         GateResult gate = MetadataGate.check(merged);
+        // v5.14.0 / W64-02：重建时必须带上判据汇总与套件数。此前用 11 参兼容构造器，
+        // 补录一次就把 criteriaConclusion / suiteCount 冲成「未知」——叠加只该改门禁与
+        // metadata，不该把同一次运行的其它事实一起抹掉。
         return new ReportRecord(record.projectId(), record.runId(), record.state(),
                 gate.exportable(), gate.missing(), merged,
                 record.passCount(), record.failCount(), record.skipCount(),
-                record.startedAt(), record.finishedAt());
+                record.startedAt(), record.finishedAt(), record.criteriaConclusion(),
+                record.criteriaEvaluated(), record.criteriaMissingCount(), record.suiteCount());
     }
 
     /**

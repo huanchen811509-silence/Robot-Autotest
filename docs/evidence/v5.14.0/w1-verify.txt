@@ -1,0 +1,45 @@
+v5.14.0 / W1 真实验证读数（WSL ~/robot-autotest，commit 基线 efbcf37）
+时间：2026-11-15 GMT+8
+
+[1] 名称口径（W64-01 / FR-v5.14-01 / TC-01、TC-03）
+  grep -rn "对外报告" frontend/src | wc -l                -> 0
+  python3 tools/check_i18n.py                            -> [1/5] zh-CN 3099 / en-US 3099
+                                                          [2/5] 键集相等 通过
+                                                          [3/5] 254 文件，硬编码中文 0 处
+                                                          [4/5] 同值漏译与键引用 通过
+                                                          [5/5] 受控词表 27 值全部有键
+                                                          [RESULT] 通过
+  改名范围：menu.externalReports / menu.reports / testReports.open（zh+en）+ 2 处注释；
+  键名、表名、代码命名未改。历史 docs / CHANGELOG 不在扫描范围（PRD §13.2）。
+
+[2] 迁移演练（W64-02 / U-2 / R-1）
+  bash scripts/db-migrate.sh                             -> 完成；业务表数 109
+  SHOW COLUMNS FROM run LIKE 'suite_count'               -> suite_count int YES (NULL) NULL
+  flyway_schema_history 最新两条                         -> 11.73 run suite count / 11.68 code prefix registry
+  SELECT COUNT(*) FROM run WHERE suite_count IS NULL     -> 543（历史不回填）
+  业务表数（排除 flyway_schema_history）                 -> 109
+  db/down/V11_73__run_suite_count.down.sql               -> present
+  结论：V11_69~V11_72 从未落文件，跳号追加被 Flyway 与 db-audit 接受。
+
+[3] 后端单测（W64-02 / TC-09）
+  mvn -o -B -Dtest=CaseKeyPathTest,SuiteCountTest test   -> BUILD SUCCESS
+  SuiteCountTest：RF 单套件 / RF 多套件（含嵌套）/ pytest 参数化与 nodeid 混合，
+                  三组样本均断言 ReportTreeService.buildTree 的一级子节点数
+                  == CaseKeyPath.topLevelSuiteCount。
+  CaseKeyPathTest：切分边界、用例名带点、空集合返回 NULL（未知不是 0）。
+  回归：ReportTreeServiceTest 2 例 PASS。
+
+[4] 前端（W64-03）
+  npx vue-tsc --noEmit                                   -> 0 error
+  npx vitest run src/views/ReportsView.spec.ts           -> 1 file / 6 tests PASS
+  新增断言：suiteCount=3 显示数字；suiteCount=null 显示「—」且不出现数字节点。
+
+[5] 契约与机检
+  python3 tools/gen_api_contract.py                      -> endpoints=456 paths=374
+  python3 tools/gen_api_contract.py --check              -> PASS（本波未新增端点，仅响应字段）
+  python3 tools/check_dto_columns.py                     -> PASS（迁移表数 109）
+  bash scripts/db-audit.sh                              -> PASS
+
+[6] 未执行（如实登记，不冒充）
+  真视口截图 / UI 深链 / 预览 iframe DOM / 四格式导出件 / 打印 token 真实请求 /
+  10MB 快照首屏耗时 / 50MB 导出内存曲线 / 两次真实执行差异样本。

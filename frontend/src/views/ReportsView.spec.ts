@@ -36,6 +36,7 @@ const rows = [
     skipCount: 0,
     startedAt: '2026-11-14 10:00:00',
     finishedAt: '2026-11-14 10:01:00',
+    suiteCount: 3,
   },
   {
     projectId: 1,
@@ -48,6 +49,7 @@ const rows = [
     skipCount: 0,
     startedAt: '2026-11-14 11:00:00',
     finishedAt: null,
+    suiteCount: null,
   },
 ]
 
@@ -224,5 +226,18 @@ describe('ReportsView 批量软删（W59-20）', () => {
     await nextTick()
 
     expect(vi.mocked(listCrudApi.batchDeleteReports)).not.toHaveBeenCalled()
+  })
+})
+
+
+describe('ReportsView 套件数列（v5.14.0 / W64-03）', () => {
+  it('有值显示数字；历史 run 的 NULL 显示「—」而不是 0', async () => {
+    const root = await mountView()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    await nextTick()
+
+    expect(root.querySelector('[data-testid="suite-count-RUN-001"]')?.textContent).toBe('3')
+    expect(root.querySelector('[data-testid="suite-unknown-RUN-002"]')?.textContent).toBe('—')
+    expect(root.querySelector('[data-testid="suite-count-RUN-002"]')).toBeNull()
   })
 })

@@ -34,8 +34,10 @@ public record ReportDigest(
     }
 
     /** 一份已完成运行的读数；{@code total} 为 0 时回落到 pass+fail+skip。 */
+    /** {@code suiteCount} 为 null = 历史 run 未采集，界面显示「—」而非 0。 */
     public record ReportRow(String runId, String state, Instant finishedAt,
-                            int total, int pass, int fail, int skip, Integer passRateBp) {
+                            int total, int pass, int fail, int skip, Integer passRateBp,
+                            Integer suiteCount) {
     }
 
     /** 失败用例一条：窗口内失败次数 + 最近一次失败时间。 */

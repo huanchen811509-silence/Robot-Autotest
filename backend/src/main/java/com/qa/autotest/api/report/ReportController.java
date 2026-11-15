@@ -162,14 +162,15 @@ public class ReportController {
                                    Instant finishedAt,
                                    String criteriaConclusion,
                                    int criteriaEvaluated,
-                                   int criteriaMissingCount) {
+                                   int criteriaMissingCount,
+                                   Integer suiteCount) {
 
         static ReportDetailView from(ReportRecord record) {
             return new ReportDetailView(record.runId(), record.projectId(), record.state(),
                     record.exportable(), record.metadataMissing(), record.metadata(),
                     ReportCounts.from(record), record.startedAt(), record.finishedAt(),
                     record.effectiveConclusion(), record.criteriaEvaluated(),
-                    record.criteriaMissingCount());
+                    record.criteriaMissingCount(), record.suiteCount());
         }
     }
 
@@ -180,12 +181,13 @@ public class ReportController {
                                  List<String> metadataMissing,
                                  ReportCounts counts,
                                  Instant startedAt,
-                                 Instant finishedAt) {
+                                 Instant finishedAt,
+                                 Integer suiteCount) {
 
         static ReportListItem from(ReportRecord record) {
             return new ReportListItem(record.runId(), record.state(), record.exportable(),
                     record.metadataMissing(), ReportCounts.from(record),
-                    record.startedAt(), record.finishedAt());
+                    record.startedAt(), record.finishedAt(), record.suiteCount());
         }
     }
 }

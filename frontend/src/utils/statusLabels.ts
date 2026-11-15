@@ -173,7 +173,7 @@ export function reviewStatusTone(value: string | null | undefined): StatusTone {
 /**
  * 用例结论 → 色档（PASS / FAIL / SKIP / UNKNOWN）。
  *
- * **结论值刻意不翻译**：`PASS` / `FAIL` 出现在套件树、对比表、原始日志和对外报告的同一行里，
+ * **结论值刻意不翻译**：`PASS` / `FAIL` 出现在套件树、对比表、原始日志和测试报告的同一行里，
  * 翻译成「通过」反而与日志对不上；这与 `P0`～`P3` 属于同一类技术标识。
  *
  * `SKIP` 给 neutral 而不是 warn：跳过是「没判定」，不是「需要人处理」。

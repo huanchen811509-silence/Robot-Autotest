@@ -33,6 +33,8 @@ export interface ReportListItem {
   skipCount: number
   startedAt: string | null
   finishedAt: string | null
+  /** v5.14.0 / W64-03：null 或字段缺省 = 历史 run 未采集，界面显示「—」而不是 0。 */
+  suiteCount?: number | null
 }
 
 export interface ReportDetail extends ReportListItem {

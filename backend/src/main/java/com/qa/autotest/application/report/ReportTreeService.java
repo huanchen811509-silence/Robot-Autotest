@@ -99,25 +99,26 @@ public class ReportTreeService {
 
     private TreeSuite loadTree(long projectId, String runId) {
         List<RunCaseRow> cases = read.listCases(projectId, runId);
-        Map<String, List<KeywordRow>> keywordsByCase = groupKeywords(read.listKeywords(projectId, runId));
+        return buildTree(runId, cases, groupKeywords(read.listKeywords(projectId, runId)));
+    }
 
-        SuiteBuilder root = new SuiteBuilder(runId);
+    /**
+     * 包内可见的纯构建入口（v5.14.0 / W64-02）：把树的层级构造从仓储读取里拆出来，
+     * 让单测能用同一批 {@code case_key} 同时验证「树的节点数」与
+     * {@link CaseKeyPath#topLevelSuiteCount(Collection)}，而不是靠两段代码看起来一样。
+     */
+    static TreeSuite buildTree(String rootName, List<RunCaseRow> cases,
+                               Map<String, List<KeywordRow>> keywordsByCase) {
+        SuiteBuilder root = new SuiteBuilder(rootName);
         for (RunCaseRow row : cases) {
             String caseKey = row.caseKey() == null ? "" : row.caseKey();
-            // 连接键格式 suitePath.caseName；分隔点取「最后一个 / 之后的第一个 .」，
-            // 这样用例名里带点也不会把套件路径切错。
-            int slash = caseKey.lastIndexOf('/');
-            int dot = caseKey.indexOf('.', slash + 1);
-            String suitePath = dot >= 0 ? caseKey.substring(0, dot) : caseKey;
-            String caseName = dot >= 0 ? caseKey.substring(dot + 1) : caseKey;
+            // 切分规则只在 CaseKeyPath 有一份：列表的 run.suite_count 与这里的树必须同源。
+            CaseKeyPath.Split path = CaseKeyPath.split(caseKey);
             SuiteBuilder node = root;
-            for (String segment : suitePath.split("/")) {
-                if (segment.isBlank()) {
-                    continue;
-                }
+            for (String segment : CaseKeyPath.segments(path.suitePath())) {
                 node = node.child(segment);
             }
-            node.cases.add(new TreeCase(caseKey, caseName, row.verdict(), row.durationMs(),
+            node.cases.add(new TreeCase(caseKey, path.caseName(), row.verdict(), row.durationMs(),
                     row.failureMsg(), row.commandText(), row.commandSource(),
                     row.commandExitCode(), keywordTree(keywordsByCase.get(caseKey)),
                     row.retryCount(), row.flaky()));

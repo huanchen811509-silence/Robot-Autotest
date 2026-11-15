@@ -39,7 +39,13 @@ public record ReportRecord(long projectId,
                            /** 参与判据评估的用例数（criteria_verdict 非空）。 */
                            int criteriaEvaluated,
                            /** 判据缺失（MISSING）的用例数。 */
-                           int criteriaMissingCount) {
+                           int criteriaMissingCount,
+                           /**
+                            * 一级套件数（v5.14.0 / FR-v5.14-02）：由入库链路按 case_key 落列。
+                            * {@code null} = 历史 run 尚未采集或切分不可靠，界面必须显示「—」，
+                            * 不得当成 0 —— 0 是「确认没有子套件」的事实，未知不是事实。
+                            */
+                           Integer suiteCount) {
 
     public ReportRecord {
         metadataMissing = metadataMissing == null ? List.of() : List.copyOf(metadataMissing);
@@ -55,7 +61,18 @@ public record ReportRecord(long projectId,
                         int passCount, int failCount, int skipCount,
                         Instant startedAt, Instant finishedAt) {
         this(projectId, runId, state, exportable, metadataMissing, metadata,
-                passCount, failCount, skipCount, startedAt, finishedAt, null, 0, 0);
+                passCount, failCount, skipCount, startedAt, finishedAt, null, 0, 0, null);
+    }
+
+    /** 兼容 v5.14.0 之前的 14 参写法（套件数未知）。 */
+    public ReportRecord(long projectId, String runId, String state, boolean exportable,
+                        List<String> metadataMissing, Map<String, String> metadata,
+                        int passCount, int failCount, int skipCount,
+                        Instant startedAt, Instant finishedAt, String criteriaConclusion,
+                        int criteriaEvaluated, int criteriaMissingCount) {
+        this(projectId, runId, state, exportable, metadataMissing, metadata,
+                passCount, failCount, skipCount, startedAt, finishedAt,
+                criteriaConclusion, criteriaEvaluated, criteriaMissingCount, null);
     }
 
     /** 有判据评估记录时，结论只认判据；否则显式 UNDETERMINED。 */

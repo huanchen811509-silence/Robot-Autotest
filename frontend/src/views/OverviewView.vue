@@ -112,6 +112,14 @@ const digestReportColumns = computed<DataTableColumns<DigestReportRow>>(() => [
     render: (row) => h(RouterLink, { to: `/reports/${row.runId}` }, () => row.runId),
   },
   {
+    title: t('overview.digest.suiteCount'),
+    key: 'suiteCount',
+    width: 100,
+    render: (row) =>
+      h('span', { class: row.suiteCount == null ? 'muted' : 'mono' },
+        row.suiteCount == null ? '—' : String(row.suiteCount)),
+  },
+  {
     title: t('overview.digest.state'),
     key: 'state',
     width: 120,

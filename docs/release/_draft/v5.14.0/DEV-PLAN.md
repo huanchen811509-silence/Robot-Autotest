@@ -237,7 +237,7 @@ W4 与 W2/W3 改动面不重叠可并行；W5 必须在 W4 之后（要用 kerne
 | 目标 | `GATES_RESULT FAILS=0`；六份齐全；总纲状态回写 |
 | 改动面 | `docs/release/v5.14.0/*`（从 `_draft/` 迁入）、总纲交付表 |
 | 出口判据 | ① 门禁 `FAILS=0`；② `check_release_docs.py v5.14.0` PASS；③ 表格机检全 PASS |
-| 验证命令 | `python3 tools/check_gates.py 2>&1 \| tail -3` |
+| 验证命令 | `bash scripts/gates.sh 2>&1 \| grep GATES_RESULT`（仓库里**没有** `tools/check_gates.py`，5.12/5.13 已两次踩过） |
 | 依赖 | W1 ~ W6 全部 |
 
 ---
@@ -281,3 +281,48 @@ W4 与 W2/W3 改动面不重叠可并行；W5 必须在 W4 之后（要用 kerne
 | 日期 | 修订 | 依据 |
 |---|---|---|
 | 2026-11-15 | 首版：7 波 19 个 WBS；改名先行；套件数算法与树共用一份切分函数 | `PRD.md` v5.14.0 + 评估 04 |
+
+
+---
+
+## 13. 开工前 WBS 重定义（依据 01-ASSESSMENT，W1）
+
+> WBS 编号 W64-01 ~ W64-19 **一个不改**，只把「草案以为要造的能力」改成真实工作量。
+> 依据 `01-ASSESSMENT.md` §1 逐需求评估与 §6 被推翻假设；不删波次、不改验收命令的可复制性。
+
+| WBS | 草案定位 | 真实定位（开工口径） | 容量变化 |
+|---|---|---|---|
+| W64-02 | 新增切分函数 + 两套内核规则 | 抽 `CaseKeyPath` **唯一**函数，`ReportTreeService.buildTree` 与落列共用；不读 kernel | 减：少一套算法 |
+| W64-03 | 三处列表显示套件数 | `/reports` + 项目看板 `digest` 两处（同源 `run.suite_count`）；`/test-reports` 列表展示的是 `test_report` 对象，**不加**该列 | 减：一处 |
+| W64-05 | 新增 `GET /api/test-reports/{id}` | 端点已存在；改为新增**只读 HTML 快照通道** + `iframe sandbox` 详情页与路由 | 增：后端 HTML 通道 |
+| W64-06 | 草稿态 + 生成快照按钮 | DRAFT 创建即物化快照；改为**冻结动作接线**与历史脏数据空态 | 减：不新建快照能力 |
+| W64-07 | 三格式导出 | 统一**四格式**（html/pdf/docx/xlsx），接 `exportBlob` | 平 |
+| W64-08 | 开发打印页 | 页面 / 路由 / 端点已存在；只补按钮 + `issuePrintToken` 封装 | 减：降级接线 |
+| W64-10~13 | 模板四级回退从零补 | 已有两级 + `TemplateRef`；扩 kernel 维度、白名单分组仍单一真源；断言改 `TemplateRef` | 增：白名单连带改动面 |
+| W64-14/15 | 三段式前端接线 | 需改 `ReportSnapshotService` 或新增渲染层，否则分节锚点无落点 | 增：后端渲染 |
+| W64-16 | 开发批量删与影响面 | 5.9 已交付；**降级为回归验证 + 文案统一** | 减：零开发 |
+| W64-18 | 契约与预览性能 | 契约重生成；10MB / 50MB 样本无采样环境则如实标 `PARTIAL` | 平 |
+| W64-19 | 门禁全量与文档回写 | 唯一门禁是 `scripts/gates.sh`，判据 `GATES_RESULT FAILS=0 UNJUDGED=0` | 平 |
+
+### 13.1 W1 实际完成（W64-01 ~ W64-03）
+
+| WBS | 完成内容 | 验收命令 / 读数 |
+|---|---|---|
+| W64-01 | i18n 中英 4 处改名 + 2 处注释；键名 / 表名 / 代码命名不动 | `grep -rn "对外报告" frontend/src \| wc -l` = 0；`check_i18n.py` 5/5，zh/en 3099 键 |
+| W64-02 | `V11_73` + `.down.sql`；`CaseKeyPath`；`ReportRepositoryJdbc` 从实际写入的 `case_key` 算并落列；`ReportTreeService` 改用同一函数 | `mvn -o -B -Dtest=CaseKeyPathTest,SuiteCountTest test` BUILD SUCCESS；迁移 `11.73/11.68`、表数 109 |
+| W64-03 | `ReportRecord` / 列表 / 详情 / digest DTO 带 `suiteCount`；`/reports` 与看板两列；NULL 显示「—」 | `vue-tsc --noEmit` 0 error；`ReportsView.spec.ts` 6/6；`gen_api_contract.py --check` PASS（456/374）；`check_dto_columns.py` PASS |
+
+### 13.2 W1 偏差登记
+
+| # | 偏差 | 原因 |
+|---|---|---|
+| B-1 | 「三处列表」实际收敛为两处 | `/test-reports` 展示的是 `test_report`（对外报告对象），不是 `run`；给它加执行报告的套件数，恰好制造 FR-01 要消除的口径混淆 |
+| B-2 | 单测初版断言「无分隔符 key 不产生一级节点」判红 | 实测 `split()` 在既无 `/` 也无 `.` 时把整个 `case_key` 当 `suitePath`，树会建一级节点；修正断言为 2 并补同源核对，不是放水 |
+| B-3 | `MetadataOverlay.apply` 顺手补齐 | 它原用 11 参兼容构造器重建 `ReportRecord`，会把判据汇总冲成「未知」；补录后连新加的 `suiteCount` 也会丢，改为完整构造 |
+
+### 13.3 修订记录
+
+| 日期 | 修订 | 依据 |
+|---|---|---|
+| 2026-11-15 | 首版：7 波 19 WBS | `PRD.md` v5.14.0 + 评估 04 |
+| 2026-11-15 | 开工前重定义 WBS 内容、修正 W64-19 门禁命令、登记 W1 完成与偏差 | `01-ASSESSMENT.md`、W1 真实命令输出 |

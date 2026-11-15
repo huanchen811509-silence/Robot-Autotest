@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.qa.autotest.application.report.CaseCommandExtractor;
+import com.qa.autotest.application.report.CaseKeyPath;
 import com.qa.autotest.application.repository.ReportRepository;
 import com.qa.autotest.application.repository.RunMetadataRepository;
 import com.qa.autotest.common.BusinessException;
@@ -61,7 +62,7 @@ public class ReportRepositoryJdbc implements ReportRepository {
     private static final String REPORT_COLUMNS = """
             SELECT r.project_id, r.run_id, r.run_status, r.exportable, r.metadata_missing,
                    r.metadata_json, r.pass_count, r.fail_count, r.skip_count,
-                   r.started_at, r.finished_at,
+                   r.started_at, r.finished_at, r.suite_count,
                    (SELECT CASE
                              WHEN COUNT(*) = 0 THEN NULL
                              WHEN SUM(tr.criteria_verdict = 'FAIL') > 0 THEN 'FAIL'
@@ -85,6 +86,13 @@ public class ReportRepositoryJdbc implements ReportRepository {
                    `pass_count` = ?, `fail_count` = ?, `skip_count` = ?,
                    `started_at` = COALESCE(?, `started_at`),
                    `updated_at` = CURRENT_TIMESTAMP(3)
+             WHERE `project_id` = ? AND `id` = ?
+            """;
+
+    /** v5.14.0 / W64-02：套件数只由入库链路写，历史 run 保持 NULL。 */
+    private static final String UPDATE_SUITE_COUNT = """
+            UPDATE run
+               SET `suite_count` = ?, `updated_at` = CURRENT_TIMESTAMP(3)
              WHERE `project_id` = ? AND `id` = ?
             """;
 
@@ -150,7 +158,13 @@ public class ReportRepositoryJdbc implements ReportRepository {
         SuiteNode root = parsed.root();
         if (root != null) {
             String runId = jdbc.queryForObject("SELECT run_id FROM run WHERE id = ?", String.class, runDbId);
-            insertSuite(runDbId, root, rootBasePath(root.name(), runId));
+            // v5.14.0 / W64-02：从「真正写进 test_result 的 case_key」算套件数，
+            // 不重新遍历 parsed.root() 生成一遍路径（两份路径生成逻辑必然漂移）。
+            List<String> caseKeys = new ArrayList<>();
+            insertSuite(runDbId, root, rootBasePath(root.name(), runId), caseKeys);
+            TenantGuard.requireProjectScope(UPDATE_SUITE_COUNT, "run");
+            jdbc.update(UPDATE_SUITE_COUNT, CaseKeyPath.topLevelSuiteCount(caseKeys),
+                    projectId, runDbId);
         }
     }
 
@@ -191,12 +205,15 @@ public class ReportRepositoryJdbc implements ReportRepository {
      * 若把它拼进 {@code case_key}，同一条用例每次运行的 key 都不同，趋势/对比/覆盖率全部失效（G-B8-1）。
      * 这里剥离根套件，只保留「套件路径.用例名」，使 case_key 跨 run 稳定。
      */
-    private void insertSuite(long runDbId, SuiteNode suite, String path) {
+    private void insertSuite(long runDbId, SuiteNode suite, String path,
+                             List<String> caseKeys) {
         for (CaseNode test : suite.cases()) {
-            insertCase(runDbId, path.isEmpty() ? test.name() : path + "." + test.name(), test);
+            insertCase(runDbId, path.isEmpty() ? test.name() : path + "." + test.name(),
+                    test, caseKeys);
         }
         for (SuiteNode child : suite.suites()) {
-            insertSuite(runDbId, child, path.isEmpty() ? child.name() : path + "/" + child.name());
+            insertSuite(runDbId, child, path.isEmpty() ? child.name() : path + "/" + child.name(),
+                    caseKeys);
         }
     }
 
@@ -210,12 +227,15 @@ public class ReportRepositoryJdbc implements ReportRepository {
         return rootName;
     }
 
-    private void insertCase(long runDbId, String caseKey, CaseNode test) {
+    private void insertCase(long runDbId, String caseKey, CaseNode test,
+                            List<String> caseKeys) {
+        String storedKey = fit(caseKey, 160);
+        caseKeys.add(storedKey);
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbc.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(INSERT_TEST_RESULT, Statement.RETURN_GENERATED_KEYS);
             ps.setLong(1, runDbId);
-            ps.setString(2, fit(caseKey, 160));
+            ps.setString(2, storedKey);
             ps.setString(3, test.status() == null ? "UNKNOWN" : test.status());
             ps.setLong(4, test.durationMs());
             ps.setString(5, test.failureMessage());
@@ -278,7 +298,8 @@ public class ReportRepositoryJdbc implements ReportRepository {
                 JdbcSupport.instant(rs.getTimestamp("finished_at")),
                 rs.getString("criteria_conclusion"),
                 rs.getInt("criteria_evaluated"),
-                rs.getInt("criteria_missing_count"));
+                rs.getInt("criteria_missing_count"),
+                rs.getObject("suite_count", Integer.class));
     }
 
     private String writeMetadata(Map<String, String> metadata) {
