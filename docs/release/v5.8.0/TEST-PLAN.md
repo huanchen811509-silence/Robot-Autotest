@@ -233,6 +233,8 @@ docs/evidence/v5.8.0/
 | TC-v5.8-26（执行前基线：`criteria_json IS NOT NULL` = 0） | `DB` | **PASS**（基线 `0`；当时 715 行 `criteria_verdict` 非空而 `criteria_json` 全 NULL） | 见 PRD FR-v5.8-07 实测结论表 |
 | TC-v5.8-27（real 执行后 ≥1，`verdict` 与声明一致） | `REAL`+`DB` | **PASS**（`EHT-REAL-1794671083499` 1 行 `criteria_verdict=PASS`；`link_speed 400000Mb/s` / `mtu 9000` / `pci_vendor_device 15b3:1021` 全 `passed=true`） | `docs/evidence/v5.8.0/criteria/raw/row-verdict.json` |
 | TC-v5.8-28（页面结论 = 该行 verdict） | `UI` | **PASS**（正向 `PASS` / 反向 `UNDETERMINED` 双样本，三方比对 14 项断言全过，页面无「全部通过」） | `docs/evidence/v5.8.0/criteria/raw/ui-measure.json`、`ui-report-conclusion-1440.png`、`ui-report-conclusion-unspecified-1440.png` |
+| TC-v5.8-29（安全闸四守卫） | `HTTP` | **PASS**（缺 `confirmReal` / 不存在 nodeId / 近邻拼错 / `IM-VIR-001(LX)` 高危，四条真实请求全 `400 INVALID_ARGUMENT`） | `docs/evidence/v5.8.0/criteria/raw/safety-gate.json` |
+| TC-v5.8-30（报告软删、判据行保留） | `DB`+`HTTP` | **PASS**（`EHT-FAKE-DEL-1794704818956`：删后列表不可见、详情 404；`test_result` 仍 1 行、`criteria_json` 256B 保留） | 同上 |
 
 **W58-13 的执行说明**：这条判据的验收对象是**界面**，所以取证脚本把三个值摆在一起比：
 `test_result.criteria_verdict`（DB 真值）、`criteriaConclusion`（接口聚合）、页面标签（渲染结果），
@@ -254,6 +256,14 @@ docs/evidence/v5.8.0/
 整张不渲染，`grep report-conclusion frontend/dist/assets/*.js` 无结果、`dist/index.html` 比源码早一小时。
 取证脚本的 `ui-conclusion-mounted` 断言就是挡这个的。
 
+**判据④⑤ 的取证为什么不复用 TC-v5.8-27 的那次执行**：四条守卫要发的是**会被拒**的请求，
+拒了就不该留 run 记录；软删要删的是一份**新造**的报告（`EHT-FAKE-DEL-…`，fake 单条，不动已归档的
+real 正向样本）。所以两者都另起脚本 `tools/w13_safety_delete.py`，各发真实 HTTP + 直查 DB 计数。
+
+软删那条样本还顺带证了「不拿常量凑通过」：`criteria_json` 有 256B（哨兵行确实被提取到），
+但 fake 环境拿不到实测值，三条判据全是 `actual=null` → `criteria_verdict=MISSING`。
+**有证据但判据不成立**，与「没证据就说通过」是两回事。
+
 **W58-11/12 的执行说明**：spike 用仓库内 10 份历史 `output.xml`（pabot 冒烟/故障注入、v1.0 报告链、
 v2.0 内核分片与 dryrun、v2.1 样例集），**不是**新跑的执行——判据载体是框架产物属性，与跑哪一版无关。
 这一点如实写明，避免被读成「用新执行证明的」。
@@ -272,7 +282,7 @@ v2.0 内核分片与 dryrun、v2.1 样例集），**不是**新跑的执行—�
 |---|---|---|---|
 | L-58-05 | RF 无框架级判据载体，本版只做界面标注 | RF 报告的结论恒为 `UNDETERMINED`，用户可能误以为「系统判不了」而不是「RF 不参与」 | 界面已标注；下一版评估「载体协议」（用例侧 `CRITERIA:` 前缀 / 断言侧统一写法 / 执行侧注入），选定后实现提取 |
 | L-58-06 | 10000 行同屏渲染只有 20.4~28.5fps（一次性 HTML 口径，低于预算 50） | 当前**不影响用户**：产品每页 100 行，该场景在产品形态下不可达 | 不改产品；登记为「将来取消分页或上虚拟滚动」的前置输入。若真要做，先解决 10000 个 `<tr>` 的渲染（虚拟滚动）再谈 fps |
-| L-58-07 | FR-v5.8-07 判据④（安全闸四守卫重测）与判据⑤（样本报告软删、判据行保留）尚未执行 | 本轮只验了 real 成功路径；软删涉及真实报告数据，删前需确认 | W58-17 收口时补：④ 四条真实请求（缺 `confirmReal` / 未绑定 / 高危 / 拼错 nodeId 各 400）；⑤ 软删后 `GET /api/reports` 不可见、`test_result` 该行仍在 |
+| L-58-07 | ~~FR-v5.8-07 判据④⑤尚未执行~~ **已于 2026-11-14 关闭** | 原风险：只验了 real 成功路径，安全闸与软删没实际发过请求 | 已补：`tools/w13_safety_delete.py` 发四条真实请求（全部 400）+ 软删前后对比（13 项断言全 PASS），见 `docs/evidence/v5.8.0/criteria/raw/safety-gate.json` |
 | L-58-08 | pytest 入口写入的 metadata 只有 `RUN_ID`，报告 `exportable=false`、`metadataMissing` 9 项 | 报告能看、结论正确，但**不能对外交付**（导出按钮禁用） | 与 L-55-07「metadata 六项 vs 后端十项」同源；需在 pytest 入口补齐 `CASE_ID/QA_PROJECT/DUT/LINK/SW_BUILD` 等，或明确「pytest 报告仅内部可见」的口径 |
 
 ---

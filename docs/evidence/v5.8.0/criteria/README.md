@@ -1,6 +1,8 @@
 # W58-13 判据链端到端取证（FR-v5.8-07）
 
-本目录回答一个问题：**「报告详情页给出的结论」是不是真的等于「那一行用例的判据结论」**。
+本目录覆盖 FR-v5.8-07 的五条验收判据（①基线 ②入库一致 ③页面结论 ④安全闸 ⑤软删保留）。
+主问题只有一个：**「报告详情页给出的结论」是不是真的等于「那一行用例的判据结论」**（判据③）。
+其余四条是它的前提与边界——判据样本真不真（①②）、这条链能不能安全地用（④⑤）。
 
 答案是**是**，但成立的前提有三个，缺一个就只剩一句口号：
 
@@ -43,6 +45,7 @@
 | `raw/ui-measure-unspecified.json` | 同上（反向） |
 | `raw/ui-report-conclusion-1440.png` | 报告详情页截图（正向，1440×1000） |
 | `raw/ui-report-conclusion-unspecified-1440.png` | 报告详情页截图（反向） |
+| `raw/safety-gate.json` | 安全闸四守卫四条真实请求 + 软删前后对比（判据④⑤，13 项断言） |
 
 ## 三、复跑
 
@@ -66,6 +69,10 @@ node scripts/w13-criteria-ui.mjs \
   --run EHT-FAKE-1794661209912 --project 95 \
   --row-verdict docs/evidence/v5.8.0/criteria/raw/row-verdict-unspecified.json \
   --out docs/evidence/v5.8.0/criteria/raw --tag unspecified
+
+# 4) 安全闸四守卫 + 软删（会新建一份 fake 报告并把它删掉，不动已归档样本）
+set -a; . ~/.config/robot-autotest/env; set +a
+python3 tools/w13_safety_delete.py --project 95 --out docs/evidence/v5.8.0/criteria/raw
 ```
 
 退出码：`0` = 全部断言通过；`1` = 有断言失败；`2` = 前置缺失（口令 / 参数）。
@@ -82,7 +89,44 @@ node scripts/w13-criteria-ui.mjs \
    这条断言在修复前是红的（速览卡原文案），修复后转绿。
 5. **`ui-no-js-error`**：采集期间 `Runtime.exceptionThrown` 必须为 0。截图漂亮但控制台报错的页面不算通过。
 
-## 五、环境
+## 五、安全闸与软删（判据④⑤）
+
+这两个判据与「结论对不对」无关，但决定这条链**能不能安全地用**：④ 是「不许绕过安全闸」，
+⑤ 是「删报告不许顺手删掉执行事实」。取证脚本 `tools/w13_safety_delete.py`，结果 `raw/safety-gate.json`。
+
+**④ 四道守卫（四条真实 HTTP，全部 400）**
+
+| 场景 | 请求要点 | 结果 | 响应原文（截断） |
+|---|---|---|---|
+| 缺 `confirmReal` | `mode=real`，合法 L0 nodeId | `400 INVALID_ARGUMENT` | real 模式需要显式确认：请求体加 confirmReal=true（真实执行会登录 DUT） |
+| 未绑定（不存在） | `confirmReal=true`，`test_not_exist_9527.py::test_nothing` | `400 INVALID_ARGUMENT` | 以下 nodeId 未绑定用例，无法判定安全级，按 fail-closed 拒跑 |
+| 拼错（近邻） | 同上，`test_im_fun_14_nic_info`（少一个 `0`） | `400 INVALID_ARGUMENT` | 同上，点名到具体 nodeId |
+| 高危 LX | `IM-VIR-001`（SR-IOV，L0/L1 之外） | `400 INVALID_ARGUMENT` | 目标用例安全级未判定或属高危，按 ADR-0013 拒跑（先人工补判）：`IM-VIR-001(LX)` |
+
+「拼错」与「未绑定」走同一个 `unmappedNodes` 分支，但两者都测：说明 fail-closed 不是「只挡完全不存在」，
+**近邻拼错同样挡**——这才是实际会犯的错。
+
+**⑤ 软删不清执行事实**
+
+| 步骤 | 观测 |
+|---|---|
+| 造样本 `EHT-FAKE-DEL-1794704818956`（fake 单条） | `stage=FINISHED`，`elapsedMs=14143` |
+| 删前 | 报告列表可见（共 41 条）；`test_result` 1 行 |
+| `DELETE /api/reports/{runId}?projectId=95` | `200 {"deleted":true,"impact":{"testReportExportCount":0,"runArtifactCount":2}}` |
+| 删后 | 列表**不可见**；详情 `404`；`test_result` **仍 1 行**，判据列保留 |
+
+该行内容正是「不拿常量凑通过」的活证据：`criteria_json` 有 **256B**（哨兵行确实被提取到），
+但 fake 环境拿不到实测值，三条判据全是 `actual=null`：
+
+```json
+[{"metric":"link_speed","op":"==","threshold":"400000Mb/s","actual":null,"passed":false},
+ {"metric":"mtu","op":">=","threshold":"1500","actual":null,"passed":null},
+ {"metric":"pci_vendor_device","op":"==","threshold":"15b3:1021","actual":null,"passed":null}]
+```
+
+平台据此判 `criteria_verdict=MISSING`——**有证据但判据不成立**，与「没证据就说通过」是两回事。
+
+## 六、环境
 
 | 项 | 值 |
 |---|---|
@@ -93,7 +137,7 @@ node scripts/w13-criteria-ui.mjs \
 | 账号 | `qa-e2e-admin`（`qa-e2e-engineer` 亦可），项目 95 `EHT-PYTEST-LIB` |
 | 采集时间 | 2026-11-14T15:59Z ~ 16:01Z（GMT+8 23:59 ~ 次日 00:01） |
 
-## 六、一个必须记住的坑
+## 七、一个必须记住的坑
 
 **改了 `.vue` 不重建 `frontend/dist`，浏览器看到的还是旧产物。**
 本轮第一次取证时结论卡片整张不渲染，`grep report-conclusion frontend/dist/assets/*.js` 无结果，

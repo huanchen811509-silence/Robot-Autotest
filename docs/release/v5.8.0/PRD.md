@@ -233,8 +233,8 @@ v5.7.0 交付后，用户能在界面上点到三样东西，但点下去都没�
 | 1 | 执行前基线 `criteria_json IS NOT NULL` = 0 | **达成**（基线读数 `0`；当时 715 行 `criteria_verdict` 非空但 `criteria_json` 一条没有 = 断点 1 的直接表现） | DB 计数输出 |
 | 2 | 执行后 ≥1 且该行 `verdict` 与声明一致 | **达成**（1 行 `criteria_verdict=PASS`，三条判据 `passed=true`） | `raw/row-verdict.json` |
 | 3 | 报告详情页结论 = 该行 `verdict` | **达成**（正向 `PASS`、反向 `UNDETERMINED`，三方比对 14 项全 PASS） | `raw/ui-measure.json`、`raw/ui-report-conclusion-1440.png` |
-| 4 | 安全闸守卫仍生效（缺 `confirmReal` / 未绑定 → 400） | **未在本条重测**，见 TC-v5.8-29 | 待补 |
-| 5 | 样本报告软删、`test_result` 判据行保留 | **未做**（留待 W58-17 收口，见 L-58-07） | 待补 |
+| 4 | 安全闸守卫仍生效（缺 `confirmReal` / 未绑定 → 400） | **达成**（四条真实请求全 400：缺 `confirmReal` / 不存在 nodeId / 近邻拼错 / `IM-VIR-001(LX)` 高危） | `raw/safety-gate.json` |
+| 5 | 样本报告软删、`test_result` 判据行保留 | **达成**（软删后列表不可见、详情 404；`test_result` 仍 1 行，`criteria_json` 256B 完整保留） | `raw/safety-gate.json` |
 
 样本：`EHT-REAL-1794671083499`（project 95 `EHT-PYTEST-LIB`，gpu01@gpu02 真机，`IM-FUN-014`），
 三条判据全部为实测值 `link_speed 400000Mb/s` / `mtu 9000` / `pci_vendor_device 15b3:1021`。

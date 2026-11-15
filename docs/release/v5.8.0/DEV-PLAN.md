@@ -174,7 +174,7 @@ W6 最后，且开始前 W1 ~ W5 出口判据全部满足。
 | 目标 | `test_result` 出现非空 `criteria_json`，且报告详情结论与之一致 |
 | 改动面 | ~~零代码（发现缺口再补）~~ → **实际改了 5 个文件**：`PytestCriteriaExtractor`（改读 json-report）、`ReportIngestService`（匹配顺序）、`CriteriaEvaluation`（哨兵行解析）、`ReportSummaryCard`（口径）、`ReportDetailView`（传参）。理由见 D-58-11 / D-58-12 |
 | 出口判据 | ① 执行前基线 `count=0`；② 执行后 ≥1 且 `verdict` 与声明一致；③ 页面结论 = 该行 verdict（截图）；④ 安全闸四条守卫各一条请求日志 |
-| 完成情况 | ①②③ **完成**（正反双样本，14 项断言全 PASS）；④ **未做**，登记 L-58-07 |
+| 完成情况 | ①②③④⑤ **全部完成**（正反双样本 + 四守卫 + 软删，共 27 项断言全 PASS） |
 | 验证命令 | `SELECT count(*) FROM test_result WHERE criteria_json IS NOT NULL;`（`DB_NAME=robot_dev`） |
 | 依赖 | W58-02（页面验收）、真机窗口 |
 
@@ -264,6 +264,7 @@ W6 最后，且开始前 W1 ~ W5 出口判据全部满足。
 | 2026-11-14 | 追加 §12「执行进度与偏差登记」：W58-01~05 完成情况、D-58-01~03 偏差、本轮验证读数 | 提交 `f16825e` / `c1108e1` + 全量单测读数 |
 | 2026-11-14 | §12 补 W58-06~12 行、D-58-04~10；§12.2 补性能与隔离读数 | `27722fa` + `docs/evidence/v5.8.0/perf/` |
 | 2026-11-14 | §12 补 W58-13 行、D-58-11~13；W58-13「零代码」预估被实测推翻，改为 5 处改动 | `docs/evidence/v5.8.0/criteria/`（正反双样本 14 项断言） |
+| 2026-11-14 | W58-13 判据④⑤补完（四守卫真实请求 + 软删保留），L-58-07 关闭；§12.2 补三条读数 | `tools/w13_safety_delete.py` + `raw/safety-gate.json`（13 项断言） |
 
 ---
 
@@ -286,7 +287,7 @@ W6 最后，且开始前 W1 ~ W5 出口判据全部满足。
 | W58-11 | 完成 | ① 10 份逐份「有/无载体」+ 片段（`README.md` 表 + `scan.json`）② 结论明确：无框架级载体（`<doc>` 2/10、断言 3/10、结构化失败消息 4/10，均不构成稳定协议） | `docs/evidence/v5.8.0/rf-criteria-spike/`（样本清单 + 扫描脚本 + 原始读数） |
 | W58-12 | 完成（走标注分支） | ① 未实现提取（无载体）② 界面标注 `report-conclusion-scope`，spec 断言含 `pytest` 与 `Robot Framework` ③ 选择依据写在 spike `README.md` §4 与 PRD FR-11「实测结论」 | `ReportDetailView.spec.ts` 14 例 |
 | W58-08 | 完成（截图待补） | ① 台账 42 行逐条有结论，缺口 7 → 6 ② `ReportsView` 行为对齐 `TestReportsView`（编辑/软删），截图待补 ③ 前端全量 130 文件 1030 例（只增不减） | `docs/evidence/v5.8.0/list-crud-matrix.md`；`ReportsView.spec.ts` 3 例 |
-| W58-13 | 完成 ①②③，④未做（见 D-58-11~13、L-58-07） | ① 真机 `EHT-REAL-1794671083499` 1 行 `criteria_verdict=PASS`，三条判据为实测值 ② 报告接口 `criteriaConclusion=PASS / evaluated=1 / missing=0` ③ 页面标签「通过」与结论卡一致，三方比对 14 项断言全 PASS ④ 反向样本 70 行全 `MISSING` → 页面「未判定」，无「全部通过」 ⑤ 后端全量 1946 例 FAIL 0；前端相关 22 例 PASS；`vue-tsc` 无输出 | `docs/evidence/v5.8.0/criteria/`（README + 8 份原件）；`scripts/w13-criteria-ui.mjs` |
+| W58-13 | 完成 ①~⑤（见 D-58-11~13） | ① 真机 `EHT-REAL-1794671083499` 1 行 `criteria_verdict=PASS`，三条判据为实测值 ② 报告接口 `criteriaConclusion=PASS / evaluated=1 / missing=0` ③ 页面标签「通过」与结论卡一致，三方比对 14 项断言全 PASS ④ 反向样本 70 行全 `MISSING` → 页面「未判定」，无「全部通过」 ⑤ 四守卫四条真实请求全 400（含 `IM-VIR-001(LX)`）；软删后列表不可见、详情 404、`test_result` 保留 ⑥ 后端全量 1946 例 FAIL 0；前端相关 22 例 PASS；`vue-tsc` 无输出 | `docs/evidence/v5.8.0/criteria/`（README + 9 份原件）；`scripts/w13-criteria-ui.mjs`；`tools/w13_safety_delete.py` |
 
 ### 12.1 偏差登记
 
@@ -324,5 +325,8 @@ W6 最后，且开始前 W1 ~ W5 出口判据全部满足。
 | 报告结论（界面） | 结论卡「通过 · 已评估 1 条，判据缺失 0 条」；速览卡「通过 · 本轮 1 条用例：通过 1，失败 0，跳过 0」；两处均无「全部通过」 |
 | 反向实证（判据全缺失） | `EHT-FAKE-1794661209912` 70 行全 `MISSING`、通过率 7.1% → 两处均「未判定」；`ui-no-counted-verdict` PASS |
 | 界面取证断言数 | 正向 14 项 / 反向 14 项，全 PASS（`W13_CRITERIA_UI PASS`）；`ui-no-js-error` 0 exception |
+| 安全闸四守卫（判据④） | 四条真实 HTTP 全 `400 INVALID_ARGUMENT`：缺 `confirmReal` / 不存在 nodeId / 近邻拼错（少一个 `0`）/ `IM-VIR-001(LX)` 高危 |
+| 软删保留（判据⑤） | `EHT-FAKE-DEL-1794704818956`：删前列表可见（41 条）、`test_result` 1 行 → `DELETE` 返回 `deleted=true`、`impact.runArtifactCount=2` → 删后列表不可见、详情 404、`test_result` **仍 1 行**，`criteria_json` 256B 完整 |
+| fake 下判据形态 | `verdict=SKIP`、`criteria_verdict=MISSING`、`criteria_json` 256B，三条判据 `actual=null` → 「有证据但判据不成立」，不伪造实测值 |
 | 后端单测（W58-13 后） | `Tests run: 1946, Failures: 0, Errors: 0, Skipped: 4`，BUILD SUCCESS（较本节首行 1934 再 +12，来自提取器 4 例 + 评估 3 例 + 既有其他） |
 | 前端相关单测 | `ReportSummaryCard.spec` 8 例 + `ReportDetailView.spec` 14 例，共 22 例 PASS；`vue-tsc --noEmit` 无输出 |

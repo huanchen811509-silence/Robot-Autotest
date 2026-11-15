@@ -1,0 +1,147 @@
+{
+  "capturedAt": "2026-11-15T01:07:14.713419+00:00",
+  "backend": "http://127.0.0.1:8081",
+  "projectId": 95,
+  "operator": "qa-e2e-admin",
+  "guards": [
+    {
+      "id": "no-confirmReal",
+      "request": {
+        "mode": "real",
+        "nodeIds": [
+          "tests/nic/new_scripts/test_im_fun_014.py::test_im_fun_014_nic_info"
+        ]
+      },
+      "httpStatus": 400,
+      "code": 40001,
+      "codeName": "INVALID_ARGUMENT",
+      "message": "real 模式需要显式确认：请求体加 confirmReal=true（真实执行会登录 DUT）",
+      "expectContains": "real 模式需要显式确认",
+      "passed": true
+    },
+    {
+      "id": "unmapped-absent",
+      "request": {
+        "mode": "real",
+        "confirmReal": true,
+        "nodeIds": [
+          "tests/nic/new_scripts/test_not_exist_9527.py::test_nothing"
+        ]
+      },
+      "httpStatus": 400,
+      "code": 40001,
+      "codeName": "INVALID_ARGUMENT",
+      "message": "以下 nodeId 未绑定用例，无法判定安全级，按 fail-closed 拒跑：tests/nic/new_scripts/test_not_exist_9527.py::test_nothing",
+      "expectContains": "未绑定用例",
+      "passed": true
+    },
+    {
+      "id": "unmapped-typo",
+      "request": {
+        "mode": "real",
+        "confirmReal": true,
+        "nodeIds": [
+          "tests/nic/new_scripts/test_im_fun_014.py::test_im_fun_14_nic_info"
+        ]
+      },
+      "httpStatus": 400,
+      "code": 40001,
+      "codeName": "INVALID_ARGUMENT",
+      "message": "以下 nodeId 未绑定用例，无法判定安全级，按 fail-closed 拒跑：tests/nic/new_scripts/test_im_fun_014.py::test_im_fun_14_nic_info",
+      "expectContains": "未绑定用例",
+      "passed": true
+    },
+    {
+      "id": "high-risk-LX",
+      "request": {
+        "mode": "real",
+        "confirmReal": true,
+        "nodeIds": [
+          "tests/nic/new_scripts/test_im_vir_001.py::test_im_vir_001_sriov_vf_create"
+        ]
+      },
+      "httpStatus": 400,
+      "code": 40001,
+      "codeName": "INVALID_ARGUMENT",
+      "message": "目标用例安全级未判定或属高危，按 ADR-0013 拒跑（先人工补判）：IM-VIR-001(LX)",
+      "expectContains": "拒跑",
+      "passed": true
+    }
+  ],
+  "softDelete": {
+    "runId": "EHT-FAKE-DEL-1794704818956",
+    "state": "{'RUNID': 'EHT-FAKE-DEL-1794704818956', 'STAGE': 'FINISHED', 'TOTAL': 1, 'FINISHED': 1, 'PASSED': 0, 'FAILED': 0, 'ELAPSEDMS': 14143, 'CANCELREQUESTED': FALSE, 'TERMINAL': TRUE, 'SOURCE': 'DB'}",
+    "rowsBefore": "1",
+    "rowsAfter": "1",
+    "listedBefore": true,
+    "listedAfter": false,
+    "criteriaVerdicts": "MISSING"
+  },
+  "checks": [
+    {
+      "id": "guard-no-confirmReal",
+      "ok": true,
+      "detail": "HTTP 400 · real 模式需要显式确认：请求体加 confirmReal=true（真实执行会登录 DUT） INVALID_ARGUMENT"
+    },
+    {
+      "id": "guard-unmapped-absent",
+      "ok": true,
+      "detail": "HTTP 400 · 以下 nodeId 未绑定用例，无法判定安全级，按 fail-closed 拒跑：tests/nic/new_scripts/test_not_exist_9527.py::test_nothing INVALID_AR"
+    },
+    {
+      "id": "guard-unmapped-typo",
+      "ok": true,
+      "detail": "HTTP 400 · 以下 nodeId 未绑定用例，无法判定安全级，按 fail-closed 拒跑：tests/nic/new_scripts/test_im_fun_014.py::test_im_fun_14_nic_info INV"
+    },
+    {
+      "id": "guard-high-risk-LX",
+      "ok": true,
+      "detail": "HTTP 400 · 目标用例安全级未判定或属高危，按 ADR-0013 拒跑（先人工补判）：IM-VIR-001(LX) INVALID_ARGUMENT"
+    },
+    {
+      "id": "delete-prepare-run",
+      "ok": true,
+      "detail": "HTTP 200 runId=EHT-FAKE-DEL-1794704818956"
+    },
+    {
+      "id": "delete-run-finished",
+      "ok": true,
+      "detail": "state={'RUNID': 'EHT-FAKE-DEL-1794704818956', 'STAGE': 'FINISHED', 'TOTAL': 1, 'FINISHED': 1, 'PASSED': 0, 'FAILED': 0, 'ELAPSEDMS': 14143, 'CANCELREQUESTED': FALSE, 'TERMINAL': TRUE, 'SOURCE': 'DB'}"
+    },
+    {
+      "id": "delete-rows-before",
+      "ok": true,
+      "detail": "test_result rows=1"
+    },
+    {
+      "id": "delete-listed-before",
+      "ok": true,
+      "detail": "报告列表可见=True 共 41 条"
+    },
+    {
+      "id": "delete-http",
+      "ok": true,
+      "detail": "HTTP 200 deleted=True resp={\"deleted\": true, \"impact\": {\"testReportExportCount\": 0, \"runArtifactCount\": 2}}"
+    },
+    {
+      "id": "delete-hidden-after",
+      "ok": true,
+      "detail": "报告列表可见=False"
+    },
+    {
+      "id": "delete-detail-gone",
+      "ok": true,
+      "detail": "详情 HTTP 404"
+    },
+    {
+      "id": "delete-rows-kept",
+      "ok": true,
+      "detail": "test_result rows 1 -> 1（软删不清执行事实）"
+    },
+    {
+      "id": "delete-criteria-kept",
+      "ok": true,
+      "detail": "criteria_verdict=[MISSING]"
+    }
+  ]
+}
