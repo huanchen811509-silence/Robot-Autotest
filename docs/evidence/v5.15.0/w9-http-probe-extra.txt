@@ -1,0 +1,12 @@
+v5.15.0 W9 补充真实 HTTP + DB 探针
+PASS=8 FAIL=0 TOTAL=8
+CLEANUP :: items=ok; snapshot=ok; leftover=0
+
+[PASS] 登录取得 Bearer token :: HTTP=200
+[PASS] 快照不可修改（PUT 被 405/404 拒绝） :: HTTP=405
+[PASS] 自己与自己按项对比三项全空 :: HTTP=200 rows=0
+[PASS] 旧 env_profile 快照仍可按 name 读（NFR-02 只读兼容） :: HTTP=200 project=29 rows=2
+[PASS] 存量 link 两列无 NULL（默认 PLANNED/MANUAL） :: null_rows=0
+[PASS] 声明但无快照被拒且提示先采集 :: HTTP=409 project=1 msg=环境闸门未通过：无可用设备快照；请先执行一次采集
+[PASS] 400G 声明对 400G 快照放行（>= 边界） :: HTTP=200 snapshotId=6
+[PASS] 旧深链 /environment/prepare 入口 200（非 404） :: HTTP=200

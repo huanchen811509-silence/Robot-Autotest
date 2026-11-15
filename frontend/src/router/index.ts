@@ -357,14 +357,15 @@ const router = createRouter({
       component: () => import('@/views/environment/TopologySnapshotView.vue'),
     },
     {
+      // v5.15.0 / W65-14：旧深链不删，收敛到 4 个主页面。
       path: '/environment/prepare',
       name: 'environment-prepare',
-      component: () => import('@/views/environment/EnvironmentPrepareView.vue'),
+      redirect: '/environment/overview',
     },
     {
       path: '/environment/analysis',
       name: 'environment-analysis',
-      component: () => import('@/views/environment/CollectionAnalysisView.vue'),
+      redirect: '/environment/topology',
     },
     {
       // v4.3.0 / FR-v4.3-07：连接与拓扑（只读，从设备/端口/链路派生）。

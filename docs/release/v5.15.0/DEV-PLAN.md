@@ -316,3 +316,51 @@ W5 是最后一个功能波（页面要能承载前面所有能力）；W8 随�
 | 日期 | 修订 | 依据 |
 |---|---|---|
 | 2026-11-15 | 首版：9 波 21 个 WBS；快照对象化先行；闸门「声明才校验」写进 WBS | `PRD.md` v5.15.0 + 评估 05 + 白泽调研 |
+
+
+---
+
+## 附：W0 开工前修订记录（2026-11-15）
+
+> 依据 `00-RESEARCH.md` 事实清单；本节的订正**在 W1 之前生效**，后续波次按订正口径施工。
+
+| 位置 | 原文失真点 | 订正 |
+|---|---|---|
+| 全篇 5 处 `psql "$DB_URL" -c ...` | 数据库不是 PostgreSQL | 改 `bash scripts/db-migrate.sh`、`bash scripts/db-audit.sh` 或 mysql CLI；不引入 `DB_URL` |
+| `W65-02` / `W65-20` 的 `/api/environment/snapshots/{id}` | 端点不存在 | 新增端点挂 `/api/projects/{projectId}/snapshots/{id}` 与 `/items?key=` |
+| `W65-03` 「采集完成不再写 snapshot_json」 | 前提为假（R-13） | 改为「采集新增双写新两表，旧 env_profile 链路零改动」 |
+| `W65-06` ~ `W65-08` 探针包 | 被写成既有能力 | 定性为本期新造 `probe_pack` / `probe_pack_command`，`COMMANDS` 十条幂等种子 |
+| `W65-09` `V11_77` | 写成「补默认值」 | 写成「新增两列 + 默认值回填 + down」；同步 `schema-contract.json` 表数 |
+| `W65-15` ~ `W65-17` 闸门 | 假定直接改执行编排 | 独立 `EnvironmentGate` + 独立端点；**不改 `RunExecutionService` / `RunMetadataService`**（冻结清单 R-32） |
+| `W65-17` `select env_check_note from run` | 列不存在 | 改为新增 `run.env_check_note` 列（`V11_75` 内追加）或写 `run_metadata`，二选一在 W6 实测后定 |
+| `W65-18` 项目侧采集传 deviceId | deviceId 已存在（R-19） | 改为补 credentialId / username / confirm 透传并对齐 5.13 绑定 |
+| `W65-21` 门禁命令 | 与真实入口不一致 | 唯一入口 `bash scripts/gates.sh`，判据 `GATES_RESULT FAILS=0 UNJUDGED=0` |
+
+**新增 W0 出口判据**：`00-RESEARCH.md` 与 `01-ASSESSMENT.md` 落盘、三份草案追加修订记录、
+六份文档齐 `check_md_tables.py` PASS，才允许进入 W1 编码。
+
+
+---
+
+## 15. W1 ~ W9 实际完成与偏差登记
+
+| 波次 | 完成内容 | 验收读数 |
+|---|---|---|
+| W0 | 补 00-RESEARCH / 01-ASSESSMENT，10 条草案冲突逐条订正 | 五份 `check_md_tables.py` PASS |
+| W1 / W2 | `V11_75` 快照两表 + 采集双写 + 按项读写/对比端点 + 拓扑页按项面板 | W1 探针 16/16；契约 464/382 |
+| W3 / W4 / W6 | `V11_76` 探针包、`V11_77` 拓扑两列与 run 留痕列、独立环境闸门 | db-audit PASS（113 表）；契约 471/389 |
+| W5 / W7 | 环境组 6→4 叶 + 旧深链 redirect + 凭证入参透传 | `check_nav_kind` 42 PASS；i18n 3139 键；vue-tsc 0 error |
+| W8 | SSH 九项硬约束只读核对（含 askpass 关键字口径订正） | `check_host_inventory.py --self-check` 9/9 |
+| W9 | 首轮真实探针 4 判红 → 修复 TINYINT(1) Boolean 真缺陷 → 25/25 + 8/8；全量门禁；六份迁入 | GATES_RESULT FAILS=0 UNJUDGED=0；`check_release_docs.py v5.15.0` PASS |
+
+### 15.1 偏差登记（B-39 ~ B-45）
+
+| # | 偏差 | 原因 |
+|---|---|---|
+| B-39 | 探针包只落 HOST_LINUX 单包 | 交换机 / BMC 采集链路需要真机样本，本轮不造；如实标功能缺口 |
+| B-40 | 命令文本不入库 | 门禁 29 从源码字面量抽取，存两份会造成证据漂移 |
+| B-41 | 执行闸门独立成端点，未接 RunLaunch | 避免改动冻结清单的 10 个执行链文件；409 判据仍完整 |
+| B-42 | 拓扑图图例 / 过滤 / 规划源启用未落地 | 本版优先把事实链与闸门做实，UI 渲染另立；标为未达成 |
+| B-43 | `V11_77` 同时加 `run.env_check_note` | W65-17 留痕需要可查询落点，减少一支迁移 |
+| B-44 | W9 从「只收口」变成「修复波 + 收口波」 | 首轮真实探针抓到 TINYINT(1) Boolean 真缺陷，P0 不允许带着 500 收口 |
+| B-45 | 导航叶数基线 44 → 42 | 6 页收敛 4 页，按 `check_nav_kind.py` 自身要求显式改并写理由 |

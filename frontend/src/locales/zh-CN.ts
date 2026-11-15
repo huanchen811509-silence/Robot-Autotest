@@ -2466,6 +2466,8 @@ export default {
       confirmHint: '采集会在目标机执行上面 10 条只读命令并入库一条记录。',
       collected: '采集完成，记录 #{id}',
       historyTitle: '采集历史',
+      usernamePlaceholder: '远程账号（可选）',
+      credentialPlaceholder: '凭据 ID（远程必填）',
     },
     topology: {
       title: '拓扑与快照',
@@ -2492,6 +2494,14 @@ export default {
       created: '快照已创建 #{id}',
       defaultName: '当前环境',
       createDescription: '由环境页按当前资产生成',
+      deviceTitle: '按项设备快照',
+      deviceHint: '来自真实采集的按项事实，未采到项显示原因，不填占位值。',
+      deviceIdle: '暂无设备快照；到采集页显式采一次后这里才有数据。',
+      itemColKey: '按项键',
+      itemColCategory: '分类',
+      itemColValue: '值 / 未采集原因',
+      itemCompare: '按项对比',
+      itemNoDiff: '两份按项快照内容一致',
     },
     prepare: {
       title: '环境准备',

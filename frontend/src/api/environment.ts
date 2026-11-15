@@ -46,6 +46,10 @@ export interface HostInventoryRecord {
 export interface CollectPayload {
   host: string
   deviceId?: number | null
+  /** v5.15.0 / FR-v5.15-11: remote collection needs a credential and explicit confirmation. */
+  username?: string
+  credentialId?: number
+  confirm?: boolean
 }
 
 const HOST = '/asset-host-inventory'
@@ -136,4 +140,152 @@ export const envApi = {
       body: JSON.stringify({ before, after }),
     })
   },
+}
+
+// ------------------------------------------------------------------ v5.15.0 按项快照 / 探针包 / 拓扑 / 闸门
+
+export interface DeviceSnapshot {
+  id: number
+  projectId: number
+  deviceId: number | null
+  host: string
+  source: string
+  snapshotHash: string
+  specHash: string | null
+  sourceRecordId: number | null
+  collectedAt: string
+  itemCount: number
+  createdAt: string
+}
+
+export interface DeviceSnapshotItem {
+  id: number
+  projectId: number
+  snapshotId: number
+  itemKey: string
+  category: string
+  command: string | null
+  valueJson: string | null
+  valueHash: string | null
+  collected: boolean
+  reason: string | null
+  createdAt: string
+}
+
+export interface ItemDiff {
+  key: string
+  change: string
+  before: string | null
+  after: string | null
+}
+
+/** Path builders are exported so the contract can be asserted without a live server. */
+export const deviceSnapshotPaths = {
+  list: (projectId: number, limit = 20) =>
+    `/projects/${projectId}/snapshots/device${toQuery({ limit })}`,
+  detail: (projectId: number, id: number) => `/projects/${projectId}/snapshots/${id}`,
+  items: (projectId: number, id: number, key?: string) =>
+    `/projects/${projectId}/snapshots/${id}/items${toQuery(key ? { key } : {})}`,
+  latestItems: (projectId: number, key?: string) =>
+    `/projects/${projectId}/snapshots/items/latest${toQuery(key ? { key } : {})}`,
+  diffByItem: (projectId: number) => `/projects/${projectId}/snapshots/diff-by-item`,
+}
+
+export const deviceSnapshotApi = {
+  list(projectId: number, limit = 20): Promise<DeviceSnapshot[]> {
+    return request<DeviceSnapshot[]>(deviceSnapshotPaths.list(projectId, limit))
+  },
+  detail(projectId: number, id: number): Promise<DeviceSnapshot> {
+    return request<DeviceSnapshot>(deviceSnapshotPaths.detail(projectId, id))
+  },
+  items(projectId: number, id: number, key?: string): Promise<DeviceSnapshotItem[]> {
+    return request<DeviceSnapshotItem[]>(deviceSnapshotPaths.items(projectId, id, key))
+  },
+  latestItems(projectId: number, key?: string): Promise<DeviceSnapshotItem[]> {
+    return request<DeviceSnapshotItem[]>(deviceSnapshotPaths.latestItems(projectId, key))
+  },
+  diffByItem(projectId: number, beforeId: number, afterId: number): Promise<ItemDiff[]> {
+    return request<ItemDiff[]>(deviceSnapshotPaths.diffByItem(projectId), {
+      method: 'POST',
+      body: JSON.stringify({ beforeId, afterId }),
+    })
+  },
+}
+
+export interface PackCommandView {
+  key: string
+  command: string
+  required: boolean
+}
+
+export interface PackView {
+  code: string
+  deviceType: string
+  commands: PackCommandView[]
+}
+
+export const probePackApi = {
+  commands(projectId: number, deviceType = 'HOST_LINUX'): Promise<PackView> {
+    return request<PackView>(`/probe-packs/commands${toQuery({ projectId, deviceType })}`)
+  },
+  evaluate(projectId: number, snapshotId: number): Promise<Record<string, unknown>> {
+    return request<Record<string, unknown>>(
+      `/probe-packs/evaluate${toQuery({ projectId, snapshotId })}`)
+  },
+}
+
+export interface TrustView {
+  buckets: { confidence: string; source: string; count: number }[]
+  measured: number
+  planned: number
+  overriddenPairs: number
+  priority: string
+}
+
+export const topologyTrustApi = {
+  trust(projectId: number): Promise<TrustView> {
+    return request<TrustView>(`/projects/${projectId}/topology/trust`)
+  },
+  lldpImport(projectId: number, neighbors: unknown[]): Promise<Record<string, unknown>> {
+    return request<Record<string, unknown>>(`/projects/${projectId}/topology/lldp-import`, {
+      method: 'POST',
+      body: JSON.stringify({ neighbors }),
+    })
+  },
+}
+
+export interface GateRequirement {
+  key: string
+  op: string
+  value: string
+}
+
+export interface GateCheckResult {
+  pass: boolean
+  undeclared: boolean
+  snapshotId: number
+  failures: { key: string; expected: string; actual: string; snapshotId: number }[]
+  note: string
+  notedRows: number
+}
+
+export const envGateApi = {
+  check(projectId: number, payload: {
+    caseKey?: string
+    runId?: string
+    requirements?: GateRequirement[]
+  }): Promise<GateCheckResult> {
+    return request<GateCheckResult>(`/projects/${projectId}/env-check`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
+  notes(projectId: number): Promise<Record<string, unknown>[]> {
+    return request<Record<string, unknown>[]>(`/projects/${projectId}/env-check/notes`)
+  },
+}
+
+/** Explicit collection body: credential fields pass through, undefined fields stay absent. */
+export function buildCollectBody(projectId: number, payload: CollectPayload) {
+  return { projectId, ...payload }
 }

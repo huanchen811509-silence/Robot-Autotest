@@ -15,7 +15,11 @@ import EmptyState from '@/components/EmptyState.vue'
 import EmptyGuide from '@/components/EmptyGuide.vue'
 import { useAuthStore } from '@/stores/auth'
 import { deviceApi, linkApi } from '@/api/asset'
-import { envApi, type EnvProfileSummary, type EnvSnapshot, type SnapshotDiff } from '@/api/environment'
+import {
+  deviceSnapshotApi, envApi,
+  type DeviceSnapshot, type DeviceSnapshotItem, type EnvProfileSummary,
+  type EnvSnapshot, type ItemDiff, type SnapshotDiff,
+} from '@/api/environment'
 import { formatDateTime } from '@/utils/format'
 
 interface Row {
@@ -29,6 +33,17 @@ interface DiffRow extends SnapshotDiff {
   id: string
 }
 
+interface ItemFactRow {
+  id: string
+  itemKey: string
+  category: string
+  display: string
+}
+
+interface ItemDiffRow extends ItemDiff {
+  id: string
+}
+
 const { t } = useI18n()
 const auth = useAuthStore()
 const projectId = computed(() => auth.projectId ?? 0)
@@ -39,6 +54,11 @@ const snapshots = ref<EnvSnapshot[]>([])
 const beforeId = ref('')
 const afterId = ref('')
 const diffs = ref<SnapshotDiff[] | null>(null)
+const deviceSnapshots = ref<DeviceSnapshot[]>([])
+const devBeforeId = ref('')
+const devAfterId = ref('')
+const snapshotItems = ref<DeviceSnapshotItem[]>([])
+const itemDiffs = ref<ItemDiff[] | null>(null)
 const confirming = ref(false)
 const busy = ref(false)
 const loading = ref(false)
@@ -56,6 +76,17 @@ const diffColumns = computed<DataTableColumns<DiffRow>>(() => [
   { title: t('env.topology.diffBefore'), key: 'before' },
   { title: t('env.topology.diffAfter'), key: 'after' },
 ])
+const itemColumns = computed<DataTableColumns<ItemFactRow>>(() => [
+  { title: t('env.topology.itemColKey'), key: 'itemKey' },
+  { title: t('env.topology.itemColCategory'), key: 'category' },
+  { title: t('env.topology.itemColValue'), key: 'display' },
+])
+const itemDiffColumns = computed<DataTableColumns<ItemDiffRow>>(() => [
+  { title: t('env.topology.diffPath'), key: 'key' },
+  { title: t('env.topology.diffChange'), key: 'change' },
+  { title: t('env.topology.diffBefore'), key: 'before' },
+  { title: t('env.topology.diffAfter'), key: 'after' },
+])
 
 const rows = computed<Row[]>(() => snapshots.value.map((s) => ({
   id: s.id,
@@ -64,6 +95,16 @@ const rows = computed<Row[]>(() => snapshots.value.map((s) => ({
   status: `${(s.snapshotJson || '').length} B`,
 })))
 const diffRows = computed<DiffRow[]>(() => (diffs.value ?? []).map((d, i) => ({ ...d, id: `${i}-${d.path}` })))
+const itemRows = computed<ItemFactRow[]>(() => snapshotItems.value.map((item) => ({
+  id: String(item.id),
+  itemKey: item.itemKey,
+  category: item.category,
+  display: item.collected
+    ? (item.valueJson ?? '')
+    : `${t('env.common.notCollected')} · ${item.reason ?? ''}`,
+})))
+const itemDiffRows = computed<ItemDiffRow[]>(() => (itemDiffs.value ?? [])
+  .map((d, i) => ({ ...d, id: `${i}-${d.key}` })))
 const selectedBefore = computed(() => snapshots.value.find((s) => String(s.id) === beforeId.value) ?? null)
 const selectedAfter = computed(() => snapshots.value.find((s) => String(s.id) === afterId.value) ?? null)
 
@@ -107,6 +148,52 @@ async function compare() {
   }
 }
 
+/** v5.15.0 / FR-v5.15-01~03: item-based snapshot facts, not a second invented data set. */
+async function loadDeviceSnapshots() {
+  if (!projectId.value) {
+    deviceSnapshots.value = []
+    snapshotItems.value = []
+    itemDiffs.value = null
+    return
+  }
+  try {
+    deviceSnapshots.value = await deviceSnapshotApi.list(projectId.value, 20)
+    if (deviceSnapshots.value.length >= 2) {
+      devAfterId.value = String(deviceSnapshots.value[0].id)
+      devBeforeId.value = String(deviceSnapshots.value[1].id)
+    } else if (deviceSnapshots.value.length === 1) {
+      devAfterId.value = String(deviceSnapshots.value[0].id)
+      devBeforeId.value = ''
+    }
+    await selectDeviceSnapshot()
+  } catch {
+    deviceSnapshots.value = []
+    snapshotItems.value = []
+  }
+}
+
+async function selectDeviceSnapshot() {
+  if (!devAfterId.value) { snapshotItems.value = []; return }
+  try {
+    snapshotItems.value = await deviceSnapshotApi.items(projectId.value, Number(devAfterId.value))
+  } catch {
+    snapshotItems.value = []
+  }
+}
+
+async function compareByItem() {
+  if (!devBeforeId.value || !devAfterId.value) return
+  busy.value = true
+  try {
+    itemDiffs.value = await deviceSnapshotApi.diffByItem(
+      projectId.value, Number(devBeforeId.value), Number(devAfterId.value))
+  } catch {
+    itemDiffs.value = []
+  } finally {
+    busy.value = false
+  }
+}
+
 /** 快照内容 = 当前项目的真实设备与链路，不是手编的拓扑样例。 */
 async function createSnapshot() {
   if (!confirming.value) { confirming.value = true; return }
@@ -139,9 +226,15 @@ async function createSnapshot() {
   }
 }
 
-onMounted(async () => { await loadProfiles(); await loadSnapshots() })
-watch(projectId, async () => { envName.value = ''; await loadProfiles(); await loadSnapshots() })
+onMounted(async () => { await loadProfiles(); await loadSnapshots(); await loadDeviceSnapshots() })
+watch(projectId, async () => {
+  envName.value = ''
+  await loadProfiles()
+  await loadSnapshots()
+  await loadDeviceSnapshots()
+})
 watch(envName, loadSnapshots)
+watch(devAfterId, selectDeviceSnapshot)
 </script>
 
 <template>
@@ -227,6 +320,40 @@ watch(envName, loadSnapshots)
         </template>
       </DataTable>
       <p v-else class="empty" data-testid="topology-diff-idle">{{ t('env.topology.diffIdle') }}</p>
+    </section>
+
+    <section class="panel">
+      <h2>{{ t('env.topology.deviceTitle') }}</h2>
+      <p class="muted">{{ t('env.topology.deviceHint') }}</p>
+      <div class="action" v-if="deviceSnapshots.length">
+        <select v-model="devBeforeId" data-testid="device-before" class="pick">
+          <option v-for="s in deviceSnapshots" :key="`db-${s.id}`" :value="String(s.id)">
+            #{{ s.id }} · {{ formatDateTime(s.collectedAt) }}
+          </option>
+        </select>
+        <select v-model="devAfterId" data-testid="device-after" class="pick">
+          <option v-for="s in deviceSnapshots" :key="`da-${s.id}`" :value="String(s.id)">
+            #{{ s.id }} · {{ formatDateTime(s.collectedAt) }}
+          </option>
+        </select>
+        <NButton size="small" :disabled="!devBeforeId || !devAfterId || busy"
+          data-testid="device-diff" @click="compareByItem">
+          {{ t('env.topology.itemCompare') }}
+        </NButton>
+      </div>
+      <DataTable v-if="deviceSnapshots.length" :columns="itemColumns" :data="itemRows"
+        :row-key="(row: ItemFactRow) => row.id" data-testid="device-items">
+        <template #empty>
+          <p class="empty" data-testid="device-items-empty">{{ t('env.common.empty') }}</p>
+        </template>
+      </DataTable>
+      <p v-else class="empty" data-testid="device-idle">{{ t('env.topology.deviceIdle') }}</p>
+      <DataTable v-if="itemDiffs !== null" :columns="itemDiffColumns" :data="itemDiffRows"
+        :row-key="(row: ItemDiffRow) => row.id" data-testid="device-diff-table">
+        <template #empty>
+          <p class="empty" data-testid="device-diff-empty">{{ t('env.topology.itemNoDiff') }}</p>
+        </template>
+      </DataTable>
     </section>
 
     <section class="panel">

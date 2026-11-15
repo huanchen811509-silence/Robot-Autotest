@@ -511,7 +511,7 @@ export const NAVIGATION: NavNode[] = [
     ],
   },
   {
-    // v2.2 / MENU-01 + MENU-02：环境与拓扑（5 个只读二级页）。
+    // v5.15.0 / FR-v5.15-08：6 个只读二级页收敛为 4 个；prepare / analysis 旧深链保留 redirect。
     // 6 个业务能力域不建一级菜单，降为用例 domain_tag 筛选标签（FR-UI-30 仍成立）。
     key: 'environment',
     labelKey: 'menu.environment',
@@ -520,9 +520,7 @@ export const NAVIGATION: NavNode[] = [
       { key: 'environment-overview', labelKey: 'menu.envOverview', icon: 'dashboard', path: '/environment/overview' },
       { key: 'environment-collect', labelKey: 'menu.envCollect', icon: 'database', path: '/environment/collect' },
       { key: 'environment-topology', labelKey: 'menu.envTopology', icon: 'link', path: '/environment/topology' },
-      { key: 'environment-prepare', labelKey: 'menu.envPrepare', icon: 'sliders', path: '/environment/prepare' },
-      { key: 'environment-analysis', labelKey: 'menu.envAnalysis', icon: 'reports', path: '/environment/analysis' },
-      {
+        {
         // v4.3.0 / FR-v4.3-07：连接与拓扑（只读派生页），数据来自 `/asset-info`。
         // 不做连接编辑：连接由链路定义，编辑入口仍在「测试资产 → 链路」。
         key: 'environment-connections',

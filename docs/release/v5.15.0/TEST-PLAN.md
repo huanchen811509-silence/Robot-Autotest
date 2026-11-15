@@ -264,3 +264,45 @@ docs/evidence/v5.15.0/
 | 日期 | 修订 | 依据 |
 |---|---|---|
 | 2026-11-15 | 首版：56 条 TC 覆盖 12 条 FR；闸门四条为一票否决项；LLDP/SSH 需真实设备证据 | `PRD.md` v5.15.0 + `DEV-PLAN.md` |
+
+
+---
+
+## 附：W0 开工前修订记录（2026-11-15）
+
+> 依据 `00-RESEARCH.md`；TC 编号与数量（56 条）**不变**，只订正证据形态与前置条件。
+
+| 涉及 TC 类型 | 原证据形态 | 订正 |
+|---|---|---|
+| 迁移 / DB 类 | `psql "$DB_URL" -c` 或 `\d` | 改 `mysql` CLI / `db-audit.sh` / `SHOW CREATE TABLE`；env 从 `~/.config/robot-autotest/env` 读 |
+| 按项快照类 | 假定 `GET /api/environment/snapshots/{id}` 已存在 | 端点为本期新增，探针按 `/api/projects/{projectId}/snapshots/{id}` 打 |
+| 采集写快照类 | 断言「snapshot_json 不再变化」 | 改为「`device_host_spec` 既有行不变 + 新两表新增行 + `env_profile` 只读可查」 |
+| 凭证入参类 | 断言 deviceId 被新增 | 改为断言 credentialId / confirm 透传生效，远程采集无凭证仍 400 |
+| 执行闸门类 | 断言 `run.env_check_note` 可直接查 | 按 W6 实测选定「新增列」或「run_metadata」后再落 SQL |
+| 页面收敛类 | 只看页面数 | 加 `navigation.spec.ts` 叶数、旧深链重定向、i18n 双语种与门禁 44 四项 |
+
+**新增纪律**：真实 DUT 的 400G / 100G 样本、两次真实采集、真视口逐 TC 截图若未取得，
+一律在 `05-TEST-REPORT.md` §5 逐条标 PARTIAL，不把 UT / 机检写成放行理由。
+
+
+---
+
+## 17. W1 ~ W9 实测结果（最终落定）
+
+| 来源 | 结果 |
+|---|---|
+| W1 真实 HTTP + DB 探针 | PASS=16 FAIL=0 TOTAL=16 |
+| W9 首轮综合探针 | PASS=21 FAIL=4 TOTAL=25，4 条判红留痕不隐去（`w9-http-probe-first-run.txt`） |
+| W9 修复后主探针 | PASS=25 FAIL=0 TOTAL=25 |
+| W9 补充边界探针 | PASS=8 FAIL=0 TOTAL=8 |
+| W8 SSH 核对 | 门禁 29 负向自证 9/9，源码核对留痕 |
+| 全量门禁 | GATES_RESULT FAILS=0 UNJUDGED=0 |
+| 六份产物 | 从 `_draft/v5.15.0/` 迁入 `docs/release/v5.15.0/`，补 `05-TEST-REPORT.md` |
+
+**本版补测的既有遗留项**：快照不可变 405、自己与自己对比空、旧 env_profile 读回、
+link 两列 NULL=0、无快照 409、400G 边界、旧深链入口 200、探针包 required 语义、
+闸门留痕只填空不覆盖、凭证入参透传。
+
+**仍未取得**（如实登记，逐条见 `05-TEST-REPORT.md` §5）：真视口逐 TC 截图、
+500/1000 项与 100 节点性能样本、真机交换机 / 错误口令 / host key 样本、
+ADR-0013 安全闸顺序与 v5.14 反向回放、端点孤儿与取凭证同源走查清单。

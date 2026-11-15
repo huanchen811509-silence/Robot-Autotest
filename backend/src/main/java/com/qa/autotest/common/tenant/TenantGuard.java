@@ -62,7 +62,11 @@ public final class TenantGuard {
             // EHT-11 修复（2026-11-13）：v5.3–v5.4 建表时漏登记的租户业务表。
             // 三张表都有 project_id；未登记时 requireProjectScope 直接抛 500
             // 「未配置租户策略」，六页读真实端点全部失败（实测 3/12 端点 500）。
-            "case_duration_baseline", "case_failure_disposition", "manual_execution");
+            "case_duration_baseline", "case_failure_disposition", "manual_execution",
+            // v5.15.0：设备快照两表都带 project_id，按项目隔离。
+            "device_snapshot", "device_snapshot_item",
+            // v5.15.0：探针包两表带 project_id（0=平台预置），查询按项目条件收口。
+            "probe_pack", "probe_pack_command");
 
     private TenantGuard() {
     }

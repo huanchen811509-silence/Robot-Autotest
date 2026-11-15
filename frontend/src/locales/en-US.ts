@@ -2457,6 +2457,8 @@ export default {
       confirmHint: 'Collection runs the 10 read-only commands above and stores one record.',
       collected: 'Collected, record #{id}',
       historyTitle: 'Collection history',
+      usernamePlaceholder: 'Remote user (optional)',
+      credentialPlaceholder: 'Credential ID (required for remote)',
     },
     topology: {
       title: 'Topology & snapshots',
@@ -2483,6 +2485,14 @@ export default {
       created: 'Snapshot created #{id}',
       defaultName: 'Current environment',
       createDescription: 'Generated from current assets on the environment page',
+      deviceTitle: 'Item-based device snapshots',
+      deviceHint: 'Real collected facts per item; missing items show a reason, never a placeholder.',
+      deviceIdle: 'No device snapshots yet; run an explicit collection first.',
+      itemColKey: 'Item key',
+      itemColCategory: 'Category',
+      itemColValue: 'Value / reason',
+      itemCompare: 'Compare by item',
+      itemNoDiff: 'The two item-based snapshots are identical',
     },
     prepare: {
       title: 'Environment preparation',

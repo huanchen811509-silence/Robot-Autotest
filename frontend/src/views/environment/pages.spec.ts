@@ -33,12 +33,17 @@ const INTERACTIVE_VIEWS = [
   'TopologySnapshotView.vue',
 ] as const
 
+// v5.15.0 / W65-14：6 页收敛为 4 页；prepare / analysis 旧深链保留 redirect。
 const ROUTES: Array<[path: string, name: string]> = [
   ['/environment/overview', 'environment-overview'],
   ['/environment/collect', 'environment-collect'],
   ['/environment/topology', 'environment-topology'],
-  ['/environment/prepare', 'environment-prepare'],
-  ['/environment/analysis', 'environment-analysis'],
+  ['/environment/connections', 'environment-connections'],
+]
+
+const LEGACY_REDIRECTS: Array<[path: string, target: string]> = [
+  ['/environment/prepare', '/environment/overview'],
+  ['/environment/analysis', '/environment/topology'],
 ]
 
 const WRITE_RE = /method\s*:\s*['"](POST|PUT|DELETE|PATCH)['"]|requestMultipart/i
@@ -56,11 +61,22 @@ function apiSource(): string {
 }
 
 describe('FR-v3.11-02 环境与拓扑 5 页', () => {
-  it('5 条路由都解析到真实页面（不落到 not-found）', () => {
+  it('4 条主路由都解析到真实页面（不落到 not-found）', () => {
     for (const [path, name] of ROUTES) {
       const matched = router.resolve(path).matched.at(-1)?.name
       expect(matched, path).toBe(name)
       expect(matched).not.toBe('not-found')
+    }
+  })
+
+  it('旧深链 prepare / analysis 保留路由并重定向到收敛后的页面（不是 404）', () => {
+    for (const [path, target] of LEGACY_REDIRECTS) {
+      // Vue Router 的 resolve 不跟随 redirect（只有导航才跟随），
+      // 所以这里同时验「原路由仍在」与「路由记录的 redirect 指向收敛后的目标页」。
+      const matched = router.resolve(path).matched.at(-1)?.name
+      expect(matched, path).not.toBe('not-found')
+      const record = router.getRoutes().find((route) => route.path === path)
+      expect(record?.redirect, path).toBe(target)
     }
   })
 
@@ -118,10 +134,12 @@ describe('FR-v3.11-02 环境与拓扑 5 页', () => {
     expect(source('EnvironmentPrepareView.vue')).not.toMatch(WRITE_RE)
   })
 
-  it('API 层：取数函数一律 GET，写只出现在 collect / create / diff 三处', () => {
+  it('API 层：取数函数一律 GET，写只出现在 6 处显式动作', () => {
     const text = apiSource()
     const postCount = (text.match(/method:\s*'POST'/g) ?? []).length
-    expect(postCount).toBe(3)
+    // v5.15.0：原 3 处 collect / create / diff 不变，新增按项对比、LLDP 导入、
+    // 环境闸门 3 处显式 POST；取数仍一律 GET，禁止 PUT / DELETE 的判据不动。
+    expect(postCount).toBe(6)
     for (const name of ['commands', 'list', 'detail', 'profiles', 'snapshots', 'latest']) {
       const start = text.indexOf(`  ${name}(`)
       expect(start, name).toBeGreaterThan(-1)
@@ -142,11 +160,11 @@ describe('FR-v3.11-02 环境与拓扑 5 页', () => {
     expect(spec?.items[0].reason).toContain('GPU')
   })
 
-  it('「环境与拓扑」一级分组含 5 个二级项，路径与路由一致', () => {
+  it('「环境与拓扑」一级分组收敛为 4 个二级项，路径与路由一致', () => {
     const group = NAVIGATION.find((node) => node.key === 'environment') as NavGroup
     expect(group).toBeTruthy()
     expect(isGroup(group)).toBe(true)
-    expect(group.children.length).toBeGreaterThanOrEqual(5)
+    expect(group.children.length).toBe(4)
     const paths = group.children.map((child) => child.path)
     for (const [path] of ROUTES) expect(paths, path).toContain(path)
   })

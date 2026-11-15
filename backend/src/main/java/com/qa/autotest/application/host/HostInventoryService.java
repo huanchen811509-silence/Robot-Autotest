@@ -2,6 +2,7 @@ package com.qa.autotest.application.host;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.qa.autotest.application.asset.CredentialService;
+import com.qa.autotest.application.env.DeviceSnapshotService;
 import com.qa.autotest.application.iam.AuditService;
 import com.qa.autotest.application.repository.HostInventoryRepository;
 import com.qa.autotest.common.BusinessException;
@@ -40,6 +41,7 @@ public class HostInventoryService {
     private final ObjectMapper mapper;
     private final CredentialService credentials;
     private final AuditService audit;
+    private final DeviceSnapshotService snapshots;
 
     public HostInventoryService(HostInventoryCollector collector,
                                 NetworkDeviceCollector networkCollector,
@@ -47,7 +49,8 @@ public class HostInventoryService {
                                 HostInventoryRepository repository,
                                 ObjectMapper mapper,
                                 CredentialService credentials,
-                                AuditService audit) {
+                                AuditService audit,
+                                DeviceSnapshotService snapshots) {
         this.collector = collector;
         this.networkCollector = networkCollector;
         this.bmcCollector = bmcCollector;
@@ -55,6 +58,7 @@ public class HostInventoryService {
         this.mapper = mapper;
         this.credentials = credentials;
         this.audit = audit;
+        this.snapshots = snapshots;
     }
 
     /** 采集 + 入库，返回落库后的记录（含 id，前端据此拉详情）。 */
@@ -95,6 +99,17 @@ public class HostInventoryService {
                     () -> new BusinessException(ErrorCode.INTERNAL_ERROR, "采集结果写入后读不回来"));
             audit.record("host.inventory.collect", "device_host_spec", String.valueOf(id),
                     detail + "; status=" + saved.status());
+            // v5.15.0 / FR-v5.15-02：主清单已落库后按项双写快照。
+            // 只填空不覆盖：同 hash 复用、items 用 INSERT IGNORE。
+            // 双写失败不回滚已采到的主事实，但必须留下失败审计，不许静默吞掉。
+            try {
+                long snapshotId = snapshots.capture(projectId, saved);
+                audit.record("device.snapshot.capture", "device_snapshot",
+                        String.valueOf(snapshotId), "source=" + id);
+            } catch (RuntimeException snapshotFailure) {
+                audit.recordFailure("device.snapshot.capture", "device_snapshot", "0",
+                        "source=" + id + "; " + snapshotFailure.getMessage());
+            }
             return saved;
         } catch (BusinessException ex) {
             audit.recordFailure("host.inventory.collect", "device_host_spec", "0",

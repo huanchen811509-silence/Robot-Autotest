@@ -34,6 +34,8 @@ const history = ref<HostInventoryRecord[]>([])
 const selectedId = ref<number | null>(null)
 const spec = ref<HostInventorySpec | null>(null)
 const hostInput = ref('localhost')
+const usernameInput = ref('')
+const credentialIdInput = ref('')
 const confirming = ref(false)
 const collecting = ref(false)
 const loading = ref(false)
@@ -94,7 +96,15 @@ async function collectNow() {
   collecting.value = true
   notice.value = ''
   try {
-    const record = await hostInventoryApi.collect(projectId.value, { host: hostInput.value.trim() || 'localhost' })
+    const credentialId = credentialIdInput.value.trim()
+      ? Number(credentialIdInput.value.trim()) : undefined
+    const username = usernameInput.value.trim() || undefined
+    const record = await hostInventoryApi.collect(projectId.value, {
+      host: hostInput.value.trim() || 'localhost',
+      ...(credentialId ? { credentialId } : {}),
+      ...(username ? { username } : {}),
+      ...(credentialId ? { confirm: true } : {}),
+    })
     notice.value = t('env.collect.collected', { id: record.id })
     await load()
     await select(record.id)
@@ -139,6 +149,10 @@ watch(projectId, () => { selectedId.value = null; spec.value = null; load() })
       <div class="action">
         <NInput v-model:value="hostInput" :placeholder="t('env.collect.hostPlaceholder')"
           data-testid="collect-host" style="max-width: 220px" />
+        <NInput v-model:value="usernameInput" :placeholder="t('env.collect.usernamePlaceholder')"
+          data-testid="collect-username" style="max-width: 180px" />
+        <NInput v-model:value="credentialIdInput" :placeholder="t('env.collect.credentialPlaceholder')"
+          data-testid="collect-credential" style="max-width: 180px" />
         <NButton type="primary" :disabled="collecting" data-testid="collect-confirm" @click="collectNow">
           {{ confirming ? t('env.collect.confirmAgain') : t('env.collect.trigger') }}
         </NButton>

@@ -1,0 +1,30 @@
+v5.15.0 W9 综合真实 HTTP + DB 探针
+运行期 HEAD=be2cff8
+PASS=21 FAIL=4 TOTAL=25
+CLEANUP :: lldp_deleted=ok; fixture_items=ok; fixture_snapshot=ok; run_note_restored=ok; leftover_lldp=0; leftover_fixture=0
+
+[PASS] 登录取得 Bearer token :: HTTP=200
+[PASS] 探针包清单真实 200 且含平台预置包 :: HTTP=200 codes=['HOST_LINUX_DEFAULT']
+[FAIL] 按 device_type 选包返回 10 类命令 :: HTTP=500 count=0
+[FAIL] 命令文本来自唯一真源（10 类键与 HostInventory 一致） :: keys=[]
+[FAIL] required 语义：6 项必采 / 4 项可选 :: required=[]
+[PASS] 未知 device_type 不静默回落（404 点名） :: HTTP=404 msg=未找到 device_type=UNKNOWN 的探针包
+[FAIL] required 评估读真实快照且点名缺项 :: HTTP=500 missing=None
+[PASS] 三源分级统计真实 200 且带优先级 :: HTTP=200 priority=MEASURED > INFERRED > PLANNED
+[PASS] LLDP 邻居真实导入 1 条实测链路 :: HTTP=200 result={'imported': 1, 'skipped': 0, 'plannedKept': 0}
+[PASS] 同设备对重复导入去重（skipped=1） :: HTTP=200 result={'imported': 0, 'skipped': 1, 'plannedKept': 0}
+[PASS] 实测盖规划不覆盖：PLANNED 行数不变 :: before=0 after=0
+[PASS] 导入行落 confidence=MEASURED / source=LLDP :: rows=1
+[PASS] 导入后 trust 统计出现 MEASURED 桶 :: measured=1
+[PASS] 无声明路径放行且标记 undeclared=true :: HTTP=200 verdict={'pass': True, 'undeclared': True, 'snapshotId': 3, 'failures': [], 'note': 'caseKey=TC-W9-UNDECLARED; undeclared=true; pass=true; snapshotId=3', 'notedRows': 1}
+[PASS] 无声明也写可查询留痕（notedRows=1） :: notedRows=1
+[PASS] 留痕查询端点真实 200 且能查到该 run :: HTTP=200 rows=1 runId=EHT-FAKE-DEL-1794704818956
+[PASS] 留痕只填空不覆盖非空（notedRows=0） :: notedRows=0
+[PASS] 已存在的留痕未被第二次改写 :: note=caseKey=TC-W9-UNDECLARED; undeclared=true; pass=true; snapshotId=3
+[PASS] 声明 400G 而快照 100G 返回 409 :: HTTP=409
+[PASS] 409 点名 key / expected / actual / snapshotId :: message=环境闸门未通过：caseKey=TC-W9-400G; undeclared=false; pass=false; snapshotId=4 | key=ROCE; expected=400; actual=100; snapshotId=4
+[PASS] 满足声明的环境放行（100G 声明对 100G 快照） :: HTTP=200
+[PASS] 远程采集凭证入参真实透传（不存在的凭据被点名） :: HTTP=404 msg=凭据不存在
+[PASS] 导航环境组不再含 prepare / analysis 叶子 :: removed=2
+[PASS] 旧深链保留 redirect（不删路由） :: redirect=2
+[PASS] W1 按项端点零回归 :: HTTP=200 rows=3
