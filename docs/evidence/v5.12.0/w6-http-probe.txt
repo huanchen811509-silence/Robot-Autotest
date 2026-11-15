@@ -1,0 +1,26 @@
+v5.12.0 W6 真实 HTTP 探针（部署后执行）
+HEAD=b0a6362  BASE=http://127.0.0.1:8081
+PASS=22 FAIL=0 TOTAL=22
+------------------------------------------------------------------------
+[PASS] 登录取得 Bearer token :: HTTP 200
+[PASS] 运行期 build-info commit == HEAD :: runtime=b0a6362 head=b0a6362 HTTP=200
+[PASS] 全局资产列表可达 :: HTTP=200 count=13
+[PASS] 项目列表可读 :: HTTP=200 ids=[126, 125, 124, 122, 121, 120]
+[PASS] 项目 126 设备列表可达 :: HTTP=200 visible=0
+[PASS] 项目 125 设备列表可达 :: HTTP=200 visible=0
+[PASS] 项目 124 设备列表可达 :: HTTP=200 visible=0
+[PASS] 项目 122 设备列表可达 :: HTTP=200 visible=0
+[PASS] 项目 121 设备列表可达 :: HTTP=200 visible=0
+[PASS] 项目 120 设备列表可达 :: HTTP=200 visible=0
+[PASS] 项目 119 设备列表可达 :: HTTP=200 visible=0
+[PASS] 项目 118 设备列表可达 :: HTTP=200 visible=0
+[PASS] 项目 95 设备列表可达 :: HTTP=200 visible=4
+[PASS] 项目 93 设备列表可达 :: HTTP=200 visible=1
+[PASS] 项目 92 设备列表可达 :: HTTP=200 visible=0
+[PASS] 项目 80 设备列表可达 :: HTTP=200 visible=1
+[PASS] 跨项目按 id 直访被拒（非 200） :: owner=95 other=126 device=21 HTTP=404 body={"code":40400,"codeName":"NOT_FOUND","message":"设备不存在","data":null,"success":false}
+[PASS] 全局 PUT 可达且管理员权限通过（不存在资产返 404） :: HTTP=404 body={"code":40400,"codeName":"NOT_FOUND","message":"资产不存在或不是公共资产","data":null,"success":false}
+[PASS] managementIp 仅设备可写的真实校验生效 :: HTTP=400 body={"code":40001,"codeName":"INVALID_ARGUMENT","message":"管理 IP 只适用于设备资产","data":null,"success":false}
+[PASS] 批量删空列表 fail-closed :: HTTP=400 body={"code":40001,"codeName":"INVALID_ARGUMENT","message":"批量删除列表不能为空","data":null,"success":false}
+[PASS] 批量删未知类型 fail-closed :: HTTP=400 body={"code":40001,"codeName":"INVALID_ARGUMENT","message":"不支持的资产类型：ROUTER","data":null,"success":false}
+[PASS] 批量删逐条结果（NOT_FOUND 不混入 conflicted） :: HTTP=200 body={"code":0,"codeName":"OK","message":"OK","data":{"deleted":0,"conflicted":0,"items":[{"id":999999999,"deleted":false,"reason":"NOT_FOUND","projects":[]}]},"success":true}

@@ -19,17 +19,20 @@ import {
   type MatrixRow,
 } from '@/config/assetWorkspaceMatrix'
 
-function readSource(rel: string): string {
+function readSource(rel: string, fallback?: string): string {
   for (const base of [process.cwd(), join(process.cwd(), '..')]) {
-    const full = join(base, rel)
-    if (existsSync(full)) return readFileSync(full, 'utf-8')
+    for (const candidate of fallback ? [rel, fallback] : [rel]) {
+      const full = join(base, candidate)
+      if (existsSync(full)) return readFileSync(full, 'utf-8')
+    }
   }
   throw new Error(`source not found: ${rel}`)
 }
 
 /** PRD §3 表格：从「## 3.」到「> 这张表是唯一真值」之间的 `|` 数据行。 */
 function prdMatrixRows(): number {
-  const src = readSource('docs/release/_draft/v5.12.0/PRD.md')
+  // W6：草稿迁入正式目录后，机检必须跟到新路径；保留草稿路径作为开发期回退
+  const src = readSource('docs/release/v5.12.0/PRD.md', 'docs/release/_draft/v5.12.0/PRD.md')
   const section = src.split('## 3. 资产工作台差异矩阵')[1]?.split('> 这张表是唯一真值')[0]
   if (!section) throw new Error('PRD §3 section not found')
   // 表头是「| 列 / 动作 | ...」，数据行里也有以「列：」开头的四行，不能一刀切掉

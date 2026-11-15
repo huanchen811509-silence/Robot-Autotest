@@ -10,7 +10,7 @@
 import type { TestCase } from '@/api/cases'
 
 /** 成员详情 DTO：视图里能显示的字段全集。加字段必须同步 `CASE_SET_MEMBER_FIELDS`。 */
-export interface CaseSetMemberView extends TestCase {}
+export type CaseSetMemberView = TestCase
 
 /** 接口字段清单（与上面的 interface 逐字段由单测核对，防止「加了字段忘了登记」）。 */
 export const CASE_SET_MEMBER_FIELDS = [

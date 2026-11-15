@@ -45,7 +45,7 @@ const { t } = useI18n()
 }
 .set-nav {
   min-width: 0;
-  max-height: calc(100vh - 210px);
+  max-height: calc(100vh - 200px);
   overflow: auto;
   padding-right: 4px;
 }
@@ -53,14 +53,14 @@ const { t } = useI18n()
 .case-set-empty {
   box-sizing: border-box;
   min-height: 220px;
-  padding: 48px 24px;
-  border: 1px dashed var(--n-border-color, #d9d9d9);
+  padding: 44px 24px;
+  border: 1px dashed var(--border);
   border-radius: 8px;
   text-align: center;
 }
 .case-set-empty-title { margin: 0 0 8px; font-size: 16px; font-weight: 600; }
 .muted { margin: 0; opacity: 0.7; font-size: 13px; }
-@media (max-width: 1100px) {
+@media (max-width: 1080px) {
   .case-set-workspace { grid-template-columns: minmax(0, 1fr); }
   .set-nav { max-height: 320px; }
 }

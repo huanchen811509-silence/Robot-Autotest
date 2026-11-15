@@ -37,7 +37,7 @@ async function mount(scope: 'project' | 'global'): Promise<{ root: HTMLElement; 
       scope,
       columns: cols,
       rows: [],
-      rowKey: (row: any) => (row as { id: number }).id,
+      rowKey: (row: object) => (row as { id: number }).id,
     }, {
       actions: (slotProps: { actions: { key: string }[] }) => {
         actions = slotProps.actions.map((a) => a.key)

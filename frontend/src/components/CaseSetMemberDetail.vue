@@ -61,7 +61,7 @@ function text(field: CaseSetMemberField): string {
   margin: 0;
 }
 .member-detail-row { display: flex; gap: 8px; min-width: 0; }
-.member-detail-label { flex: 0 0 96px; opacity: 0.7; font-size: 12px; }
+.member-detail-label { flex: 0 0 100px; opacity: 0.7; font-size: 12px; }
 .member-detail-value { margin: 0; min-width: 0; overflow-wrap: anywhere; font-size: 13px; }
 .member-detail-script { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
 .muted { opacity: 0.7; font-size: 13px; }

@@ -26,7 +26,7 @@ function readSource(rel: string): string {
 
 function interfaceFields(): string[] {
   const src = readSource('src/config/caseSetMemberColumns.ts')
-  const block = /export interface CaseSetMemberView extends TestCase \{\}/.exec(src)
+  const block = /export type CaseSetMemberView = TestCase\b/.exec(src)
   if (!block) throw new Error('CaseSetMemberView 形态变了，本测试必须跟上')
   // 它继承 TestCase；字段清单在 cases.ts，逐字段抽出来比对
   const cases = readSource('src/api/cases.ts')

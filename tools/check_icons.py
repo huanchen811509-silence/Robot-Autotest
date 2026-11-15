@@ -46,9 +46,12 @@ ICONS_BLOCK_RE = re.compile(r"const ICONS = \{(.*?)\}\s*as const", re.S)
 KEY_RE = re.compile(r"^\s*([A-Za-z][\w]*)\s*:", re.M)
 
 # icon="x" / :icon="'x'" —— 只认小写开头的裸标识符，避免把表达式当名字。
-# `(?<!:)` 是必须的：`:icon="emptyIcon"` 是**变量**，没有这个后顾，`\b` 会在 `:` 与 `i`
-# 之间成立，于是把一个变量名当成图标名报「未定义」（UX-05 表格壳第一次用动态 icon 时踩到）。
-ICON_ATTR_RE = re.compile(r"""(?<!:)\bicon\s*=\s*["']([a-z][\w]*)["']""")
+# 后顾断言 `[:\w-]` 两条都不能少：
+#   - `:` -> `:icon="emptyIcon"` 是动态绑定，不是静态名字（UX-05 表格壳踩到）；
+#   - `-` / 词字符 -> `empty-icon="emptyIcon"`、`data-icon="x"` 是**别的属性**，
+#     不能因为 `-` 是非单词字符就把中间的 `icon` 拆出来当独立属性（W62-08 工作台踩到）。
+# 少任何一条都会把正确的 Vue 写法判成「未定义图标名」，逼人改坏代码。
+ICON_ATTR_RE = re.compile(r"""(?<![:\w-])icon\s*=\s*["']([a-z][\w]*)["']""")
 ICON_BIND_RE = re.compile(r""":icon\s*=\s*["']'([a-z][\w]*)'["']""")
 # 动态绑定（`:icon="expr"`）：无法静态判定，只计数上报，不假装检查过
 ICON_EXPR_RE = re.compile(r""":icon\s*=\s*"([^"]*)\"""")
@@ -218,7 +221,33 @@ def self_test() -> int:
             ok = False
             print(f"[SELFTEST] FAIL 动态绑定被误判：{r.violations}")
 
-    print("[SELFTEST] " + ("通过：四类场景均符合预期" if ok else "存在未拦截场景"))
+    # 5) 复合属性名不得被拆出 `icon`：W62-08 的 AssetWorkspace 用
+    #    `empty-icon="emptyIcon"` 传图标变量，旧正则把它当成静态名 `emptyIcon` 判红。
+    #    同一条用例里再验证「真正的静态 icon="shield" 仍被拦」，防止把正则改松到失去判定力。
+    with tempfile.TemporaryDirectory() as d:
+        compound_vue = (
+            '<template><AppIcon name="audit" />'
+            '<DataTable empty-icon="emptyIcon" :empty-icon="emptyIcon" /></template>\n'
+        )
+        icon_map, src = build(Path(d), good_keys, compound_vue)
+        r = evaluate(icon_map, src)
+        if not r.violations and r.hits >= 1:
+            print("[SELFTEST] 通过：复合属性 empty-icon 不误报（静态引用 %d 处）" % r.hits)
+        else:
+            ok = False
+            print(f"[SELFTEST] FAIL 复合属性被误判：{r.violations}")
+
+    with tempfile.TemporaryDirectory() as d:
+        static_bad = '<template><AppIcon name="audit" /><EmptyState icon="shield" /></template>\n'
+        icon_map, src = build(Path(d), good_keys, static_bad)
+        r = evaluate(icon_map, src)
+        if any("shield" in v for v in r.violations):
+            print('[SELFTEST] 通过：真实的静态 icon="shield" 仍被拦')
+        else:
+            ok = False
+            print(f"[SELFTEST] FAIL 静态未定义名没被拦：{r.violations}")
+
+    print("[SELFTEST] " + ("通过：六类场景均符合预期" if ok else "存在未拦截场景"))
     return 0 if ok else 1
 
 

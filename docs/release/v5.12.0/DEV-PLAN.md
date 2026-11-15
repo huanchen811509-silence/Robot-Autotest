@@ -103,7 +103,7 @@ W5 必须在 W4 之后（动作挂在 `AssetWorkspace` 上）；**W6 的差异�
 
 | 项 | 内容 |
 |---|---|
-| 目标 | 把 PRD §3 的 20 行矩阵落成 `assetWorkspaceMatrix.ts`（列与动作的可见性唯一数据源） |
+| 目标 | 〔W6 修正〕把 PRD §3 的 **16 行**矩阵落成 `assetWorkspaceMatrix.ts`（列与动作的可见性唯一数据源） |
 | 改动面 | 新增配置文件 + 类型定义；矩阵行数与 PRD §3 逐行对应 |
 | 出口判据 | ① 行数与 PRD §3 表格一致（计数比对）；② 每行含 `key` / `projectScope` / `globalScope` / `note`；③ 无「代码里另写一份 v-if 判断」 |
 | 验证命令 | `cd frontend && npx vitest run src/config/assetWorkspaceMatrix.spec.ts` |
@@ -136,7 +136,7 @@ W5 必须在 W4 之后（动作挂在 `AssetWorkspace` 上）；**W6 的差异�
 | 目标 | 删除被替换的旧页面主体；资产相关页面总行数 ≤1530（原 2557 的 60%） |
 | 改动面 | 删除旧模板段落；`git tag v5.12.0-pre-merge` |
 | 出口判据 | ① 行数统计达标；② 无死引用（`vue-tsc` 无输出）；③ tag 已打（回滚可恢复） |
-| 验证命令 | `cd frontend && wc -l src/views/AssetsView.vue src/views/GlobalAssetsView.vue src/components/AssetWorkspace.vue` |
+| 验证命令 | 〔W6 修正路径〕`cd frontend && wc -l src/views/AssetsView.vue src/views/global/GlobalAssetsView.vue src/components/AssetWorkspace.vue` |
 | 依赖 | W62-09 |
 
 ---
@@ -157,7 +157,7 @@ W5 必须在 W4 之后（动作挂在 `AssetWorkspace` 上）；**W6 的差异�
 
 | 项 | 内容 |
 |---|---|
-| 目标 | 补 `PUT /api/global/assets/{id}`（承接 5.9 FR-07 判据 3）；项目侧补前端编辑入口 |
+| 目标 | 〔W6 实测修正〕**扩展 5.9 既有的 `PUT /api/global/assets/{type}/{id}`**（只写 name → 可选 managementIp）；项目侧补前端编辑入口 |
 | 改动面 | 后端 Controller/Service + 权限判定（仅管理员）+ 单测；前端编辑表单 |
 | 出口判据 | ① 两 scope 都能改名称/管理 IP，保存后 DB 与界面一致；② 非管理员调用全局 PUT → 403；③ 契约快照更新 |
 | 验证命令 | `cd backend && mvn -o -B -Dtest=GlobalAssetUpdateTest test` |
@@ -180,7 +180,7 @@ W5 必须在 W4 之后（动作挂在 `AssetWorkspace` 上）；**W6 的差异�
 | 目标 | 管理员批量删；被引用返 409 并点名引用项目；未引用成功 |
 | 改动面 | 全局删端点（批量）+ 前端批量选择 + 影响面 |
 | 出口判据 | ① 选 3 台（1 被引用）→ 2 成功 1 返 409；② 409 文案含项目名；③ 删除确认含影响面 |
-| 验证命令 | `curl -s -X DELETE "$API/api/global/assets/batch" -d '{"ids":[1,2,3]}' \| jq` |
+| 验证命令 | 〔W6 修正方法与路径〕`curl -s -X POST "$API/api/global/assets/batch-delete" -H 'Content-Type: application/json' -d '{"type":"DEVICE","ids":[1,2,3]}' \| jq` |
 | 依赖 | W62-12 |
 
 ---
@@ -214,7 +214,7 @@ W5 必须在 W4 之后（动作挂在 `AssetWorkspace` 上）；**W6 的差异�
 | 目标 | `GATES_RESULT FAILS=0`；六份齐全；总纲状态回写 |
 | 改动面 | `docs/release/v5.12.0/*`（从 `_draft/` 迁入）、总纲交付表 |
 | 出口判据 | ① 门禁 `FAILS=0`；② `check_release_docs.py v5.12.0` PASS；③ 表格机检全 PASS |
-| 验证命令 | `python3 tools/check_gates.py 2>&1 \| tail -3` |
+| 验证命令 | 〔W6 修正：仓库里没有 `tools/check_gates.py`〕`bash scripts/gates.sh 2>&1 \| grep GATES_RESULT`（判据 = `FAILS=0 UNJUDGED=0`） |
 | 依赖 | W1 ~ W5 全部 |
 
 ---
@@ -224,7 +224,7 @@ W5 必须在 W4 之后（动作挂在 `AssetWorkspace` 上）；**W6 的差异�
 | 变更 | 类型 | 影响 | 处理 |
 |---|---|---|---|
 | `/api/case-sets/{id}/items` 响应加 `scriptPath`/`scriptName`/`bindingState` | 响应新字段 | 前端成员表 | 契约重生成 |
-| `PUT /api/global/assets/{id}` | 新端点 | 全局编辑 | 契约重生成 |
+| `PUT /api/global/assets/{type}/{id}` | 〔W6 修正〕**既有端点扩字段** | 全局编辑（新增可选 `managementIp`） | 契约重生成，451/370 PASS |
 | 全局资产批量删端点 | 新端点 | 管理员批量操作 | 契约重生成 |
 | 成员批量排序/移出端点（若缺） | 新端点 | 批量动作条 | 契约重生成 |
 | 数据库 | **预期零迁移** | 若 join 需索引则 `V11_71` | 配 `.down.sql` |
@@ -257,3 +257,34 @@ W5 必须在 W4 之后（动作挂在 `AssetWorkspace` 上）；**W6 的差异�
 | 日期 | 修订 | 依据 |
 |---|---|---|
 | 2026-11-15 | 首版：6 波 17 个 WBS；矩阵先行、合并后补 CRUD；打 pre-merge tag 保回滚 | `PRD.md` v5.12.0 + 评估 02 §四 + 评估 03 §一~§二 |
+| 2026-11-15 | **W6 回写**：修正矩阵行数 20→16、W62-10 路径、W62-12「新增 PUT」口径、W62-14 批量删方法与路径、§8 接口清单 | W1~W5 实测（见 §12） |
+
+## 12. ⑦ 回写：实际完成情况与偏差（W6）
+
+### 12.1 六波实际完成情况
+
+| 波次 | WBS | 完成 | 提交 | 出口判据复核 |
+|---|---|---|---|---|
+| W1 | W62-01 ~ 02 | 完成 | `2a25df0` | 后端 5 条 + 布局壳 4 条；前端 140 文件 / 1103 例 |
+| W2 | W62-03 ~ 04 | 完成 | `2a25df0` | 幂等 10 条（6 条注入判红）；`CaseScriptLink` 接入 |
+| W3 | W62-05 ~ 06 | 完成 | `2d22a95` | 批量移出 5 条；CSV 4 条；契约 450/369 PASS |
+| W4 | W62-07 ~ 10 | 完成（NFR-03 未达成） | `6146484` | 矩阵 12 条 + 工作台 5 条 + 两页 31 条回归；tag `v5.12.0-pre-merge` 存在 |
+| W5 | W62-11 ~ 14 | 完成 | `b0a6362` | 后端 17 条；资产页 42 条；契约 451/370 PASS |
+| W6 | W62-15 ~ 17 | 完成（读数见测试报告 §7） | 本版收口 | 门禁 / 发布文档机检 / 表格机检 |
+
+### 12.2 计划偏差（逐条写明原因）
+
+| # | 偏差 | 原因 | 影响 |
+|---|---|---|---|
+| B-1 | W62-01 未补 `LEFT JOIN` | 5.11 已交付 `CaseScriptLookup`，再写会形成第二份同源 SQL | 零新增端点；改为 5 条同源测试 |
+| B-2 | W62-12 不是「新增 PUT」 | 5.9 已有端点，真实缺口是 `managementIp` 不透传 | 保持 1 参 `RenameRequest` 与 3 参前端调用兼容 |
+| B-3 | W62-14 用 `POST /batch-delete` 而非 `DELETE /batch` | `DELETE` 带 body 在代理与网关上兼容差；逐条结果需要响应体 | 契约 +1 endpoint；`BatchDeleteResult` 逐条返回 |
+| B-4 | W62-10 行数收敛未达成 | 保留两页独有弹窗 / 拓扑 / 租约 / 表单以换零功能回退 | 2725 行 > 1530；已登记不冒充达成 |
+| B-5 | 零迁移（未追加 `V11_71`） | 成员脚本与资产引用都复用既有表列，实测不需要索引 | NFR-01 达成 |
+| B-6 | W62-17 原验证命令指向不存在的 `tools/check_gates.py` | 全仓 `find` 无此文件；门禁判据由 `gates.sh` 自己输出 | 已改为读 `GATES_RESULT` 行 |
+
+### 12.3 未闭合的验收项
+
+- 真视口截图 / 1000 行 fps / 3000 分类耗时：无采样环境，按 PARTIAL 登记（测试报告 §5 L-62-06）。
+- 跨项目越界直访与全局总数已由 W6 真实 HTTP 验证（404 / 13 台）；授权后列表与解除授权仍需双项目样本，留 5.13。
+- 发版、破坏性变更与对外口径：**由大师拍板**，本版只做到「内部收口」。

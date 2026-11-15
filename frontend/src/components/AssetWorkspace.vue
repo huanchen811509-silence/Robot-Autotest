@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup lang="ts" generic="T extends object">
 /**
  * 资产工作台（v5.12 / W62-08 / FR-v5.12-06）。
  *
@@ -12,39 +12,50 @@
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import type { DataTableColumns, DataTableRowKey } from 'naive-ui'
 import DataTable from '@/components/DataTable.vue'
+import type { IconName } from '@/components/iconMap'
+import type { IllustrationName } from '@/components/EmptyIllustration.vue'
 import {
   filterColumnsByMatrix,
   visibleActions,
   type AssetScope,
 } from '@/config/assetWorkspaceMatrix'
 
+/** 矩阵只按 `key` 过滤；列对象运行时一定带 key，形状断言集中在这一处。 */
+type KeyedColumn = { key: string }
+
 const props = withDefaults(defineProps<{
   scope: AssetScope
-  columns: any[]
-  rows: any[]
-  rowKey: (row: any) => string | number
+  columns: DataTableColumns<T>
+  rows: T[]
+  rowKey?: (row: T) => DataTableRowKey
   loading?: boolean
   error?: boolean
   emptyTitle?: string
   emptyDescription?: string
-  emptyIcon?: any
-  emptyIllustration?: any
+  emptyIcon?: IconName
+  emptyIllustration?: IllustrationName
   maxHeight?: number
   flexHeight?: boolean
 }>(), {
+  rowKey: undefined,
   loading: false,
   error: false,
   emptyTitle: '',
   emptyDescription: '',
   emptyIcon: 'boxes',
-  emptyIllustration: '',
+  emptyIllustration: undefined,
   maxHeight: undefined,
   flexHeight: false,
 })
 
 const { t } = useI18n()
-const filteredColumns = computed(() => filterColumnsByMatrix(props.scope, props.columns))
+/** 差异矩阵标 ❌ 的列在对应 scope 的渲染结果里必须消失。 */
+const filteredColumns = computed(() =>
+  filterColumnsByMatrix(props.scope, props.columns as unknown as KeyedColumn[]))
+/** 回传给严格泛型的 DataTable：过滤只删元素，不改列对象本身的形状。 */
+const tableColumns = computed(() => filteredColumns.value as unknown as DataTableColumns<T>)
 const actions = computed(() => visibleActions(props.scope))
 </script>
 
@@ -55,7 +66,7 @@ const actions = computed(() => visibleActions(props.scope))
     </div>
     <div class="list-fill" data-testid="assets-grid">
       <DataTable
-        :columns="filteredColumns"
+        :columns="tableColumns"
         :data="rows"
         :loading="loading"
         :row-key="rowKey"
