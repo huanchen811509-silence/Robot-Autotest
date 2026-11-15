@@ -1,0 +1,38 @@
+v5.13.0 W7 真实 HTTP + DB 探针（部署后执行）
+HEAD=7333338  BASE=http://127.0.0.1:8081
+TIME=2026-11-15 18:40:25
+样本：device=3 leaf-switch-01 临时改 127.0.0.1 走本机 Linux 采集器，真实命令 + 真实落库；finally 逐列还原
+PASS=32 FAIL=0 TOTAL=32
+------------------------------------------------------------------------
+[PASS] 登录取得 Bearer token :: HTTP=200
+[PASS] 运行期 build-info commit == HEAD :: HTTP=200 runtime=7333338 head=7333338
+[PASS] 后端健康探针 :: HTTP=200
+[PASS] GET /api/assets/collect-profiles 可达 :: HTTP=200 count=13
+[PASS] 画像响应不含明文凭证字段（非空响应才有意义） :: count=13 leaked=[] keys=19
+[PASS] 平台态画像覆盖公共资产（W7 修复回归） :: count=13 期望 >=13 台 PLATFORM 设备
+[PASS] 画像三态取值合法 :: states=BLOCKED,PARTIAL,READY
+[PASS] 画像状态筛选 state=READY :: HTTP=200 count=1
+[PASS] 画像状态筛选 state=PARTIAL :: HTTP=200 count=11
+[PASS] 画像状态筛选 state=BLOCKED :: HTTP=200 count=1
+[PASS] 设备 6 画像含绑定列 :: HTTP=200 mgmt=3 bmc=5
+[PASS] 项目侧画像可读（X-Project-Id=95） :: HTTP=200 OK
+[PASS] 跨项目画像被拒 :: HTTP=403 不能查询其他项目的采集画像：126
+[PASS] GET /api/assets/collect-history 可达 :: HTTP=200 count=5
+[PASS] 历史摘要不回 spec_json :: keys=collectedAt,deviceId,id,nicCount,roceMaxGbps,rocePorts,status
+[PASS] 无历史设备返回空数组而非报错 :: HTTP=200
+[PASS] 项目侧设备详情返回两个绑定字段 :: HTTP=200 keys=architecture,bmcCredentialId,deviceType,domainTag,enabled,hostKey,id,lastCheckedAt,location,managementCredentialId,managementIp,model,modelDictId,name,osFamily,osVersion,ownerId,pr
+[PASS] TC-v5.13-15 安全闸不回退 :: HTTP=400 采集需要二次确认：请求需带 confirm=true
+[PASS] TC-v5.13-13 两者都未绑 → 400 点名【防线 1】 :: HTTP=400 设备 3（leaf-switch-01）未绑定凭证，请先关联或手工指定 credentialId
+[PASS] TC-v5.13-16 首采成功自动填空（仅 NULL） :: HTTP=200 status=PARTIAL mgmt=4
+[PASS] TC-v5.13-20 手工关联写绑定 :: HTTP=200 mgmt=3
+[PASS] TC-v5.13-17 已绑 A 用 B 采集，绑定仍为 A【防线 2】 :: HTTP=200 before=3 after=3 status=PARTIAL
+[PASS] TC-v5.13-14 显式凭证写入验证事实 :: row=4|SUCCESS||source=COLLECT; channel=MGMT; result=SUCCESS; kind=-
+[PASS] TC-v5.13-06 成功采集写 SUCCESS + source=COLLECT :: row=4|SUCCESS||source=COLLECT; channel=MGMT; result=SUCCESS; kind=-
+[PASS] TC-v5.13-11 采集读绑定（不传 credentialId） :: HTTP=200 row=3|SUCCESS|source=COLLECT; channel=MGMT; result=SUCCESS; kind=-
+[PASS] TC-v5.13-08 source=VERIFY 与 source=COLLECT 可区分 :: verifyHTTP=200 VERIFY=2 COLLECT=7
+[PASS] TC-v5.13-21 解绑后画像立即回落 BLOCKED :: HTTP=200 cols=0,0 state=BLOCKED/NO_CREDENTIAL
+[PASS] TC-v5.13-44 跨项目凭证用于采集被拒 :: HTTP=400 凭证不属于本项目，不能用于采集或关联：8
+[PASS] TC-v5.13-18 / TC-v5.13-07 采集失败不填空且写 FAILED 事实 :: HTTP=200 status=FAILED mgmt=0 row=FAILED|REJECTED|source=COLLECT; channel=MGMT; result=FAILED; kind=REJECTED
+[PASS] TC-v5.13-22 项目侧提交越权凭证被拒 :: HTTP=400 凭证不属于本项目，不能用于采集或关联：1
+[PASS] 采集链路真实新增验证事实行 :: before=5 after=10
+[PASS] 临时样本 device=3 已还原 :: restored=10.202.54.1,0,0

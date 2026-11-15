@@ -2,10 +2,15 @@
 /**
  * 采集历史 + 两次对比（v5.13.0 / W63-10）。
  * 只消费摘要字段，不渲染 specJson 原文；无历史时给自解释空态而不是空表格。
+ *
+ * W7 修正：数据网格统一走 DataTable 壳（UX-05 / check_tables.py），不再写原生 <table>。
+ * 行级 data-testid 改由 rowProps 提供，空态与对比区保持原有可观测性。
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import type { DataTableColumns } from 'naive-ui'
 import type { CollectHistoryRow } from '@/api/collectProfiles'
+import DataTable from './DataTable.vue'
 import { diffCollectSnapshots, latestPair, snapshotItemsOf } from '@/utils/collectDiff'
 
 const props = defineProps<{
@@ -22,6 +27,17 @@ const diff = computed(() => diffCollectSnapshots(
 const credentialText = computed(() => props.boundCredentialName
   ? t('w63.boundCredentialLabel', { name: props.boundCredentialName })
   : t('w63.unbound'))
+
+const columns = computed<DataTableColumns<CollectHistoryRow>>(() => [
+  { title: t('w63.historyTime'), key: 'collectedAt', render: (row) => row.collectedAt ?? '-' },
+  { title: t('w63.historyCredential'), key: 'credential', render: () => credentialText.value },
+  { title: t('w63.historyResult'), key: 'status', render: (row) => row.status ?? '-' },
+  {
+    title: t('w63.historyItems'),
+    key: 'items',
+    render: (row) => `${row.nicCount} / ${row.rocePorts}`,
+  },
+])
 </script>
 
 <template>
@@ -31,24 +47,14 @@ const credentialText = computed(() => props.boundCredentialName
       {{ t('w63.historyEmpty') }}
     </div>
     <template v-else>
-      <table class="data-table" data-testid="collect-history-table">
-        <thead>
-          <tr>
-            <th>{{ t('w63.historyTime') }}</th>
-            <th>{{ t('w63.historyCredential') }}</th>
-            <th>{{ t('w63.historyResult') }}</th>
-            <th>{{ t('w63.historyItems') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="row in rows" :key="row.id" :data-testid="`collect-history-${row.id}`">
-            <td>{{ row.collectedAt ?? '-' }}</td>
-            <td>{{ credentialText }}</td>
-            <td>{{ row.status ?? '-' }}</td>
-            <td>{{ row.nicCount }} / {{ row.rocePorts }}</td>
-          </tr>
-        </tbody>
-      </table>
+      <DataTable
+        :columns="columns"
+        :data="rows"
+        :row-key="(row: CollectHistoryRow) => row.id"
+        :row-props="(row: CollectHistoryRow) => ({ 'data-testid': `collect-history-${row.id}` })"
+        :max-height="260"
+        data-testid="collect-history-table"
+      />
       <div v-if="pair.previous" data-testid="collect-diff">
         <h3>{{ t('w63.diffTitle') }}</h3>
         <p class="muted">

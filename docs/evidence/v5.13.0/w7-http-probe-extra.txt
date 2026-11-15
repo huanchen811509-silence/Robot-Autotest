@@ -1,0 +1,16 @@
+v5.13.0 W7 补充真实 HTTP + DB 探针
+HEAD=7333338  BASE=http://127.0.0.1:8081
+TIME=2026-11-15 18:43:08
+PASS=11 FAIL=0 TOTAL=11
+------------------------------------------------------------------------
+[PASS] 补充探针登录 :: HTTP=200
+[PASS] TC-v5.13-27 设备→凭证 与 凭证→设备 对数一致 :: credDevices=5 profileBound=5
+[PASS] TC-v5.13-47 项目侧按 profileState 筛选 :: HTTP=200 count=0
+[PASS] TC-v5.13-48 项目侧详情与画像绑定 id 相同 :: detail=None/None profile=None/None
+[PASS] TC-v5.13-23 关联写入审计事实 :: table=audit_log rows=4
+[PASS] TC-v5.13-05 零新增业务表（最新迁移仍为 V11_68） :: maxVersion=11.68 baseTables=110
+[PASS] db-audit.sh 通过 :: exit=0 db-audit: PASS
+[PASS] TC-v5.13-43 项目私有设备在项目内采集（原 404 消失） :: HTTP=200 status=PARTIAL OK
+[PASS] TC-v5.13-42 项目授权来的平台设备在项目内采集 :: HTTP=200 status=PARTIAL OK
+[PASS] TC-v5.13-42 采集事实真实落库 :: rows=1
+[PASS] 补充探针临时样本已还原（device 20 / 6 + 新增引用） :: d20=10.202.54.101,0 d6=10.202.54.101,3
