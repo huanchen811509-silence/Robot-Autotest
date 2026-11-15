@@ -64,7 +64,7 @@ W5 必须在 W3-15 之后（通则要落在真实页面上）；W7 最后，且 
 | 目标 | 删有项目角色的用户不再 500；删组不留孤儿；删除前返回影响面 |
 | 改动面 | `UserRepositoryJdbc.delete`（补 `project_member_role` 清理）、`GroupRepositoryJdbc.delete`、`UserService`/`GroupService` 的 `impact` 端点、单测 |
 | 出口判据 | ① 复现用例（2 个项目有角色的用户）由 500 转 200；② 影响面响应含 `projectRoleCount` / `groupRelationCount`；③ 在 v5.8 收口 commit 上回放判红（500） |
-| 验证命令 | `cd backend && mvn -o -B -Dtest=UserServiceTest+GroupServiceTest test` |
+| 验证命令 | `cd backend && mvn -o -B -Dtest=UserServiceTest,GroupServiceTest test` |
 | 依赖 | W59-02 |
 
 ---
@@ -78,7 +78,7 @@ W5 必须在 W3-15 之后（通则要落在真实页面上）；W7 最后，且 
 | 目标 | 三源并集写成一个 `ProjectVisibilitySql`（常量或类），`visibleProjects` 与 `requireProjectAccess` 共用 |
 | 改动面 | 新增 `application/iam/ProjectVisibilitySql.java`；`AccessControlService:145-173` 改为调用它 |
 | 出口判据 | ① 两处调用同一常量（代码检查：`project_member` 字面量在 iam 包内只出现 1 次）；② 单测矩阵 3 账号 × 5 项目：并集内项目 `requireProjectAccess` 必不抛 403 |
-| 验证命令 | `cd backend && mvn -o -B -Dtest=AccessControlServiceTest+VisibilityMatrixTest test` |
+| 验证命令 | `cd backend && mvn -o -B -Dtest=AccessControlServiceTest,VisibilityMatrixTest test` |
 | 依赖 | W59-03 |
 
 ### W59-06 三源并集与来源字段
@@ -98,7 +98,7 @@ W5 必须在 W3-15 之后（通则要落在真实页面上）；W7 最后，且 
 | 目标 | 有效角色 = `project_member_role` ∪ `project_group_role`（按 `user_group_member` 展开），同源计算；修 `GroupsView.vue:58` 的 `userId=0` |
 | 改动面 | `AccessControlService` 角色计算、`EffectiveRoleResolver` 收敛为唯一入口、`GroupsView.vue`、`PermissionMatrix` 不新增分支 |
 | 出口判据 | ① 仅组授权的账号访问项目 API → 200；② 撤销组授权 → 403；③ 组 VIEWER + 成员 ENGINEER → 取 ENGINEER；④ 界面显示角色与同刻 HTTP 结果一致（6 组样本） |
-| 验证命令 | `cd backend && mvn -o -B -Dtest=EffectiveRoleTest+AuthzMatrixTest test` |
+| 验证命令 | `cd backend && mvn -o -B -Dtest=EffectiveRoleTest,AuthzMatrixTest test` |
 | 依赖 | W59-05 |
 
 ### W59-08 幂等批量写入
@@ -108,7 +108,7 @@ W5 必须在 W3-15 之后（通则要落在真实页面上）；W7 最后，且 
 | 目标 | 单个与批量关联统一为「重复视为成功跳过」，响应含 `added`/`skipped` |
 | 改动面 | `ProjectService.addMember`（`:338-346` 去 409 分支）、`GroupService.grant`、两个响应 record、前端提示文案 |
 | 出口判据 | ① 同一用户连续添加 2 次：两次 200，第二次 `added=0 skipped=1`；② `project_member` 行数不变；③ 单/批两端点计数口径一致 |
-| 验证命令 | `cd backend && mvn -o -B -Dtest=ProjectServiceTest+GroupServiceTest test` |
+| 验证命令 | `cd backend && mvn -o -B -Dtest=ProjectServiceTest,GroupServiceTest test` |
 | 依赖 | W59-06 |
 
 ### W59-09 owner 转移事务
@@ -308,7 +308,7 @@ W5 必须在 W3-15 之后（通则要落在真实页面上）；W7 最后，且 
 | 目标 | `AuthzMatrixTest` / `AuthorizationBoundaryTest` 的期望值变化逐条列入测试报告，禁「改绿了事」 |
 | 改动面 | 测试报告新增「期望变更清单」表；`docs/evidence/v5.9.0/authz/expected-changes.md` |
 | 出口判据 | ① 每条变更含「原期望 / 新期望 / 依据判据 / 复核人」；② 无「未说明的期望变更」（机检或人工清单比对） |
-| 验证命令 | `cd backend && mvn -o -B -Dtest=AuthzMatrixTest+AuthorizationBoundaryTest test` |
+| 验证命令 | `cd backend && mvn -o -B -Dtest=AuthzMatrixTest,AuthorizationBoundaryTest test` |
 | 依赖 | W59-07、W59-18 |
 
 ### W59-27 契约与迁移收口

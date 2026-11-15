@@ -43,7 +43,7 @@ W4 与 W2/W3 改动面不重叠可并行；W5 必须在 W4 之后（要用 kerne
 | 目标 | `run.suite_count INT NULL`；`ReportIngestService` 入库时写；切分函数与 `ReportTreeService` **共用同一实现** |
 | 改动面 | 迁移两支 + 切分函数抽为 `CaseKeyPath.split()` + `ReportIngestService` 调用 + `ReportTreeService:18-26,100-122` 改为调用同一函数 |
 | 出口判据 | ① 三类样本（RF 单套件 / RF 多套件 / pytest 参数化）入库值 = 详情树一级子节点数；② 单测断言两处算法对同一 `case_key` 集合得到相同前缀数；③ 不可靠切分写 NULL 不猜 |
-| 验证命令 | `cd backend && mvn -o -B -Dtest=SuiteCountTest+CaseKeySplitTest test` |
+| 验证命令 | `cd backend && mvn -o -B -Dtest=SuiteCountTest,CaseKeySplitTest test` |
 | 依赖 | — |
 
 ### W64-03 三处列表显示套件数

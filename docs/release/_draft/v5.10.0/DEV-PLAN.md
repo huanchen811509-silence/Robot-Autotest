@@ -44,7 +44,7 @@ W2 与 W3 改动面不重叠（`ProjectWizardView` vs `TemplateWizardView`）可
 | 目标 | 去掉 `MAX(序号)+1`（`ProjectService.java:191-196`），改「序列原子递增 + `DuplicateKeyException` 重试 3 次」；极端失败返回 409 人话，不返回 500 |
 | 改动面 | `ProjectService.nextCodeSequence`、`ProjectCodeSequenceRepository`（新增）、单测（含并发） |
 | 出口判据 | ① 删最大号后新建 → 新号 = 原号 +1；② 5 并发全部成功且编号互不相同；③ 重试耗尽路径有单测且返回 409 |
-| 验证命令 | `cd backend && mvn -o -B -Dtest=ProjectCodeTest+ProjectCodeConcurrencyTest test` |
+| 验证命令 | `cd backend && mvn -o -B -Dtest=ProjectCodeTest,ProjectCodeConcurrencyTest test` |
 | 依赖 | W60-01 |
 
 ### W60-03 前缀注册校验
