@@ -156,14 +156,14 @@ class ReportLifecycleServiceTest {
     }
 
     @Test
-    @DisplayName("冻结报告拒绝删除：提示请先撤销冻结")
+    @DisplayName("冻结报告拒绝删除：提示已冻结请先解冻")
     void deleteTestReport_frozenRejected() {
         ReportLifecycleService service = stubbed(null, reportRow("FROZEN", null), 0, 0, 0);
 
         BusinessException ex = assertThrows(BusinessException.class,
                 () -> service.deleteTestReport(7L, 9L));
 
-        assertEquals("请先撤销冻结", ex.getMessage());
+        assertEquals("已冻结，请先解冻", ex.getMessage());
         verify(service, never()).execute(anyString(), anyList());
     }
 
@@ -176,7 +176,7 @@ class ReportLifecycleServiceTest {
                 () -> service.updateTestReport(7L, 9L,
                         new ReportLifecycleService.TestReportUpdate("新标题", null, null)));
 
-        assertEquals("请先撤销冻结", ex.getMessage());
+        assertEquals("已冻结，请先解冻", ex.getMessage());
     }
 
     @Test

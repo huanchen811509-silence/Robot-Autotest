@@ -65,6 +65,13 @@ public class ReportTemplateController {
         return ApiResponse.ok(null);
     }
 
+    /** v5.14.0 / W64-17：平台内置模板复制成本项目可改模板（源不变）。 */
+    @PostMapping("/{id}/copy")
+    public ApiResponse<ReportTemplateView> copy(@RequestParam long projectId,
+                                                @PathVariable long id) {
+        return ApiResponse.ok(templates.copy(projectId, id));
+    }
+
     @PutMapping("/{id}/default")
     public ApiResponse<ReportTemplateView> setDefault(@RequestParam long projectId,
                                                       @PathVariable long id) {

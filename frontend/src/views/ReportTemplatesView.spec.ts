@@ -23,6 +23,7 @@ vi.mock('@/api/reportTemplates', () => ({
     update: vi.fn(),
     remove: vi.fn(),
     setDefault: vi.fn(),
+    copy: vi.fn(),
   },
 }))
 
@@ -93,6 +94,7 @@ beforeEach(() => {
   vi.mocked(reportTemplateApi.update).mockResolvedValue(projectTemplate)
   vi.mocked(reportTemplateApi.remove).mockResolvedValue(undefined)
   vi.mocked(reportTemplateApi.setDefault).mockResolvedValue(projectTemplate)
+  vi.mocked(reportTemplateApi.copy).mockResolvedValue(projectTemplate)
   pinia = createPinia()
   setActivePinia(pinia)
   useAuthStore().projectId = 1
@@ -245,5 +247,26 @@ describe('ReportTemplatesView', () => {
     expect(rows.map((row) => row.dataset.field)).toEqual(REQUIRED)
     const nameInput = root.querySelector<HTMLInputElement>('[data-testid="template-name"]')!
     expect(nameInput.disabled).toBe(false)
+  })
+})
+
+describe('ReportTemplatesView W64-17 复制平台模板', () => {
+  it('平台模板行有复制动作、项目模板行没有；点击按 projectId + id 发请求', async () => {
+    const root = await mountView()
+    expect(root.querySelector('[data-testid="copy-1"]')).not.toBeNull()
+    expect(root.querySelector('[data-testid="copy-2"]')).toBeNull()
+    root.querySelector<HTMLButtonElement>('[data-testid="copy-1"]')!.click()
+    await tick()
+    expect(vi.mocked(reportTemplateApi.copy)).toHaveBeenCalledWith(1, 1)
+  })
+
+  it('复制成功后就地重载列表并给出回执', async () => {
+    const root = await mountView()
+    const before = vi.mocked(reportTemplateApi.list).mock.calls.length
+    root.querySelector<HTMLButtonElement>('[data-testid="copy-1"]')!.click()
+    await tick()
+    await tick()
+    expect(vi.mocked(reportTemplateApi.list).mock.calls.length).toBeGreaterThan(before)
+    expect(root.querySelector('[data-testid="notice"]')?.textContent).toContain('已复制')
   })
 })

@@ -101,3 +101,13 @@
 | R-28 | 5.11 的 `CaseScriptLink.vue` 是默认导出组件，`bound` 只在 `bindingState` 为 `BOUND_VERIFIED` / `BOUND_UNVERIFIED` 时为真；报告链路此前**零引用** | `CaseScriptLink.vue:1-48` |
 | R-29 | `ReportSnapshotService.build` 已有 2 参 / 3 参重载，`ReportSnapshotTest` 断言平铺 HTML 与 hash 稳定；新增三段式必须保留旧重载，否则历史报告与单测一起变 | `ReportSnapshotTest.java:31-41` |
 | R-30 | 真实库探针（2 个 run 样本）：`run_artifact.path` / `pytest_case_step.stdout_path` 存的是**绝对路径**（`/home/evergreen/robot-test/artifacts/...`、`/tmp/eht-fake-runs/...`），且部分 run 的 `case_key` 为空 → `node_ref` 会是 NULL | `w5-verify.txt` [3]（`w5_sql_probe.py`） |
+
+
+## 附：W6 开工前事实补录（R-31 ~ R-34）
+
+| 编号 | 事实 | 证据 |
+|---|---|---|
+| R-31 | `POST /api/reports/batch-delete` 与影响面回算在 5.9 已全链路交付；`ReportsView.vue` 有多选、批量删按钮、确认弹窗、影响面回执，`ReportsView.spec.ts` 有 2 条批量删断言 | `frontend/src/views/ReportsView.vue`、`ReportsView.spec.ts:189/224` |
+| R-32 | `ReportLifecycleService.deleteTestReport` 对 `state=FROZEN` 抛 `409 CONFLICT`「请先撤销冻结」，`ReportLifecycleServiceTest:166/179` 钉住；后端冻结保护不是缺口 | `ReportLifecycleService.java:240`、`ReportLifecycleServiceTest.java` |
+| R-33 | `TestReportsView.vue` 勾选列对**所有**行渲染 `NCheckbox`，冻结件仍可勾选；`batchDelete()` 原样把选中集合送进删除请求 | `frontend/src/views/TestReportsView.vue:223`、`batchDelete()` |
+| R-34 | `ReportTemplateRepositoryJdbc.find` 用 `project_id IN (?, 0)` 让平台级模板可见；`create` 权限是 `EXECUTION:UPDATE`；`requireEditable` 禁改平台级模板；`ReportTemplatesView.select()` 会清空 `notice` | `ReportTemplateRepositoryJdbc.java:79`、`ReportTemplateService.java`、`ReportTemplatesView.vue:268` |

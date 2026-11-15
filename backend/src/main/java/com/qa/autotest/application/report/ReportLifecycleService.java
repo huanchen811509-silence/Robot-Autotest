@@ -23,7 +23,7 @@ import org.springframework.stereotype.Service;
  * <p>三条口径：
  * <ul>
  *   <li><b>软删幂等</b>：重复删不报错，返回 {@code deleted=false}；恢复重复调用同样不报错；</li>
- *   <li><b>冻结保护</b>：{@code test_report.state='FROZEN'} 拒绝软删与改标题，提示「请先撤销冻结」；
+ *   <li><b>冻结保护</b>：{@code test_report.state='FROZEN'} 拒绝软删与改标题，提示「已冻结，请先解冻」；
  *       只改 remark / tags 放行（那是备注，不是交付件标题）；</li>
  *   <li><b>默认过滤</b>：对外展示查询一律带 {@code deleted_at IS NULL}；生命周期操作
  *       （删除幂等 / 恢复）必须能看到已删行，故 {@link #findRunRow} 不加该条件——
@@ -219,7 +219,7 @@ public class ReportLifecycleService {
         }
         TestReportUpdate value = update == null ? new TestReportUpdate(null, null, null) : update;
         if (value.title() != null && isFrozen(row)) {
-            throw new BusinessException(ErrorCode.CONFLICT, "请先撤销冻结");
+            throw new BusinessException(ErrorCode.CONFLICT, "已冻结，请先解冻");
         }
         execute(SQL_UPDATE_REPORT, Arrays.asList(
                 fit(value.title(), 200), fit(value.remark(), 1000), fit(value.tags(), 512),
@@ -238,7 +238,7 @@ public class ReportLifecycleService {
             return new DeleteResult(false, impact);
         }
         if (isFrozen(row)) {
-            throw new BusinessException(ErrorCode.CONFLICT, "请先撤销冻结");
+            throw new BusinessException(ErrorCode.CONFLICT, "已冻结，请先解冻");
         }
         execute(SQL_SOFT_DELETE_REPORT, Arrays.asList(TenantContext.userId(), projectId, id));
         audit.record("report.test.delete", "test_report", String.valueOf(id),

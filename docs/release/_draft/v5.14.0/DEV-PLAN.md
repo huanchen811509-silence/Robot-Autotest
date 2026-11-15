@@ -429,3 +429,22 @@ W4 与 W2/W3 改动面不重叠可并行；W5 必须在 W4 之后（要用 kerne
 | B-25 | 差异基线沿用 DUT/LINK，不新增 kernel 过滤 | 既有 `CompareService` 服务执行报告链路，改它的基线口径会波及 v3.x 既有判据（A-19） |
 | B-26 | 新增 1 个端点 `/{id}/sections` | 详情页外围证据卡片需要独立只读通道；契约由 457/375 升到 458/376 |
 | B-27 | W5 零迁移 | 三段式是查询期装配（A-23），业务表数仍 109 |
+
+
+## 18. W6 实际完成（W64-16 ~ W64-17）
+
+| WBS | 完成内容 | 验收读数 |
+|---|---|---|
+| W64-16 | 5.9 既有批量删链路回归；新增 `frontend/src/utils/reportSelection.ts`（冻结判定与可删集合单一真源）+ 3 例单测；`TestReportsView` 勾选列冻结行改渲染「已冻结，请先解冻」、`toggleSelected` / `askDelete` / `batchDelete` 三处过滤；zh/en 两类删除文案明确区分「执行报告（运行记录）」与「测试报告」；后端冻结 409 文案统一到判据字面 | 前端 `reportSelection.spec` 3 + `TestReportsView.w57.spec` 8 + `ReportsView.spec` 7 + `TestReportsView.spec` 16；后端 `ReportLifecycleServiceTest` 15 |
+| W64-17 | 新增 `POST /api/report-templates/{id}/copy` + `ReportTemplateService.copy()`；源只读、副本独立主表行与字段行、名称确定性顺延、内核与标题逐项复制、审计 `REPORT_TEMPLATE_COPY`；前端 `reportTemplates.ts.copy()` + 平台模板行按钮 + 就地重载与回执 | 后端 `ReportTemplateServiceTest` 15（含 4 条新增）；前端 `ReportTemplatesView.spec` 11（含 2 条新增）；契约 459/377 |
+
+### 18.1 W6 偏差登记
+
+| # | 偏差 | 原因 |
+|---|---|---|
+| B-28 | W64-16 从「开发批量删与影响面」降级为「回归 + 文案 + 前端防线」 | R-31：5.9 已全链路交付；重写等于造第二份实现 |
+| B-29 | 后端冻结提示文案由「请先撤销冻结」改为「已冻结，请先解冻」，同步改 2 条既有单测 | W64-16 判据 ② 是字面口径，统一文案而非在文档里放松判据 |
+| B-30 | 顺手修 `save/remove/makeDefault/copyToProject` 5 处回执被 `select()` 抹掉 | R-34 / A-27：W6 复制回执单测抓到的真实 UX 缺陷，不修则「复制成功」用户看不到 |
+| B-31 | 复制权限择「与 `create` 同口径」：`bindProject` + `EXECUTION:UPDATE`，无权限 403 | 判据 ④ 允许二选一；不另造更宽通道，避免非管理员绕过模板创建权限 |
+| B-32 | TC-v5.14-50 期望文案修订为「删除执行报告（运行记录）」 | W1 菜单口径 D-01 已是「执行报告 / 测试报告」，原「执行记录（含报告）」与之冲突；修订留痕在 `01-ASSESSMENT.md` A-27 |
+| B-33 | 新增 1 端点 `/{id}/copy` | 复制是写动作，不能复用只读模板端点；契约由 458/376 升到 459/377 |

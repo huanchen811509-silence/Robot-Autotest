@@ -382,14 +382,15 @@ async function save(): Promise<void> {
   try {
     if (creating.value || selectedId.value === null) {
       const created = await reportTemplateApi.create(payload())
-      notice.value = t('reportTemplates.created')
       await load()
       select(created)
+      // select() 会清空 notice，回执必须在它之后设置，否则用户看不到任何回执。
+      notice.value = t('reportTemplates.created')
     } else {
       const updated = await reportTemplateApi.update(projectId.value, selectedId.value, payload())
-      notice.value = t('reportTemplates.saved')
       await load()
       select(updated)
+      notice.value = t('reportTemplates.saved')
     }
     creating.value = false
     errorText.value = ''
@@ -400,15 +401,35 @@ async function save(): Promise<void> {
   }
 }
 
+/** W64-17：平台内置模板只读，要改必须先复制成本项目模板；源一行不动。 */
+const copyingId = ref<number | null>(null)
+async function copyToProject(template: ReportTemplate): Promise<void> {
+  if (copyingId.value !== null) return
+  copyingId.value = template.id
+  try {
+    const created = await reportTemplateApi.copy(projectId.value, template.id)
+    await load()
+    select(created)
+    creating.value = false
+    errorText.value = ''
+    notice.value = t('reportTemplates.copied', { name: created.name })
+  } catch (error) {
+    handle(error)
+  } finally {
+    copyingId.value = null
+  }
+}
+
 async function remove(): Promise<void> {
   if (!current.value || readonly.value) return
   try {
     await reportTemplateApi.remove(projectId.value, current.value.id)
-    notice.value = t('reportTemplates.removed')
     selectedId.value = null
     creating.value = false
     resetDraft()
+    // load() 在 selectedId 为空时会 select(默认项)，同样会清 notice。
     await load()
+    notice.value = t('reportTemplates.removed')
   } catch (error) {
     handle(error)
   }
@@ -418,8 +439,8 @@ async function makeDefault(): Promise<void> {
   if (!current.value || readonly.value) return
   try {
     await reportTemplateApi.setDefault(projectId.value, current.value.id)
-    notice.value = t('reportTemplates.defaultSet')
     await load()
+    notice.value = t('reportTemplates.defaultSet')
   } catch (error) {
     handle(error)
   }
@@ -483,6 +504,16 @@ onMounted(load)
             <span class="muted count">
               v{{ template.version }} · {{ template.fields.length }} · {{ template.kernel || 'robot' }}
             </span>
+            <button
+              v-if="template.platform"
+              class="link"
+              type="button"
+              :data-testid="`copy-${template.id}`"
+              :disabled="copyingId === template.id"
+              @click="copyToProject(template)"
+            >
+              {{ t('reportTemplates.copyToProject') }}
+            </button>
           </li>
         </ul>
         <button class="btn" type="button" data-testid="new-template" @click="startNew">

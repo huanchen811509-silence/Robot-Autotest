@@ -1,0 +1,69 @@
+v5.14.0 / W6 验证证据（W64-16 批量删回归与文案、W64-17 复制平台模板）
+时间：2026-11-15（GMT+8）  副本：WSL ~/robot-autotest（权威）  基准提交：1576610
+
+[1] 开工前只读核实（Explore + 精确源码复核）
+  - POST /api/reports/batch-delete：5.9 已全链路交付（Controller/Service/前端 ReportsView.vue/
+    ReportsView.spec.ts），本波零开发，只做回归 + 文案统一。
+  - ReportLifecycleService.deleteTestReport：state=FROZEN 抛 409「请先撤销冻结」，
+    ReportLifecycleServiceTest 2 条断言钉住；后端防线本来就存在。
+  - 真实缺口 1：TestReportsView.vue 勾选列对所有行渲染 NCheckbox，冻结件可被勾中送进批量删，
+    整批回执变成「部分失败」，只能靠后端报错解释。
+  - 真实缺口 2：ReportTemplatesView.vue:12 注释承诺「复制成项目模板」，但
+    ReportTemplateController / Service / Repository / reportTemplates.ts 全无 copy 实现。
+  - ReportTemplateRepositoryJdbc.find 用 project_id IN (?, 0)，平台级模板可见；
+    create 权限口径是 EXECUTION:UPDATE；requireEditable 禁止改平台级模板。
+  - ReportTemplatesView.vue select() 会同步清空 notice，回执必须放在 select() 之后。
+
+[2] W6 落地
+  - W64-16：新增 frontend/src/utils/reportSelection.ts（isFrozenReport / deletableIds 单一真源）
+    + reportSelection.spec.ts 3 例；TestReportsView 勾选列冻结行改渲染「已冻结，请先解冻」、
+    toggleSelected 拒绝冻结行、askDelete/batchDelete 二次过滤；zh/en 两处删除文案明确区分
+    「执行报告（运行记录）」与「测试报告」。
+  - W64-16 口径统一：后端两处冻结抛错文案由「请先撤销冻结」改为「已冻结，请先解冻」，
+    类注释与 ReportLifecycleServiceTest 2 条断言同步（判据 ② 字面口径，不放水）。
+  - W64-17：新增 POST /api/report-templates/{id}/copy；ReportTemplateService.copy()
+    权限与 create 一致（bindProject + EXECUTION:UPDATE），源只读、副本独立主表行 + 独立字段行，
+    名称「原名-副本」冲突顺延 -2/-3，内核与 titleOverride 逐项复制，审计 REPORT_TEMPLATE_COPY。
+  - W64-17 前端：reportTemplates.ts copy()；平台模板行「复制为项目模板」按钮；
+    复制成功就地重载列表并选中副本；spec 2 例。
+  - 真缺陷修复：select()/load() 会清空 notice，save(2 处)/remove/makeDefault/copyToProject
+    的回执原本全被自己抹掉；统一把回执移到 select/load 之后，共 5 处。
+
+[3] 后端
+  mvn -q -Dtest=ReportTemplateServiceTest,ReportLifecycleServiceTest,ReportTemplateKernelTest,
+        ReportTemplateFreezeTest test
+  首轮 43 例中 1 例判红：「复制的源边界」把第二个前置样本误算成复制落库（测试自身基线取早了），
+  已修（基线移到两个 seed 之后），复跑 43/43：
+    ReportTemplateServiceTest 15 / ReportLifecycleServiceTest 15 /
+    ReportTemplateKernelTest 6 / ReportTemplateFreezeTest 7 —— 全部 errors=0 failures=0
+  注意：mvn ... | tail 管道把退出码吞成 0，判红必须看输出里的 [ERROR] 与 surefire XML。
+  后端全量 mvn -q test：见本文件末尾补充读数。
+
+[4] 前端
+  check_i18n.py 5/5：zh-CN 3129 / en-US 3129 键，硬编码中文 0
+  vue-tsc --noEmit 0 error
+  vitest 5 文件 45 例全 PASS：reportSelection.spec 3 / ReportTemplatesView.spec 11 /
+    TestReportsView.w57.spec 8 / TestReportsView.spec 16 / ReportsView.spec 7
+
+[5] 契约与机检
+  gen_api_contract.py -> endpoints=459 paths=377（新增 POST /{id}/copy，由 458/376 升一）
+  gen_api_contract.py --check -> PASS
+  check_dto_columns.py PASS；check_tables.py PASS（68 处数据网格走壳）；
+  check_md_tables.py 5 份文档 PASS；db-audit.sh PASS（业务表数 109）
+
+[6] 待 W7 补测（如实登记，不冒充达成）
+  - 重建 jar + 重启后真实 HTTP：POST /{id}/copy 逐字段比对、非管理员 403、
+    FROZEN 批量删 409 文案、3 条执行报告批量删影响面与分页
+  - 真视口截图：冻结行不可勾选提示、执行报告/测试报告两组删除文案、复制按钮与回执
+  - 全量门禁 bash scripts/gates.sh -> GATES_RESULT FAILS=0 UNJUDGED=0
+
+[7] 后端全量回归（W6 收口前额外保险）
+  cd backend && mvn -q test  ->  exit 0，耗时 2m33s，输出无 [ERROR] / 无 Failed to execute goal
+  意义：ReportTemplateService 新增 copy() 与 ReportTemplateController 新增 POST 端点后，
+  确认 Spring 自动装配、ArchUnit 分层、报告生命周期与分片/归档全链路无回归。
+  注：日志里的 ShardFailover / SlowQuery / ArchUnit PluginLoader 均为既有单测正常输出。
+
+[8] 文档与机检
+  check_md_tables.py 5 份文档 -> 121 个表格块 / 770 个数据行，PASS
+  W6 回写：00-RESEARCH R-31~R-34、01-ASSESSMENT A-24~A-27（含 TC-50 文案修订留痕）、
+  PRD FR-10/FR-11 验收登记、DEV-PLAN §18 + B-28~B-33、TEST-PLAN §15（沿用 TC-48~TC-55，禁补号）。

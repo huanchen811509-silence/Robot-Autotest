@@ -167,3 +167,19 @@ describe('TestReportsView W57 B 类动作纪律', () => {
     expect(vi.mocked(testReportsApi.list).mock.calls.length).toBeGreaterThan(before)
   })
 })
+
+describe('TestReportsView W64-16 冻结态批量删防线', () => {
+  it('冻结行不给勾选框，改给「已冻结，请先解冻」提示', async () => {
+    const frozen: TestReportItem = {
+      ...EXISTING[0],
+      id: 8,
+      title: '冻结周报',
+      state: 'FROZEN',
+      frozenAt: '2026-11-10T10:00:00+08:00',
+    }
+    vi.mocked(testReportsApi.list).mockResolvedValue([EXISTING[0], frozen])
+    const root = await mountView()
+    expect(root.querySelectorAll('[data-testid="frozen-no-select"]').length).toBe(1)
+    expect(root.textContent).toContain('已冻结，请先解冻')
+  })
+})

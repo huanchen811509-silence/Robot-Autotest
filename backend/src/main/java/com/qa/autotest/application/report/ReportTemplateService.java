@@ -114,6 +114,67 @@ public class ReportTemplateService {
         return ReportTemplateView.of(require(projectId, id));
     }
 
+    /**
+     * v5.14.0 / W64-17：把可见模板（平台内置或本项目）复制成**本项目可改**的模板。
+     *
+     * <p>四条边界：① 源只读、不改动任何一行；② 副本是独立主表行 + 独立字段行，
+     * 漏了 replaceFields 会得到一个 0 字段的副本（TPLX-01 真实 HTTP 抓到过同类问题）；
+     * ③ 名称确定性顺延，不覆盖已有同名模板；④ 权限口径与 create 完全一致
+     * （EXECUTION:UPDATE），非管理员无该权限时被拒 —— 不另造一条更宽的通道。
+     */
+    @Transactional
+    public ReportTemplateView copy(long projectId, long id) {
+        requireProjectId(projectId);
+        access.bindProject(projectId);
+        access.require(PermissionResource.EXECUTION, PermissionAction.UPDATE);
+
+        ReportTemplate source = require(projectId, id);
+        List<ReportTemplate.Field> fields = source.fields() == null ? List.of()
+                : source.fields().stream()
+                        .map(f -> new ReportTemplate.Field(
+                                f.fieldKey(), f.sortOrder(), f.titleOverride()))
+                        .toList();
+        if (fields.isEmpty()) {
+            throw bad("源模板没有字段，无法复制: " + id);
+        }
+
+        String name = copyName(projectId, source.name());
+        ReportTemplate draft = new ReportTemplate(0L, projectId, name, source.description(), 1,
+                false, fields, null, null, source.kernel());
+        long newId = templates.insert(draft, null);
+        templates.replaceFields(projectId, newId, fields, null);
+        audit.record("REPORT_TEMPLATE_COPY", "report_template", String.valueOf(newId),
+                "source=" + id + "; name=" + name + "; fields=" + fields.size()
+                        + "; kernel=" + source.kernel());
+        return ReportTemplateView.of(require(projectId, newId));
+    }
+
+    /** 副本名：原名 + "-副本"，同名时 -2 / -3 顺延；超长按 MAX_NAME_LENGTH 截断。 */
+    private String copyName(long projectId, String sourceName) {
+        String suffix = "-副本";
+        int max = ReportTemplate.MAX_NAME_LENGTH;
+        String base = sourceName == null ? "TEMPLATE" : sourceName.trim();
+        if (base.length() + suffix.length() > max) {
+            base = base.substring(0, max - suffix.length());
+        }
+        for (int i = 1; i <= 100; i++) {
+            String candidate = base + suffix + (i == 1 ? "" : "-" + i);
+            if (candidate.length() > max) {
+                candidate = candidate.substring(0, max);
+            }
+            if (templates.findByName(projectId, candidate).isEmpty()) {
+                return requireName(candidate);
+            }
+        }
+        throw bad("同名模板过多，无法生成副本名: " + sourceName);
+    }
+
+    private static void requireProjectId(long projectId) {
+        if (projectId <= 0) {
+            throw bad("projectId 不能为空");
+        }
+    }
+
     @Transactional
     public ReportTemplateView update(long id, TemplateCommand command) {
         long projectId = requireProject(command);

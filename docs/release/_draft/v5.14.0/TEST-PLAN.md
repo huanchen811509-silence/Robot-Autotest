@@ -401,3 +401,27 @@ docs/evidence/v5.14.0/
 **仍待 W7（如实登记）**：重建 jar + 重启后真实 HTTP 端点探针（含 `/{id}/sections` 响应）、
 真视口截图（三段锚点跳转、证据路径点击、RF 不适用、差异）、两次真实执行差异样本、
 全量门禁 `bash scripts/gates.sh`。
+
+
+## 15. W6 实测结果（滚动，沿用既有 TC 编号，不补号）
+
+| TC | 方式 | 结果 | 证据 |
+|---|---|---|---|
+| TC-v5.14-48 | `UT` | PARTIAL | 5.9 既有批量删链路本波只做回归（`ReportsView.spec` 7 例含 2 条批量删）；真实 3 条 UI + DB 软删留 W7 |
+| TC-v5.14-49 | `UT`+`FE` | PASS（实现侧） | 后端 409 文案统一为「已冻结，请先解冻」且 2 条既有单测同步；`reportSelection.spec` 3 例；冻结行不给勾选框并给同句提示（`TestReportsView.w57.spec`）；真视口截图留 W7 |
+| TC-v5.14-50 | `FE` | PASS（实现侧） | zh/en 两套删除文案分别点名「执行报告（运行记录）」与「测试报告」；口径修订见 A-27；真视口截图留 W7 |
+| TC-v5.14-51 | `UT` | PARTIAL | 5.9 既有分页行为未改；W7 回归 |
+| TC-v5.14-52 | `UT`+`FE` | PASS（实现侧） | 副本 `platform=false`、名称 `EHT-PYTEST-副本` / 同名 `DEFAULT-副本-2`；模板页按钮与回执 2 例；真实 DB 比对留 W7 |
+| TC-v5.14-53 | `UT` | PASS | 字段键 / 顺序 / `titleOverride` / `kernel` 逐项断言，`replaceFields` 必须调用 1 次 |
+| TC-v5.14-54 | `UT` | PASS | `update(copyId)` 后平台源名称、`project_id=0`、21 字段全不变 |
+| TC-v5.14-55 | `UT` | PASS（实现侧） | `DenyingAccess` 断言无 `EXECUTION:UPDATE` 时 403 且不落库；真实 HTTP 非管理员响应留 W7 |
+
+**W6 合计**：后端 `ReportTemplateServiceTest` 15 / `ReportLifecycleServiceTest` 15 /
+`ReportTemplateKernelTest` 6 / `ReportTemplateFreezeTest` 7 = **43 例**（首轮 1 例测试自身基线取早判红，
+修复后 43/43）；前端 `reportSelection.spec` 3 / `ReportTemplatesView.spec` 11 /
+`TestReportsView.w57.spec` 8 / `TestReportsView.spec` 16 / `ReportsView.spec` 7 = **45 例**；
+`check_i18n.py` 5/5（3129 键）、`vue-tsc` 0 error、契约 `459/377 --check PASS`、
+`check_dto_columns.py` / `check_tables.py` / `check_md_tables.py` / `db-audit.sh` 全 PASS。
+
+**仍待 W7（如实登记）**：重建 jar + 重启后真实 HTTP（`/{id}/copy` 逐字段比对、非管理员 403、
+冻结批量删 409、3 条执行报告影响面）、真视口截图、全量门禁 `bash scripts/gates.sh`。

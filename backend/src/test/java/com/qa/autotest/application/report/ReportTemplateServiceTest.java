@@ -187,6 +187,100 @@ class ReportTemplateServiceTest {
         assertTrue(fields.containsAll(ReportFieldWhitelist.REQUIRED_FIELDS));
     }
 
+    @Test
+    @DisplayName("W64-17：复制平台模板 → 本项目出现可改副本，字段 / 标题 / 内核逐项一致")
+    void 复制平台模板生成项目副本() {
+        long sourceId = templates.seed(ReportTemplate.PLATFORM_PROJECT_ID, "EHT-PYTEST",
+                fullKeys(), true);
+        List<ReportTemplate.Field> sourceFields = List.of(
+                new ReportTemplate.Field("reportId", 0, null),
+                new ReportTemplate.Field("title", 1, "报告标题"),
+                new ReportTemplate.Field("conclusion", 2, null));
+        templates.rows.put(sourceId, new ReportTemplate(sourceId, 0L, "EHT-PYTEST", "",
+                1, true, sourceFields, null, Instant.EPOCH, ReportTemplate.KERNEL_PYTEST));
+
+        ReportTemplateView copy = service.copy(PROJECT, sourceId);
+
+        assertFalse(copy.platform(), "副本必须是项目级、可改");
+        assertEquals(PROJECT, copy.projectId());
+        assertEquals("EHT-PYTEST-副本", copy.name());
+        assertEquals(ReportTemplate.KERNEL_PYTEST, copy.kernel(), "内核不能回落成 robot");
+        assertEquals(sourceFields.size(), copy.fields().size(), "字段数必须与源一致");
+        assertEquals(List.of("reportId", "title", "conclusion"),
+                copy.fields().stream().map(ReportTemplateView.FieldView::fieldKey).toList());
+        assertEquals(List.of(0, 1, 2),
+                copy.fields().stream().map(ReportTemplateView.FieldView::sortOrder).toList());
+        assertEquals("报告标题", copy.fields().get(1).titleOverride(), "自定义标题要一起复制");
+        assertEquals(1, templates.fieldWrites.getOrDefault(copy.id(), 0),
+                "insert 之外必须显式 replaceFields，否则副本是 0 字段");
+        // 源一行未动
+        assertEquals(sourceFields, templates.rows.get(sourceId).fields());
+        assertEquals(0L, templates.rows.get(sourceId).projectId());
+    }
+
+    @Test
+    @DisplayName("W64-17：副本名同名顺延；改副本不影响平台源")
+    void 副本名顺延且改副本不动源() {
+        long sourceId = templates.seed(ReportTemplate.PLATFORM_PROJECT_ID, "DEFAULT",
+                fullKeys(), true);
+        templates.seed(PROJECT, "DEFAULT-副本", fullKeys(), false);
+
+        ReportTemplateView copy = service.copy(PROJECT, sourceId);
+        assertEquals("DEFAULT-副本-2", copy.name(), "不能覆盖已有同名模板");
+
+        service.update(copy.id(), command("改过的副本", fullKeys()));
+        ReportTemplate source = templates.rows.get(sourceId);
+        assertEquals("DEFAULT", source.name());
+        assertEquals(0L, source.projectId());
+        assertEquals(fullKeys(), source.fields().stream()
+                .map(ReportTemplate.Field::fieldKey).toList(), "改副本不得改动平台源");
+    }
+
+    @Test
+    @DisplayName("W64-17：跨项目源 403；空字段源 400，且都不落库")
+    void 复制的源边界() {
+        long otherId = templates.seed(OTHER_PROJECT, "OTHER", fullKeys(), false);
+        long emptyId = templates.seed(ReportTemplate.PLATFORM_PROJECT_ID, "EMPTY",
+                List.of(), true);
+        // 基线必须在两个前置样本都 seed 之后取，否则把第二个样本误算成「复制落库」。
+        int before = templates.rows.size();
+
+        BusinessException forbidden = assertThrows(BusinessException.class,
+                () -> service.copy(PROJECT, otherId));
+        assertEquals(ErrorCode.FORBIDDEN, forbidden.errorCode());
+
+        BusinessException invalid = assertThrows(BusinessException.class,
+                () -> service.copy(PROJECT, emptyId));
+        assertEquals(ErrorCode.INVALID_ARGUMENT, invalid.errorCode());
+        assertEquals(before, templates.rows.size(), "被拒的复制不得落库");
+    }
+
+    @Test
+    @DisplayName("W64-17：权限口径与 create 一致 —— 无 EXECUTION:UPDATE 被拒且不落库")
+    void 复制不允许绕过权限() {
+        long sourceId = templates.seed(ReportTemplate.PLATFORM_PROJECT_ID, "DEFAULT",
+                fullKeys(), true);
+        int before = templates.rows.size();
+        AccessControlService denying = new AccessControlService(null, null) {
+            @Override
+            public void bindProject(long projectId) {
+                // 测试里不做项目成员校验
+            }
+
+            @Override
+            public void require(PermissionResource resource, PermissionAction action) {
+                throw new BusinessException(ErrorCode.FORBIDDEN, "缺少 EXECUTION:UPDATE");
+            }
+        };
+        ReportTemplateService guarded = new ReportTemplateService(templates, denying,
+                new SilentAudit());
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> guarded.copy(PROJECT, sourceId));
+        assertEquals(ErrorCode.FORBIDDEN, ex.errorCode());
+        assertEquals(before, templates.rows.size(), "权限被拒时不得生成副本");
+    }
+
     private static List<String> fullKeys() {
         return ReportFieldWhitelist.EXTERNAL_ORDER;
     }
@@ -260,7 +354,7 @@ class ReportTemplateServiceTest {
             // （TPLX-01 真实 HTTP 验收就是这么抓到过一次）。
             rows.put(id, new ReportTemplate(id, draft.projectId(), draft.name(),
                     draft.description(), draft.version(), draft.isDefault(), List.of(),
-                    operatorId, Instant.EPOCH));
+                    operatorId, Instant.EPOCH, draft.kernel()));
             return id;
         }
 
@@ -270,7 +364,7 @@ class ReportTemplateServiceTest {
             ReportTemplate old = rows.get(id);
             rows.put(id, new ReportTemplate(id, old.projectId(), name, description,
                     old.version() + 1, old.isDefault(), old.fields(), old.createdBy(),
-                    old.createdAt()));
+                    old.createdAt(), old.kernel()));
         }
 
         @Override
@@ -285,7 +379,7 @@ class ReportTemplateServiceTest {
             ReportTemplate old = rows.get(templateId);
             rows.put(templateId, new ReportTemplate(templateId, old.projectId(), old.name(),
                     old.description(), old.version(), old.isDefault(), fields,
-                    old.createdBy(), old.createdAt()));
+                    old.createdBy(), old.createdAt(), old.kernel()));
         }
 
         @Override

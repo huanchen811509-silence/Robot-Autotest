@@ -30,6 +30,7 @@ import { testReportsApi, type TestReportItem } from '@/api/testReports'
 import type { TestSet } from '@/api/cases'
 import type { ExecutionRun } from '@/api/execution'
 import { formatDateTime } from '@/utils/format'
+import { deletableIds, isFrozenReport } from '@/utils/reportSelection'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -74,7 +75,8 @@ function sourceLabel(row: TestReportItem): string {
 /**
  * 对外测试报告既有「建草稿」是 A 类用户创建入口（v3.10，已有回归覆盖），保留不动；
  * 列表侧本次只补 B 类动作：元数据编辑 / 软删 / 恢复 / 批量，**不新增任何「新增」按钮**。
- * 冻结态不渲染可点动作，改给一句「请先撤销冻结」；软删后导出链接失效也有可读说明。
+ * 冻结态不渲染可点动作，也不给批量勾选，改给「已冻结，请先解冻」；
+ * 软删后导出链接失效也有可读说明。
  */
 const reportFilters = useTableFilters({ prefix: 'tr_', columns: ['title', 'runId'] })
 const reportFilterColumns: TableFilterColumn[] = [
@@ -111,10 +113,12 @@ const selectionCount = computed(() => selectedIds.value.size)
 function isSelected(id: number): boolean {
   return selectedIds.value.has(id)
 }
-function toggleSelected(id: number): void {
+function toggleSelected(row: TestReportItem): void {
+  // 冻结件不可删：前端先挡，后端 409 保留为第二道防线，不能靠「整批里夹一条失败」来提示。
+  if (isFrozen(row)) return
   const next = new Set(selectedIds.value)
-  if (next.has(id)) next.delete(id)
-  else next.add(id)
+  if (next.has(row.id)) next.delete(row.id)
+  else next.add(row.id)
   selectedIds.value = next
 }
 function clearSelection(): void {
@@ -134,7 +138,7 @@ const confirmImpacts = ref<{ label: string; count: number }[]>([])
 const pendingDeleteIds = ref<number[]>([])
 
 function isFrozen(row: TestReportItem): boolean {
-  return row.state.toUpperCase() === 'FROZEN' || row.frozenAt !== null
+  return isFrozenReport(row)
 }
 
 function openEdit(row: TestReportItem): void {
@@ -167,15 +171,17 @@ async function submitEdit(): Promise<void> {
   }
 }
 function askDelete(ids: number[]): void {
-  if (ids.length === 0) return
-  pendingDeleteIds.value = ids
+  // 二次过滤：即便选中集合是旧状态残留，也不把冻结件送进删除请求。
+  const deletable = deletableIds(rows.value, ids)
+  if (deletable.length === 0) return
+  pendingDeleteIds.value = deletable
   // 选中条数是确定的事实；关联影响面要等删除后由后端 DeleteResult.impact 回算再展示。
-  confirmCount.value = ids.length
-  confirmImpacts.value = [{ label: t('w57.testReports.pendingDelete'), count: ids.length }]
+  confirmCount.value = deletable.length
+  confirmImpacts.value = [{ label: t('w57.testReports.pendingDelete'), count: deletable.length }]
   confirmShow.value = true
 }
 function batchDelete(): void {
-  askDelete([...selectedIds.value])
+  askDelete(deletableIds(rows.value, selectedIds.value))
 }
 async function doDelete(): Promise<void> {
   const ids = pendingDeleteIds.value
@@ -220,13 +226,19 @@ const columns = computed<DataTableColumns<TestReportItem>>(() => [
   {
     title: t('w57.testReports.colSelect'),
     key: '__select',
-    width: 64,
+    width: 90,
     render: (row) =>
-      h(NCheckbox, {
-        checked: isSelected(row.id),
-        'onUpdate:checked': () => toggleSelected(row.id),
-        'aria-label': t('w57.testReports.selectRow', { title: row.title }),
-      }),
+      isFrozen(row)
+        ? h('span', {
+            class: 'muted',
+            'data-testid': 'frozen-no-select',
+            title: t('w57.testReports.frozenSelectHint'),
+          }, t('w57.testReports.frozenSelectHint'))
+        : h(NCheckbox, {
+            checked: isSelected(row.id),
+            'onUpdate:checked': () => toggleSelected(row),
+            'aria-label': t('w57.testReports.selectRow', { title: row.title }),
+          }),
   },
   {
     title: t('testReports.colTitle'),

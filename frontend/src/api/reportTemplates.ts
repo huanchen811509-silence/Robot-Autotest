@@ -69,6 +69,13 @@ export const reportTemplateApi = {
     })
   },
 
+  /** W64-17：源模板不变，返回本项目新建的可改副本。 */
+  copy(projectId: number, id: number): Promise<ReportTemplate> {
+    return request<ReportTemplate>(`/report-templates/${id}/copy${toQuery({ projectId })}`, {
+      method: 'POST',
+    })
+  },
+
   remove(projectId: number, id: number): Promise<void> {
     return request<void>(`/report-templates/${id}${toQuery({ projectId })}`, { method: 'DELETE' })
   },
