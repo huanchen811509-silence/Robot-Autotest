@@ -303,6 +303,14 @@ class RetentionPlannerTest {
                 return Optional.of(new ProjectMember(1L, PROJECT, 2L, "viewer", "viewer",
                         "viewer", true));
             }
+            // v5.9.0：判权改读三源并集的两个入口，桩必须与 findMember 说的是同一件事，
+            // 否则「是成员」的夹具会被判成「无权访问该项目」，测不到真正的管理员闸。
+            if ("isVisibleTo".equals(method.getName())) {
+                return Boolean.TRUE;
+            }
+            if ("effectiveRoleCodes".equals(method.getName())) {
+                return java.util.List.of("viewer");
+            }
             return defaultValue(method.getReturnType());
         });
     }
