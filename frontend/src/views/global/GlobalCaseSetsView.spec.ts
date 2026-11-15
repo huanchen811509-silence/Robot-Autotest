@@ -28,6 +28,16 @@ vi.mock('@/api/platformCaseSets', () => ({
 }))
 // v5.9.0 / W59-20：删除前会先弹确认框，这里把 confirmAction 打桩成「点确定」
 vi.mock('@/composables/useConfirm', () => ({ confirmAction: vi.fn(async () => true) }))
+const routerState = vi.hoisted(() => ({
+  route: { query: {} as Record<string, unknown> },
+  replace: vi.fn(),
+  push: vi.fn(),
+}))
+vi.mock('vue-router', () => ({
+  useRoute: () => routerState.route,
+  useRouter: () => ({ replace: routerState.replace, push: routerState.push }),
+}))
+
 vi.mock('@/api/iam', () => ({
   projectApi: { list: vi.fn(async () => []) },
   authApi: { renew: vi.fn(), logout: vi.fn() },

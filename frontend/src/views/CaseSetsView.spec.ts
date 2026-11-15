@@ -88,6 +88,16 @@ vi.mock('@/api/execution', () => ({
   },
 }))
 
+const routerState = vi.hoisted(() => ({
+  route: { query: {} as Record<string, unknown> },
+  replace: vi.fn(),
+  push: vi.fn(),
+}))
+vi.mock('vue-router', () => ({
+  useRoute: () => routerState.route,
+  useRouter: () => ({ replace: routerState.replace, push: routerState.push }),
+}))
+
 vi.mock('@/components/ProjectPicker.vue', () => ({
   default: { name: 'ProjectPicker', template: '<div />' },
 }))

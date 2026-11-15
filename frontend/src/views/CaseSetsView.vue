@@ -7,6 +7,12 @@
  * 左侧维护集合本身，右侧「管理用例」维护成员与顺序，可一键按集合发起运行。
  */
 import { computed, h, ref, watch } from 'vue'
+import { useRoute, useRouter, type LocationQueryRaw } from 'vue-router'
+import CaseSetWorkspace from '@/components/CaseSetWorkspace.vue'
+import DetailDock from '@/components/DetailDock.vue'
+import CaseScriptLink from '@/components/CaseScriptLink.vue'
+import CaseSetMemberDetail from '@/components/CaseSetMemberDetail.vue'
+import { useDetailDock } from '@/composables/useDetailDock'
 import { useI18n } from 'vue-i18n'
 import { NButton, NCheckbox, NInput, NPagination, NSelect, type DataTableColumns } from 'naive-ui'
 import ColumnFilter from '@/components/ColumnFilter.vue'
@@ -27,6 +33,14 @@ import { confirmAction } from '@/composables/useConfirm'
 
 const { t } = useI18n()
 const auth = useAuthStore()
+
+// v5.12 / W62-02：三栏 + 成员详情 Dock。URL 由页面统一写一次（与 5.11 的口径一致），
+// 组件各自 replace 会互相覆盖成「最后一个赢」。
+const route = useRoute()
+const router = useRouter()
+const memberDock = useDetailDock({
+  initial: typeof route.query.detail === 'string' ? route.query.detail : null,
+})
 
 const projectId = computed(() => auth.projectId ?? 0)
 
@@ -249,6 +263,7 @@ async function load(): Promise<void> {
     })
     sets.value = result.items
     total.value = result.total
+    restoreSelectionFromQuery()
   } catch (e) {
     error.value = localizeError(e)
   } finally {
@@ -363,6 +378,7 @@ async function openItems(row: TestSet): Promise<void> {
   selectedCaseId.value = null
   message.value = ''
   await Promise.all([loadItems(), searchCases(''), loadAsset(row.id)])
+  syncQuery()
 }
 
 function closeItems(): void {
@@ -375,6 +391,45 @@ function closeItems(): void {
   assetDiff.value = null
   assetError.value = null
   assetMessage.value = ''
+  memberDock.close()
+  syncQuery()
+}
+
+/** `?set=<id>&detail=<itemId>`：刷新后集合与成员都回到原位（FR-v5.12-01 判据 6）。 */
+function syncQuery(): void {
+  const query: LocationQueryRaw = { ...route.query }
+  if (activeSet.value) query.set = String(activeSet.value.id)
+  else delete query.set
+  if (memberDock.isOpen.value) query.detail = memberDock.selected.value
+  else delete query.detail
+  void router.replace({ query })
+}
+
+function restoreSelectionFromQuery(): void {
+  const raw = route.query.set
+  if (typeof raw !== 'string' || activeSet.value) return
+  const id = Number(raw)
+  if (!Number.isFinite(id)) return
+  const hit = sets.value.find((row) => row.id === id)
+  if (hit) void openItems(hit)
+}
+
+const detailItem = computed<TestCase | null>(
+  () => items.value.find((row) => String(row.id) === memberDock.selected.value) ?? null,
+)
+const detailOpen = computed(() => memberDock.isOpen.value && detailItem.value !== null)
+const detailTitle = computed(() =>
+  detailItem.value ? `${detailItem.value.caseCode} · ${detailItem.value.title}` : '',
+)
+
+function openMember(item: TestCase): void {
+  memberDock.toggle(item.id)
+  syncQuery()
+}
+
+function closeMember(): void {
+  memberDock.close()
+  syncQuery()
 }
 
 /**
@@ -669,6 +724,9 @@ void load()
       </div>
     </form>
 
+    <!-- v5.12 / W62-02：中栏集合列表 + 右工作区成员；壳只管形态，不碰数据。 -->
+    <CaseSetWorkspace :active="activeSet !== null">
+      <template #nav>
     <!-- W57-16：全选用筛选条件表达；>10000 命中先二次确认，不静默选中上万条。 -->
     <div class="batch-bar" data-testid="case-sets-batch">
       <template v-if="awaitingSelectAllConfirm">
@@ -721,7 +779,8 @@ void load()
       @update:page-size="changePageSize"
       @update:page="turnPage"
     />
-
+      </template>
+      <template #workspace>
     <div v-if="activeSet" class="card items-card">
       <div class="items-head">
         <h2 class="card-title">{{ t('caseSets.itemsTitle', { name: activeSet.name }) }}</h2>
@@ -776,11 +835,28 @@ void load()
       <p v-if="itemsLoading" class="muted">{{ t('common.loading') }}</p>
       <p v-else-if="items.length === 0" class="muted">{{ t('caseSets.noItems') }}</p>
       <ul v-else class="set-items">
-        <li v-for="(item, index) in visibleItems" :key="item.id" class="set-item">
+        <li
+          v-for="(item, index) in visibleItems"
+          :key="item.id"
+          class="set-item"
+          :data-testid="`set-item-${item.id}`"
+          @click="openMember(item)"
+        >
           <span class="set-item-order">{{ index + 1 }}</span>
           <span class="set-item-code">{{ item.caseCode }}</span>
           <span class="set-item-title">{{ item.title }}</span>
-          <span class="row-actions">
+          <span class="set-item-category">{{ item.category || EMPTY }}</span>
+          <span class="set-item-priority">{{ item.priority || EMPTY }}</span>
+          <span class="set-item-script">
+            <CaseScriptLink
+              :script-path="item.scriptPath"
+              :script-name="item.scriptName"
+              :binding-state="item.bindingState"
+              :other-script-count="item.otherScriptCount"
+              :absolute-source="item.scriptAbsoluteSource"
+            />
+          </span>
+          <span class="row-actions" @click.stop>
             <!-- 筛选态下显示顺序 ≠ 完整顺序，禁用排序避免按显示下标移动错一条 -->
             <NButton
               text
@@ -804,6 +880,11 @@ void load()
           </span>
         </li>
       </ul>
+
+      <!-- W62-02：成员详情停靠在成员列表之后，不是弹窗 / 抽屉 / 跳页 -->
+      <DetailDock :open="detailOpen" :title="detailTitle" @close="closeMember">
+        <CaseSetMemberDetail v-if="detailItem" :member="detailItem" />
+      </DetailDock>
 
       <div v-if="assetView" class="asset-panel" data-testid="asset-panel">
         <div class="asset-head">
@@ -872,6 +953,8 @@ void load()
         </p>
       </div>
     </div>
+      </template>
+    </CaseSetWorkspace>
 
     <div v-if="isAdmin" class="card platform-card" data-testid="platform-case-sets">
       <div class="items-head">

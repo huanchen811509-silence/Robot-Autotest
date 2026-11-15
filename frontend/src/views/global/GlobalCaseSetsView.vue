@@ -8,6 +8,10 @@ import { confirmAction } from '@/composables/useConfirm'
  * 后端仍会二次校验（前端只做显隐）。
  */
 import { computed, onMounted, ref } from 'vue'
+import { useRoute, useRouter, type LocationQueryRaw } from 'vue-router'
+import CaseSetWorkspace from '@/components/CaseSetWorkspace.vue'
+import DetailDock from '@/components/DetailDock.vue'
+import { useDetailDock } from '@/composables/useDetailDock'
 import { useMenuCapabilitiesStore } from '@/stores/menuCapabilities'
 import {
   platformCaseSetApi,
@@ -17,6 +21,13 @@ import {
 
 import { useI18n } from 'vue-i18n'
 const { t } = useI18n()
+
+// v5.12 / W62-02：两页共用同一个三栏壳；URL 由页面统一写一次。
+const route = useRoute()
+const router = useRouter()
+const memberDock = useDetailDock({
+  initial: typeof route.query.detail === 'string' ? route.query.detail : null,
+})
 
 const capabilities = useMenuCapabilitiesStore()
 /**
@@ -167,14 +178,54 @@ async function loadItems(): Promise<void> {
 async function openItems(row: PlatformCaseSet): Promise<void> {
   activeSet.value = row
   newCaseId.value = null
+  memberDock.close()
   await loadItems()
+  syncQuery()
 }
 
 function closeItems(): void {
   activeSet.value = null
   items.value = []
   newCaseId.value = null
+  memberDock.close()
+  syncQuery()
 }
+
+function syncQuery(): void {
+  const query: LocationQueryRaw = { ...route.query }
+  if (activeSet.value) query.set = String(activeSet.value.id)
+  else delete query.set
+  if (memberDock.isOpen.value) query.detail = memberDock.selected.value
+  else delete query.detail
+  void router.replace({ query })
+}
+
+const detailItem = computed<PlatformCaseSetItem | null>(
+  () => items.value.find((row) => String(row.id) === memberDock.selected.value) ?? null,
+)
+const detailOpen = computed(() => memberDock.isOpen.value && detailItem.value !== null)
+const detailTitle = computed(() =>
+  detailItem.value ? `${detailItem.value.caseCode} · ${detailItem.value.title}` : '',
+)
+
+function openMember(item: PlatformCaseSetItem): void {
+  memberDock.toggle(item.id)
+  syncQuery()
+}
+
+function closeMember(): void {
+  memberDock.close()
+  syncQuery()
+}
+
+onMounted(() => {
+  const raw = route.query.set
+  if (typeof raw !== 'string') return
+  const id = Number(raw)
+  if (!Number.isFinite(id)) return
+  const hit = sets.value.find((row) => row.id === id)
+  if (hit) void openItems(hit)
+})
 
 async function addItem(): Promise<void> {
   if (!activeSet.value || newCaseId.value === null) return
@@ -274,6 +325,8 @@ onMounted(() => void load())
       </div>
     </form>
 
+    <CaseSetWorkspace :active="activeSet !== null">
+      <template #nav>
     <div v-if="loading" class="muted" data-testid="loading">{{ t('w57.globalCaseSets.loading') }}</div>
 
     <ul v-else-if="sets.length" class="set-list" data-testid="case-set-list">
@@ -297,6 +350,8 @@ onMounted(() => void load())
       <p class="muted">{{ t('w57.globalCaseSets.emptyHint') }}</p>
     </div>
 
+      </template>
+      <template #workspace>
     <div v-if="activeSet" class="card member-panel" data-testid="member-panel">
       <div class="member-head">
         <h2 class="card-title">{{ t('w57.globalCaseSets.memberTitle', { name: activeSet.name, count: items.length }) }}</h2>
@@ -321,12 +376,18 @@ onMounted(() => void load())
         </div>
         <p v-if="items.length === 0" class="muted">{{ t('w57.globalCaseSets.noMember') }}</p>
         <ul v-else class="member-list">
-          <li v-for="(item, index) in items" :key="item.id" class="member-row" :data-testid="`member-row-${item.id}`">
+          <li
+            v-for="(item, index) in items"
+            :key="item.id"
+            class="member-row"
+            :data-testid="`member-row-${item.id}`"
+            @click="openMember(item)"
+          >
             <span class="order">{{ index + 1 }}</span>
             <span class="mono">{{ item.caseCode }}</span>
             <span class="set-name" :title="item.title">{{ item.title }}</span>
             <span class="muted small">{{ item.categoryL1 || t('w57.globalCaseSets.uncategorized') }}</span>
-            <span v-if="canWrite" class="row-actions">
+            <span v-if="canWrite" class="row-actions" @click.stop>
               <button type="button" class="btn small" :disabled="index === 0" :data-testid="`move-up-${item.id}`" @click="move(index, -1)">{{ t('w57.globalCaseSets.moveUp') }}</button>
               <button type="button" class="btn small" :disabled="index === items.length - 1" :data-testid="`move-down-${item.id}`" @click="move(index, 1)">{{ t('w57.globalCaseSets.moveDown') }}</button>
               <button type="button" class="btn small danger" :data-testid="`remove-item-${item.id}`" @click="removeItem(item.id)">{{ t('w57.globalCaseSets.remove') }}</button>
@@ -334,7 +395,17 @@ onMounted(() => void load())
           </li>
         </ul>
       </template>
+      <DetailDock :open="detailOpen" :title="detailTitle" @close="closeMember">
+        <dl v-if="detailItem" class="member-detail" data-testid="member-detail">
+          <div class="member-detail-row"><dt>{{ t('w62.field.caseCode') }}</dt><dd>{{ detailItem.caseCode }}</dd></div>
+          <div class="member-detail-row"><dt>{{ t('w62.field.title') }}</dt><dd>{{ detailItem.title }}</dd></div>
+          <div class="member-detail-row"><dt>{{ t('w62.field.category') }}</dt><dd>{{ detailItem.categoryL1 || t('w57.globalCaseSets.uncategorized') }}</dd></div>
+          <div class="member-detail-row"><dt>{{ t('w62.memberScript') }}</dt><dd>{{ t('w62.platformReadonlyScript') }}</dd></div>
+        </dl>
+      </DetailDock>
     </div>
+      </template>
+    </CaseSetWorkspace>
   </section>
 </template>
 
