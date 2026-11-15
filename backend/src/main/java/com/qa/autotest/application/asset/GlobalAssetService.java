@@ -529,59 +529,136 @@ public class GlobalAssetService {
      */
     public CollectResult collect(long deviceId, Long credentialId, String username, boolean confirmed) {
         requireWrite();
+        // 安全闸不回退：未确认时连绑定列都不许读，直接 400（W63-05 判据 5）
+        if (!confirmed) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                    "采集需要二次确认：请求需带 confirm=true");
+        }
         List<Map<String, Object>> rows = jdbc.queryForList("""
-                SELECT id, name, management_ip FROM device WHERE id = ? AND owner_scope = 'PLATFORM'
+                SELECT id, name, management_ip, management_ip_alt,
+                       bmc_address, bmc_address_alt,
+                       management_credential_id, bmc_credential_id
+                  FROM device WHERE id = ? AND owner_scope = 'PLATFORM'
                 """, deviceId);
         if (rows.isEmpty()) {
             throw new BusinessException(ErrorCode.NOT_FOUND, "公共设备不存在");
         }
-        String host = rows.get(0).get("management_ip") == null
-                ? null : String.valueOf(rows.get(0).get("management_ip"));
-        if (host == null || host.isBlank()) {
-            throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "该设备没有管理 IP，无法采集");
-        }
-        long platformId = platform.id();
+        Map<String, Object> device = rows.get(0);
+        String name = device.get("name") == null ? String.valueOf(deviceId)
+                : String.valueOf(device.get("name"));
+        String host = firstAddress(device, "management_ip", "management_ip_alt");
+        String bmcHost = firstAddress(device, "bmc_address", "bmc_address_alt");
+        Long boundMgmt = longOf(device.get("management_credential_id"));
+        Long boundBmc = longOf(device.get("bmc_credential_id"));
+
+        // 回退链（W63-05）：显式传参 > 管理面绑定 > BMC 绑定；两者都未绑 → 400 点名
+        String channel = "MGMT";
         Long usedCredentialId = credentialId;
+        if (usedCredentialId == null) {
+            if (host != null) {
+                usedCredentialId = boundMgmt != null ? boundMgmt : boundBmc;
+            } else if (bmcHost != null) {
+                host = bmcHost;
+                channel = "BMC";
+                usedCredentialId = boundBmc != null ? boundBmc : boundMgmt;
+            }
+            if (usedCredentialId == null) {
+                throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                        "设备 " + deviceId + "（" + name
+                                + "）未绑定凭证，请先关联或手工指定 credentialId");
+            }
+        }
+        if (host == null || host.isBlank()) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                    "设备 " + deviceId + "（" + name + "）没有管理 IP 或 BMC 地址，无法采集");
+        }
+
+        long platformId = platform.id();
         if (usedCredentialId != null) {
             ensurePlatformCredentialReference(platformId, usedCredentialId);
         }
         try {
             HostInventoryRecord record = hostInventory.collect(platformId, host, deviceId,
-                    TenantContext.userId(), username, usedCredentialId, confirmed);
+                    TenantContext.userId(), username, usedCredentialId, true);
             jdbc.update("UPDATE device SET last_checked_at = NOW(3), updated_by = ? WHERE id = ?",
                     TenantContext.userId(), deviceId);
-            recordCollectFact(deviceId, usedCredentialId, record.status(), null);
+            boolean ok = record.status() != null && !"FAILED".equalsIgnoreCase(record.status());
+            recordCollectFact(deviceId, usedCredentialId, channel, ok ? record.status() : null, null);
+            if (ok && "MGMT".equals(channel)) {
+                autoBindIfNull(deviceId, usedCredentialId);
+            }
             audit.record("global.asset.collect", "device", String.valueOf(deviceId),
-                    "hostInventory=" + record.id() + " status=" + record.status());
+                    "hostInventory=" + record.id() + " status=" + record.status()
+                            + " credentialId=" + usedCredentialId + " channel=" + channel);
             return new CollectResult(deviceId, host, record.status(),
                     record.collectedAt() == null ? null : record.collectedAt().toString(),
                     record.nicCount(), record.rocePorts(), record.roceMaxGbps());
         } catch (RuntimeException ex) {
-            recordCollectFact(deviceId, usedCredentialId, null, ex);
+            recordCollectFact(deviceId, usedCredentialId, channel, null, ex);
             throw ex;
         }
     }
 
     /**
-     * 采集结果 → 一条验证事实（v5.13.0 / W63-03、04）。
-     *
-     * <p>写事实失败不能把已经落库的采集结果变成 500，也不能盖掉原始采集异常：
-     * 这里吞掉写事实异常并留 WARN，由审计/日志追；采集本身该成功还是成功、该失败还是失败。
+     * 自动填空（W63-06 / FR-v5.13-04 核心防线）：采集成功且走管理面时，
+     * <b>仅当</b>管理面绑定列为空才回填（SQL 条件见下）。
+     * 已绑 A 的设备用 B 采集成功，SQL 命中 0 行，绑定仍为 A —— 绝不允许悄悄改人工配置。
+     * 失败路径根本不进这个方法，不会形成「已验证可采」的假象。
      */
-    private void recordCollectFact(long deviceId, Long usedCredentialId, String status,
-                                   RuntimeException failure) {
+    private void autoBindIfNull(long deviceId, long credentialId) {
+        String sql = """
+                UPDATE device SET management_credential_id = ?, updated_by = ?
+                 WHERE id = ? AND management_credential_id IS NULL
+                """;
+        int changed = jdbc.update(sql, credentialId, TenantContext.userId(), deviceId);
+        if (changed > 0) {
+            audit.recordChange("asset.credential.auto-bind", "device", String.valueOf(deviceId),
+                    null, "managementCredentialId=" + credentialId + ";source=collect");
+        }
+    }
+
+    /**
+     * 采集结果 → 一条验证事实（v5.13.0 / W63-03、04）。
+     * 写事实失败不把已落库的采集结果变成 500，也不盖掉原始采集异常。
+     */
+    private void recordCollectFact(long deviceId, Long usedCredentialId, String channel,
+                                   String status, RuntimeException failure) {
         if (usedCredentialId == null || verifications == null) {
             return;
         }
         try {
-            boolean ok = failure == null && status != null
-                    && !"FAILED".equalsIgnoreCase(status);
+            boolean ok = failure == null && status != null;
             String kind = failure == null ? null
                     : CredentialVerificationService.collectFailureKind(failure);
-            verifications.recordCollectResult(deviceId, usedCredentialId, "MGMT", ok, kind);
+            verifications.recordCollectResult(deviceId, usedCredentialId, channel, ok, kind);
         } catch (RuntimeException ex) {
             LOG.warn("采集验证事实写入失败 deviceId={} credentialId={}",
                     deviceId, usedCredentialId, ex);
+        }
+    }
+
+    /** 地址取第一个非空值；alt 是「映射假公网 IP」的兜底，顺序不可反。 */
+    private static String firstAddress(Map<String, Object> row, String... columns) {
+        for (String column : columns) {
+            Object value = row.get(column);
+            if (value != null && !String.valueOf(value).isBlank()) {
+                return String.valueOf(value).trim();
+            }
+        }
+        return null;
+    }
+
+    private static Long longOf(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Number number) {
+            return number.longValue();
+        }
+        try {
+            return Long.valueOf(String.valueOf(value));
+        } catch (NumberFormatException ex) {
+            return null;
         }
     }
 

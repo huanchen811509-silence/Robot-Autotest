@@ -98,13 +98,13 @@ class CollectWritesFactTest {
     }
 
     @Test
-    @DisplayName("没有 credentialId 时不写事实（W63-05 回退链接入前的安全行为）")
-    void noCredentialWritesNoFact() {
-        doReturn(okRecord()).when(hostInventory).collect(anyLong(), anyString(), any(),
-                any(), any(), any(), anyBoolean());
+    @DisplayName("未绑定且未指定凭证 → 400 点名，不写事实（W63-05 防线）")
+    void noCredentialAndNoBindingRejects() {
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> service.collect(9L, null, null, true));
 
-        service.collect(9L, null, null, true);
-
+        org.junit.jupiter.api.Assertions.assertTrue(ex.getMessage().contains("未绑定凭证"));
+        org.junit.jupiter.api.Assertions.assertTrue(ex.getMessage().contains("gpu-01"));
         verify(verifications, org.mockito.Mockito.never())
                 .recordCollectResult(anyLong(), anyLong(), anyString(), anyBoolean(), any());
     }
