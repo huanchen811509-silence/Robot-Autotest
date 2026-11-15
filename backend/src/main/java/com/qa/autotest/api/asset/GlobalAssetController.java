@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -39,6 +40,10 @@ public class GlobalAssetController {
 
     public GlobalAssetController(GlobalAssetService service) {
         this.service = service;
+    }
+
+    /** 改名入参。 */
+    public record RenameRequest(String name) {
     }
 
     @GetMapping
@@ -135,6 +140,18 @@ public class GlobalAssetController {
                                                          @RequestParam long projectId) {
         service.unreference(projectId, type, id);
         return ApiResponse.ok(Map.of("unreferenced", true));
+    }
+
+    /**
+     * 改显示名（v5.9.0 / W59-20）。独立入参对象而不是裸 String：
+     * 裸 String body 在 {@code Content-Type: text/plain} 下会被当成参数绑定失败，报错看不懂。
+     */
+    @PutMapping("/{type}/{id}")
+    public ApiResponse<Map<String, String>> rename(@PathVariable String type,
+                                                   @PathVariable long id,
+                                                   @RequestBody RenameRequest body) {
+        String saved = service.rename(type, id, body == null ? null : body.name());
+        return ApiResponse.ok(Map.of("name", saved));
     }
 
     @DeleteMapping("/{type}/{id}")

@@ -225,6 +225,20 @@ public class TestCaseService {
         access.require(PermissionResource.CASE, PermissionAction.DELETE);
         TestCase existing = cases.find(projectId, id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "用例不存在"));
+        // v5.9.0 / W59-20：被脚本绑定引用时不许删，并**点名**占着它的去向与条数。
+        // 只说「删除失败」会让用户挨个页面找，删之前先告诉他被谁引用、几条。
+        java.util.Map<String, Long> refs = cases.caseReferences(projectId, id);
+        if (refs != null && !refs.isEmpty()) {
+            StringBuilder who = new StringBuilder();
+            refs.forEach((label, count) -> {
+                if (who.length() > 0) {
+                    who.append("、");
+                }
+                who.append(label).append(' ').append(count).append(" 条");
+            });
+            throw new BusinessException(ErrorCode.CONFLICT,
+                    "用例被以下数据引用，不能删除：" + who + "；请先解除引用");
+        }
         cases.delete(projectId, id);
         audit.recordChange("case:delete", "test_case", String.valueOf(id),
                 "code=" + existing.caseCode() + "; title=" + existing.title(), null);

@@ -541,6 +541,8 @@ export default {
       trendEmpty: '还没有可用的运行明细',
       recentTitle: '最近完成报告',
       recentEmpty: '还没有完成的执行记录',
+      confirmDeleteReport:
+        '确认删除报告 {runId}？报告会从列表移除，用例级结果与产物登记保留，可在运行记录页恢复。',
       runId: '运行号',
       state: '状态',
       finishedAt: '完成时间',
@@ -1335,6 +1337,11 @@ export default {
       tags: '标签',
       confirmDelete: '确认删除报告 {runId}？报告会从列表移除，用例级结果与产物登记保留，可在运行记录页恢复。',
       deleted: '已删除 {deleted} 条 / 关联导出件 {exports} 个、产物文件 {artifacts} 个',
+      batchDelete: '批量删除（{count}）',
+      confirmBatchDelete:
+        '确认删除选中的 {count} 条报告？报告会从列表移除，用例级结果与产物登记保留，可在运行记录页逐条恢复；导出件与产物文件的清理数在删除后如实回报。',
+      batchDeleted: '已删除 {deleted} 条 / 失败 {failed} 条 / 关联导出件 {exports} 个、产物文件 {artifacts} 个',
+      batchDeleteFailed: '未删除：{list}',
     },
     retention: {
       open: '清理产物',
@@ -1575,6 +1582,11 @@ export default {
     assetStatusDeprecated: '已失效',
     assetDelete: '删除',
     assetDeleteConfirm: '确认删除公共资产「{name}」？被项目引用时会被拒绝。',
+    assetRenameAction: '改名',
+    assetRenameTitle: '修改资产显示名',
+    assetRenameHint:
+      '只改显示名。型号、序列号、管理 IP 由采集与导入回写，手工修改会在下次采集被覆盖。',
+    assetRenameSubmit: '保存名称',
     importAssets: '导入公共资产',
     assetImportHint: '上传含「当前测试环境」工作表的工作簿；预览只统计，不写库，确认后才提交。',
     assetImportDone: '提交完成：设备 {devices}，端口 {ports}，凭据 {credentials}，软失效 {deprecations}，状态补充 {supplemented}',
@@ -1635,7 +1647,8 @@ export default {
     templateCreate: '新建模板',
     templateEdit: '编辑',
     templateDelete: '删除',
-    templateDeleteConfirm: '确认删除模板「{name}」？',
+    templateDeleteConfirm:
+      '确认删除模板「{name}」？用该模板已建成的项目不受影响，但模板本身删除后不可恢复。',
     templateCopy: '复制',
     templateEnable: '启用',
     templateDisable: '停用',
@@ -3250,6 +3263,8 @@ export default {
       created: '用例集已创建',
       updated: '用例集已更新',
       deleted: '已删除「{name}」',
+      confirmDelete:
+        '确认删除用例集「{name}」？集合内 {count} 条用例关联会一并解除，用例本身不会被删除。',
       seedDone: '已按一级分类重建样例集',
       title: '全局用例集',
       subtitle: '跨项目的公共样例集：按一级分类组织，可被项目向导与执行选择引用。',

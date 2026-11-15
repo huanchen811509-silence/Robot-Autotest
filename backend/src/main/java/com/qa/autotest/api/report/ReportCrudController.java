@@ -3,8 +3,10 @@ package com.qa.autotest.api.report;
 import com.qa.autotest.application.iam.AccessControlService;
 import com.qa.autotest.application.report.ReportLifecycleService;
 import com.qa.autotest.common.ApiResponse;
+import java.util.List;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -32,6 +34,10 @@ public class ReportCrudController {
         this.access = access;
     }
 
+    /** 批量删入参。 */
+    public record BatchDeleteRequest(List<String> runIds) {
+    }
+
     /** 编辑展示层元数据：display_name / remark / tags。 */
     @PutMapping("/{runId}")
     public ApiResponse<ReportLifecycleService.RunMeta> update(
@@ -40,6 +46,16 @@ public class ReportCrudController {
             @RequestBody(required = false) ReportLifecycleService.RunUpdate body) {
         access.bindProject(projectId);
         return ApiResponse.ok(lifecycle.updateRun(projectId, runId, body));
+    }
+
+    /** 批量软删（v5.9.0 / W59-20）：逐条删，返回真删条数与逐条失败原因。 */
+    @PostMapping("/batch-delete")
+    public ApiResponse<ReportLifecycleService.BatchDeleteResult> batchDelete(
+            @RequestParam long projectId,
+            @RequestBody(required = false) BatchDeleteRequest body) {
+        access.bindProject(projectId);
+        return ApiResponse.ok(lifecycle.deleteRuns(projectId,
+                body == null ? List.of() : body.runIds()));
     }
 
     /** 软删；返回 deleted（幂等时 false）与影响面 count。 */

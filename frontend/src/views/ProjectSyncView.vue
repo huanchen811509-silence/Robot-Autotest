@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { confirmAction } from '@/composables/useConfirm'
 /**
  * 存量同步（v4.9.0 / FR-v4.9-01..07）。
  *
@@ -221,7 +222,8 @@ async function execute(): Promise<void> {
 
 async function rollback(job: SyncJobRow): Promise<void> {
   if (!projectId.value) return
-  if (!window.confirm(t('sync.rollbackConfirm', { id: job.id }))) return
+  if (!(await confirmAction(t('sync.rollbackConfirm', { id: job.id }), { tone: 'danger' })))
+    return
   busy.value = true
   failed.value = ''
   notice.value = ''

@@ -236,7 +236,7 @@ onBeforeUnmount(stopCountdown)
 .selection-mismatch {
   margin: 4px 0 0;
   font-size: 12px;
-  color: var(--warn, #b26a00);
+  color: var(--warn);
 }
 
 .selection-irreversible {

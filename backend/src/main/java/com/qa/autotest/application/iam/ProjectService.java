@@ -134,6 +134,13 @@ public class ProjectService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "项目不存在"));
     }
 
+    /**
+     * 改项目（含 owner 转移）：**整段同事务**（v5.9.0 / FR-v5.9-11）。
+     *
+     * <p>加 {@code @Transactional} 的直接原因：owner 转移要写三张表（{@code project.owner_id}、
+     * {@code project_member}、{@code project_member_role}），不在一笔事务里就可能出现半个状态。
+     */
+    @Transactional
     public Project update(long projectId, String name, String description, boolean enabled,
                           Long ownerId, String visibility, String testKernel) {
         access.bindProject(projectId);
@@ -149,12 +156,50 @@ public class ProjectService {
             }
         }
         String kernel = normalizeKernel(testKernel);
-        projects.update(projectId, name, description, enabled, ownerId, visibility,
+        // ownerId 传 null 表示「不改归属」。旧实现直接把 NULL 写进 owner_id，
+        // 只要调用方漏带该字段项目就变成无主（没人能改、没人能删）——保持原值比猜安全。
+        Long targetOwner = ownerId == null ? existing.ownerId() : ownerId;
+        if (targetOwner != null && !targetOwner.equals(existing.ownerId())) {
+            transferOwner(projectId, targetOwner, existing);
+        }
+        projects.update(projectId, name, description, enabled, targetOwner, visibility,
                 kernel, TenantContext.userId());
         syncKernelSetting(projectId, kernel);
         audit.record("project.update", "project", String.valueOf(projectId),
                 "name=" + name + "; kernel=" + kernel);
         return get(projectId);
+    }
+
+    /**
+     * owner 转移（v5.9.0 / FR-v5.9-11）：**先补成员关系，再改 owner 列**，同事务。
+     *
+     * <p>顺序本身就是判据的一部分。反向（先改 owner 再补成员）一旦成员写入失败，库面就留下
+     * 「owner 指向一个查不到成员行的人」——他自己的项目进不去、成员页也看不到自己，
+     * 而旧 owner 若已被移除则项目彻底失去管理者。先写成员，成员写失败时 owner 一步都没执行，
+     * 天然满足「失败则 owner 未变」；再叠一层事务兜住反方向的半成品。
+     *
+     * <p>三人成行：新 owner 必须同时是 {@code project_member} 成员且持有 {@code project_member_role}
+     * 的 admin 角色，否则他无法在项目内行使管理动作（判权走角色表，不是 owner 列）。
+     * 已是成员但缺 admin 时**并集补角色**，不覆盖他原有的 engineer/viewer。
+     */
+    private void transferOwner(long projectId, long newOwnerId, Project existing) {
+        users.findById(newOwnerId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND,
+                        "目标用户不存在：" + newOwnerId));
+        long operator = TenantContext.requireUserId();
+        java.util.Optional<ProjectMember> member = projects.findMember(projectId, newOwnerId);
+        if (member.isEmpty()) {
+            // addMember 内同时写 project_member 与 project_member_role（addRole），一次落两表
+            projects.addMember(projectId, newOwnerId, RoleCode.ADMIN.code(), operator);
+        } else if (!member.get().roleCodes().contains(RoleCode.ADMIN.code())) {
+            List<String> merged = new ArrayList<>(member.get().roleCodes());
+            merged.add(RoleCode.ADMIN.code());
+            List<String> ordered = normalizeRoles(merged);
+            projects.replaceMemberRoles(projectId, newOwnerId, ordered, primaryRole(ordered),
+                    operator);
+        }
+        audit.recordChange("project.owner.transfer", "project", String.valueOf(projectId),
+                "owner=" + existing.ownerId(), "owner=" + newOwnerId);
     }
 
     /**

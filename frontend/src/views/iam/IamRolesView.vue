@@ -138,10 +138,10 @@ onMounted(load)
     </div>
 
     <form v-if="showForm" class="inline-form" @submit.prevent="submit">
-      <NInput v-model:value="form.code" :disabled="Boolean(editing)" style="width: 150px"
+      <NInput v-model:value="form.code" :disabled="Boolean(editing)" style="width: 140px"
               :placeholder="t('iam.roles.code')" />
       <NInput v-model:value="form.name" style="width: 180px" :placeholder="t('iam.roles.name')" />
-      <NInput v-model:value="form.description" style="width: 260px"
+      <NInput v-model:value="form.description" style="width: 240px"
               :placeholder="t('iam.roles.description')" />
       <NButton type="primary" attr-type="submit">{{ t('common.save') }}</NButton>
       <NButton quaternary @click="showForm = false">{{ t('common.cancel') }}</NButton>
@@ -167,8 +167,8 @@ onMounted(load)
 .inline-form { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .notice { padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; margin: 0; }
 :deep(.row-actions) { display: flex; gap: 10px; }
-:deep(.btn-link) { background: none; border: 0; padding: 0; cursor: pointer; color: var(--link, #2563eb); font-size: 13px; }
+:deep(.btn-link) { background: none; border: 0; padding: 0; cursor: pointer; color: var(--accent); font-size: 13px; }
 :deep(.btn-link[disabled]) { color: var(--text-muted); cursor: not-allowed; }
-:deep(.btn-link.danger) { color: var(--danger, #dc2626); }
+:deep(.btn-link.danger) { color: var(--fail); }
 :deep(.btn-link.danger[disabled]) { color: var(--text-muted); }
 </style>

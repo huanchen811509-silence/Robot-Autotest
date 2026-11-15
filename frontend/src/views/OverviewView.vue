@@ -3,6 +3,8 @@ import { computed, h, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
 import { NButton, type DataTableColumns } from 'naive-ui'
+import { listCrudApi } from '@/api/listCrud'
+import { confirmAction } from '@/composables/useConfirm'
 import {
   digestApi,
   overviewApi,
@@ -133,7 +135,46 @@ const digestReportColumns = computed<DataTableColumns<DigestReportRow>>(() => [
     width: 110,
     render: (row) => formatPercent(row.passRateBp),
   },
+  {
+    title: t('common.actions'),
+    key: '__actions',
+    width: 90,
+    fixed: 'right',
+    render: (row) =>
+      h(
+        NButton,
+        {
+          text: true,
+          size: 'small',
+          type: 'error',
+          'data-testid': `digest-delete-${row.runId}`,
+          onClick: () => void removeDigestReport(row),
+        },
+        () => t('common.delete'),
+      ),
+  },
 ])
+
+/**
+ * 看板上直接删报告（v5.9.0 / W59-20）。
+ *
+ * 看板是「发现一条不该在的数据」的第一现场，原来只能跳到报告页再删两次点击才能处理。
+ * 删除走与报告页同一个软删端点，不是另一套逻辑 —— 两套删除必然出现两套语义。
+ */
+async function removeDigestReport(row: DigestReportRow): Promise<void> {
+  if (!projectId.value) return
+  const ok = await confirmAction(
+    t('overview.digest.confirmDeleteReport', { runId: row.runId }),
+    { tone: 'danger' },
+  )
+  if (!ok) return
+  try {
+    await listCrudApi.deleteReport(projectId.value, row.runId)
+    await load()
+  } catch (e) {
+    digestError.value = localizeError(e)
+  }
+}
 
 const digestFailedColumns = computed<DataTableColumns<DigestFailedCase>>(() => [
   { title: t('overview.digest.caseKey'), key: 'caseKey', minWidth: 200, ellipsis: { tooltip: true } },

@@ -380,6 +380,18 @@ public class TestCaseRepositoryJdbc implements TestCaseRepository {
     }
 
     @Override
+    public java.util.Map<String, Long> caseReferences(long projectId, long caseId) {
+        java.util.Map<String, Long> refs = new java.util.LinkedHashMap<>();
+        Long bindings = jdbc.queryForObject("""
+                SELECT COUNT(*) FROM case_script_binding WHERE project_id = ? AND case_id = ?
+                """, Long.class, projectId, caseId);
+        if (bindings != null && bindings > 0) {
+            refs.put("脚本绑定", bindings);
+        }
+        return refs;
+    }
+
+    @Override
     public List<CapabilityStat> capabilities(long projectId) {
         // 空白串在库里既不等于 NULL 也不等于 ''，会被当成能力桶渲染出空标签，故按 trim 后判空
         String sql = """

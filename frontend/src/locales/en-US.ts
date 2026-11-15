@@ -536,6 +536,8 @@ export default {
       trendEmpty: 'No usable run details yet',
       recentTitle: 'Recently finished reports',
       recentEmpty: 'No finished runs yet',
+      confirmDeleteReport:
+        'Delete report {runId}? It leaves the list; case-level results and artifact records are kept and can be restored from the runs page.',
       runId: 'Run ID',
       state: 'State',
       finishedAt: 'Finished',
@@ -1323,7 +1325,12 @@ export default {
       remark: 'Remark',
       tags: 'Tags',
       confirmDelete: 'Delete report {runId}? It disappears from this list; case-level results and artifacts stay registered and can be restored from the Runs page.',
-      deleted: 'Deleted {deleted} / linked exports {exports}, artifacts {artifacts}',
+
+      batchDelete: 'Delete selected ({count})',
+      confirmBatchDelete:
+        'Delete the {count} selected reports? They leave the list; case-level results and artifact records are kept and each can be restored from the runs page. Export/artifact clean-up counts are reported after deletion.',
+      batchDeleted: 'Deleted {deleted} / failed {failed} / exports {exports}, artifacts {artifacts}',
+      batchDeleteFailed: 'Not deleted: {list}',      deleted: 'Deleted {deleted} / linked exports {exports}, artifacts {artifacts}',
     },
     retention: {
       open: 'Purge artifacts',
@@ -1564,6 +1571,11 @@ export default {
     assetStatusDeprecated: 'Deprecated',
     assetDelete: 'Delete',
     assetDeleteConfirm: 'Delete shared asset "{name}"? Deletion is rejected while any project references it.',
+    assetRenameAction: 'Rename',
+    assetRenameTitle: 'Rename asset',
+    assetRenameHint:
+      'Display name only. Model, serial and management IP are written back by collection/import, so manual edits are overwritten on the next run.',
+    assetRenameSubmit: 'Save name',
     importAssets: 'Import shared assets',
     assetImportHint: 'Upload a workbook containing "current test environment" sheets; preview does not write, commit does.',
     assetImportDone: 'Committed: {devices} devices, {ports} ports, {credentials} credentials, {deprecations} soft-deprecated, {supplemented} statuses supplemented',
@@ -1624,7 +1636,8 @@ export default {
     templateCreate: 'New template',
     templateEdit: 'Edit',
     templateDelete: 'Delete',
-    templateDeleteConfirm: 'Delete template "{name}"?',
+    templateDeleteConfirm:
+      'Delete template "{name}"? Projects already created from it are unaffected, but the template itself cannot be restored.',
     templateCopy: 'Copy',
     templateEnable: 'Enable',
     templateDisable: 'Disable',
@@ -3241,6 +3254,8 @@ export default {
       created: 'Case set created',
       updated: 'Case set updated',
       deleted: 'Deleted "{name}"',
+      confirmDelete:
+        'Delete case set "{name}"? Its {count} case links are removed; the cases themselves are kept.',
       seedDone: 'Sample sets rebuilt by L1 category',
       title: 'Global case sets',
       subtitle: 'Cross-project public sample sets: organized by L1 category, referencable by the project wizard and execution selection.',

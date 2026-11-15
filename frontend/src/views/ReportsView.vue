@@ -2,9 +2,13 @@
 import { computed, h, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { NButton, NInput, NPagination, type DataTableColumns } from 'naive-ui'
+import { NButton, NInput, NPagination, type DataTableColumns, type DataTableRowKey } from 'naive-ui'
 import { reportsApi, type ReportListItem, type RetentionResult } from '@/api/reports'
-import { listCrudApi, type DeleteResult } from '@/api/listCrud'
+import {
+  listCrudApi,
+  type BatchDeleteResult,
+  type DeleteResult,
+} from '@/api/listCrud'
 import { useAuthStore } from '@/stores/auth'
 import DataTable from '@/components/DataTable.vue'
 import { useListPageSize, type PageSize } from '@/composables/useListPageSize'
@@ -44,6 +48,10 @@ const editLoading = ref(false)
 const editSaving = ref(false)
 const deletingRunId = ref<string | null>(null)
 const deletedImpact = ref<DeleteResult | null>(null)
+// 批量选择（v5.9.0 / W59-20）：勾选状态由本页掌握，翻页后按 runId 保留
+const checkedRunIds = ref<DataTableRowKey[]>([])
+const batchDeleting = ref(false)
+const batchResult = ref<BatchDeleteResult | null>(null)
 const pageCount = computed(() => Math.max(1, Math.ceil(total.value / size.value)))
 
 /**
@@ -244,6 +252,35 @@ async function deleteReport(runId: string): Promise<void> {
   }
 }
 
+/**
+ * 批量软删（v5.9.0 / W59-20）。
+ *
+ * <p>确认框里写的是**已选条数**而不是「可能影响 N 项」：影响面（导出件/产物）只有删完
+ * 后端才算得准，前端在确认前编一个数字就是在骗人。删完用回执把真删条数与影响面补上。
+ */
+async function deleteCheckedReports(): Promise<void> {
+  const runIds = checkedRunIds.value.map((key) => String(key))
+  if (runIds.length === 0 || batchDeleting.value) return
+  const ok = await confirmAction(
+    t('reports.crud.confirmBatchDelete', { count: runIds.length }),
+    { tone: 'danger' },
+  )
+  if (!ok) return
+  batchDeleting.value = true
+  error.value = null
+  batchResult.value = null
+  deletedImpact.value = null
+  try {
+    batchResult.value = await listCrudApi.batchDeleteReports(projectId.value, runIds)
+    checkedRunIds.value = []
+    await load()
+  } catch (e) {
+    error.value = localizeError(e)
+  } finally {
+    batchDeleting.value = false
+  }
+}
+
 function reasonLabel(reason: string): string {
   const key = `reports.retention.reasons.${reason}`
   return te(key) ? t(key) : reason
@@ -306,6 +343,16 @@ watch(
       <NButton quaternary @click="load">
         <template #icon><AppIcon name="refresh" :size="16" /></template>
         {{ t('common.refresh') }}
+      </NButton>
+      <NButton
+        v-if="checkedRunIds.length > 0"
+        type="error"
+        secondary
+        :loading="batchDeleting"
+        data-testid="batch-delete-reports"
+        @click="deleteCheckedReports"
+      >
+        {{ t('reports.crud.batchDelete', { count: checkedRunIds.length }) }}
       </NButton>
       <NButton v-if="auth.isAdmin" quaternary @click="openRetention">
         <template #icon><AppIcon name="trash" :size="16" /></template>
@@ -387,6 +434,20 @@ watch(
       }}
     </p>
 
+    <p v-if="batchResult" class="text-ok" data-testid="report-batch-delete-result">
+      {{
+        t('reports.crud.batchDeleted', {
+          deleted: batchResult.deleted,
+          failed: batchResult.failed,
+          exports: batchResult.impact.testReportExportCount,
+          artifacts: batchResult.impact.runArtifactCount,
+        })
+      }}
+      <span v-if="batchResult.failures.length" class="muted">
+        {{ t('reports.crud.batchDeleteFailed', { list: batchResult.failures.map((f) => f.runId).join(', ') }) }}
+      </span>
+    </p>
+
     <div v-if="editingRunId" class="card wide-card crud-dialog" role="dialog" aria-modal="true"
          :aria-label="t('reports.crud.editTitle')">
       <h2 class="card-title">{{ t('reports.crud.editTitle') }}</h2>
@@ -414,6 +475,8 @@ watch(
 
     <div class="list-fill">
       <DataTable
+        v-model:checked-keys="checkedRunIds"
+        selectable
         :columns="columns"
         :data="items"
         :loading="loading"

@@ -42,8 +42,10 @@ ROUTER = ROOT / "frontend" / "src" / "router" / "index.ts"
 # 叶子基线：改动菜单时同步改这里，让数量的增减留下痕迹
 # v5.7.0 / W57-09、W57-12：全局侧栏显式新增两叶
 #   global-cases-sets（/g/case-sets）与 global-projects-new（/g/projects/new）。
+# v5.9.0 / W59-14~19：全局侧栏新增「用户与权限」一级菜单 4 叶
+#   （/g/iam/roles、/g/iam/groups、/g/iam/users、/g/iam/projects），41 → 44。
 # 基线随真实菜单增减同步，不是放宽断言：孤儿叶子、路径格式、kind 三项仍逐条判。
-EXPECTED_LEAVES = 41
+EXPECTED_LEAVES = 44
 
 PATH_RE = re.compile(r"path:\s*['\"](/[^'\"]*)['\"]")
 

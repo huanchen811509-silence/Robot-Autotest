@@ -68,6 +68,12 @@ vi.mock('@/api/listCrud', () => ({
       impact: { testReportExportCount: 2, runArtifactCount: 5 },
     })),
     runImpact: vi.fn(),
+    batchDeleteReports: vi.fn(async () => ({
+      deleted: 2,
+      failed: 0,
+      impact: { testReportExportCount: 4, runArtifactCount: 7 },
+      failures: [],
+    })),
     patchRun: vi.fn(),
     deleteRun: vi.fn(),
     restoreRun: vi.fn(),
@@ -174,5 +180,49 @@ describe('ReportsView 软删（W58-08）', () => {
 
     expect(listCrudApi.deleteReport).not.toHaveBeenCalled()
     expect(byTestId(root, 'report-delete-impact')).toBeNull()
+  })
+})
+
+describe('ReportsView 批量软删（W59-20）', () => {
+  it('勾选两条 → 批量删：确认框带条数，请求带两个 runId，回执报真删条数', async () => {
+    const root = await mountView()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    await nextTick()
+
+    const boxes = root.querySelectorAll<HTMLElement>('.n-checkbox')
+    // 第 0 个是表头全选；点它等于勾上当前页两行
+    boxes[0].click()
+    await nextTick()
+    await nextTick()
+
+    const batchButton = root.querySelector<HTMLButtonElement>('[data-testid="batch-delete-reports"]')
+    expect(batchButton).not.toBeNull()
+    batchButton!.click()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    await nextTick()
+
+    expect(vi.mocked(confirmAction)).toHaveBeenCalled()
+    expect(String(vi.mocked(confirmAction).mock.calls[0][0])).toContain('2')
+    expect(vi.mocked(listCrudApi.batchDeleteReports)).toHaveBeenCalledTimes(1)
+    const [pid, ids] = vi.mocked(listCrudApi.batchDeleteReports).mock.calls[0]
+    expect(pid).toBe(1)
+    expect(ids).toEqual(['RUN-001', 'RUN-002'])
+    expect(root.querySelector('[data-testid="report-batch-delete-result"]')?.textContent).toContain('7')
+  })
+
+  it('取消确认时不发批量请求', async () => {
+    vi.mocked(confirmAction).mockResolvedValueOnce(false)
+    const root = await mountView()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    await nextTick()
+
+    root.querySelectorAll<HTMLElement>('.n-checkbox')[0].click()
+    await nextTick()
+    await nextTick()
+    root.querySelector<HTMLButtonElement>('[data-testid="batch-delete-reports"]')!.click()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    await nextTick()
+
+    expect(vi.mocked(listCrudApi.batchDeleteReports)).not.toHaveBeenCalled()
   })
 })

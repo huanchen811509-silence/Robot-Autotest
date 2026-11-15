@@ -75,6 +75,13 @@ const props = withDefaults(
     filterColumns?: TableFilterColumn[]
     /** 受控筛选值：列 key → 选中值数组（text 模式用单元素数组承载文本） */
     filters?: Record<string, string[]>
+    /**
+     * W59-20：可勾选（供批量操作）。默认 false —— 不开时不多渲染一列、不多挂一个事件，
+     * 既有页面的 DOM 与行为完全不变。
+     */
+    selectable?: boolean
+    /** 受控勾选行 key。想「勾选状态由调用方掌握」时必须配 `@update:checked-keys` */
+    checkedKeys?: DataTableRowKey[]
   }>(),
   {
     loading: false,
@@ -94,17 +101,34 @@ const props = withDefaults(
     filterable: false,
     filterColumns: () => [],
     filters: () => ({}),
+    selectable: false,
+    checkedKeys: () => [],
   },
 )
 
 const emit = defineEmits<{
   'update:filters': [value: Record<string, string[]>]
   'filter-change': [value: Record<string, string[]>]
+  'update:checkedKeys': [keys: DataTableRowKey[]]
 }>()
 
 const { t } = useI18n()
 
-const scrollX = computed(() => computeScrollX(props.columns, props.minScrollX))
+/**
+ * 勾选列由壳插入，调用方的 `columns` 数组保持原样。
+ *
+ * <p>不就地 `unshift` 调用方的数组：那是 prop 里的对象，改它会同时改动父组件的状态，
+ * 下次重渲染又多插一列（Vue 不会报错，只会「勾选框越来越多」）。
+ */
+const displayColumns = computed<DataTableColumns<T>>(() =>
+  props.selectable
+    ? ([{ type: 'selection', width: 44, fixed: 'left' }] as unknown as DataTableColumns<T>).concat(
+        props.columns,
+      )
+    : props.columns,
+)
+
+const scrollX = computed(() => computeScrollX(displayColumns.value, props.minScrollX))
 const virtualScroll = computed(() =>
   shouldVirtualize(props.data.length, props.maxHeight, props.virtualScroll),
 )
@@ -232,12 +256,14 @@ const skeletonData = computed<T[]>(() =>
 
     <NDataTable
       v-else
-      :columns="columns"
+      :columns="displayColumns"
       :data="data"
       :loading="loading"
       :row-key="resolvedRowKey"
       :row-class-name="rowClassName"
       :row-props="rowProps"
+      :checked-row-keys="checkedKeys"
+      @update:checked-row-keys="(keys: DataTableRowKey[]) => emit('update:checkedKeys', keys)"
       :scroll-x="scrollX"
       :max-height="flexHeight ? undefined : (maxHeight ?? undefined)"
       :flex-height="flexHeight"

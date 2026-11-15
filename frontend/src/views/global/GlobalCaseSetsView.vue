@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { confirmAction } from '@/composables/useConfirm'
 /**
  * 全局（平台）用例集（W57-09）。
  *
@@ -116,6 +117,13 @@ async function submit(): Promise<void> {
 async function removeSet(row: PlatformCaseSet): Promise<void> {
   error.value = ''
   message.value = ''
+  // v5.9.0 / W59-20：删除前二次确认，并且把「多少条关联会解除、用例本身不受影响」说清楚。
+  // 只问「确定删除吗」等于让用户赌集合里有多空。
+  const ok = await confirmAction(
+    t('w57.globalCaseSets.confirmDelete', { name: row.name, count: row.itemCount }),
+    { tone: 'danger' },
+  )
+  if (!ok) return
   try {
     await platformCaseSetApi.remove(row.id)
     message.value = t('w57.globalCaseSets.deleted', { name: row.name })

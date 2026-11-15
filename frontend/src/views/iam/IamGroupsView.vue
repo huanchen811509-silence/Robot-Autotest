@@ -227,7 +227,7 @@ defineExpose({ openDetail, load, addMember, grant, remove })
 
     <form v-if="showForm" class="inline-form" @submit.prevent="submit">
       <NInput v-model:value="form.name" style="width: 180px" :placeholder="t('iam.groups.name')" />
-      <NInput v-model:value="form.description" style="width: 260px"
+      <NInput v-model:value="form.description" style="width: 240px"
               :placeholder="t('iam.groups.description')" />
       <NButton type="primary" attr-type="submit">{{ t('common.save') }}</NButton>
       <NButton quaternary @click="showForm = false">{{ t('common.cancel') }}</NButton>
@@ -278,7 +278,7 @@ defineExpose({ openDetail, load, addMember, grant, remove })
           <div class="bar">
             <NSelect v-model:value="projectToGrant" :options="projectOptions" filterable clearable
                      style="width: 220px" :placeholder="t('iam.groups.pickProject')" />
-            <NSelect v-model:value="grantRole" :options="roleOptions" style="width: 130px" />
+            <NSelect v-model:value="grantRole" :options="roleOptions" style="width: 140px" />
             <NButton size="small" @click="grant">{{ t('iam.groups.grant') }}</NButton>
           </div>
           <ul class="plain-list">
@@ -310,6 +310,6 @@ defineExpose({ openDetail, load, addMember, grant, remove })
 .plain-list { margin: 8px 0 0; padding-left: 18px; display: grid; gap: 6px; font-size: 13px; }
 .tag { font-size: 11px; border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; margin: 0 6px; }
 :deep(.row-actions) { display: flex; gap: 10px; }
-.btn-link { background: none; border: 0; padding: 0; cursor: pointer; color: var(--link, #2563eb); font-size: 13px; }
-.btn-link.danger { color: var(--danger, #dc2626); }
+.btn-link { background: none; border: 0; padding: 0; cursor: pointer; color: var(--accent); font-size: 13px; }
+.btn-link.danger { color: var(--fail); }
 </style>

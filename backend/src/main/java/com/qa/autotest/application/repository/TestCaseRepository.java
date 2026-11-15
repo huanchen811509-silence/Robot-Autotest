@@ -112,5 +112,16 @@ public interface TestCaseRepository {
         return java.util.Map.of();
     }
 
+    /**
+     * 用例被引用的去向与条数（v5.9.0 / W59-20，「删不掉要说清被谁占着」）。
+     *
+     * <p>只返回**会真正挡住删除**的引用：当前是 {@code case_script_binding}（脚本绑定）。
+     * key 是给人看的中文简称，值是该去向的条数。默认空实现保证既有假仓储无需改动；
+     * 空 Map 与「没有引用」同义，删除照旧放行（保持旧行为，不因新增检查误伤）。
+     */
+    default java.util.Map<String, Long> caseReferences(long projectId, long caseId) {
+        return java.util.Map.of();
+    }
+
     List<CapabilityStat> capabilities(long projectId);
 }

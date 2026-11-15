@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { confirmAction } from '@/composables/useConfirm'
 /**
  * 公共资产库（v4.7.0 / FR-v4.7-01..09、v4.7.1 / FR-v4.7-11..13、v4.9.3 采集与状态、v4.12.0 凭据绑定）。
  *
@@ -101,6 +102,11 @@ watch(
 
 /* ------------------------------------------------------------ 表格列定义 */
 
+const renaming = ref<GlobalAssetRow | null>(null)
+const renameValue = ref('')
+const renameBusy = ref(false)
+const renameError = ref('')
+
 const columns = computed<DataTableColumns<GlobalAssetRow>>(() => {
   const cols: DataTableColumns<GlobalAssetRow> = [
     { title: t('global.assetName'), key: 'name', minWidth: 180 },
@@ -161,6 +167,16 @@ const columns = computed<DataTableColumns<GlobalAssetRow>>(() => {
                 },
                 () => t('global.assetCredentialDevices'),
               ),
+          h(
+            NButton,
+            {
+              text: true,
+              type: 'primary',
+              'data-testid': `rename-${row.id}`,
+              onClick: () => openRename(row),
+            },
+            () => t('global.assetRenameAction'),
+          ),
           h(
             NButton,
             { text: true, type: 'error', onClick: () => void removeAsset(row) },
@@ -536,8 +552,40 @@ async function exportAssets() {
   URL.revokeObjectURL(url)
 }
 
-async function removeAsset(row: GlobalAssetRow) {
-  if (!window.confirm(t('global.assetDeleteConfirm', { name: row.name }))) return
+/**
+ * 改名（v5.9.0 / W59-20）：这是台账里 `/g/assets` 缺的那个 U。
+ *
+ * 只开放显示名 —— 型号/序列号/管理 IP 由采集与导入回写，手工改会在下次采集被覆盖。
+ * 保存后重拉列表而不是就地改 `row.name`：列表里还有排序与搜索命中的可能，
+ * 以服务端返回为准才不会出现「改完看起来没变」。
+ */
+function openRename(row: GlobalAssetRow): void {
+  renaming.value = row
+  renameValue.value = row.name
+  renameError.value = ''
+}
+
+async function submitRename(): Promise<void> {
+  const row = renaming.value
+  if (!row || renameBusy.value) return
+  renameError.value = ''
+  renameBusy.value = true
+  try {
+    await globalAssetApi.rename(row.assetType, row.id, renameValue.value)
+    renaming.value = null
+    await load()
+  } catch (error) {
+    renameError.value = error instanceof Error ? error.message : t('global.loadFailed')
+  } finally {
+    renameBusy.value = false
+  }
+}
+
+async function removeAsset(row: GlobalAssetRow): Promise<void> {
+  if (!(await confirmAction(t('global.assetDeleteConfirm', { name: row.name }), {
+      tone: 'danger',
+    })))
+    return
   try {
     await globalAssetApi.remove(row.assetType, row.id)
     await load()
@@ -835,6 +883,29 @@ onMounted(() => {
           <button class="btn" @click="deviceFormOpen = false">{{ t('global.close') }}</button>
           <button class="btn btn-primary" :disabled="deviceFormBusy" @click="submitDeviceForm">
             {{ t('global.assetCreateSubmit') }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- W59-20：公共资产改名（只改显示名） -->
+    <div v-if="renaming" class="modal-mask" @click.self="renaming = null">
+      <div class="modal narrow">
+        <header class="modal-head">
+          <h2>{{ t('global.assetRenameTitle') }}</h2>
+          <button class="link" @click="renaming = null">{{ t('global.close') }}</button>
+        </header>
+        <p class="muted">{{ t('global.assetRenameHint') }}</p>
+        <label class="field">
+          <span>{{ t('global.assetFieldName') }} *</span>
+          <input v-model="renameValue" class="input" data-testid="asset-rename-input" />
+        </label>
+        <p v-if="renameError" class="error">{{ renameError }}</p>
+        <div class="modal-actions">
+          <button class="btn" @click="renaming = null">{{ t('global.close') }}</button>
+          <button class="btn btn-primary" :disabled="renameBusy" data-testid="asset-rename-submit"
+                  @click="submitRename">
+            {{ t('global.assetRenameSubmit') }}
           </button>
         </div>
       </div>

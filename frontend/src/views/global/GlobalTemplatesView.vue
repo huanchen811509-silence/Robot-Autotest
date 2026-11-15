@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { confirmAction } from '@/composables/useConfirm'
 /**
  * 模板中心（v4.8.0 / FR-v4.8-01..09、v4.8.1 / FR-v4.8-11..13）。
  *
@@ -187,7 +188,10 @@ async function copyTemplate(row: TemplateRow) {
 }
 
 async function removeTemplate(row: TemplateRow) {
-  if (!window.confirm(t('global.templateDeleteConfirm', { name: row.name }))) return
+  if (!(await confirmAction(t('global.templateDeleteConfirm', { name: row.name }), {
+      tone: 'danger',
+    })))
+    return
   try {
     await templateApi.remove(row.id)
     await load()

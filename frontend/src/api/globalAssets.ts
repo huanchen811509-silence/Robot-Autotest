@@ -146,6 +146,18 @@ export const globalAssetApi = {
   list(params: { type?: string; keyword?: string; availability?: string }) {
     return request<GlobalAssetRow[]>(`/global/assets${toQuery(params)}`)
   },
+  /**
+   * 改显示名（v5.9.0 / W59-20）。
+   *
+   * 只改 name：型号、序列号、管理 IP 由采集与导入回写，手工改会在下次采集被覆盖，
+   * 变成「界面一套、设备一套」。显示名是纯人工标注，也是列表里唯一需要就地纠正的东西。
+   */
+  rename(type: string, id: number, name: string) {
+    return request<{ name: string }>(`/global/assets/${type}/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ name }),
+    })
+  },
   references(type: string, id: number) {
     return request<Record<string, number>>(`/global/assets/${type}/${id}/references`)
   },

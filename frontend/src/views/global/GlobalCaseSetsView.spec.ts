@@ -10,6 +10,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useMenuCapabilitiesStore } from '@/stores/menuCapabilities'
 import GlobalCaseSetsView from '@/views/global/GlobalCaseSetsView.vue'
 import { platformCaseSetApi } from '@/api/platformCaseSets'
+import { confirmAction } from '@/composables/useConfirm'
 
 vi.mock('@/api/platformCaseSets', () => ({
   platformCaseSetApi: {
@@ -25,6 +26,8 @@ vi.mock('@/api/platformCaseSets', () => ({
   },
   globalGroupedApi: { grouped: vi.fn() },
 }))
+// v5.9.0 / W59-20：删除前会先弹确认框，这里把 confirmAction 打桩成「点确定」
+vi.mock('@/composables/useConfirm', () => ({ confirmAction: vi.fn(async () => true) }))
 vi.mock('@/api/iam', () => ({
   projectApi: { list: vi.fn(async () => []) },
   authApi: { renew: vi.fn(), logout: vi.fn() },
@@ -204,11 +207,22 @@ describe('GlobalCaseSetsView 搜索与 CRUD', () => {
     expect(api.update).toHaveBeenCalledWith(1, expect.objectContaining({ name: '冒烟集（改）' }))
   })
 
-  it('删除：调 remove(id)', async () => {
+  it('删除：先二次确认，确认后调 remove(id)', async () => {
     const root = await mountView()
     root.querySelector<HTMLButtonElement>('[data-testid="delete-1"]')!.click()
     await settle()
+    expect(confirmAction).toHaveBeenCalledTimes(1)
+    // 确认文案必须带上「多少条关联会解除」——不提条数的确认等于让用户赌
+    expect(vi.mocked(confirmAction).mock.calls[0][0]).toContain('3')
     expect(api.remove).toHaveBeenCalledWith(1)
+  })
+
+  it('删除：取消确认时一个请求都不发', async () => {
+    vi.mocked(confirmAction).mockResolvedValueOnce(false)
+    const root = await mountView()
+    root.querySelector<HTMLButtonElement>('[data-testid="delete-1"]')!.click()
+    await settle()
+    expect(api.remove).not.toHaveBeenCalled()
   })
 })
 

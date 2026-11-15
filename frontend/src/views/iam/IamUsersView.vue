@@ -207,12 +207,12 @@ defineExpose({ openDetail, load, remove })
     </div>
 
     <form v-if="showForm" class="inline-form" @submit.prevent="submit">
-      <NInput v-model:value="form.username" :disabled="Boolean(editing)" style="width: 150px"
+      <NInput v-model:value="form.username" :disabled="Boolean(editing)" style="width: 140px"
               :placeholder="t('iam.users.username')" />
-      <NInput v-model:value="form.displayName" style="width: 150px" :placeholder="t('iam.users.displayName')" />
-      <NInput v-model:value="form.email" style="width: 190px" :placeholder="t('iam.users.email')" />
+      <NInput v-model:value="form.displayName" style="width: 140px" :placeholder="t('iam.users.displayName')" />
+      <NInput v-model:value="form.email" style="width: 200px" :placeholder="t('iam.users.email')" />
       <NInput v-if="!editing" v-model:value="form.password" type="password" show-password-on="click"
-              style="width: 190px" :placeholder="t('iam.users.password')" autocomplete="new-password" />
+              style="width: 200px" :placeholder="t('iam.users.password')" autocomplete="new-password" />
       <NSelect v-model:value="form.roleCodes" multiple :options="roleOptions" style="min-width: 220px"
                :placeholder="t('iam.users.globalRoles')" />
       <NButton type="primary" attr-type="submit">{{ t('common.save') }}</NButton>
@@ -289,6 +289,6 @@ defineExpose({ openDetail, load, remove })
 .plain-list { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 13px; }
 .tag { font-size: 11px; border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; margin-left: 6px; }
 :deep(.row-actions) { display: flex; gap: 10px; }
-:deep(.btn-link) { background: none; border: 0; padding: 0; cursor: pointer; color: var(--link, #2563eb); font-size: 13px; }
-:deep(.btn-link.danger) { color: var(--danger, #dc2626); }
+:deep(.btn-link) { background: none; border: 0; padding: 0; cursor: pointer; color: var(--accent); font-size: 13px; }
+:deep(.btn-link.danger) { color: var(--fail); }
 </style>

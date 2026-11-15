@@ -6131,6 +6131,69 @@
       }
     },
     "/api/global/assets/{type}/{id}": {
+      "put": {
+        "operationId": "GlobalAssetController.rename",
+        "tags": [
+          "asset"
+        ],
+        "responses": {
+          "200": {
+            "description": "统一信封；业务错误码见 ErrorCode",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "type",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "title": "RenameRequest"
+              }
+            }
+          }
+        }
+      },
       "delete": {
         "operationId": "GlobalAssetController.delete",
         "tags": [
@@ -20834,6 +20897,63 @@
             }
           }
         ]
+      }
+    },
+    "/api/reports/batch-delete": {
+      "post": {
+        "operationId": "ReportCrudController.batchDelete",
+        "tags": [
+          "report"
+        ],
+        "responses": {
+          "200": {
+            "description": "统一信封；业务错误码见 ErrorCode",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        },
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "title": "BatchDeleteRequest"
+              }
+            }
+          }
+        }
       }
     },
     "/api/reports/retention/run": {

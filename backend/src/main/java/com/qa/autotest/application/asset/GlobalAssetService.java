@@ -924,6 +924,47 @@ public class GlobalAssetService {
     }
 
     /** 删除公共资产：被项目引用时 409（不泄露引用项目名，只给数量）。 */
+    /**
+     * 改公共资产的显示名（v5.9.0 / W59-20，台账里 {@code /g/assets} 缺的 U）。
+     *
+     * <p><b>只改 name</b>：型号、序列号、管理 IP 这些是采集/导入回写的事实列，
+     * 手工改会和下次采集打架，出现「界面一套、设备一套」。显示名是纯人工标注，改了不会被覆盖，
+     * 也正是用户在列表里唯一需要就地纠正的东西。
+     */
+    public String rename(String type, long id, String name) {
+        requireAdmin();
+        String normalized = type == null ? "" : type.trim().toUpperCase(Locale.ROOT);
+        String trimmed = name == null ? "" : name.trim();
+        if (trimmed.isEmpty()) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "资产名称不能为空");
+        }
+        if (trimmed.length() > 128) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "资产名称不能超过 128 个字符");
+        }
+        int updated = switch (normalized) {
+            case "DEVICE" -> jdbc.update("""
+                    UPDATE device SET name = ?, updated_by = ?
+                     WHERE id = ? AND owner_scope = 'PLATFORM'
+                    """, trimmed, TenantContext.userId(), id);
+            case "CREDENTIAL" -> jdbc.update("""
+                    UPDATE credential SET name = ?, updated_by = ?
+                     WHERE id = ? AND owner_scope = 'PLATFORM'
+                    """, trimmed, TenantContext.userId(), id);
+            case "LINK" -> jdbc.update("""
+                    UPDATE link SET name = ?, updated_by = ?
+                     WHERE id = ? AND owner_scope = 'PLATFORM'
+                    """, trimmed, TenantContext.userId(), id);
+            default -> throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                    "不支持的资产类型：" + type);
+        };
+        if (updated == 0) {
+            throw new BusinessException(ErrorCode.NOT_FOUND, "资产不存在或不是公共资产");
+        }
+        audit.record("global.asset.rename", normalized.toLowerCase(Locale.ROOT),
+                String.valueOf(id), "name=" + trimmed);
+        return trimmed;
+    }
+
     public void delete(String type, long id) {
         requireAdmin();
         String normalized = type.trim().toUpperCase(Locale.ROOT);

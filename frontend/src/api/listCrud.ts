@@ -48,6 +48,20 @@ export interface DeleteResult {
   impact: RunImpact
 }
 
+/** 批量删的逐条失败原因（单条失败不拖累其他条）。 */
+export interface BatchFailure {
+  runId: string
+  reason: string
+}
+
+/** 批量删结果：`deleted` 是**真删掉的条数**，`impact` 只累加这些条。 */
+export interface BatchDeleteResult {
+  deleted: number
+  failed: number
+  impact: RunImpact
+  failures: BatchFailure[]
+}
+
 export interface RunUpdate {
   displayName?: string
   remark?: string
@@ -83,6 +97,19 @@ export const listCrudApi = {
   deleteReport(projectId: number, runId: string): Promise<DeleteResult> {
     return request<DeleteResult>(`${reportPath(runId)}${toQuery({ projectId })}`, {
       method: 'DELETE',
+    })
+  },
+
+  /**
+   * 批量软删（v5.9.0 / W59-20）。
+   *
+   * 后端逐条删、逐条回报，**不整体失败**：勾 30 条里 1 条已被别人删掉时，
+   * 让整批报错等于逼用户重来一遍。前端拿 `deleted` 显示真删条数，拿 `failures` 说清哪几条没删。
+   */
+  batchDeleteReports(projectId: number, runIds: string[]): Promise<BatchDeleteResult> {
+    return request<BatchDeleteResult>(`/reports/batch-delete${toQuery({ projectId })}`, {
+      method: 'POST',
+      body: JSON.stringify({ runIds }),
     })
   },
 

@@ -182,3 +182,33 @@ describe('DataTable W57 可选列筛选（默认关闭）', () => {
     expect(root.querySelector('.data-table__filter-clear')).not.toBeNull()
   })
 })
+
+// ------------------------------------------------------------------ 勾选列（v5.9.0 / W59-20）
+
+describe('DataTable 勾选列', () => {
+  it('默认不渲染勾选列：不开 selectable 的页面 DOM 一个复选框都不多', async () => {
+    const root = await mountTable({ columns, data: [{ id: 1, name: 'a' }] })
+    expect(root.querySelectorAll('.n-checkbox').length).toBe(0)
+  })
+
+  it('selectable 时插入勾选列，点一下通过 update:checkedKeys 交回调用方', async () => {
+    const seen: unknown[] = []
+    const root = await mountTable({
+      columns,
+      data: [
+        { id: 1, name: 'a' },
+        { id: 2, name: 'b' },
+      ],
+      selectable: true,
+      checkedKeys: [],
+      'onUpdate:checkedKeys': (keys: unknown[]) => seen.push(keys),
+    })
+    const boxes = root.querySelectorAll<HTMLElement>('.n-checkbox')
+    expect(boxes.length).toBeGreaterThan(0)
+    // 第 0 个是表头全选，第 1 个是第一行
+    boxes[1].click()
+    await nextTick()
+    expect(seen.length).toBeGreaterThan(0)
+    expect(seen[0]).toContain(1)
+  })
+})

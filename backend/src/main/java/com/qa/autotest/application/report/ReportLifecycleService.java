@@ -167,6 +167,48 @@ public class ReportLifecycleService {
         return runMetaOf(runId, findRunRow(projectId, runId).orElse(row));
     }
 
+    /**
+     * 批量软删（v5.9.0 / W59-20）：逐条删，**不整体回滚**。
+     *
+     * <p>为什么不做「全成或全废」：批量删报告是清理动作，用户勾了 30 条里 1 条已被别人删掉，
+     * 整批失败只会让他重来一遍。这里逐条走 {@link #deleteRun}，把失败逐条回报，
+     * 影响面按**实际删掉的每一条**累加 —— 报出来的数字必须等于真删掉的，不是勾选数。
+     */
+    public BatchDeleteResult deleteRuns(long projectId, List<String> runIds) {
+        List<String> ids = new java.util.ArrayList<>();
+        if (runIds != null) {
+            for (String raw : runIds) {
+                if (raw != null && !raw.isBlank() && !ids.contains(raw.trim())) {
+                    ids.add(raw.trim());
+                }
+            }
+        }
+        if (ids.isEmpty()) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "请至少选择一条报告");
+        }
+        int deleted = 0;
+        long exports = 0;
+        long artifacts = 0;
+        List<BatchFailure> failures = new java.util.ArrayList<>();
+        for (String runId : ids) {
+            try {
+                DeleteResult one = deleteRun(projectId, runId);
+                if (one.deleted()) {
+                    deleted++;
+                }
+                exports += one.impact().testReportExportCount();
+                artifacts += one.impact().runArtifactCount();
+            } catch (BusinessException ex) {
+                failures.add(new BatchFailure(runId, ex.getMessage()));
+            }
+        }
+        audit.record("report.run.batchDelete", "run", String.valueOf(projectId),
+                "requested=" + ids.size() + "; deleted=" + deleted
+                        + "; failed=" + failures.size());
+        return new BatchDeleteResult(deleted, failures.size(),
+                new RunImpact(exports, artifacts), failures);
+    }
+
     // ---------------------------------------------------------------- test_report
 
     /** 编辑用户报告元数据；冻结件改标题一律拒绝。 */
@@ -325,6 +367,15 @@ public class ReportLifecycleService {
     }
 
     public record RunImpact(long testReportExportCount, long runArtifactCount) {
+    }
+
+    /** 批量删的逐条失败原因（单条失败不拖累其他条）。 */
+    public record BatchFailure(String runId, String reason) {
+    }
+
+    /** 批量删结果：deleted 是**真删掉的条数**，impact 只累加这些条。 */
+    public record BatchDeleteResult(int deleted, int failed, RunImpact impact,
+                                    List<BatchFailure> failures) {
     }
 
     public record DeleteResult(boolean deleted, RunImpact impact) {

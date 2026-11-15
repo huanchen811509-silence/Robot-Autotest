@@ -234,4 +234,43 @@ class ReportLifecycleServiceTest {
         assertEquals(ErrorCode.INVALID_ARGUMENT, ex.errorCode());
         verify(service, never()).query(anyString(), anyList());
     }
+    // ---------------------------------------------------------------- 批量软删（v5.9.0 / W59-20）
+
+    @Test
+    @DisplayName("批量软删：逐条删，deleted 与影响面都只算真删掉的条数")
+    void batchDeleteCountsOnlyReallyDeleted() {
+        ReportLifecycleService service = stubbed(runRow(null), reportRow("DRAFT", null), 3, 2, 10);
+
+        ReportLifecycleService.BatchDeleteResult result = service.deleteRuns(7L,
+                List.of("RUN-1", "RUN-2"));
+
+        assertEquals(2, result.deleted());
+        assertEquals(0, result.failed());
+        // 每条报告各带 3 份导出、2 个产物；两条就是累加，不能报「勾选数」
+        assertEquals(6, result.impact().testReportExportCount());
+        assertEquals(4, result.impact().runArtifactCount());
+        assertTrue(result.failures().isEmpty());
+    }
+
+    @Test
+    @DisplayName("批量软删：单条不存在只记失败，不中断其余条")
+    void batchDeleteToleratesMissingRow() {
+        ReportLifecycleService service = stubbed(null, null, 1, 1, 1);
+
+        ReportLifecycleService.BatchDeleteResult result = service.deleteRuns(7L, List.of("RUN-9"));
+
+        assertEquals(0, result.deleted());
+        assertEquals(1, result.failed());
+        assertEquals("RUN-9", result.failures().get(0).runId());
+        assertTrue(result.failures().get(0).reason().contains("RUN-9"));
+    }
+
+    @Test
+    @DisplayName("批量软删：空选择是 400，不是「删了 0 条」的假成功")
+    void batchDeleteRejectsEmptySelection() {
+        ReportLifecycleService service = stubbed(runRow(null), null, 0, 0, 1);
+
+        assertThrows(BusinessException.class, () -> service.deleteRuns(7L, List.of()));
+        assertThrows(BusinessException.class, () -> service.deleteRuns(7L, null));
+    }
 }

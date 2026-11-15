@@ -225,7 +225,7 @@ onMounted(loadBase)
           <div class="bar">
             <NSelect v-model:value="userToAdd" :options="userOptions" filterable clearable
                      style="width: 200px" :placeholder="t('iam.links.pickUser')" />
-            <NSelect v-model:value="userRoles" multiple :options="roleOptions" style="width: 190px" />
+            <NSelect v-model:value="userRoles" multiple :options="roleOptions" style="width: 200px" />
             <NButton size="small" @click="addUser">{{ t('common.add') }}</NButton>
           </div>
           <DataTable
@@ -251,6 +251,6 @@ onMounted(loadBase)
 .dock h2 { margin: 0; font-size: 16px; }
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 .grid-2 h3 { margin: 0 0 8px; font-size: 14px; }
-:deep(.btn-link) { background: none; border: 0; padding: 0; cursor: pointer; color: var(--danger, #dc2626); font-size: 13px; }
+:deep(.btn-link) { background: none; border: 0; padding: 0; cursor: pointer; color: var(--fail); font-size: 13px; }
 :deep(.row-active) { background: var(--surface-2, rgba(37, 99, 235, 0.08)); }
 </style>

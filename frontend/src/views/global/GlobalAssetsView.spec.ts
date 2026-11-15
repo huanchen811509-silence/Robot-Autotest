@@ -29,6 +29,7 @@ vi.mock('@/api/globalAssets', () => ({
     reference: vi.fn(),
     unreference: vi.fn(),
     remove: vi.fn(),
+    rename: vi.fn(async (_type: string, _id: number, name: string) => ({ name })),
     credentialDevices: vi.fn(),
     collectByCredential: vi.fn(),
     createDevice: vi.fn(),
@@ -467,5 +468,31 @@ describe('GlobalAssetsView 手工录入（FR-v4.12-13/14）', () => {
     expect(vi.mocked(globalAssetApi.createCredential).mock.calls[0][0].secret).toBe('Eht_lab2026!')
     // 提交后口令立刻从页面状态清掉：截屏/录屏不会带走明文
     expect(root.querySelector<HTMLInputElement>('[data-testid="credential-secret"]')!.value).toBe('')
+  })
+})
+
+describe('GlobalAssetsView 改名（W59-20）', () => {
+  it('点改名 → 输入 → 保存：只提交 name，保存后重拉列表', async () => {
+    const root = await mountView()
+    const rename = root.querySelector<HTMLButtonElement>('[data-testid="rename-101"]')
+    expect(rename).not.toBeNull()
+    rename!.click()
+    await nextTick()
+
+    const input = root.querySelector<HTMLInputElement>('[data-testid="asset-rename-input"]')!
+    expect(input.value).toBe('leaf-01')
+    input.value = '机房 A 核心交换机'
+    input.dispatchEvent(new Event('input'))
+    await nextTick()
+
+    list.mockClear()
+    root.querySelector<HTMLButtonElement>('[data-testid="asset-rename-submit"]')!.click()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    await nextTick()
+
+    expect(globalAssetApi.rename).toHaveBeenCalledWith('DEVICE', 101, '机房 A 核心交换机')
+    // 保存后重拉：以服务端为准，不就地改 row.name（否则搜索/排序命中的副本会不一致）
+    expect(list).toHaveBeenCalled()
+    expect(root.querySelector('[data-testid="asset-rename-input"]')).toBeNull()
   })
 })
