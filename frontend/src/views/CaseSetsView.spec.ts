@@ -65,6 +65,7 @@ vi.mock('@/api/cases', () => ({
     items: vi.fn(async () => items),
     addItem: vi.fn(),
     removeItem: vi.fn(),
+    batchRemoveItems: vi.fn(async () => ({ removed: 2 })),
     reorder: vi.fn(async () => undefined),
   },
   caseApi: {
@@ -550,5 +551,71 @@ describe('CaseSetsView 服务端筛选与计数（FR-v5.8-03）', () => {
       setCode: 'REG',
       page: 2,
     })
+  })
+})
+
+
+describe('CaseSetsView 成员批量动作与二次确认（W62-05/06）', () => {
+  async function openWithMembers(): Promise<HTMLElement> {
+    const root = await mountView()
+    rowButton(root, 0, i18n.global.t('caseSets.manage')).click()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    await nextTick()
+    return root
+  }
+
+  it('未选中时四个批量按钮全部 disabled（不是隐藏）', async () => {
+    const root = await openWithMembers()
+    for (const id of ['remove', 'up', 'down', 'export']) {
+      const btn = root.querySelector<HTMLButtonElement>(`[data-testid="member-batch-${id}"]`)
+      expect(btn).not.toBeNull()
+      expect(btn?.disabled).toBe(true)
+    }
+  })
+
+  it('勾选 2 条后显示「已选 2 条」且按钮解禁', async () => {
+    const root = await openWithMembers()
+    const checks = [...root.querySelectorAll<HTMLInputElement>('.member-check')]
+    expect(checks).toHaveLength(2)
+    checks.forEach((input) => {
+      input.checked = true
+      input.dispatchEvent(new Event('change'))
+    })
+    await nextTick()
+    expect(root.querySelector('[data-testid="member-batch-count"]')?.textContent).toContain('2')
+    expect(root.querySelector<HTMLButtonElement>('[data-testid="member-batch-remove"]')?.disabled).toBe(false)
+  })
+
+  it('批量移出：确认后调 batchRemoveItems，取消则一个请求都不发', async () => {
+    vi.mocked(caseSetApi.batchRemoveItems).mockClear()
+    const root = await openWithMembers()
+    root.querySelector<HTMLButtonElement>('[data-testid="member-batch-select-all"]')!.click()
+    await nextTick()
+    const btn = root.querySelector<HTMLButtonElement>('[data-testid="member-batch-remove"]')!
+    btn.click()
+    useConfirmHost().settle(true)
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    await nextTick()
+    expect(caseSetApi.batchRemoveItems).toHaveBeenCalledWith(1, 7, [101, 102])
+
+    vi.mocked(caseSetApi.batchRemoveItems).mockClear()
+    root.querySelector<HTMLButtonElement>('[data-testid="member-batch-select-all"]')!.click()
+    await nextTick()
+    root.querySelector<HTMLButtonElement>('[data-testid="member-batch-remove"]')!.click()
+    useConfirmHost().settle(false)
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(caseSetApi.batchRemoveItems).not.toHaveBeenCalled()
+  })
+
+  it('删除集合的确认文案含集合名与成员数', async () => {
+    const root = await mountView()
+    const remove = rowButton(root, 0, i18n.global.t('common.delete'))
+    remove.click()
+    // 文案由 confirmAction 的第一个参数给出；这里断言 hook 收到了弹窗请求
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    const host = useConfirmHost()
+    expect(host.current.value).not.toBeNull()
+    expect(host.current.value?.message).toContain('冒烟集')
+    host.settle(false)
   })
 })

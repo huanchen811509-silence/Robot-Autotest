@@ -110,6 +110,8 @@ export interface TestSet {
   setCode: string
   name: string
   description: string | null
+  /** 后端一直返回（TestSet.itemCount），前端类型此前漏登记；可选以兼容历史夹具。 */
+  itemCount?: number
 }
 
 /** 批量动作（FR-v0.2-37：提交评审/通过/驳回/改优先级/改技术域/改安全级/删除）。 */
@@ -299,6 +301,13 @@ export const caseSetApi = {
   removeItem(projectId: number, id: number, caseId: number) {
     return request<void>(`${base(projectId)}/case-sets/${id}/items/${caseId}`, {
       method: 'DELETE',
+    })
+  },
+  /** W62-05：批量移出（一次确认、一次版本更新、剩余成员序号连续）。 */
+  batchRemoveItems(projectId: number, id: number, caseIds: number[]) {
+    return request<{ removed: number }>(`${base(projectId)}/case-sets/${id}/items/batch-remove`, {
+      method: 'POST',
+      body: JSON.stringify({ caseIds }),
     })
   },
   /** 重排：`caseIds` 必须是当前集合的完整成员列表（后端据此整体覆盖顺序）。 */

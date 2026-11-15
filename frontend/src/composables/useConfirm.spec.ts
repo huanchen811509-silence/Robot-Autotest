@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { confirmAction, useConfirmHost } from './useConfirm'
 
-/** 替换 window.confirm 后最怕两件事：Promise 永远 pending、两个弹窗叠在一起。 */
+/** 替换 nativeConfirm 后最怕两件事：Promise 永远 pending、两个弹窗叠在一起。 */
 describe('useConfirm', () => {
   const { current, settle } = useConfirmHost()
 

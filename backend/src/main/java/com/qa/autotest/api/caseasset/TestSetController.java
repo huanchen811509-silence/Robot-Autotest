@@ -39,6 +39,10 @@ public class TestSetController {
     public record OrderRequest(List<Long> caseIds) {
     }
 
+    /** W62-05：成员批量移出（一次确认、一次版本更新、序号连续）。 */
+    public record BatchRemoveRequest(List<Long> caseIds) {
+    }
+
     /** FR-49-28：分类筛选（全选一级 / 全选二级 / 跨表交集）。 */
     public record CategoryFilterRequest(String categoryL1, String categoryL2,
                                         Long intersectWithSetId) {
@@ -143,6 +147,14 @@ public class TestSetController {
                                         @PathVariable long caseId) {
         sets.removeItem(projectId, id, caseId);
         return ApiResponse.ok(null);
+    }
+
+    @PostMapping("/{id}/items/batch-remove")
+    public ApiResponse<Map<String, Integer>> batchRemoveItems(@PathVariable long projectId,
+                                                              @PathVariable long id,
+                                                              @RequestBody BatchRemoveRequest request) {
+        return ApiResponse.ok(Map.of("removed",
+                sets.removeItems(projectId, id, request.caseIds())));
     }
 
     @PutMapping("/{id}/order")

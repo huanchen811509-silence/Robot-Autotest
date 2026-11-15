@@ -2869,6 +2869,8 @@ export default {
     localeCycle: 'Cycle language (中文 / English)',
   },
   w62: {
+    selectMember: 'Select member',
+    batchRemoved: 'Removed {count} members',
     navTitle: 'Case set list',
     workspace: 'Member workspace',
     empty: 'No case set selected',

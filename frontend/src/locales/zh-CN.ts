@@ -2879,6 +2879,8 @@ export default {
     localeCycle: '切换语言（中文 / English）',
   },
   w62: {
+    selectMember: '勾选成员',
+    batchRemoved: '已移出 {count} 个成员',
     navTitle: '用例集列表',
     workspace: '成员工作区',
     empty: '未选择用例集',

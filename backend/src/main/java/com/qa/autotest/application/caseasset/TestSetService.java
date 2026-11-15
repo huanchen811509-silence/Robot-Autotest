@@ -162,6 +162,45 @@ public class TestSetService {
         audit.record("set.remove-item", "test_set_item", setId + ":" + caseId, "");
     }
 
+    /**
+     * W62-05：批量移出成员。删完把剩余成员整体重排，保证 {@code seq_no} 从 1 连续
+     * （单条 removeItem 不会重排，连续删 N 条会留下空洞）。
+     *
+     * <p>只认「确实属于本集合」的 id：传一个不在集合里的 id 不算移出，
+     * 也不会让它出现在 reorder 列表里。版本只涨一次，审计只记一条。
+     */
+    @Transactional
+    public int removeItems(long projectId, long setId, List<Long> caseIds) {
+        access.bindProject(projectId);
+        access.require(PermissionResource.CASE, PermissionAction.UPDATE);
+        get(projectId, setId);
+        if (caseIds == null || caseIds.isEmpty()) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "批量移出列表不能为空");
+        }
+        List<Long> ids = caseIds.stream().filter(java.util.Objects::nonNull).distinct().toList();
+        if (ids.isEmpty()) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "批量移出列表不能为空");
+        }
+        List<TestCase> before = sets.items(projectId, setId);
+        Set<Long> target = new HashSet<>(ids);
+        List<Long> remaining = before.stream().map(TestCase::id)
+                .filter(id -> !target.contains(id)).toList();
+        int removed = before.size() - remaining.size();
+        if (removed == 0) {
+            return 0;
+        }
+        for (Long caseId : ids) {
+            sets.removeItem(projectId, setId, caseId);
+        }
+        if (!remaining.isEmpty()) {
+            sets.reorder(projectId, setId, remaining, TenantContext.userId());
+        }
+        assetVersions.onChanged(projectId, setId);
+        audit.record("set.batch-remove-items", "test_set_item", String.valueOf(setId),
+                "removed=" + removed);
+        return removed;
+    }
+
     public void reorder(long projectId, long setId, List<Long> caseIds) {
         access.bindProject(projectId);
         access.require(PermissionResource.CASE, PermissionAction.UPDATE);

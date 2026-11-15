@@ -29,6 +29,7 @@ import ErrorLineView from '@/components/ErrorLine.vue'
 import FormField from '@/components/FormField.vue'
 import { localizeError, type ErrorLine } from '@/utils/errors'
 import { EMPTY } from '@/utils/format'
+import { buildMemberCsv } from '@/utils/memberCsv'
 import { confirmAction } from '@/composables/useConfirm'
 
 const { t } = useI18n()
@@ -65,6 +66,8 @@ const items = ref<TestCase[]>([])
 const itemsLoading = ref(false)
 const itemsError = ref<ErrorLine | null>(null)
 const selectedCaseId = ref<number | null>(null)
+/** W62-05：成员级批量选择（与集合级 selection 完全隔离）。 */
+const selectedItemIds = ref<number[]>([])
 const caseOptions = ref<{ label: string; value: number }[]>([])
 const caseLoading = ref(false)
 let searchTimer: ReturnType<typeof setTimeout> | undefined
@@ -328,7 +331,8 @@ async function submit(): Promise<void> {
 }
 
 async function removeSet(row: TestSet): Promise<void> {
-  if (!(await confirmAction(t('caseSets.confirmDelete', { name: row.name }), { tone: 'danger' })))
+  // W62-06：文案含集合名与成员数，取消后零写入
+  if (!(await confirmAction(t('w62.confirmRemoveSet', { name: row.name, count: row.itemCount ?? 0 }), { tone: 'danger' })))
     return
   error.value = null
   message.value = ''
@@ -478,8 +482,75 @@ async function addCase(): Promise<void> {
   }
 }
 
+function toggleItem(id: number, checked: boolean): void {
+  selectedItemIds.value = checked
+    ? [...new Set([...selectedItemIds.value, id])]
+    : selectedItemIds.value.filter((value) => value !== id)
+}
+
+function selectAllItems(): void {
+  selectedItemIds.value = items.value.map((row) => row.id)
+}
+
+async function batchRemove(): Promise<void> {
+  if (!activeSet.value || selectedItemIds.value.length === 0) return
+  const count = selectedItemIds.value.length
+  if (!(await confirmAction(t('w62.confirmRemoveItems', { count }), { tone: 'danger' }))) return
+  itemsError.value = null
+  message.value = ''
+  try {
+    await caseSetApi.batchRemoveItems(projectId.value, activeSet.value.id, selectedItemIds.value)
+    selectedItemIds.value = []
+    memberDock.close()
+    syncQuery()
+    message.value = t('w62.batchRemoved', { count })
+    await loadItems()
+  } catch (e) {
+    itemsError.value = localizeError(e)
+  }
+}
+
+/** 选中的成员作为一个整体前后挪一位，未选中的相对顺序不变。 */
+async function batchMove(delta: number): Promise<void> {
+  if (!activeSet.value || selectedItemIds.value.length === 0) return
+  const picked = new Set(selectedItemIds.value)
+  const chosen = items.value.filter((row) => picked.has(row.id))
+  const others = items.value.filter((row) => !picked.has(row.id))
+  const firstIndex = items.value.findIndex((row) => picked.has(row.id))
+  const insertAt = Math.max(0, Math.min(others.length, firstIndex + delta))
+  const next = [...others.slice(0, insertAt), ...chosen, ...others.slice(insertAt)]
+  items.value = next
+  itemsError.value = null
+  try {
+    await caseSetApi.reorder(projectId.value, activeSet.value.id, next.map((row) => row.id))
+    message.value = t('caseSets.orderSaved')
+  } catch (e) {
+    itemsError.value = localizeError(e)
+    await loadItems()
+  }
+}
+
+function exportCsv(): void {
+  const chosen = selectedItemIds.value.length
+    ? items.value.filter((row) => selectedItemIds.value.includes(row.id))
+    : items.value
+  const csv = buildMemberCsv(chosen, [
+    t('w62.csv.order'), t('w62.csv.code'), t('w62.csv.title'),
+    t('w62.csv.category'), t('w62.csv.script'),
+  ])
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+  if (typeof URL.createObjectURL !== 'function') return
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `${activeSet.value?.setCode ?? 'case-set'}-members.csv`
+  link.click()
+  URL.revokeObjectURL(url)
+}
+
 async function removeItem(item: TestCase): Promise<void> {
   if (!activeSet.value) return
+  if (!(await confirmAction(t('w62.confirmRemoveItems', { count: 1 }), { tone: 'danger' }))) return
   itemsError.value = null
   message.value = ''
   try {
@@ -812,6 +883,25 @@ void load()
         />
       </div>
 
+      <!-- W62-05：成员批量动作条。未选中时按钮 disabled，不是隐藏后仍可点。 -->
+      <div class="member-batch" data-testid="member-batch">
+        <span class="muted" data-testid="member-batch-count">
+          {{ t('w62.selectedCount', { count: selectedItemIds.length }) }}
+        </span>
+        <NButton size="small" :disabled="selectedItemIds.length === 0" data-testid="member-batch-remove"
+                 @click="batchRemove">{{ t('w62.batchRemove') }}</NButton>
+        <NButton size="small" :disabled="selectedItemIds.length === 0" data-testid="member-batch-up"
+                 @click="batchMove(-1)">{{ t('w62.moveUp') }}</NButton>
+        <NButton size="small" :disabled="selectedItemIds.length === 0" data-testid="member-batch-down"
+                 @click="batchMove(1)">{{ t('w62.moveDown') }}</NButton>
+        <NButton size="small" :disabled="selectedItemIds.length === 0" data-testid="member-batch-export"
+                 @click="exportCsv">{{ t('w62.batchExport') }}</NButton>
+        <NButton size="small" quaternary data-testid="member-batch-select-all" @click="selectAllItems">
+          {{ t('w57.caseSets.selectAllMatching') }}
+        </NButton>
+        <span v-if="selectedItemIds.length === 0" class="muted small">{{ t('w62.batchDisabledHint') }}</span>
+      </div>
+
       <div class="toolbar">
         <NSelect
           v-model:value="selectedCaseId"
@@ -842,6 +932,14 @@ void load()
           :data-testid="`set-item-${item.id}`"
           @click="openMember(item)"
         >
+          <input
+            type="checkbox"
+            class="member-check"
+            :checked="selectedItemIds.includes(item.id)"
+            :aria-label="t('w62.selectMember')"
+            @click.stop
+            @change="toggleItem(item.id, ($event.target as HTMLInputElement).checked)"
+          />
           <span class="set-item-order">{{ index + 1 }}</span>
           <span class="set-item-code">{{ item.caseCode }}</span>
           <span class="set-item-title">{{ item.title }}</span>

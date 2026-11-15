@@ -241,6 +241,8 @@ async function addItem(): Promise<void> {
 
 async function removeItem(caseId: number): Promise<void> {
   if (!activeSet.value) return
+  // W62-06：单条移除也走统一确认；批量走项目侧动作条
+  if (!(await confirmAction(t('w62.confirmRemoveItems', { count: 1 })))) return
   error.value = ''
   try {
     await platformCaseSetApi.removeItem(activeSet.value.id, caseId)

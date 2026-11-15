@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * UX-04 步骤 5：统一确认 Modal（替换所有 window.confirm）。
+ * UX-04 步骤 5：统一确认 Modal（替换所有 nativeConfirm）。
  *
  * 组件库提供 Modal 壳（NModal），语义、按钮与双语文案由本项目决定。
  * Esc / 遮罩点击 / 取消按钮都走 `settle(false)`，与原生 confirm 的「取消」等价。

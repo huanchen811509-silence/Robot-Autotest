@@ -168,9 +168,11 @@ class TestSetMemberQueryTest {
                 paths.addAll(Arrays.asList(values.length == 0 ? new String[]{""} : values));
             }
         }
+        // W62-05 显式新增批量移出端点：不是「夹带」，是同版有据的授权（DEV-PLAN §8）
         assertEquals(Set.of("", "/{id}", "/{id}/items", "/{id}/items/{caseId}",
-                "/{id}/order", "/{id}/items/category-filter", "/scenario-groups",
-                "/scenario-groups/{scenarioId}/case-sets", "/scenario-groups/{scenarioId}"), paths,
+                "/{id}/items/batch-remove", "/{id}/order", "/{id}/items/category-filter",
+                "/scenario-groups", "/scenario-groups/{scenarioId}/case-sets",
+                "/scenario-groups/{scenarioId}"), paths,
                 "新增端点必须同版更新本集合并在 DEV-PLAN 说明，不能靠扩字段夹带");
     }
 
