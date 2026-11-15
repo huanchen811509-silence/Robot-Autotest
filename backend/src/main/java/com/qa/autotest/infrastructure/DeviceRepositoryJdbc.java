@@ -26,7 +26,8 @@ public class DeviceRepositoryJdbc implements DeviceRepository {
             SELECT d.id, d.project_id, d.name, d.device_type, d.model, d.vendor, d.serial_no,
                    d.management_ip, d.location, d.rack_no, d.domain_tag, d.status, d.owner_id,
                    d.last_checked_at, d.host_key, d.os_family, d.os_version, d.architecture,
-                   d.ssh_port, d.model_dict_id
+                   d.ssh_port, d.model_dict_id,
+                   d.management_credential_id, d.bmc_credential_id
               FROM device d
             """;
 
@@ -58,7 +59,9 @@ public class DeviceRepositoryJdbc implements DeviceRepository {
             rs.getString("host_key"), rs.getString("os_family"), rs.getString("os_version"),
             rs.getString("architecture"),
             rs.getObject("ssh_port") == null ? null : rs.getInt("ssh_port"),
-            rs.getObject("model_dict_id") == null ? null : rs.getLong("model_dict_id"));
+            rs.getObject("model_dict_id") == null ? null : rs.getLong("model_dict_id"),
+            rs.getObject("management_credential_id", Long.class),
+            rs.getObject("bmc_credential_id", Long.class));
 
     private static final RowMapper<DevicePort> PORT_MAPPER = (rs, rowNum) -> new DevicePort(
             rs.getLong("id"), rs.getLong("device_id"), rs.getString("port_name"),
