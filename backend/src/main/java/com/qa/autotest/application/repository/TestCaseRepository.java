@@ -22,6 +22,18 @@ public interface TestCaseRepository {
     record ImportedStep(int stepNo, String action, String expectation) {
     }
 
+    /**
+     * 删除影响面（v5.11.0 / W61-15 / FR-v5.11-07）：三个数字**只用于删除前预览**，
+     * 不参与删除判定（判定仍走 {@link #caseReferences}，口径不同不能混用）。
+     */
+    record ImpactCounts(long setRefs, long scriptBindings, long runResults) {
+    }
+
+    /** 默认零值：既有测试桩不关心影响面，不必为一个预览数字全部实现。 */
+    default ImpactCounts impactOf(long projectId, long caseId) {
+        return new ImpactCounts(0L, 0L, 0L);
+    }
+
     PageResult<TestCase> page(long projectId, String keyword, String domain, String priority,
                               String reviewStatus, String capability, String safetyLevel,
                               int page, int size);
@@ -50,11 +62,25 @@ public interface TestCaseRepository {
     void replaceSteps(long testCaseId, List<TestCaseStep> steps, Long operatorId);
 
     /** EDIM-01/02：commit 插入用例后，写 ED202 扩展字段（六列全空时不发 SQL）。 */
-    void writeImportMetadata(long testCaseId, ImportMetadata meta, Long operatorId);
+    /**
+     * 导入补录的元数据（v5.11.0 / W61-16 / FR-v5.11-09）。
+     *
+     * <p>带 {@code projectId} 是契约修补：只按用例 id 更新，等于把「跨项目改别人数据」
+     * 的安全性押在「调用点恰好刚插入同事务 id」这一实现细节上。现在 SQL 自带项目条件。
+     */
+    void writeImportMetadata(long projectId, long testCaseId, ImportMetadata meta,
+                             Long operatorId);
 
     /** EDIM-03：commit 插入用例后，把「测试步骤」拆出的步骤写进 test_case_step。 */
-    void insertImportedSteps(long testCaseId, List<ImportedStep> steps, int sourceRow,
-                             Long operatorId);
+    /**
+     * 导入的测试步骤（v5.11.0 / W61-16）。
+     *
+     * <p>{@code test_case_step} 本身没有 {@code project_id} 列，所以这里不是「加 project_id 条件」，
+     * 而是用 {@code WHERE EXISTS(父用例属于本项目)} 把写入钉在父用例的租户上 —— 效果相同，
+     * 但符合实际表结构（PRD 里写成「两处 UPDATE 加条件」是笔误，已在 05-TEST-REPORT §8 登记）。
+     */
+    void insertImportedSteps(long projectId, long testCaseId, List<ImportedStep> steps,
+                             int sourceRow, Long operatorId);
 
     void updateReview(long projectId, long id, String reviewStatus, String comment,
                       Long reviewedBy, Instant reviewedAt);

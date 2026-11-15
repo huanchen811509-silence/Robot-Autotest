@@ -6,6 +6,7 @@ import com.qa.autotest.application.group.ScenarioService;
 import com.qa.autotest.common.ApiResponse;
 import com.qa.autotest.common.BusinessException;
 import com.qa.autotest.common.ErrorCode;
+import com.qa.autotest.application.caseasset.CaseListView;
 import com.qa.autotest.domain.caseasset.TestCase;
 import com.qa.autotest.domain.caseasset.TestSet;
 import com.qa.autotest.domain.common.PageResult;
@@ -61,6 +62,14 @@ public class TestSetController {
         this.sets = sets;
     }
 
+    /** v5.11.0 / W61-11：脚本路径解析（可选装配，老单测不受影响）。 */
+    private com.qa.autotest.application.caseasset.CaseScriptLookup scripts;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setScriptLookup(com.qa.autotest.application.caseasset.CaseScriptLookup scripts) {
+        this.scripts = scripts;
+    }
+
     private ScenarioService requireScenarios() {
         if (scenarios == null) {
             throw new BusinessException(ErrorCode.INTERNAL_ERROR, "场景服务未装配");
@@ -103,10 +112,23 @@ public class TestSetController {
         return ApiResponse.ok(null);
     }
 
+    /**
+     * 成员列表（v5.11.0 / W61-11：尾部补脚本三件套，与用例列表/详情同源同算法）。
+     *
+     * <p>用例集三栏化在 5.12，本版只保证「同一用例三处路径字符串相同」。
+     */
     @GetMapping("/{id}/items")
-    public ApiResponse<List<TestCase>> items(@PathVariable long projectId,
-                                             @PathVariable long id) {
-        return ApiResponse.ok(sets.items(projectId, id));
+    public ApiResponse<List<CaseListView>> items(@PathVariable long projectId,
+                                                 @PathVariable long id) {
+        List<TestCase> rows = sets.items(projectId, id);
+        if (scripts == null || rows.isEmpty()) {
+            return ApiResponse.ok(rows.stream().map(CaseListView::of).toList());
+        }
+        java.util.Map<Long, com.qa.autotest.application.caseasset.CaseScriptView> scriptMap =
+                scripts.of(projectId, rows.stream().map(TestCase::id).toList());
+        return ApiResponse.ok(rows.stream()
+                .map(row -> CaseListView.of(row, scriptMap.get(row.id())))
+                .toList());
     }
 
     @PostMapping("/{id}/items")

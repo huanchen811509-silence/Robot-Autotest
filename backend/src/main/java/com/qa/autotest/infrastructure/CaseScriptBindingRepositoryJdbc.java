@@ -4,6 +4,8 @@ import com.qa.autotest.application.repository.CaseScriptBindingRepository;
 import com.qa.autotest.domain.caseasset.CaseScriptBinding;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -68,6 +70,29 @@ public class CaseScriptBindingRepositoryJdbc implements CaseScriptBindingReposit
         }
         return jdbc.query(SELECT + " WHERE project_id = ? AND kernel = ? AND script_sha256 = ?",
                 MAPPER, projectId, kernel, scriptSha256);
+    }
+
+    @Override
+    public List<CaseScriptBinding> listByCaseIds(long projectId, Collection<Long> caseIds) {
+        if (caseIds == null || caseIds.isEmpty()) {
+            return List.of();
+        }
+        // 占位符按 ids 个数生成，全部走参数绑定；不拼任何值。
+        StringBuilder marks = new StringBuilder();
+        List<Object> args = new ArrayList<>();
+        args.add(projectId);
+        for (Long caseId : caseIds) {
+            if (caseId == null) {
+                continue;
+            }
+            marks.append(marks.length() == 0 ? "?" : ", ?");
+            args.add(caseId);
+        }
+        if (marks.length() == 0) {
+            return List.of();
+        }
+        return jdbc.query(SELECT + " WHERE project_id = ? AND case_id IN (" + marks + ")"
+                + " ORDER BY case_id, id", MAPPER, args.toArray());
     }
 
     @Override

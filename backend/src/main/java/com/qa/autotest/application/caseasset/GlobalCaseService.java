@@ -51,10 +51,22 @@ public class GlobalCaseService {
             "用例编号", "标题", "一级分类", "二级分类", "优先级", "前置条件", "测试步骤",
             "预期结果", "用例分类", "测试归类", "ED202覆盖情况", "安全级", "生命周期状态", "来源工作表");
 
+    /**
+     * 公共库列表行。
+     *
+     * <p>v5.11.0 / W61-11：尾部追加脚本三件套（+ 多绑定计数 + 绝对路径脏数据标记）。
+     * 追加在尾部而不是插在中间，是为了既有调用点的位置参数照旧成立。
+     */
     public record GlobalCaseRow(long id, String caseCode, String externalId, String title,
                                 String categoryL1, String categoryL2, String priority,
                                 String safetyLevel, String lifecycleStatus, int versionNo,
-                                String sourceSheet, String contentSha) {
+                                String sourceSheet, String contentSha,
+                                String scriptPath, String scriptName, String bindingState,
+                                int otherScriptCount, boolean scriptAbsoluteSource) {
+    }
+
+    /** 用例步骤（v5.11.0 / W61-08）：详情取真值，不再显示「源表无此列」。 */
+    public record StepView(int stepNo, String action, String expectation) {
     }
 
     public record CategoryRow(long id, int level, Long parentId, String name, int sortNo,
@@ -91,7 +103,10 @@ public class GlobalCaseService {
             String aSideCommand, String bSideCommand, String switchConfig,
             String testResult, String testResource,
             Long syncJobId, boolean localOverride, String sourceBadge,
-            String keyMaskedCredential) {
+            String keyMaskedCredential,
+            // v5.11.0 追加：内容三列 + 步骤 + 脚本三件套（追加在尾部，既有位置参数不变）
+            String caseKind, String precondition, String expected, List<StepView> steps,
+            String scriptPath, String scriptName, String bindingState) {
     }
 
     /** OPT-07 / FR-49-28：全选一级 / 全选二级 / 跨表交集三种筛选共用条件。 */
@@ -132,8 +147,21 @@ public class GlobalCaseService {
 
     // ------------------------------------------------------------------ 列表
 
+    /** 兼容旧调用（无「只看未分类」维度）。 */
     public PageResult<GlobalCaseRow> page(String keyword, String categoryL1, String categoryL2,
                                           String lifecycleStatus, int page, int size) {
+        return page(keyword, categoryL1, categoryL2, lifecycleStatus, false, page, size);
+    }
+
+    /**
+     * 公共库列表。
+     *
+     * @param uncategorized v5.11.0 / FR-v5.11-02：中栏「未分类」节点。为真时只返回
+     *                      一级分类为空的用例；与 categoryL1/L2 互斥（同时给以本参数为准）
+     */
+    public PageResult<GlobalCaseRow> page(String keyword, String categoryL1, String categoryL2,
+                                          String lifecycleStatus, boolean uncategorized,
+                                          int page, int size) {
         access.requireGlobalEnter();
         long projectId = platform.id();
         StringBuilder where = new StringBuilder(" WHERE project_id = ?");
@@ -146,7 +174,10 @@ public class GlobalCaseService {
             args.add(like);
             args.add(like);
         }
-        if (notBlank(categoryL1)) {
+        if (uncategorized) {
+            // 历史脏数据里既有 NULL 也有空串，两种都算「未分类」
+            where.append(" AND (category_l1 IS NULL OR TRIM(category_l1) = '')");
+        } else if (notBlank(categoryL1)) {
             where.append(" AND category_l1 = ?");
             args.add(categoryL1.trim());
         }
@@ -169,17 +200,27 @@ public class GlobalCaseService {
                 "SELECT id, case_code, external_id, title, category_l1, category_l2, priority,"
                         + " safety_level, lifecycle_status, version_no, source_sheet, content_sha"
                         + " FROM test_case" + where + " ORDER BY category_l1, case_code LIMIT ? OFFSET ?",
+                // 尾部 5 个脚本字段先占位，随后由 withScript 统一填充（未注入解析服务时保持空）
                 (rs, i) -> new GlobalCaseRow(rs.getLong("id"), rs.getString("case_code"),
                         rs.getString("external_id"), rs.getString("title"),
                         rs.getString("category_l1"), rs.getString("category_l2"),
                         rs.getString("priority"), rs.getString("safety_level"),
                         rs.getString("lifecycle_status"), rs.getInt("version_no"),
-                        rs.getString("source_sheet"), rs.getString("content_sha")),
+                        rs.getString("source_sheet"), rs.getString("content_sha"),
+                        null, null, CaseScriptView.UNBOUND, 0, false),
                 listArgs.toArray());
-        return new PageResult<>(rows, total == null ? 0 : total, safePage, safeSize);
+        return new PageResult<>(withScript(rows), total == null ? 0 : total, safePage, safeSize);
     }
 
     /** FR-49-07：GET /api/global/cases/{id} 详情（统一契约、脱敏）。 */
+    /** v5.11.0 / W61-11：脚本路径解析（可选装配；未注入时脚本字段为空，列表本身照常返回）。 */
+    private CaseScriptLookup scriptLookup;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setScriptLookup(CaseScriptLookup scriptLookup) {
+        this.scriptLookup = scriptLookup;
+    }
+
     public CaseDetailView detail(long id) {
         access.requireGlobalEnter();
         return findDetail(platform.id(), id);
@@ -192,12 +233,35 @@ public class GlobalCaseService {
         return findDetail(projectId, caseId);
     }
 
+    /** 一页用例一次批量解析脚本，不在 SQL 里逐行 join（避免 N+1 与重复行）。 */
+    private List<GlobalCaseRow> withScript(List<GlobalCaseRow> rows) {
+        if (scriptLookup == null || rows.isEmpty()) {
+            return rows;
+        }
+        List<Long> ids = rows.stream().map(GlobalCaseRow::id).toList();
+        java.util.Map<Long, CaseScriptView> scripts = scriptLookup.of(platform.id(), ids);
+        List<GlobalCaseRow> out = new ArrayList<>(rows.size());
+        for (GlobalCaseRow row : rows) {
+            CaseScriptView script = scripts.get(row.id());
+            if (script == null) {
+                out.add(row);
+                continue;
+            }
+            out.add(new GlobalCaseRow(row.id(), row.caseCode(), row.externalId(), row.title(),
+                    row.categoryL1(), row.categoryL2(), row.priority(), row.safetyLevel(),
+                    row.lifecycleStatus(), row.versionNo(), row.sourceSheet(), row.contentSha(),
+                    script.scriptPath(), script.scriptName(), script.bindingState(),
+                    script.otherScriptCount(), script.absoluteSource()));
+        }
+        return out;
+    }
+
     private CaseDetailView findDetail(long projectId, long caseId) {
         List<Map<String, Object>> rows = jdbc.queryForList("""
                 SELECT id, case_code, external_id, title, category_l1, category_l2, priority,
                        safety_level, lifecycle_status, version_no, source_sheet, content_sha,
                        a_side_command, b_side_command, switch_config, test_result, test_resource,
-                       source
+                       case_kind, precondition, expected, source
                   FROM test_case WHERE id = ? AND project_id = ?
                 """, caseId, projectId);
         if (rows.isEmpty()) {
@@ -211,6 +275,15 @@ public class GlobalCaseService {
         boolean localOverride = "local_override".equals(text(r.get("source")));
         String badge = localOverride ? "LOCAL_OVERRIDE"
                 : syncJobId != null ? "GLOBAL_SYNC" : "LOCAL";
+        // v5.11.0 / W61-08：步骤与内容三列取真值 —— 这三项此前被前端硬编码成「源表无此列」，
+        // 而 test_case.precondition / expected 与 test_case_step 一直都在库里。
+        List<StepView> steps = jdbc.query("""
+                SELECT step_no, action, expectation
+                  FROM test_case_step WHERE test_case_id = ? ORDER BY step_no, id
+                """, (rs, i) -> new StepView(rs.getInt("step_no"), rs.getString("action"),
+                rs.getString("expectation")), caseId);
+        CaseScriptView script = scriptLookup == null
+                ? CaseScriptView.empty(null) : scriptLookup.one(projectId, caseId);
         // 凭据类字段只允许 keyMasked 前缀，且只放掩码；绝不把任何凭据原文放进响应。
         return new CaseDetailView(
                 ((Number) r.get("id")).longValue(), text(r.get("case_code")),
@@ -222,7 +295,9 @@ public class GlobalCaseService {
                 text(r.get("a_side_command")), text(r.get("b_side_command")),
                 text(r.get("switch_config")), text(r.get("test_result")),
                 text(r.get("test_resource")),
-                syncJobId, localOverride, badge, "****");
+                syncJobId, localOverride, badge, "****",
+                text(r.get("case_kind")), text(r.get("precondition")), text(r.get("expected")),
+                steps, script.scriptPath(), script.scriptName(), script.bindingState());
     }
 
     // ---------------------------------------------------------------- 分类

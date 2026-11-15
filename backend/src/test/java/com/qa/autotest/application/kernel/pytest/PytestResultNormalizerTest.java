@@ -307,13 +307,14 @@ class PytestResultNormalizerTest {
         }
 
         @Override
-        public void writeImportMetadata(long testCaseId, ImportMetadata meta, Long operatorId) {
+        public void writeImportMetadata(long projectId, long testCaseId, ImportMetadata meta,
+                                        Long operatorId) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public void insertImportedSteps(long testCaseId, List<ImportedStep> steps, int sourceRow,
-                Long operatorId) {
+        public void insertImportedSteps(long projectId, long testCaseId, List<ImportedStep> steps,
+                int sourceRow, Long operatorId) {
             throw new UnsupportedOperationException();
         }
 

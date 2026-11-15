@@ -59,10 +59,12 @@ public class GlobalCaseController {
             @RequestParam(required = false) String categoryL1,
             @RequestParam(required = false) String categoryL2,
             @RequestParam(required = false) String lifecycleStatus,
+            // v5.11.0 / FR-v5.11-02：中栏「未分类」节点
+            @RequestParam(required = false) Boolean uncategorized,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size) {
         return ApiResponse.ok(service.page(keyword, categoryL1, categoryL2, lifecycleStatus,
-                page, size));
+                Boolean.TRUE.equals(uncategorized), page, size));
     }
 
     @GetMapping("/categories")

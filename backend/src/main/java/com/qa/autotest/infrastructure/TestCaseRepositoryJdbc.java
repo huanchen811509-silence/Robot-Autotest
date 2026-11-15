@@ -240,34 +240,39 @@ public class TestCaseRepositoryJdbc implements TestCaseRepository {
     }
 
     @Override
-    public void writeImportMetadata(long testCaseId, ImportMetadata meta, Long operatorId) {
+    public void writeImportMetadata(long projectId, long testCaseId, ImportMetadata meta,
+                                    Long operatorId) {
         if (meta == null || (isBlank(meta.categoryL2()) && isBlank(meta.sourcePriority())
                 && isBlank(meta.caseClass()) && isBlank(meta.testCategory())
                 && isBlank(meta.ed202Coverage()) && isBlank(meta.sourceSheet()))) {
             return;
         }
-        jdbc.update("""
+        String sql = """
                 UPDATE test_case SET category_l2 = ?, source_priority = ?, case_class = ?,
                        test_category = ?, ed202_coverage = ?, source_sheet = ?, updated_by = ?
-                 WHERE id = ?
-                """, meta.categoryL2(), meta.sourcePriority(), meta.caseClass(),
+                 WHERE id = ? AND project_id = ?
+                """;
+        TenantGuard.requireProjectScope(sql, "test_case");
+        jdbc.update(sql, meta.categoryL2(), meta.sourcePriority(), meta.caseClass(),
                 meta.testCategory(), meta.ed202Coverage(), meta.sourceSheet(),
-                operatorId, testCaseId);
+                operatorId, testCaseId, projectId);
     }
 
     @Override
-    public void insertImportedSteps(long testCaseId, List<ImportedStep> steps, int sourceRow,
-                                    Long operatorId) {
+    public void insertImportedSteps(long projectId, long testCaseId, List<ImportedStep> steps,
+                                    int sourceRow, Long operatorId) {
         if (steps == null || steps.isEmpty()) {
             return;
         }
         for (ImportedStep step : steps) {
+            // 父用例不属于本项目时 EXISTS 为假 → 0 行写入，绝不往别人项目里塞步骤
             jdbc.update("""
                     INSERT INTO test_case_step
                       (test_case_id, step_no, action, expectation, source_row, created_by, updated_by)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    SELECT ?, ?, ?, ?, ?, ?, ?
+                     WHERE EXISTS (SELECT 1 FROM test_case WHERE id = ? AND project_id = ?)
                     """, testCaseId, step.stepNo(), step.action(), step.expectation(),
-                    sourceRow, operatorId, operatorId);
+                    sourceRow, operatorId, operatorId, testCaseId, projectId);
         }
     }
 
@@ -377,6 +382,29 @@ public class TestCaseRepositoryJdbc implements TestCaseRepository {
             result.put(rs.getString("case_code"), rs.getString("priority"));
         }, projectId);
         return result;
+    }
+
+    @Override
+    public ImpactCounts impactOf(long projectId, long caseId) {
+        String setSql = """
+                SELECT COUNT(*) FROM test_set_item i
+                  JOIN test_set s ON s.id = i.test_set_id
+                 WHERE s.project_id = ? AND i.test_case_id = ?
+                """;
+        TenantGuard.requireProjectScope(setSql, "test_set_item");
+        Long setRefs = jdbc.queryForObject(setSql, Long.class, projectId, caseId);
+        Long scriptBindings = jdbc.queryForObject("""
+                SELECT COUNT(*) FROM case_script_binding WHERE project_id = ? AND case_id = ?
+                """, Long.class, projectId, caseId);
+        // test_result 没有 project_id（按 run 归属），所以走 run 关联取项目口径
+        Long runResults = jdbc.queryForObject("""
+                SELECT COUNT(*) FROM test_result r
+                  JOIN run n ON n.id = r.run_id
+                 WHERE n.project_id = ? AND r.case_id = ?
+                """, Long.class, projectId, caseId);
+        return new ImpactCounts(setRefs == null ? 0L : setRefs,
+                scriptBindings == null ? 0L : scriptBindings,
+                runResults == null ? 0L : runResults);
     }
 
     @Override

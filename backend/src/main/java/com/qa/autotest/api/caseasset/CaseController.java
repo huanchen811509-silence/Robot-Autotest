@@ -1,6 +1,8 @@
 package com.qa.autotest.api.caseasset;
 
 import com.qa.autotest.application.caseasset.CaseImportService;
+import com.qa.autotest.application.caseasset.CaseListView;
+import com.qa.autotest.application.caseasset.CaseScriptLookup;
 import com.qa.autotest.common.query.PageQuery;
 import com.qa.autotest.application.caseasset.CapabilityService;
 import com.qa.autotest.application.caseasset.GlobalCaseService;
@@ -52,9 +54,17 @@ public class CaseController {
     /** OPT-02：统一详情契约的可选装配；既有测试用 3 参构造器直接 new，未注入时降级。 */
     private GlobalCaseService globalCases;
 
+    /** v5.11.0 / W61-11：脚本路径解析；未注入时列表照常返回，脚本字段退化为空。 */
+    private CaseScriptLookup scripts;
+
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     void setGlobalCases(GlobalCaseService globalCases) {
         this.globalCases = globalCases;
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setScriptLookup(CaseScriptLookup scripts) {
+        this.scripts = scripts;
     }
 
     public CaseController(TestCaseService cases, CapabilityService capabilities,
@@ -65,7 +75,7 @@ public class CaseController {
     }
 
     @GetMapping("/cases")
-    public ApiResponse<PageResult<TestCase>> page(
+    public ApiResponse<PageResult<CaseListView>> page(
             @PathVariable long projectId,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String domain,
@@ -80,8 +90,27 @@ public class CaseController {
         PageQuery paging = beforeId == null
                 ? PageQuery.of(page, size, sort, SORTS, "id")
                 : PageQuery.keyset(size, beforeId);
-        return ApiResponse.ok(cases.page(projectId, keyword, domain, priority, reviewStatus,
-                capability, safetyLevel, paging));
+        PageResult<TestCase> result = cases.page(projectId, keyword, domain, priority,
+                reviewStatus, capability, safetyLevel, paging);
+        if (scripts == null || result.items().isEmpty()) {
+            return ApiResponse.ok(new PageResult<>(
+                    result.items().stream().map(CaseListView::of).toList(),
+                    result.total(), result.page(), result.size()));
+        }
+        java.util.Map<Long, com.qa.autotest.application.caseasset.CaseScriptView> scriptMap =
+                scripts.of(projectId, result.items().stream().map(TestCase::id).toList());
+        return ApiResponse.ok(new PageResult<>(
+                result.items().stream()
+                        .map(item -> CaseListView.of(item, scriptMap.get(item.id())))
+                        .toList(),
+                result.total(), result.page(), result.size()));
+    }
+
+    /** v5.11.0 / FR-v5.11-07：删除前的影响面预览（只读，不改任何数据）。 */
+    @GetMapping("/cases/{id}/impact")
+    public ApiResponse<TestCaseService.CaseImpact> impact(@PathVariable long projectId,
+                                                          @PathVariable long id) {
+        return ApiResponse.ok(cases.impact(projectId, id));
     }
 
     /** FR-49-07：项目用例详情与公共库共用同一字段契约（四列补录 + 来源徽章 + 脱敏）。 */
@@ -103,7 +132,13 @@ public class CaseController {
                 tc.id() == null ? 0L : tc.id(), tc.caseCode(), tc.caseCode(), tc.title(),
                 tc.category(), "", tc.priority(), tc.safetyLevel(), "active", 1, "", "",
                 "", "", "", "", "", null, localOverride,
-                localOverride ? "LOCAL_OVERRIDE" : "LOCAL", "****"));
+                localOverride ? "LOCAL_OVERRIDE" : "LOCAL", "****",
+                tc.category(), tc.precondition(), tc.expected(),
+                detail.steps().stream()
+                        .map(step -> new GlobalCaseService.StepView(step.stepNo(), step.action(),
+                                step.expectation()))
+                        .toList(),
+                null, null, "UNBOUND"));
     }
 
     @PostMapping("/cases")

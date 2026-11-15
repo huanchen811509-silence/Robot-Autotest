@@ -95,7 +95,11 @@ class CaseImportExtraColumnsTest {
                 1L, "C-1", "EXT-1", "标题", "L1", "L2", "P0", "LX",
                 "active", 1, "sheet", "sha",
                 "cmdA", "cmdB", "cfg", "pass", "resource",
-                9L, false, "GLOBAL_SYNC", "****");
+                9L, false, "GLOBAL_SYNC", "****",
+                // v5.11.0：内容三列 + 步骤 + 脚本三件套
+                "功能", "预置条件", "期望结果",
+                java.util.List.of(new GlobalCaseService.StepView(1, "动作", "预期")),
+                "cases/net/roce_bw.py", "roce_bw.py", "BOUND_VERIFIED");
         ObjectMapper mapper = new ObjectMapper();
         String json = mapper.writeValueAsString(view);
         String lower = json.toLowerCase(Locale.ROOT);

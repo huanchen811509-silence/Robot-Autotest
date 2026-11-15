@@ -1,6 +1,7 @@
 package com.qa.autotest.application.repository;
 
 import com.qa.autotest.domain.caseasset.CaseScriptBinding;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -35,4 +36,17 @@ public interface CaseScriptBindingRepository {
     void deleteById(long projectId, long id);
 
     long countByProject(long projectId, String kernel);
+
+    /**
+     * 批量取一页用例的绑定（v5.11.0 / W61-11 / FR-v5.11-05）。
+     *
+     * <p>为什么给 default 空实现：本方法只服务「列表行显示脚本」这一个读场景，
+     * 既有测试桩（5 处）不关心脚本，不该为了一个展示字段全部改一遍。
+     * 生产只有一个实现（{@code CaseScriptBindingRepositoryJdbc}），已显式覆盖。
+     *
+     * @param caseIds 为空时返回空列表，调用方不必特判
+     */
+    default List<CaseScriptBinding> listByCaseIds(long projectId, Collection<Long> caseIds) {
+        return List.of();
+    }
 }

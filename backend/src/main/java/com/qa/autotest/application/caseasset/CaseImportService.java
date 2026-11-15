@@ -525,12 +525,13 @@ public class CaseImportService {
                 long caseId = cases.insert(entity, TenantContext.userId());
                 Long operatorId = TenantContext.userId();
                 if (hasExtendedData(row)) {
-                    cases.writeImportMetadata(caseId, new TestCaseRepository.ImportMetadata(
+                    cases.writeImportMetadata(projectId, caseId, new TestCaseRepository.ImportMetadata(
                             row.categoryL2(), row.sourcePriority(), row.caseClass(),
                             row.testCategory(), row.ed202Coverage(), row.sourceSheet()), operatorId);
                 }
                 writeExtraColumns(caseId, row, operatorId);
-                cases.insertImportedSteps(caseId, toImportedSteps(row.steps()), row.sourceRow(),
+                cases.insertImportedSteps(projectId, caseId, toImportedSteps(row.steps()),
+                        row.sourceRow(),
                         operatorId);
                 imported++;
             }

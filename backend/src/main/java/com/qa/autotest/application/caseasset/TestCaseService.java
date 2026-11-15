@@ -48,6 +48,16 @@ public class TestCaseService {
     public record CaseDetail(TestCase testCase, List<TestCaseStep> steps) {
     }
 
+    /**
+     * 删除前影响面（v5.11.0 / W61-15 / FR-v5.11-07）。
+     *
+     * <p>三个数字在**确认弹窗里先给用户看**，再决定删不删；它们与删除的拦截条件是两回事：
+     * 拦截仍只看脚本绑定（{@code caseReferences}），这里多出来的「用例集引用」删除时会
+     * 按既有策略级联移出（{@code TestCaseRepositoryJdbc.delete} 先删 test_set_item）。
+     */
+    public record CaseImpact(long setRefs, long scriptBindings, long runResults) {
+    }
+
     /** 批量动作（UX-02，FR-v0.2-37；setSafetyLevel 为 G2-3 / ADR-0013 的人工补判入口）。 */
     public static final Set<String> BATCH_ACTIONS = Set.of("submit", "approve", "reject",
             "setPriority", "setDomainTag", "setSafetyLevel", "delete");
@@ -220,6 +230,15 @@ public class TestCaseService {
     }
 
     @Audited(action = "case:delete", resource = "test_case")
+    public CaseImpact impact(long projectId, long id) {
+        access.bindProject(projectId);
+        access.require(PermissionResource.CASE, PermissionAction.READ);
+        cases.find(projectId, id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "用例不存在"));
+        var counts = cases.impactOf(projectId, id);
+        return new CaseImpact(counts.setRefs(), counts.scriptBindings(), counts.runResults());
+    }
+
     public void delete(long projectId, long id) {
         access.bindProject(projectId);
         access.require(PermissionResource.CASE, PermissionAction.DELETE);
