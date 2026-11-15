@@ -1,10 +1,12 @@
 package com.qa.autotest.application.report;
 
+import com.qa.autotest.application.repository.EhtSectionRepository;
 import com.qa.autotest.application.repository.ReportTemplateRepository;
 import com.qa.autotest.application.repository.TestReportRepository;
 import com.qa.autotest.application.repository.TestSetRepository;
 import com.qa.autotest.common.BusinessException;
 import com.qa.autotest.common.ErrorCode;
+import com.qa.autotest.domain.report.ReportRecord;
 import com.qa.autotest.domain.report.ReportSnapshot;
 import com.qa.autotest.domain.report.ReportSourceType;
 import com.qa.autotest.domain.report.ReportState;
@@ -28,11 +30,12 @@ public class TestReportService {
     private final ReportQueryService queries;
     private final ReportTemplateRepository templates;
     private final TestSetRepository caseSets;
+    private final EhtSectionRepository ehtSections;
 
     public TestReportService(TestReportRepository repository, ReportSnapshotService snapshots,
                              ReportViewRenderer renderer, ReportExportService exports,
                              ReportQueryService queries, ReportTemplateRepository templates,
-                             TestSetRepository caseSets) {
+                             TestSetRepository caseSets, EhtSectionRepository ehtSections) {
         this.repository = repository;
         this.snapshots = snapshots;
         this.renderer = renderer;
@@ -40,6 +43,7 @@ public class TestReportService {
         this.queries = queries;
         this.templates = templates;
         this.caseSets = caseSets;
+        this.ehtSections = ehtSections;
     }
 
     public TestReport find(long id) {
@@ -94,8 +98,9 @@ public class TestReportService {
     private TestReport createInternal(long projectId, String runId, ReportSourceType sourceType,
                                       Long caseSetId, String title) {
         int version = repository.maxVersion(projectId, runId) + 1;
-        ReportSnapshot snapshot = snapshots.build(queries.detail(projectId, runId), version,
-                defaultTemplate(projectId, runId));
+        ReportRecord detail = queries.detail(projectId, runId);
+        ReportSnapshot snapshot = snapshots.build(detail, version,
+                defaultTemplate(projectId, runId), sectionsOf(detail));
         long id = repository.insert(projectId, runId, sourceType, caseSetId,
                 title == null || title.isBlank() ? "报告 " + runId : title, version, snapshot);
         repository.audit(id, "CREATE", null, ReportState.DRAFT.name(), null);
@@ -117,9 +122,9 @@ public class TestReportService {
         TestReport report = find(id);
         require(report.state().canTransitionTo(ReportState.FROZEN), "只有 DRAFT 可以冻结");
         int version = repository.maxVersion(report.projectId(), report.runId()) + 1;
-        ReportSnapshot snapshot = snapshots.build(
-                queries.detail(report.projectId(), report.runId()), version,
-                defaultTemplate(report.projectId(), report.runId()));
+        ReportRecord detail = queries.detail(report.projectId(), report.runId());
+        ReportSnapshot snapshot = snapshots.build(detail, version,
+                defaultTemplate(report.projectId(), report.runId()), sectionsOf(detail));
         repository.freeze(id, snapshot);
         repository.audit(id, "FREEZE", report.state().name(), ReportState.FROZEN.name(), null);
         return find(id);
@@ -154,6 +159,25 @@ public class TestReportService {
      * kernel 创建后不可改（B-15），所以现场推断不会让历史报告漂移；模板若已被删除，
      * 原样返回快照回指，不编造来源。
      */
+    /**
+     * v5.14.0 / W64-14：三段式数据装配。metadata 取冻结用的同一份 ReportRecord，
+     * 与快照 JSON 同源；装配失败不阻断报告创建（仓储本身返回可解释空值）。
+     */
+    private EhtSections sectionsOf(ReportRecord detail) {
+        return ehtSections.load(detail.projectId(), detail.runId())
+                .withMetadata(ReportViewRenderer.safeMetadata(detail.metadata()));
+    }
+
+    /** 详情页「证据层」卡片的只读数据源：现场装配，字段清单仍以冻结快照为准。 */
+    public EhtSections sections(long id) {
+        TestReport report = find(id);
+        try {
+            return sectionsOf(queries.detail(report.projectId(), report.runId()));
+        } catch (RuntimeException ex) {
+            return ehtSections.load(report.projectId(), report.runId());
+        }
+    }
+
     public ReportViewRenderer.TemplateRef template(long id) {
         TestReport report = find(id);
         ReportViewRenderer.TemplateRef ref = renderer.templateRef(snapshotOf(report));

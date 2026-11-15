@@ -49,6 +49,42 @@ export interface TestReportSnapshot {
   hasSnapshot: boolean
 }
 
+/** v5.14.0 / W64-14：三段式报告的只读装配（结论 / 证据 / 附录）。 */
+export interface EhtCountRow {
+  passed: number
+  failed: number
+  missingEvidence: number
+  undetermined: number
+  total: number
+}
+
+export interface EhtEvidenceRow {
+  /** 优先真实 pytest nodeid，退化为 test_result.case_key */
+  nodeRef: string
+  criteriaText: string
+  measuredValue: string
+  /** 证据文件相对路径；null = 本次执行没有登记产物 */
+  evidencePath: string | null
+}
+
+export interface EhtSections {
+  kernel: string
+  counts: EhtCountRow
+  undetermined: { nodeRef: string; reason: string }[]
+  evidence: EhtEvidenceRow[]
+  metadata: Record<string, string>
+  metadataRequired: string[]
+  commitSha: string | null
+  diff: {
+    hasBaseline: boolean
+    baselineRunId: string | null
+    newFail: number
+    newPass: number
+    bothFail: number
+    notRun: number
+  }
+}
+
 /**
  * v5.14.0 / W64-11：模板回指元信息。字段清单仍来自冻结快照，
  * kernel / templateSource 是查询期补充，供界面判断「当前使用通用模板」。
@@ -100,6 +136,8 @@ export const testReportsApi = {
     request<TestReportSnapshot>(`/test-reports/${id}/snapshot`),
   template: (id: number) =>
     request<TestReportTemplateRef>(`/test-reports/${id}/template`),
+  sections: (id: number) =>
+    request<EhtSections>(`/test-reports/${id}/sections`),
   render: (id: number, external = true) =>
     request<Record<string, unknown>>(`/test-reports/${id}?external=${external}`),
   exportBlob: (id: number, format: string) =>

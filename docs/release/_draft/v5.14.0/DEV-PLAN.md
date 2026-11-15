@@ -406,3 +406,26 @@ W4 与 W2/W3 改动面不重叠可并行；W5 必须在 W4 之后（要用 kerne
 |---|---|---|
 | B-18 | B-17 的「界面提示语留 W7」提前到 W4 落地 | P0 判据不能等到收口波才补；实现只增元信息与一个提示条，不动冻结快照 |
 | B-19 | `templateSource` 未写进 `snapshot_json`，而是查询期由 `/template` 端点算 | 写进快照会让每份历史报告的 hash 变化，且「选择落在哪一级」是展示元信息不是报告字段 |
+
+
+---
+
+## 17. W5 实际完成（W64-14 ~ W64-15）
+
+| WBS | 完成内容 | 验收读数 |
+|---|---|---|
+| W64-14 | 新增 `EhtSections`（结论四态 / 未定项 / 证据行 / 环境 / 差异）+ `EhtSectionRepository` 接口 + `EhtSectionRepositoryJdbc`（4 条只读 SQL）；`ReportSnapshotService` 加 4 参重载生成三段式 HTML（结论 / 证据 / 附录 + 目录锚点），**旧 2/3 参重载保持平铺不变**；`TestReportService` 装配并接线；新增 `GET /api/test-reports/{id}/sections`；详情页加证据层卡片复用 `CaseScriptLink` | 后端 `EhtPytestReportTest` 9 例 / `ReportDiffTest` 4 例；前端 `TestReportDetailView.spec.ts` 4 例；真实库 4 条 SQL 探针 2 样本 |
+| W64-15 | 差异复用既有 `CompareService` 自动基线；`EhtSections.Diff.from()` 作映射单一真值，无基线一律 `none()` 并显示「无上次执行」 | `ReportDiffTest` 4 例（含有基线四类计数、无基线不许假报新增失败、null 结果） |
+
+### 17.1 W5 偏差登记
+
+| # | 偏差 | 原因 |
+|---|---|---|
+| B-20 | 第四态「未执行」改为「未判定」 | `test_result` 无 NOT_RUN 载体（A-16）；四值互斥穷尽反而让判据 2 可由 SQL 保证 |
+| B-21 | 三段式只在新 4 参重载生效 | 旧重载被 `ReportSnapshotTest` 的平铺 HTML / hash 断言钉住（R-29），改它会让历史报告口径漂移 |
+| B-22 | 锚点跳转放在 iframe 内部目录，不是外层左栏 | `sandbox=""` 无 allow-same-origin（A-21）；清洗器实测保留站内 `href="#"` |
+| B-23 | 证据层 Vue 组件放在详情页外围卡片 | iframe srcdoc 是静态 HTML，无法渲染 Vue 组件（A-17） |
+| B-24 | 附录执行环境四项只给有载体的真值，其余写「未采集」 | 无数据载体（R-26）；「不编造」优先于「看起来完整」 |
+| B-25 | 差异基线沿用 DUT/LINK，不新增 kernel 过滤 | 既有 `CompareService` 服务执行报告链路，改它的基线口径会波及 v3.x 既有判据（A-19） |
+| B-26 | 新增 1 个端点 `/{id}/sections` | 详情页外围证据卡片需要独立只读通道；契约由 457/375 升到 458/376 |
+| B-27 | W5 零迁移 | 三段式是查询期装配（A-23），业务表数仍 109 |

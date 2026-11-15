@@ -85,3 +85,19 @@
 | R-20 | `V11_74` 真实迁移可执行：`kernel varchar(32) NOT NULL DEFAULT 'robot'`；`flyway_schema_history` 最新 `11.74/11.73/11.68`；存量行无 NULL；EHT-PYTEST 9 字段且 `INSERT IGNORE` 重放幂等；平台 DEFAULT 仍 21 字段；业务表数 109 | `w4-verify.txt` [4]（`bash scripts/db-migrate.sh` + mysql CLI） |
 | R-21 | `run` 表真实内核分布 `robot:496 / pytest:47`；四级回退 SELECT+CASE 在真实库上按 kernel 正确分流（robot→DEFAULT、pytest→EHT-PYTEST），项目 7 与平台项目 88 各一组 | `w4-verify.txt` [5]（`w4_sql_probe.py`） |
 | R-22 | `TestReportService.template()` 原本只从快照读 `TemplateRef(id,version,name,fieldKeys)`；快照 JSON 里**没有** run kernel，也没有「选择落在哪一级」。故 `templateSource` 只能作查询期元信息，不能从快照复原 | `ReportSnapshotService.templateNode` / `ReportRecord` 字段清单 |
+
+
+---
+
+## 附：W5 开工前事实清单（R-23 ~ R-30，2026-11-15，只读核实）
+
+| # | 事实 | 证据来源 |
+|---|---|---|
+| R-23 | 快照 HTML 是 `ReportSnapshotService.html()` 生成的平铺 `<dl>`，无分节 / 锚点；`ReportHtmlSanitizer` **保留** `<a>` / `<section id>` / `href="#..."`，但会整块删 `<style>`、删 `on*` 属性 | `ReportSnapshotService.java:117-125`、`ReportHtmlSanitizer.java:28-42` |
+| R-24 | 仓库没有「通过 / 不通过 / 缺证据 / 未执行」四态枚举；现成的是三态 `CaseConclusionResolver.Conclusion{PASS,FAIL,UNDETERMINED}` 与判据列 `criteria_verdict` 的 `PASS / FAIL / MISSING / NULL` **四值互斥且穷尽** | `V11_59__test_result_criteria.sql`、`CaseConclusionResolver.java:25-27` |
+| R-25 | `test_result` 没有 `node_id` / 证据路径列；真实证据在 `pytest_case_step.node_id / content / stdout_path`，run 级产物在 `run_artifact.path / availability` | `V11_48__pytest_case_step.sql`、`V1__baseline.sql:509-524` |
+| R-26 | 快照 metadata 只有 `safeMetadata()` 过滤后的 **5 项**脱敏值；十项门禁在 `MetadataGate.REQUIRED`；内核版本 / 插件版本 / 仓库 commit / 快照引用原本**无载体**（`COMMIT_SHA` 会被 5 键白名单滤掉） | `ReportViewRenderer.java:262-274`、`MetadataGate.java:22-24` |
+| R-27 | 跨 run 差异已有 `CompareService`，但基线按 `projectId + DUT/LINK + 时间` 选、**无 kernel 条件**，且属于执行报告链路；无基线时 `newFail` 会把所有当前 FAIL 计成「新增失败」 | `CompareService.java:91-147`、`ReportReadRepositoryJdbc.java:80-101` |
+| R-28 | 5.11 的 `CaseScriptLink.vue` 是默认导出组件，`bound` 只在 `bindingState` 为 `BOUND_VERIFIED` / `BOUND_UNVERIFIED` 时为真；报告链路此前**零引用** | `CaseScriptLink.vue:1-48` |
+| R-29 | `ReportSnapshotService.build` 已有 2 参 / 3 参重载，`ReportSnapshotTest` 断言平铺 HTML 与 hash 稳定；新增三段式必须保留旧重载，否则历史报告与单测一起变 | `ReportSnapshotTest.java:31-41` |
+| R-30 | 真实库探针（2 个 run 样本）：`run_artifact.path` / `pytest_case_step.stdout_path` 存的是**绝对路径**（`/home/evergreen/robot-test/artifacts/...`、`/tmp/eht-fake-runs/...`），且部分 run 的 `case_key` 为空 → `node_ref` 会是 NULL | `w5-verify.txt` [3]（`w5_sql_probe.py`） |

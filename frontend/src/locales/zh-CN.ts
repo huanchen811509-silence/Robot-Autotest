@@ -1897,6 +1897,11 @@ export default {
     templateLabel: '使用模板',
     templateKernelLabel: '模板内核',
     genericTemplateHint: '当前使用通用模板（本项目无匹配内核模板），可应用 EHT 预置模板',
+    sectionEvidence: '证据层（可复制的相对路径）',
+    evidenceCounts: '通过 {passed} · 不通过 {failed} · 缺证据 {missing} · 未判定 {undetermined} / 共 {total}',
+    evidenceEmpty: '本次执行没有用例级证据记录',
+    evidenceNotApplicable: '不适用（RF 判据载体未建立）',
+    noBaseline: '无上次执行（无法计算与上次差异）',
 
     freezeAction: '冻结报告',
     snapshotMissing: '该报告没有快照（历史数据），无法预览',

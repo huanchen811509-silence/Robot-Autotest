@@ -375,3 +375,29 @@ docs/evidence/v5.14.0/
 前端 `ReportTemplatesView.spec.ts` 9 例 + `TestReportDetailView.spec.ts` 3 例；契约 `457/375 --check PASS`；
 `check_dto_columns.py` / `check_tables.py` / `check_md_tables.py` 全 PASS；`vue-tsc` 0 error；`check_i18n.py` 5/5。
 真实 HTTP 端点探针、真视口截图、v5.13 反向回放仍留 W7。
+
+
+---
+
+## 14. W5 实测结果（滚动）
+
+| TC | 方式 | 结果 | 证据 |
+|---|---|---|---|
+| TC-v5.14-42 | `UT` | PASS | 三段式三个 `<section id>` + 目录 `href="#"` 存在，且经 `ReportHtmlSanitizer.sanitize()` 后仍保留 |
+| TC-v5.14-43 | `UT`+`DB` | PASS | 四态之和 = `COUNT(*)`；2 个真实 run 样本（pytest total=1 / robot total=1）断言通过；不平衡样本 HTML 显式写「不一致」 |
+| TC-v5.14-44 | `UT`+`DB` | PASS | 未定项点名到 `IM-FUN-014`（pytest 真实样本）；空 case_key 兜底为 `case#918529`（robot 真实样本） |
+| TC-v5.14-45 | `UT`+`FE` | PASS（实现侧） | 证据行渲染 `<a href="相对路径">`，详情页 `CaseScriptLink :full` 显示可复制路径；绝对路径相对化 1 例单测；真视口点击 3 条验证留 W7 |
+| TC-v5.14-46 | `UT`+`FE` | PASS（实现侧） | RF 内核快照写「不适用（RF 判据载体未建立）」且证据层不出现「判据行原文：」；前端空态断言；回归截图留 W7 |
+| TC-v5.14-47 | `UT` | PASS | `Diff.from()` 无基线不假报新增失败、有基线原样透出四类计数、null 结果显式 none；真实两次执行样本与差异截图留 W7 |
+| TC-v5.14-48 | `UT` | PASS | 旧 2 参 / 3 参重载仍平铺 `<dl>`、hash 稳定、JSON 不含 `eht` 节点（零回归） |
+
+**W5 合计**：后端 `EhtPytestReportTest` 9 / `ReportDiffTest` 4 / `ReportSnapshotTest` 5 /
+`ReportHtmlSanitizerTest` 4 / `ReportTemplateKernelTest` 6 / `ReportTemplateServiceTest` 11 /
+`ReportTemplateFreezeTest` 7 = **46 例**；前端 `TestReportDetailView.spec.ts` 4 /
+`ReportTemplatesView.spec.ts` 9 / `ReportExportBar.spec.ts` 3 / `CaseScriptLink.spec.ts` 7 = **23 例**；
+`check_i18n.py` 5/5（3126 键）、`vue-tsc` 0 error、契约 `458/376 --check PASS`、
+`check_dto_columns.py` / `check_tables.py` / `check_md_tables.py` 全 PASS。
+
+**仍待 W7（如实登记）**：重建 jar + 重启后真实 HTTP 端点探针（含 `/{id}/sections` 响应）、
+真视口截图（三段锚点跳转、证据路径点击、RF 不适用、差异）、两次真实执行差异样本、
+全量门禁 `bash scripts/gates.sh`。

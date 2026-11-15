@@ -1885,6 +1885,11 @@ export default {
     templateLabel: 'Template',
     templateKernelLabel: 'Kernel',
     genericTemplateHint: 'Using a generic template (no kernel-matched template); apply the EHT preset',
+    sectionEvidence: 'Evidence (copyable relative paths)',
+    evidenceCounts: 'Pass {passed} / Fail {failed} / Missing {missing} / Undetermined {undetermined} of {total}',
+    evidenceEmpty: 'No case-level evidence recorded for this run',
+    evidenceNotApplicable: 'Not applicable (no RF criteria carrier)',
+    noBaseline: 'No previous run (diff unavailable)',
 
     freezeAction: 'Freeze report',
     snapshotMissing: 'This report has no snapshot (legacy data), preview unavailable',

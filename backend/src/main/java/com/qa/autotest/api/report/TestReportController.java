@@ -1,6 +1,7 @@
 package com.qa.autotest.api.report;
 
 import com.qa.autotest.application.iam.AccessControlService;
+import com.qa.autotest.application.report.EhtSections;
 import com.qa.autotest.application.report.ReportViewRenderer;
 import com.qa.autotest.application.report.TestReportService;
 import com.qa.autotest.common.ApiResponse;
@@ -94,6 +95,13 @@ public class TestReportController {
     public ApiResponse<ReportViewRenderer.TemplateRef> template(@PathVariable long id) {
         access.requireProjectAccess(reports.find(id).projectId());
         return ApiResponse.ok(reports.template(id));
+    }
+
+    /** v5.14.0 / W64-14：三段式结论 / 证据 / 附录的只读装配（元信息，不进 C5 字段视图）。 */
+    @GetMapping("/{id}/sections")
+    public ApiResponse<EhtSections> sections(@PathVariable long id) {
+        access.requireProjectAccess(reports.find(id).projectId());
+        return ApiResponse.ok(reports.sections(id));
     }
 
     @PostMapping("/{id}/freeze")

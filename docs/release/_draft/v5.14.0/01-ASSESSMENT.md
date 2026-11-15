@@ -116,3 +116,19 @@
 |---|---|---|---|
 | A-14 | 「回退可见」可只靠列表卡片的 kernel 标签 + 后端 TemplateRef 承担，界面提示语留 W7 再补（B-17） | W64-11 出口判据 ② 与 FR-08 判据 3 是 **P0**，留到收口波会让版本判未完成；且原 `TemplateRef` 不带 kernel / 来源，界面根本无从判断 | W4 收尾波落地 `templateSource` 元信息 + 详情页提示；B-17 改写为 B-18 |
 | A-15 | `templateSource` 应「写进报告详情响应」= 写进快照 JSON | 快照是冻结事实，写进去会改变所有历史报告的 `snapshot_hash`，且 `ReportRecord`/快照里没有 run kernel（R-22） | 改为查询期由 `GET /{id}/template` 现场计算；字段清单仍只从快照读，冻结纪律不破（B-19） |
+
+
+---
+
+## 附：W5 实测修订（A-16 ~ A-23，2026-11-15）
+
+| # | 原假设 | 实测结论 | 修订 |
+|---|---|---|---|
+| A-16 | 结论层「通过 / 不通过 / 缺证据 / 未执行」四态计数 | `test_result` 每一行都代表**已执行**的用例，没有 NOT_RUN 载体；判据列四值是 `PASS / FAIL / MISSING / NULL` | 第四态改为「未判定（未声明判据）」，由 `criteria_verdict IS NULL` 得到；四值互斥穷尽，四态之和恒等于 `COUNT(*)`，判据 2 由 SQL 保证，不编造「未执行」数字 |
+| A-17 | 证据层「复用 5.11 的 CaseScriptLink 同一套路径组件」= 直接放进报告 | 报告正文在 `iframe sandbox=""` 的 srcdoc 里，是静态 HTML，**不能渲染 Vue 组件** | 双轨：快照 HTML 内用 `<a href="相对路径">`；详情页外围新增「证据层」卡片，用 `CaseScriptLink` 显示可复制相对路径（`:full` + `:binding-state`） |
+| A-18 | 附录「metadata 十项 + 执行环境（内核版本 / 插件版本 / 仓库 commit / 快照引用）」 | 快照 JSON 原本只有脱敏 5 项；四项环境信息无载体 | 附录逐项列 10 个门禁键，缺失写「未提供」；有载体的给真值（内核取 `run.kernel`、commit 取 `metadata_json.COMMIT_SHA`、快照引用 `runId@vN`），无载体写「未采集」，**不编造** |
+| A-19 | 「与上次同工程执行差异」按 kernel 比对 | 现成 `CompareService` 按 DUT/LINK/时间自动基线，无 kernel 条件；无基线时会假报新增失败 | W5 复用现成基线（R-27），`Diff.from()` 显式挡掉无基线场景并给「无上次执行」；「按 kernel 过滤」登记为遗留，不改写既有执行报告链路 |
+| A-20 | 验证命令 `EhtPytestReportTest` / `ReportDiffTest` 可直接跑 | 两个类在仓库里**不存在** | 本波新建两个类，覆盖三段锚点 / 四态平衡 / 未定项点名 / 相对路径 / RF 不适用 / 零回归 / 差异映射 |
+| A-21 | 「锚点可跳转」由详情页左栏 `document.getElementById` 实现 | `iframe sandbox=""` 无 `allow-same-origin`，外层 JS 读不到 iframe 文档 | 改为快照 HTML **自带目录** `<nav id="toc"><a href="#conclusion">`，同文档 fragment 跳转不需要脚本；`ReportHtmlSanitizer` 实测保留这些标签 |
+| A-22 | 证据路径天然是相对路径，nodeRef 天然非空 | 真实库存绝对路径（泄漏部署布局），且部分 `case_key` 为空导致 `node_ref=NULL` | 新增 `EhtSections.relativePath()` 截到 `artifacts/` 段或只留文件名；SQL 的 `COALESCE` 加 `NULLIF(case_key,'')` 与 `CONCAT('case#', tr.id)` 兜底；修复后复跑探针确认 `case#918529` |
+| A-23 | 草案的 `V11_75` 一类迁移假设（三段式要落新表） | 三段式全是**查询期装配**，不需要任何新表 | W5 零迁移，业务表数仍 109；`EhtSections` 是只读 DTO，不是第二份事实源 |

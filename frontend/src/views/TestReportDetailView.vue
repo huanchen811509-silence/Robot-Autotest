@@ -13,9 +13,15 @@ import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { NButton } from 'naive-ui'
-import { testReportsApi, type TestReportSnapshot, type TestReportTemplateRef } from '@/api/testReports'
+import {
+  testReportsApi,
+  type EhtSections,
+  type TestReportSnapshot,
+  type TestReportTemplateRef,
+} from '@/api/testReports'
 import ErrorLineView from '@/components/ErrorLine.vue'
 import ReportExportBar from '@/components/ReportExportBar.vue'
+import CaseScriptLink from '@/components/CaseScriptLink.vue'
 import { localizeError, type ErrorLine } from '@/utils/errors'
 
 const { t } = useI18n()
@@ -25,6 +31,7 @@ const router = useRouter()
 const id = computed(() => Number(route.params.id ?? 0))
 const snapshot = ref<TestReportSnapshot | null>(null)
 const templateRef = ref<TestReportTemplateRef | null>(null)
+const sections = ref<EhtSections | null>(null)
 const genericTemplate = computed(
   () => !!templateRef.value
     && ['PLATFORM_ANY', 'PLATFORM_FALLBACK'].includes(templateRef.value.templateSource ?? ''),
@@ -37,6 +44,7 @@ async function load(): Promise<void> {
   error.value = null
   snapshot.value = null
   templateRef.value = null
+  sections.value = null
   if (!id.value) return
   loading.value = true
   try {
@@ -46,11 +54,16 @@ async function load(): Promise<void> {
   } finally {
     loading.value = false
   }
-  // 模板回指是元信息补充：它失败不该让整份报告预览打不开，静默降级即可。
+  // 模板回指与三段式装配都是元信息补充：失败不该让整份报告预览打不开。
   try {
     templateRef.value = await testReportsApi.template(id.value)
   } catch {
     templateRef.value = null
+  }
+  try {
+    sections.value = await testReportsApi.sections(id.value)
+  } catch {
+    sections.value = null
   }
 }
 
@@ -128,6 +141,43 @@ watch(id, () => void load(), { immediate: true })
           >
             {{ t('testReports.freezeAction') }}
           </NButton>
+        </section>
+
+        <section v-if="sections" id="evidence-card" class="card" data-testid="evidence-card">
+          <h2 class="card-title">{{ t('testReports.sectionEvidence') }}</h2>
+          <p class="muted" data-testid="evidence-counts">
+            {{ t('testReports.evidenceCounts', {
+              passed: sections.counts.passed,
+              failed: sections.counts.failed,
+              missing: sections.counts.missingEvidence,
+              undetermined: sections.counts.undetermined,
+              total: sections.counts.total,
+            }) }}
+          </p>
+          <p v-if="!sections.diff.hasBaseline" class="muted" data-testid="no-baseline">
+            {{ t('testReports.noBaseline') }}
+          </p>
+          <ul v-if="sections.evidence.length" class="evidence-list">
+            <li
+              v-for="row in sections.evidence"
+              :key="row.nodeRef"
+              class="evidence-row"
+              data-testid="evidence-row"
+            >
+              <code class="mono">{{ row.nodeRef }}</code>
+              <CaseScriptLink
+                :script-path="row.evidencePath"
+                :script-name="row.nodeRef"
+                :binding-state="row.evidencePath ? 'BOUND_VERIFIED' : 'NOT_APPLICABLE'"
+                :full="true"
+              />
+            </li>
+          </ul>
+          <p v-else class="muted" data-testid="evidence-empty">
+            {{ sections.kernel === 'pytest'
+              ? t('testReports.evidenceEmpty')
+              : t('testReports.evidenceNotApplicable') }}
+          </p>
         </section>
 
         <section class="card">

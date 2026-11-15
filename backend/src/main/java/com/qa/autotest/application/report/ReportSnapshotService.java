@@ -41,6 +41,33 @@ public class ReportSnapshotService {
     }
 
     public ReportSnapshot build(ReportRecord source, int version, ReportTemplate template) {
+        Map<String, Object> root = baseRoot(source, version, template);
+        String json = write(root);
+        String html = html(root);
+        return new ReportSnapshot(json, html, sha256(json + "\n" + html), version,
+                summary(source, template));
+    }
+
+    /**
+     * v5.14.0 / W64-14：三段式快照。只有显式传入 {@link EhtSections} 才走新 HTML，
+     * 旧的 2 参 / 3 参重载仍是原平铺 {@code <dl>} —— 既有历史报告与单测零回归。
+     *
+     * <p>{@code eht} 节点写进 snapshot_json（快照自包含），但渲染器只按 C5 白名单
+     * 挑字段，三段式数据不会流进对外字段视图，也不影响 {@code snapshot_hash} 的口径
+     * （hash 本来就是 json + html，新报告有新事实，理应有新 hash）。
+     */
+    public ReportSnapshot build(ReportRecord source, int version, ReportTemplate template,
+                                EhtSections sections) {
+        Map<String, Object> root = baseRoot(source, version, template);
+        root.put("eht", sections);
+        String json = write(root);
+        String html = sections == null ? html(root) : threeSections(source, version, sections);
+        return new ReportSnapshot(json, html, sha256(json + "\n" + html), version,
+                summary(source, template));
+    }
+
+    private Map<String, Object> baseRoot(ReportRecord source, int version,
+                                         ReportTemplate template) {
         Map<String, Object> root = new LinkedHashMap<>();
         root.put("runId", source.runId());
         root.put("projectId", source.projectId());
@@ -64,10 +91,110 @@ public class ReportSnapshotService {
         root.put("templateId", template == null ? null : template.id());
         root.put("templateVersion", template == null ? null : template.version());
         root.put("template", templateNode(template));
-        String json = write(root);
-        String html = html(root);
-        return new ReportSnapshot(json, html, sha256(json + "\n" + html), version,
-                summary(source, template));
+        return root;
+    }
+
+    /**
+     * 三段式 HTML：结论 / 证据 / 附录。
+     *
+     * <p>两条硬约束：① 不用 {@code <style>} 块、不用 {@code on*} 属性 ——
+     * {@code ReportHtmlSanitizer} 会整块删 style，写了等于没写；
+     * ② 目录用 {@code href="#..."} 站内锚点，iframe {@code sandbox=""} 里
+     * 同文档 fragment 跳转不需要脚本，也不需要 allow-same-origin。
+     * 所有外部值都经 escape（字段值已在装配期 scrub 脱敏）。
+     */
+    private static String threeSections(ReportRecord source, int version, EhtSections s) {
+        StringBuilder b = new StringBuilder("<!doctype html><html><head><meta charset=\"utf-8\">"
+                + "<title>Test Report</title></head><body><h1>Test Report</h1>"
+                + "<nav id=\"toc\"><a href=\"#conclusion\">一、结论层</a> · "
+                + "<a href=\"#evidence\">二、证据层</a> · "
+                + "<a href=\"#appendix\">三、附录</a></nav>");
+
+        // 一、结论层
+        EhtSections.Counts c = s.counts();
+        b.append("<section id=\"conclusion\"><h2>一、结论层</h2><dl>")
+                .append("<dt>本次执行结论</dt><dd>").append(esc(source.effectiveConclusion())).append("</dd>")
+                .append("<dt>通过</dt><dd>").append(c.passed()).append("</dd>")
+                .append("<dt>不通过</dt><dd>").append(c.failed()).append("</dd>")
+                .append("<dt>缺证据</dt><dd>").append(c.missingEvidence()).append("</dd>")
+                .append("<dt>未判定</dt><dd>").append(c.undetermined()).append("</dd>")
+                .append("<dt>用例总数</dt><dd>").append(c.total()).append("</dd>")
+                .append("<dt>四态合计校验</dt><dd>")
+                .append(c.balanced() ? "一致（" + c.sum() + " = " + c.total() + "）"
+                        : "不一致（" + c.sum() + " ≠ " + c.total() + "）")
+                .append("</dd></dl>");
+        b.append("<h3>判据未定项清单</h3>");
+        if (s.undetermined().isEmpty()) {
+            b.append("<p>无</p>");
+        } else {
+            b.append("<ul>");
+            for (EhtSections.Undetermined item : s.undetermined()) {
+                b.append("<li>").append(esc(item.nodeRef())).append(" — ")
+                        .append(esc(item.reason())).append("</li>");
+            }
+            b.append("</ul>");
+        }
+        EhtSections.Diff d = s.diff();
+        b.append("<h3>与上次同工程执行的差异</h3>");
+        if (!d.hasBaseline()) {
+            b.append("<p>无上次执行</p>");
+        } else {
+            b.append("<dl><dt>基线 RUN_ID</dt><dd>").append(esc(d.baselineRunId())).append("</dd>")
+                    .append("<dt>新增失败</dt><dd>").append(d.newFail()).append("</dd>")
+                    .append("<dt>修复</dt><dd>").append(d.newPass()).append("</dd>")
+                    .append("<dt>仍失败</dt><dd>").append(d.bothFail()).append("</dd>")
+                    .append("<dt>本轮未执行</dt><dd>").append(d.notRun()).append("</dd></dl>");
+        }
+        b.append("</section>");
+
+        // 二、证据层
+        b.append("<section id=\"evidence\"><h2>二、证据层</h2>");
+        if (!"pytest".equalsIgnoreCase(s.kernel())) {
+            // FR-09 判据 5：RF 没有判据载体，明确写「不适用」，不许留空列装样子。
+            b.append("<p>不适用（RF 判据载体未建立）</p>");
+        } else if (s.evidence().isEmpty()) {
+            b.append("<p>本次执行没有用例级证据记录</p>");
+        } else {
+            b.append("<dl>");
+            for (EhtSections.Evidence row : s.evidence()) {
+                b.append("<dt>").append(esc(row.nodeRef())).append("</dt><dd>")
+                        .append("判据行原文：").append(esc(row.criteriaText()))
+                        .append("<br>实测值：").append(esc(row.measuredValue()))
+                        .append("<br>证据文件：");
+                String path = row.evidencePath();
+                if (path == null || path.isBlank()) {
+                    b.append("未提供");
+                } else {
+                    b.append("<a href=\"").append(esc(path)).append("\">")
+                            .append(esc(path)).append("</a>");
+                }
+                b.append("</dd>");
+            }
+            b.append("</dl>");
+        }
+        b.append("</section>");
+
+        // 三、附录
+        b.append("<section id=\"appendix\"><h2>三、附录</h2><dl>");
+        for (String key : s.metadataRequired()) {
+            String value = s.metadata().get(key);
+            b.append("<dt>").append(esc(key)).append("</dt><dd>")
+                    .append(value == null || value.isBlank() ? "未提供" : esc(value))
+                    .append("</dd>");
+        }
+        b.append("<dt>执行内核</dt><dd>").append(esc(s.kernel())).append("</dd>")
+                .append("<dt>插件版本</dt><dd>未采集</dd>")
+                .append("<dt>仓库 commit</dt><dd>")
+                .append(s.commitSha() == null || s.commitSha().isBlank() ? "未采集" : esc(s.commitSha()))
+                .append("</dd>")
+                .append("<dt>快照引用</dt><dd>").append(esc(source.runId()))
+                .append("@v").append(version).append("</dd>")
+                .append("</dl></section></body></html>");
+        return b.toString();
+    }
+
+    private static String esc(String value) {
+        return ReportViewRenderer.escape(value == null ? "" : value);
     }
 
     /**

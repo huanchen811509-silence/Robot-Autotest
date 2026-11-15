@@ -1,0 +1,58 @@
+v5.14.0 / W5 真实验证读数（WSL ~/robot-autotest）
+时间：2026-11-15 GMT+8
+基线：W4 收口 commit 80a982e；W5 零迁移，业务表数仍 109。
+
+[1] 后端单测与回归（mvn -q test）
+  EhtPytestReportTest              9 例（三段锚点 / 四态平衡 / 未定项点名 / 证据路径 /
+                                       RF 不适用 / 无基线 / 附录十项 / 绝对路径相对化 / 零回归）
+  ReportDiffTest                   4 例（无基线不假报、有基线四类计数、null、至少一条变化）
+  ReportSnapshotTest               5 例（旧重载平铺 HTML / hash 稳定，零回归）
+  ReportHtmlSanitizerTest          4 例；ReportTemplateKernelTest 6 例；
+  ReportTemplateServiceTest 11 例；ReportTemplateFreezeTest 7 例
+  合计 46 例，errors=0 failures=0
+
+[2] 前端
+  check_i18n.py 5/5：zh-CN 3126 / en-US 3126 键，硬编码中文 0
+  vue-tsc --noEmit 0 error
+  vitest 4 文件 23 例：TestReportDetailView 4 / ReportTemplatesView 9 /
+    ReportExportBar 3 / CaseScriptLink 7，全 PASS
+
+[3] 真实库 SQL 探针（把 EhtSectionRepositoryJdbc 的 4 条 SQL 原样跑，w5_sql_probe.py）
+  样本 1：project=95 run=EHT-FAKE-DEL-1794704818956 kernel=pytest
+    ENV: pytest | commit_sha=NULL
+    COUNTS: total=1 passed=0 failed=0 missing=1 undetermined=0 sum=1
+    UNDETERMINED: 1 行 -> IM-FUN-014 | 缺失指标：link_speed,mtu,pci_vendor_device
+    EVIDENCE: 1 行，run 级产物 /tmp/eht-fake-runs/.../junit.xml
+  样本 2：project=29 run=RUN-20261115030052-fb0000 kernel=robot
+    ENV: robot | commit_sha=NULL
+    COUNTS: total=1 passed=0 failed=0 missing=0 undetermined=1 sum=1
+    UNDETERMINED: 1 行 -> case#918529 | 未声明判据
+    EVIDENCE: 1 行，run 级产物 /home/evergreen/robot-test/artifacts/.../stdout.log
+  断言：两个真实样本「四态之和 == 用例总数」PASS；4 条 SQL 全部可执行
+
+[4] 真实探针抓到并修复的两个真缺陷
+  缺陷 1：库里 evidence path 是**绝对路径**（会泄漏部署目录，且违反 FR-09「相对路径」判据）。
+          修复：EhtSections.relativePath()，绝对路径截到 artifacts/ 段，无该段只留文件名；
+          单测覆盖 /home/...、/tmp/...、C:/...、已是相对路径、null/空白。
+  缺陷 2：部分 run 的 test_result.case_key 为空且无 pytest_case_step，
+          COALESCE(..., case_key) 返回 NULL，判据 3「点名」失败。
+          修复：SQL 加 NULLIF(tr.case_key,'') 与 CONCAT('case#', tr.id) 兜底；
+          复跑探针，robot 样本由 NULL 变为 case#918529。
+
+[5] 契约与机检
+  gen_api_contract.py -> endpoints=458 paths=376（新增 GET /api/test-reports/{id}/sections）
+  gen_api_contract.py --check -> PASS
+  check_dto_columns.py PASS；check_tables.py PASS（68 处数据网格走壳）；
+  check_md_tables.py 5 份文档 PASS；db-audit.sh PASS（业务表数 109）
+
+[6] 待 W7 补测（如实登记，不冒充达成）
+  - 重建 jar + 重启后真实 HTTP：GET /{id}/sections 的四态 / 未定项 / 证据 / 差异响应
+  - 真视口截图：三段锚点跳转、证据路径点击（3 条验 2 条存在）、RF「不适用」
+  - 两次真实执行样本的「新增失败 / 修复」差异识别与截图
+  - 全量门禁 bash scripts/gates.sh -> GATES_RESULT FAILS=0 UNJUDGED=0
+
+[7] 后端全量测试（W5 收口前额外保险）
+  cd backend && mvn -q test  ->  exit code 0（耗时 2m20s）
+  意义：TestReportService 构造器新增 EhtSectionRepository 依赖、新增 @Repository
+  EhtSectionRepositoryJdbc（依赖 JdbcTemplate + CompareService），必须确认 Spring
+  自动装配与 ArchUnit 分层规则没有被打破；全量回归（分片 / 归档 / 采集 / 架构测试）通过。
