@@ -233,8 +233,10 @@ docs/evidence/v5.9.0/
 
 > 只记**已经按 TC 方式跑过**的结果；未执行的 TC 一律留空，不预填「预计通过」。
 >
-> **本版执行状态：部分执行（进行中）**。已完成「导航唯一高亮」与「三源并集/组授权」两条主线，
-> 其余 TC 未跑，原因见 §8.2。**因此 v5.9.0 不得宣称完成，门禁不放行。**
+> **本版执行状态：第三次回写（收口，2026-11-15）**。前两次只覆盖导航与判权两条主线；
+> 本轮补齐 `W59-09`（owner 转移事务）、`W59-20~22`（列表 CRUD 五条通则）、`W59-28`（全量门禁）后，
+> 49 条 TC 的结论是 **PASS 21 / PARTIAL 15 / BLOCKED 13**，逐条见 `05-TEST-REPORT.md §3`。
+> **仍不得宣称完成**：真实 HTTP 与真实浏览器两类取证未跑（见 `05-TEST-REPORT.md §4`），G 门归大师。
 
 ### 8.1 已执行
 
@@ -260,12 +262,12 @@ docs/evidence/v5.9.0/
 | TC-v5.9-15~19（4 个 IAM 页面与菜单） | 未开始 | 页面未实现。**按 D-01，菜单项也未添加**——不留空壳 |
 | TC-v5.9-20~23（`/api/iam/relations` 聚合） | 未开始 | 端点未实现 |
 | TC-v5.9-25~27（批量幂等计数 / 前端提示） | 部分 | 服务端幂等已改；`added/skipped` 计数与前端提示未做 |
-| TC-v5.9-28~32（列表 CRUD 通则、`check_list_crud`） | 未开始 | — |
+| TC-v5.9-28~32（列表 CRUD 通则、`check_list_crud`） | **已完成（第三次回写）** | 批量删 spec 2 条 + 后端批量单测 3 条；用例引用守卫 3 条；用例集确认 2 条；台账 46 行缺口 0、`PASS=115 FAIL=0` |
 | TC-v5.9-33~36（删用户/删组影响面） | 部分 | 删除清理已改（`project_member_role`、`user_group_member`），影响面端点未做，真实删除请求未跑 |
 | TC-v5.9-38~41（能力闸同源、角色管理页） | 未开始 | 依赖 4 个 IAM 页 |
 | TC-v5.9-42~46（演示标签 / `purge-demo.sh` / `check_demo_data`） | 部分 | `is_demo` 列与索引已落库；标签、清理脚本、机检未做 |
 | TC-v5.9-47（`created_by`） | 通过（结构） | 列既有、索引已建、`insert` 已补列；未发真实新建请求 |
-| TC-v5.9-48/49（owner 转移事务） | 未开始 | 未改动 `transferOwner` |
+| TC-v5.9-48/49（owner 转移事务） | **已完成（第三次回写）** | `ProjectTransferTest` 8 条 + `ProjectTransferTxIT` 2 条真库用例；`@Transactional` 反证判红 |
 
 ### 8.3 实测推翻的假设（回写要求：逐条改掉，不悄悄改数字）
 
@@ -278,6 +280,7 @@ docs/evidence/v5.9.0/
 | A5 | 组级 `capability` 可省，只给 4 个子项标 `user:write` 即可 | 实测过滤后留下一个**空折叠组**（只剩标题、无可点项），`filterNavByCapabilities` 不丢弃空组 | 给 `global-iam` 组本身加 `capability: 'user:write'`，整组随能力消失 |
 | A6 | `DataTable` 有 `row-click` 事件 | 没有。可用的只有 `rowProps` | 三页改用 `rowProps` 注入 `onClick`，行内按钮加 `stopPropagation`（否则点删除会先打开详情） |
 | A7 | naive-ui 组件已全局注册 | **未注册**，各页面显式 import。缺 import 时模板静默渲染成空标签、不报错 | 4 个 IAM 页显式 `import { NButton, NInput, NSelect } from 'naive-ui'` |
+| A8 | W59-22 判据①「`grep -rn window.confirm src \| wc -l` 须为 0」 | **不可能为 0**：`useConfirm.ts` / `ConfirmModal.vue` / 其 spec 的注释里必然提到该字样（替换说明）。实测代码调用 0 处、字符串命中 7 处 | 口径改为「**代码调用** 0 处（注释与文档不计）」，并在 `05-TEST-REPORT.md` 写清判定方法 |
 
 ---
 
@@ -287,3 +290,4 @@ docs/evidence/v5.9.0/
 |---|---|---|
 | 2026-11-15 | 首版：49 条 TC 覆盖 11 条 FR；P0 五条要求一级证据，四条要求回放 | `PRD.md` v5.9.0 + `DEV-PLAN.md` |
 | 2026-11-15 | 首次执行回写：8 条通过 / 4 条部分 / 其余未执行；§8.3 记录 3 条被实测推翻的假设 | 实际运行日志 + 开发库读数 |
+| 2026-11-15 | 第三次回写：补齐 W59-09/20~22/28 后复跑，49 条 TC 定稿为 PASS 21 / PARTIAL 15 / BLOCKED 13；§8.3 追加 A8（`window.confirm` 判据口径不可达） | `05-TEST-REPORT.md` §3、本轮实测 |

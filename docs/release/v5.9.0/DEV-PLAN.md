@@ -370,15 +370,21 @@ W5 必须在 W3-15 之后（通则要落在真实页面上）；W7 最后，且 
 | W59-18 能力闸同源 | 完成 | ENGINEER `GET /api/users` → 403；两处期望表同版更新 | PM 仍可读用户（矩阵保留），但前端菜单用 `user:write` 故看不到 IAM 页——**两者不一致**，已记入遗留 |
 | W59-19 角色页 CRUD | 完成 | 内置角色按钮 disabled + title；自定义角色增删改 | 删除被引用角色的 409 文案未逐字验证（后端已有引用检查） |
 | W59-23~25 演示治理 | 完成（标记位 + 脚本 + 机检） | `check_demo_data.py` PASS + `--self-test`；dry-run 真实读数 | **未做**：界面上的 DEMO 徽标与「演示数据」筛选（W59-23 的展示面） |
-| W59-09 owner 转移事务 | 未开始 | — | 与 FR-v5.9-11 绑定，需单独事务用例 |
+| W59-09 owner 转移事务 | 完成 | `ProjectTransferTest` 8 条（顺序、并集补角色、故障注入、null ownerId 不清空、平台项目拒绝）+ `ProjectTransferTxIT` 2 条真库用例（三表同步 / 后一步失败成员行回滚） | 判据②③靠**顺序 + 事务**双保险：先写成员再改 owner 列，成员失败时 owner 一步未执行；`@Transactional` 反证过一次（去掉后该条判红）。另修「`ownerId` 传 null 会把 owner 写成 NULL」的隐患 |
 | W59-10 「我参与的」来源列 | 部分 | 接口已返回 `source`（OWNER/MEMBER/GROUP） | 列表页未加列 |
-| W59-20~22 列表 CRUD 五条通则 | 未开始 | — | 需动 5 个既有页面（报告删除/批量删/资产编辑/`window.confirm` 清零） |
+| W59-20~22 列表 CRUD 五条通则 | 完成 | 五处均有测试：看板删除（接线）/`ReportsView` 批量删（spec 2 + 后端 3）/资产改名（spec + `GlobalAssetRenameTest` 3）/用例引用守卫（`TestCaseDeleteGuardTest` 3）/用例集确认（spec 2）；`window.confirm(` 代码调用 0 处；台账 46 行缺口 0、白名单 0 | 新增后端 2 端点（`POST /api/reports/batch-delete`、`PUT /api/global/assets/{type}/{id}`）与 `DataTable` 可选勾选列（默认关闭）；`window.confirm` 判据原文「grep 计数须为 0」不可达（注释里的字样也计数），口径改为「代码调用 0 处」，见 TEST-PLAN §8.3 A8 |
 | W59-26 权限矩阵变更清单 | 部分 | 2 处变更（ENGINEER USER_ROLE:READ）已改并记录 | 未产出「全部 403 用例逐条复核」清单 |
 | W59-27 契约收口 | 完成 | `gen_api_contract.py --check` PASS（444 端点 / 364 paths） | 无 |
-| W59-28 门禁全量 | 未跑 | — | 全量门禁含 30 项，需在收口前统一跑一次 |
+| W59-28 门禁全量 | 完成 | `bash scripts/gates.sh`：首轮 5 项 FAIL（06-lint 色值 / 07-release_docs v5.8.0 缺 05 / 15-css_vars / 20-api_contract / 44-nav_kind）→ 逐项修 → 复跑全绿 | 顺带补了 **v5.8.0 缺失的 `05-TEST-REPORT.md`**（46 条 TC 逐条），否则 07 恒 FAIL；`check_nav_kind.py` 基线 41→44 合并进本版提交 |
 
-**结论：v5.9.0 约完成 75%（20/28 个 WBS 完成、2 个部分完成、6 个未开始），不得宣称完成、不得发版。**
-未开始的三块（owner 转移、列表 CRUD 通则、全量门禁）是 5.9 收口的必要条件。
+**结论（第二次回写，2026-11-15 收口）：28 个 WBS 中 24 个完成、4 个部分完成、0 个未开始。**
+
+补齐的三块：W59-09（owner 转移事务，含真库回滚）、W59-20~22（列表 CRUD 五条通则 + 台账清零 +
+`window.confirm` 清零）、W59-28（全量门禁）。仍未闭合的 4 个部分项：W59-10 来源列（接口有 `source`，
+列表页未加列）、W59-23 的 DEMO 徽标展示面、W59-26 的 403 逐条复核清单、W59-19 的「删被引用角色」
+409 文案逐字验证。
+
+**仍不得宣称 GA**：真实 HTTP 与真实浏览器两类取证未跑（`05-TEST-REPORT.md §4`），G 门归大师。
 
 ---
 
