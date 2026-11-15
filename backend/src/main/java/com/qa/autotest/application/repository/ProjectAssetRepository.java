@@ -28,6 +28,13 @@ public interface ProjectAssetRepository {
     /** 项目引用一条平台资产；已存在则只更新别名。 */
     void addReference(long projectId, String assetType, long assetId, String alias, Long operatorId);
 
+    /**
+     * 本项目是否引用了这条平台资产（v5.13.0 / W63-15）。
+     * 「被多少项目引用」是 {@link #referenceCount}，那是删除保护用的全局口径；
+     * 采集/关联的权限判定必须按「本项目」问，不能拿全局计数凑合。
+     */
+    boolean referencedBy(long projectId, String assetType, long assetId);
+
     /** 只删引用，不动物资本体；返回是否真的删除了一行。 */
     boolean removeReference(long projectId, String assetType, long assetId);
 

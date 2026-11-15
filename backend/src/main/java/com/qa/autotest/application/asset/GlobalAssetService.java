@@ -534,14 +534,20 @@ public class GlobalAssetService {
             throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
                     "采集需要二次确认：请求需带 confirm=true");
         }
+        // W63-15：不再硬限定 owner_scope='PLATFORM'，改按「本项目私有 OR 平台共享且已引用」判定。
+        // 可见性走 application.repository 接口，避免 application 反向依赖 infrastructure 成环。
+        long scopeProjectId = TenantContext.projectId() == null
+                ? platform.id() : TenantContext.projectId();
+        DeviceCredentialBindingService.assertDeviceVisible(
+                projectAssets, scopeProjectId, deviceId, platform.id());
         List<Map<String, Object>> rows = jdbc.queryForList("""
                 SELECT id, name, management_ip, management_ip_alt,
                        bmc_address, bmc_address_alt,
                        management_credential_id, bmc_credential_id
-                  FROM device WHERE id = ? AND owner_scope = 'PLATFORM'
+                  FROM device WHERE id = ?
                 """, deviceId);
         if (rows.isEmpty()) {
-            throw new BusinessException(ErrorCode.NOT_FOUND, "公共设备不存在");
+            throw new BusinessException(ErrorCode.NOT_FOUND, "设备不存在：" + deviceId);
         }
         Map<String, Object> device = rows.get(0);
         String name = device.get("name") == null ? String.valueOf(deviceId)
@@ -576,6 +582,8 @@ public class GlobalAssetService {
         long platformId = platform.id();
         if (usedCredentialId != null) {
             ensurePlatformCredentialReference(platformId, usedCredentialId);
+            DeviceCredentialBindingService.assertCredentialVisible(
+                    projectAssets, scopeProjectId, usedCredentialId, platformId);
         }
         try {
             HostInventoryRecord record = hostInventory.collect(platformId, host, deviceId,
@@ -606,11 +614,9 @@ public class GlobalAssetService {
      * 失败路径根本不进这个方法，不会形成「已验证可采」的假象。
      */
     private void autoBindIfNull(long deviceId, long credentialId) {
-        String sql = """
-                UPDATE device SET management_credential_id = ?, updated_by = ?
-                 WHERE id = ? AND management_credential_id IS NULL
-                """;
-        int changed = jdbc.update(sql, credentialId, TenantContext.userId(), deviceId);
+        // 与手工关联共用同一份「仅填空」SQL 真值，不在采集路径另写一遍
+        int changed = jdbc.update(DeviceCredentialBindingService.SQL_FILL_IF_NULL,
+                credentialId, TenantContext.userId(), deviceId);
         if (changed > 0) {
             audit.recordChange("asset.credential.auto-bind", "device", String.valueOf(deviceId),
                     null, "managementCredentialId=" + credentialId + ";source=collect");

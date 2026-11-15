@@ -35,6 +35,18 @@ public class ProjectAssetRepositoryJdbc implements ProjectAssetRepository {
     }
 
     @Override
+    public boolean referencedBy(long projectId, String assetType, long assetId) {
+        String type = AssetScopeSql.normalize(assetType);
+        String sql = """
+                SELECT COUNT(*) FROM project_asset
+                 WHERE project_id = ? AND asset_type = ? AND asset_id = ?
+                """;
+        TenantGuard.requireProjectScope(sql, "project_asset");
+        Long count = jdbc.queryForObject(sql, Long.class, projectId, type, assetId);
+        return count != null && count > 0;
+    }
+
+    @Override
     public void shareToPlatform(String assetType, long assetId, long ownerProjectId) {
         String table = AssetScopeSql.tableOf(assetType);
         String sql = "UPDATE `" + table + "` SET owner_scope = 'PLATFORM', project_id = NULL "

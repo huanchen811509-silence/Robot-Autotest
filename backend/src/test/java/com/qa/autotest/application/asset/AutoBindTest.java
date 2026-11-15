@@ -42,14 +42,19 @@ class AutoBindTest {
 
     private JdbcTemplate jdbc;
     private HostInventoryService hostInventory;
+    private ProjectAssetRepository projectAssets;
     private GlobalAssetService service;
 
     @BeforeEach
     void setUp() {
         jdbc = mock(JdbcTemplate.class);
+        projectAssets = mock(ProjectAssetRepository.class);
+        doReturn(java.util.Optional.of(
+                new ProjectAssetRepository.AssetScope(9L, null, "PLATFORM")))
+                .when(projectAssets).scopeOf(anyString(), anyLong());
         hostInventory = mock(HostInventoryService.class);
         service = new GlobalAssetService(jdbc, mock(AccessControlService.class),
-                mock(AuditService.class), mock(ProjectAssetRepository.class),
+                mock(AuditService.class), projectAssets,
                 mock(PlatformProjectService.class), hostInventory,
                 mock(SecretCipher.class), new ObjectMapper(),
                 mock(CredentialVerificationService.class));
@@ -111,13 +116,17 @@ class AutoBindTest {
     }
 
     @Test
-    @DisplayName("代码机检：autoBindIfNull 的 SQL 只有一份且恒带 IS NULL")
+    @DisplayName("代码机检：自动填空与手工绑定共用同一份 SQL 常量，且恒带 IS NULL")
     void autoBindSqlIsSingleSource() throws Exception {
-        String source = Files.readString(Path.of(
+        String collectSource = Files.readString(Path.of(
                 "src/main/java/com/qa/autotest/application/asset/GlobalAssetService.java"));
-        int occurrences = source.split("management_credential_id IS NULL", -1).length - 1;
+        String bindingSource = Files.readString(Path.of(
+                "src/main/java/com/qa/autotest/application/asset/DeviceCredentialBindingService.java"));
+        int occurrences = bindingSource.split("management_credential_id IS NULL", -1).length - 1;
         assertTrue(occurrences == 1, "自动填空条件只能有一处，实际 " + occurrences);
-        assertTrue(source.contains("autoBindIfNull(deviceId, usedCredentialId)"));
-        assertTrue(source.contains("if (ok && \"MGMT\".equals(channel))"));
+        assertTrue(collectSource.contains("DeviceCredentialBindingService.SQL_FILL_IF_NULL"));
+        assertTrue(collectSource.contains("autoBindIfNull(deviceId, usedCredentialId)"));
+        assertTrue(!collectSource.contains("management_credential_id IS NULL"),
+                "采集路径不得另写第二份填空 SQL");
     }
 }

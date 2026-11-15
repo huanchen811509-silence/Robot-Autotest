@@ -37,15 +37,20 @@ class CollectCredentialFallbackTest {
     private JdbcTemplate jdbc;
     private HostInventoryService hostInventory;
     private CredentialVerificationService verifications;
+    private ProjectAssetRepository projectAssets;
     private GlobalAssetService service;
 
     @BeforeEach
     void setUp() {
         jdbc = mock(JdbcTemplate.class);
+        projectAssets = mock(ProjectAssetRepository.class);
+        doReturn(java.util.Optional.of(
+                new ProjectAssetRepository.AssetScope(9L, null, "PLATFORM")))
+                .when(projectAssets).scopeOf(anyString(), anyLong());
         hostInventory = mock(HostInventoryService.class);
         verifications = mock(CredentialVerificationService.class);
         service = new GlobalAssetService(jdbc, mock(AccessControlService.class),
-                mock(AuditService.class), mock(ProjectAssetRepository.class),
+                mock(AuditService.class), projectAssets,
                 mock(PlatformProjectService.class), hostInventory,
                 mock(SecretCipher.class), new ObjectMapper(), verifications);
         when(hostInventory.collect(anyLong(), anyString(), any(), any(), any(), any(),
