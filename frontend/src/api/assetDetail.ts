@@ -189,7 +189,9 @@ export function toAssetDetailView(raw: AssetDetailResponse, source: AssetSource)
       nicName: port.portName ?? null,
       speedGbps: port.speedGbps ?? null,
     })),
-    credentials: masked ? [{ id: 0, name: 'credential', keyMasked: masked }] : [],
+    // v5.13.0 / W63-12：不再用 device.account 合成 id=0 的假凭据行。
+    // 真实绑定由采集画像提供；没有绑定时面板显示「未关联」空态，而不是一条叫 credential 的假数据。
+    credentials: [],
     evidence: evidence.map((item) => ({
       category: item.category ?? '',
       label: item.label ?? '',

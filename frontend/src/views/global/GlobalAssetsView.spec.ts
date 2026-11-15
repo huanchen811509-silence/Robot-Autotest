@@ -39,6 +39,16 @@ vi.mock('@/api/globalAssets', () => ({
   },
 }))
 
+vi.mock('@/api/collectProfiles', () => ({
+  collectProfileApi: {
+    list: vi.fn(async () => []),
+    bindGlobal: vi.fn(async () => ({ deviceId: 0, managementCredentialId: null, bmcCredentialId: null })),
+    bindProject: vi.fn(async () => ({ deviceId: 0, managementCredentialId: null, bmcCredentialId: null })),
+    clearProject: vi.fn(async () => ({ deviceId: 0, managementCredentialId: null, bmcCredentialId: null })),
+    history: vi.fn(async () => []),
+  },
+}))
+
 vi.mock('@/api/iam', () => ({
   projectApi: { list: vi.fn(async () => []), remove: vi.fn(), update: vi.fn() },
   authApi: { renew: vi.fn(), logout: vi.fn() },
@@ -229,17 +239,22 @@ describe('GlobalAssetsView 权限', () => {
 /* ------------------------------------------------- v4.12.0 采集通道与录入 */
 
 describe('GlobalAssetsView 采集按钮按通道显隐（FR-v4.12-10）', () => {
-  it('设备未绑定任何凭据：不渲染「采集」按钮，只显示原因', async () => {
+  it('设备未绑定任何凭据：主按钮禁用并点名原因，指定凭证入口仍可用（W63-14）', async () => {
     list.mockImplementation(async () => [
       { ...deviceRow, managementCredentialId: null, bmcCredentialId: null },
     ])
     const root = await mountView()
 
-    const actionButtons = Array.from(root.querySelectorAll<HTMLButtonElement>('.row-actions button')).map(
-      (button) => button.textContent?.trim() ?? '',
-    )
-    expect(actionButtons.some((text) => text.includes('采集'))).toBe(false)
-    expect(root.textContent).toContain('未绑定凭据')
+    const direct = root.querySelector<HTMLButtonElement>('[data-testid="direct-collect-101"]')!
+    expect(direct).not.toBeNull()
+    expect(direct.disabled).toBe(true)
+    expect(direct.title).toContain('未绑定凭证')
+    const specify = root.querySelector<HTMLButtonElement>('[data-testid="specify-collect-101"]')
+    expect(specify).not.toBeNull()
+    expect(specify?.disabled).toBe(false)
+    // W63-09：三列在未绑定时也不能空白
+    expect(root.querySelector('[data-testid="profile-credential-101"]')?.textContent)
+      .toContain('未关联')
   })
 
   it('设备只有带外凭据（纯 BMC 交换机）仍可采集', async () => {

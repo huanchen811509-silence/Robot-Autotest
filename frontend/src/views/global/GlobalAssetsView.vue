@@ -14,6 +14,17 @@ import { confirmAction } from '@/composables/useConfirm'
 import { computed, h, onMounted, ref, watch } from 'vue'
 import AssetWorkspace from '@/components/AssetWorkspace.vue'
 import { isVisible, visibleTabs } from '@/config/assetWorkspaceMatrix'
+import { collectProfileApi, type CollectHistoryRow } from '@/api/collectProfiles'
+import { useCollectProfiles } from '@/composables/useCollectProfiles'
+import {
+  blockedReasonLabelKey,
+  canCollect as profileCanCollect,
+  collectBlockLabelKey,
+  collectBlockReason,
+  credentialLabelKey,
+  stateLabelKey,
+} from '@/config/collectProfileColumns'
+import CollectHistoryPanel from '@/components/CollectHistoryPanel.vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { NButton, type DataTableColumns } from 'naive-ui'
@@ -80,6 +91,7 @@ async function load() {
       keyword: keyword.value,
       availability: availability.value,
     })
+    void loadProfiles()
   } catch {
     failed.value = t('global.loadFailed')
   } finally {
@@ -111,6 +123,9 @@ watch(
 )
 
 /* ------------------------------------------------------------ 表格列定义 */
+
+/** W63-09：画像按 deviceId 建索引；两页共用同一份加载与取值逻辑。 */
+const { byDevice: profilesByDevice, load: loadProfiles } = useCollectProfiles()
 
 const renaming = ref<GlobalAssetRow | null>(null)
 const renameValue = ref('')
@@ -185,6 +200,39 @@ const columns = computed<DataTableColumns<GlobalAssetRow>>(() => {
       width: 200,
       render: (row) => collectLabel(row),
     })
+    // W63-09：三列都是共享列（不在差异矩阵里），两 scope 都保留
+    cols.push({
+      title: t('w63.colCredential'), key: 'credential', width: 160,
+      render: (row) => {
+        const profile = profilesByDevice.value.get(row.id)
+        const key = credentialLabelKey(profile)
+        return h('span', {
+          class: key === 'w63.unbound' ? 'muted' : '',
+          'data-testid': `profile-credential-${row.id}`,
+        }, key === 'w63.unbound' ? t(key)
+          : t(key, { name: profile?.boundCredentialMasked ?? '-' }))
+      },
+    })
+    cols.push({
+      title: t('w63.colCollect'), key: 'collectProfile', width: 150,
+      render: (row) => {
+        const profile = profilesByDevice.value.get(row.id)
+        return h('span', { 'data-testid': `profile-collect-${row.id}` },
+          profile?.collectCount
+            ? t('w63.collectCount', { count: profile.collectCount })
+            : t('w63.noCollect'))
+      },
+    })
+    cols.push({
+      title: t('w63.colState'), key: 'profileState', width: 170,
+      render: (row) => {
+        const profile = profilesByDevice.value.get(row.id)
+        const reason = profile?.blockedReason
+          ? blockedReasonLabelKey(profile.blockedReason) : ''
+        return h('span', { 'data-testid': `profile-state-${row.id}` },
+          t(stateLabelKey(profile)) + (reason ? ` (${t(reason)})` : ''))
+      },
+    })
   }
   cols.push({ title: t('global.assetRefs'), key: 'referenceCount', width: 100 })
   if (canWrite.value && BATCH_DELETE_ENABLED) {
@@ -210,20 +258,21 @@ const columns = computed<DataTableColumns<GlobalAssetRow>>(() => {
       render: (row) =>
         h('span', { class: 'row-actions' }, [
           type.value === 'DEVICE'
-            ? canCollect(row)
-              ? h(
-                  NButton,
-                  { text: true, type: 'primary', onClick: () => void openCollect(row) },
-                  () => t('global.assetCollect'),
-                )
-              : h(
-                  'span',
-                  {
-                    class: 'muted action-hint',
-                    title: t('global.assetCollectUnbound'),
-                  },
-                  t('global.assetCollectUnbound'),
-                )
+            ? h('span', { class: 'row-actions' }, [
+                h(NButton, {
+                  text: true,
+                  type: 'primary',
+                  disabled: !canCollect(row),
+                  title: collectDisabledReason(row),
+                  'data-testid': `direct-collect-${row.id}`,
+                  onClick: () => void directCollect(row),
+                }, () => t('w63.directCollect')),
+                h(NButton, {
+                  text: true,
+                  'data-testid': `specify-collect-${row.id}`,
+                  onClick: () => void openCollect(row),
+                }, () => t('w63.specifyCollect')),
+              ])
             : h(
                 NButton,
                 {
@@ -295,14 +344,25 @@ const bindColumns = computed<DataTableColumns<CredentialDevice>>(() => [
 ])
 
 /**
- * 能不能点「采集」（FR-v4.12-10）。
- *
- * 判据是**两个地址面至少绑了一条凭据**：没绑凭据的远程采集必然 400，
- * 与其让用户点开弹窗才发现，不如把入口换成一句原因。
- * 纯带外的交换机（只有 bmc 绑定）仍然可以采 —— 它走 BMC 通道，不是「不能采」。
+ * 能不能点「采集」（W63-14）：判定与服务端 collect() 的 400 条件一一对应，
+ * 即「有管理 IP 且有凭证」。只绑 BMC、没管理 IP 的设备必须禁用并点名原因。
  */
+function collectRowOf(row: GlobalAssetRow) {
+  const profile = profilesByDevice.value.get(row.id)
+  return {
+    managementIp: profile?.managementIp ?? row.managementIp,
+    managementCredentialId: profile?.managementCredentialId ?? row.managementCredentialId,
+    bmcCredentialId: profile?.bmcCredentialId ?? row.bmcCredentialId,
+  }
+}
+
 function canCollect(row: GlobalAssetRow): boolean {
-  return Boolean(row.managementCredentialId || row.bmcCredentialId)
+  return profileCanCollect(collectRowOf(row))
+}
+
+function collectDisabledReason(row: GlobalAssetRow): string {
+  const reason = collectBlockReason(collectRowOf(row))
+  return reason === 'ok' ? t('w63.autoBindHint') : t(collectBlockLabelKey(reason))
 }
 
 // ---------------------------------------------------------------- 导入
@@ -362,6 +422,16 @@ const collectUsername = ref('')
 const collectBusy = ref(false)
 const collectError = ref('')
 const collectDone = ref('')
+const setAsDefault = ref(false)
+const historyRows = ref<CollectHistoryRow[]>([])
+
+async function loadHistory(deviceId: number): Promise<void> {
+  try {
+    historyRows.value = await collectProfileApi.history(deviceId)
+  } catch {
+    historyRows.value = []
+  }
+}
 
 async function openCollect(row: GlobalAssetRow) {
   collectTarget.value = row
@@ -370,10 +440,31 @@ async function openCollect(row: GlobalAssetRow) {
   collectDone.value = ''
   collectCredentialId.value = null
   collectUsername.value = ''
+  setAsDefault.value = false
+  void loadHistory(row.id)
   try {
     credentialOptions.value = await globalAssetApi.list({ type: 'CREDENTIAL' })
   } catch {
     credentialOptions.value = []
+  }
+}
+
+/** 主入口：不传 credentialId，由后端回退链读绑定；成功后再刷画像（自动填空会改状态）。 */
+async function directCollect(row: GlobalAssetRow): Promise<void> {
+  if (!canCollect(row)) return
+  collectBusy.value = true
+  collectError.value = ''
+  try {
+    const collected = await globalAssetApi.collect(row.id, { confirm: true })
+    collectDone.value = t('global.assetCollectDone', {
+      status: collected.status, nics: collected.nicCount, roce: collected.rocePorts,
+    })
+    await load()
+    await loadProfiles()
+  } catch (error) {
+    collectError.value = error instanceof Error ? error.message : t('global.loadFailed')
+  } finally {
+    collectBusy.value = false
   }
 }
 
@@ -392,6 +483,12 @@ async function runCollect() {
       nics: collected.nicCount,
       roce: collected.rocePorts,
     })
+    if (setAsDefault.value && collectCredentialId.value && collectTarget.value) {
+      await collectProfileApi.bindGlobal(collectTarget.value.id, {
+        managementCredentialId: collectCredentialId.value,
+      })
+      await loadProfiles()
+    }
     await load()
   } catch (error) {
     collectError.value = error instanceof Error ? error.message : t('global.loadFailed')
@@ -655,9 +752,11 @@ async function submitRename(): Promise<void> {
 }
 
 async function removeAsset(row: GlobalAssetRow): Promise<void> {
-  if (!(await confirmAction(t('global.assetDeleteConfirm', { name: row.name }), {
-      tone: 'danger',
-    })))
+  // W63-16：删除前把既有 referenceCount / collectCount 接到影响面，不再让用户盲删
+  const impact = row.assetType === 'CREDENTIAL'
+    ? t('w63.deleteImpact', { devices: row.referenceCount, uses: row.collectCount ?? 0 })
+    : t('global.assetDeleteConfirm', { name: row.name })
+  if (!(await confirmAction(impact, { tone: 'danger' })))
     return
   try {
     await globalAssetApi.remove(row.assetType, row.id)
@@ -838,7 +937,16 @@ onMounted(() => {
             <span>{{ t('global.assetCollectUsername') }}</span>
             <input v-model="collectUsername" class="input" />
           </label>
+          <label class="field">
+            <span>{{ t('w63.setAsDefault') }}</span>
+            <input v-model="setAsDefault" type="checkbox" data-testid="set-as-default" />
+          </label>
         </template>
+        <p class="muted">{{ t('w63.autoBindHint') }}</p>
+        <CollectHistoryPanel
+          :rows="historyRows"
+          :bound-credential-name="profilesByDevice.get(collectTarget?.id ?? 0)?.boundCredentialMasked ?? null"
+        />
         <p v-if="collectError" class="error">{{ collectError }}</p>
         <p v-if="collectDone" class="success">{{ collectDone }}</p>
         <div class="modal-actions">

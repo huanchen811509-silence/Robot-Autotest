@@ -19,6 +19,16 @@ import { deviceApi, linkApi, type Link } from '@/api/asset'
 import AssetsView from '@/views/AssetsView.vue'
 
 // 工厂内写死数据（vi.mock 提升到 import 之前，引用外部 const 会 TDZ）
+vi.mock('@/api/collectProfiles', () => ({
+  collectProfileApi: {
+    list: vi.fn(async () => []),
+    bindGlobal: vi.fn(async () => ({ deviceId: 0, managementCredentialId: null, bmcCredentialId: null })),
+    bindProject: vi.fn(async () => ({ deviceId: 0, managementCredentialId: null, bmcCredentialId: null })),
+    clearProject: vi.fn(async () => ({ deviceId: 0, managementCredentialId: null, bmcCredentialId: null })),
+    history: vi.fn(async () => []),
+  },
+}))
+
 vi.mock('@/api/asset', () => ({
   deviceApi: {
     page: vi.fn(async () => ({

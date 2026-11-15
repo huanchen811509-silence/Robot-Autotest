@@ -34,6 +34,12 @@ import { localizeError, type ErrorLine } from '@/utils/errors'
 import { EMPTY } from '@/utils/format'
 import AssetWorkspace from '@/components/AssetWorkspace.vue'
 import { visibleTabs } from '@/config/assetWorkspaceMatrix'
+import { useCollectProfiles } from '@/composables/useCollectProfiles'
+import {
+  blockedReasonLabelKey,
+  credentialLabelKey,
+  stateLabelKey,
+} from '@/config/collectProfileColumns'
 import { batchApi, type BatchResource } from '@/api/batch'
 import SelectionBar from '@/components/SelectionBar.vue'
 import { useBatchAction } from '@/composables/useBatchAction'
@@ -394,6 +400,9 @@ function selectionColumn<T extends { id: number }>(): DataTableColumns<T>[number
   }
 }
 
+/** W63-09：项目侧与全局侧共用同一份画像加载逻辑，三列值来自同一接口。 */
+const { byDevice: profilesByDevice, load: loadProfiles } = useCollectProfiles()
+
 const deviceColumns = computed<DataTableColumns<Device>>(() => [
   selectionColumn<Device>(),
   {
@@ -435,6 +444,45 @@ const deviceColumns = computed<DataTableColumns<Device>>(() => [
     key: 'source',
     width: 160,
     render: (row) => (isPlatformAsset(row) ? t('w62.sourcePlatform') : t('w62.sourceProject')),
+  },
+  // W63-09：三列与全局侧同一套画像字段，项目侧不另写一份判定
+  {
+    title: t('w63.colCredential'),
+    key: 'credential',
+    width: 160,
+    render: (row) => {
+      const profile = profilesByDevice.value.get(row.id)
+      const key = credentialLabelKey(profile)
+      return h('span', {
+        class: key === 'w63.unbound' ? 'muted' : '',
+        'data-testid': `profile-credential-${row.id}`,
+      }, key === 'w63.unbound' ? t(key)
+        : t(key, { name: profile?.boundCredentialMasked ?? '-' }))
+    },
+  },
+  {
+    title: t('w63.colCollect'),
+    key: 'collectProfile',
+    width: 150,
+    render: (row) => {
+      const profile = profilesByDevice.value.get(row.id)
+      return h('span', { 'data-testid': `profile-collect-${row.id}` },
+        profile?.collectCount
+          ? t('w63.collectCount', { count: profile.collectCount })
+          : t('w63.noCollect'))
+    },
+  },
+  {
+    title: t('w63.colState'),
+    key: 'profileState',
+    width: 170,
+    render: (row) => {
+      const profile = profilesByDevice.value.get(row.id)
+      const reason = profile?.blockedReason
+        ? blockedReasonLabelKey(profile.blockedReason) : ''
+      return h('span', { 'data-testid': `profile-state-${row.id}` },
+        t(stateLabelKey(profile)) + (reason ? ` (${t(reason)})` : ''))
+    },
   },
   {
     title: t('assets.device.domain'),
@@ -770,6 +818,7 @@ async function load(): Promise<void> {
       leases.value = await executionApi.listLeases(projectId.value)
       total.value = leases.value.length
     }
+    void loadProfiles(projectId.value)
   } catch (e) {
     error.value = localizeError(e)
   } finally {

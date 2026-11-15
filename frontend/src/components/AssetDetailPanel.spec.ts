@@ -307,7 +307,10 @@ describe('assetDetailApi 后端嵌套 DTO 适配（FR-49-13/14）', () => {
     expect(mapped.collectedAt).toBe('2026-11-11T09:00:00')
     expect(mapped.nicCount).toBe(2)
     expect(mapped.devicePorts).toHaveLength(2)
-    expect(mapped.credentials[0].keyMasked).toBe('ad***')
+    // W63-12：详情不再用 device.account 合成 id=0 的假凭据行；
+    // 掩码仍保留在 credentialRef 供展示，真实绑定改由采集画像提供。
+    expect(mapped.credentials).toHaveLength(0)
+    expect(mapped.credentialRef).toBe('ad***')
     expect(mapped.evidence[0].command).toBe('lspci')
     expect(mapped.evidence[0].rawOutput).toBe('{"speed":200}')
     // 后端未提供的参考表列保持 null，由 UI 显式标「未采集」，不伪造事实
