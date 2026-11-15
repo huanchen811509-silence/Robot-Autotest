@@ -248,6 +248,10 @@ docs/evidence/v5.9.0/
 | TC-v5.9-24 | 单测（幂等） | 通过 | `AccessControlVisibilityTest.addMemberIsIdempotent`：不新增行、不抛 409、角色并集 |
 | TC-v5.9-37 | 真实库读数 | 通过 | V11_66 建外键后两表孤儿均为 0，FK 计数 4，见 `docs/evidence/v5.9.0/sql/orphan-before.md` |
 | TC-v5.9-05/06/07/10/11 | 真实库读数（SQL 层） | 通过（部分） | 三源并集读数：`qa-e2e-engineer` 旧 1 → 新 2（组授权）、`qa-e2e-pm` 旧 1 → 新 3（负责人），见 `visibility-union.md`。**API 层未跑** |
+| TC-v5.9-12~15 | 机检 + 单测 | 通过 | 全局导航 6 组 19 叶：`check_navigation.py` PASS；`navigation.spec.ts` 124 条全绿（含 6 组 19 叶断言） |
+| TC-v5.9-16~20 | 真实接口 + 单测 | 通过 | ENGINEER 访问 `/api/users` → 403（`AuthzMatrixTest` 113 条、`PermissionMatrixTest` 484 格）；`/api/iam/relations` 三向同源，字段统一 camelCase |
+| TC-v5.9-33~36 | 视图单测 | 通过 | `IamUsersView.spec` / `IamGroupsView.spec` 共 6 条：详情在列表下方（`data-testid=iam-user-detail` / `iam-group-detail`）、计数 = 列表条数、删除必过 `confirmAction` |
+| TC-v5.9-41~45 | 机检 + 真实脚本 | 通过 | `check_demo_data.py` PASS 且 `--self-test` 注入判红；`purge-demo.sh` dry-run 真实读数 2 个演示项目、0 用户，未删任何行（`docs/evidence/v5.9.0/demo/purge-dryrun.md`） |
 
 ### 8.2 未执行与原因
 
@@ -270,6 +274,10 @@ docs/evidence/v5.9.0/
 | A1 | `project.created_by` 列不存在，需要 V11_67 新建 | **列早已存在**（历史审计列批次已覆盖 project 表）。首版迁移在开发库判红 `Duplicate column name` | V11_67 改为**只建索引**，并把修正写进迁移注释与 `V11_67...down.sql`（不再删列） |
 | A2 | 「我参与的项目只有一个」可由现有 dev 库复现 | dev 库里每个 owner 都已在 `project_member` 有行、且无任何组授权 → 旧口径读数与新口径**完全相同** | 造夹具（`visibility-fixture.sh`，两个项目打 `is_demo=1`）才复现：旧 1 / 新 2~3 |
 | A3 | 「SQL 里 `project_member` 字面量在 iam 包只出现 1 次」是可机检判据 | 审计资源名 `resource="project_member"` 有 6 处，字面量计数必然 >1 | 机检改为「SQL 关键字紧跟表名」才算违规，见 `check_visibility_sql.py` |
+| A4 | FR-v5.9-04 判据 1「全局导航 6 组 20 叶」 | 实测 **19 叶**：新增 iam 4 叶，但「系统设置 → 用户管理」按 W59-15「不保留第二套写入口」迁出，设置组 6→5 | 门禁与单测按 **6 组 19 叶**定稿；PRD 判据 1 的 20 是起草时按「保留旧入口」估的，属起草偏差，已在 `navigation.spec.ts` 注释与本表登记 |
+| A5 | 组级 `capability` 可省，只给 4 个子项标 `user:write` 即可 | 实测过滤后留下一个**空折叠组**（只剩标题、无可点项），`filterNavByCapabilities` 不丢弃空组 | 给 `global-iam` 组本身加 `capability: 'user:write'`，整组随能力消失 |
+| A6 | `DataTable` 有 `row-click` 事件 | 没有。可用的只有 `rowProps` | 三页改用 `rowProps` 注入 `onClick`，行内按钮加 `stopPropagation`（否则点删除会先打开详情） |
+| A7 | naive-ui 组件已全局注册 | **未注册**，各页面显式 import。缺 import 时模板静默渲染成空标签、不报错 | 4 个 IAM 页显式 `import { NButton, NInput, NSelect } from 'naive-ui'` |
 
 ---
 
