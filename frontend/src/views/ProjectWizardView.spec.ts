@@ -21,12 +21,15 @@ import { useAuthStore } from '@/stores/auth'
 import { projectApi, userApi, authApi } from '@/api/iam'
 import { projectCardsApi } from '@/api/projectCards'
 import { templateApi } from '@/api/globalTemplates'
+import { groupsApi } from '@/api/groups'
+import { credentialOptionsApi } from '@/api/credentialOptions'
 import ProjectWizardView from '@/views/ProjectWizardView.vue'
 
 vi.mock('@/api/iam', () => ({
   projectApi: {
     list: vi.fn(),
     create: vi.fn(),
+    composite: vi.fn(),
     nextCode: vi.fn(),
     addMembers: vi.fn(),
     update: vi.fn(),
@@ -43,6 +46,15 @@ vi.mock('@/api/projectCards', () => ({
 
 vi.mock('@/api/globalTemplates', () => ({
   templateApi: { applyContent: vi.fn(), saveAsTemplate: vi.fn(), list: vi.fn() },
+}))
+
+vi.mock('@/api/groups', () => ({
+  groupsApi: { groups: vi.fn(), grant: vi.fn() },
+  roleRank: () => 0,
+}))
+
+vi.mock('@/api/credentialOptions', () => ({
+  credentialOptionsApi: { options: vi.fn(), collectManual: vi.fn() },
 }))
 
 const routerState = vi.hoisted(() => ({
@@ -207,6 +219,15 @@ beforeEach(() => {
   vi.mocked(projectApi.create).mockResolvedValue({ id: 42 } as never)
   vi.mocked(projectApi.nextCode).mockResolvedValue({ code: 'QA-RF-202611-001' } as never)
   vi.mocked(projectApi.addMembers).mockResolvedValue({ added: 0, failed: 0, failures: [] } as never)
+  vi.mocked(projectApi.composite).mockResolvedValue({
+    projectId: 42,
+    code: 'QA-RF-202611-001',
+    members: 0,
+    groups: 0,
+    assets: 0,
+    cases: 0,
+    warnings: [],
+  } as never)
   vi.mocked(userApi.page).mockResolvedValue({ items: [], total: 0 } as never)
   vi.mocked(authApi.login).mockResolvedValue({} as never)
   vi.mocked(authApi.me).mockResolvedValue({} as never)
@@ -216,6 +237,20 @@ beforeEach(() => {
   vi.mocked(templateApi.applyContent).mockResolvedValue({} as never)
   vi.mocked(templateApi.saveAsTemplate).mockResolvedValue({ name: '冒烟模板' } as never)
   vi.mocked(templateApi.list).mockResolvedValue([] as never)
+  vi.mocked(groupsApi.groups).mockResolvedValue([
+    { id: 5, name: '网络组', memberCount: 3 },
+    { id: 6, name: '存储组', memberCount: 2 },
+  ] as never)
+  vi.mocked(credentialOptionsApi.options).mockResolvedValue({
+    items: [
+      { credentialId: 100, name: 'root@mgmt', credType: 'SSH', username: 'root', tier: 0,
+        lastResult: 'SUCCESS', lastVerifiedAt: '', boundDevices: 1, configured: true },
+      { credentialId: 101, name: 'BMC 只读', credType: 'BMC', username: 'admin', tier: 2,
+        lastResult: '', lastVerifiedAt: '', boundDevices: 0, configured: true },
+    ],
+    total: 2,
+    truncated: false,
+  } as never)
 
   routerState.route = { query: {}, path: '/' }
   picker.payload = emptyPayload()
@@ -318,8 +353,13 @@ describe('W57-12 向导步骤与 content 步复用', () => {
   })
 })
 
-describe('W57-13 内容提交 caseSetIds / 去重 / 可跳过', () => {
-  it('四类来源齐备时提交 caseIds / assets / caseSetIds，且不带后端不认的字段', async () => {
+describe('v5.10.0 一次提交（composite）：字段名 / 去重 / 可跳过', () => {
+  function compositeBody(): Record<string, unknown> {
+    const calls = vi.mocked(projectApi.composite).mock.calls
+    return (calls[calls.length - 1]?.[0] ?? {}) as Record<string, unknown>
+  }
+
+  it('六类来源一次提交：caseIds / assets / caseSetIds 同请求，且不带后端不认的字段', async () => {
     picker.payload = {
       ...emptyPayload(),
       caseIds: [11, 12],
@@ -338,19 +378,20 @@ describe('W57-13 内容提交 caseSetIds / 去重 / 可跳过', () => {
     click(root, '[data-testid="wizard-create"]')
     await tick()
 
-    expect(templateApi.applyContent).toHaveBeenCalledTimes(1)
-    expect(templateApi.applyContent).toHaveBeenCalledWith(
-      42,
-      expect.objectContaining({
-        caseIds: [11, 12],
-        assets: [{ assetType: 'DEVICE', assetId: 9 }],
-        // 后端 record 是 caseSetIds；写 setIds 会被 Jackson 忽略，建出的项目里集合为空。
-        caseSetIds: [5, 6],
-      }),
-    )
-    const body = vi.mocked(templateApi.applyContent).mock.calls[0][1] as Record<string, unknown>
+    // 只发一次请求：项目 + 成员 + 组 + 内容 + 资产 + 凭证在服务端一个事务里
+    expect(projectApi.composite).toHaveBeenCalledTimes(1)
+    expect(projectApi.create).not.toHaveBeenCalled()
+    expect(templateApi.applyContent).not.toHaveBeenCalled()
+
+    const body = compositeBody()
+    expect(body.caseIds).toEqual([11, 12])
+    expect(body.caseSetIds).toEqual([5, 6])
+    // 后端 record 是 caseSetIds；写 setIds 会被 Jackson 忽略，建出的项目里集合为空
     expect(body).not.toHaveProperty('setIds')
     expect(body).not.toHaveProperty('templateKeys')
+    expect(body.assets).toEqual([
+      { assetType: 'DEVICE', assetId: 9, managementCredentialId: null, bmcCredentialId: null },
+    ])
   })
 
   it('提交去重：重复 caseIds / caseSetIds 只留一份', async () => {
@@ -365,26 +406,25 @@ describe('W57-13 内容提交 caseSetIds / 去重 / 可跳过', () => {
     click(root, '[data-testid="wizard-create"]')
     await tick()
 
-    expect(templateApi.applyContent).toHaveBeenCalledWith(
-      42,
-      expect.objectContaining({
-        caseIds: [11, 12],
-        caseSetIds: [5],
-      }),
-    )
+    const body = compositeBody()
+    expect(body.caseIds).toEqual([11, 12])
+    expect(body.caseSetIds).toEqual([5])
   })
 
-  it('四类来源都为空时跳过内容提交，不调 applyContent', async () => {
+  it('内容全空也创建项目：composite 照样调一次，内容数组为空', async () => {
     const root = await mountView()
     await toReview(root)
     click(root, '[data-testid="wizard-create"]')
     await tick()
 
-    expect(templateApi.applyContent).not.toHaveBeenCalled()
+    expect(projectApi.composite).toHaveBeenCalledTimes(1)
+    const body = compositeBody()
+    expect(body.caseIds).toEqual([])
+    expect(body.assets).toEqual([])
     expect(root.querySelector('.wizard-result')).not.toBeNull()
   })
 
-  it('只选用例集（跳过用例）也提交 caseSetIds', async () => {
+  it('只选用例集（跳过用例）也带上 caseSetIds', async () => {
     picker.payload = {
       ...emptyPayload(),
       setIds: [5],
@@ -395,10 +435,96 @@ describe('W57-13 内容提交 caseSetIds / 去重 / 可跳过', () => {
     click(root, '[data-testid="wizard-create"]')
     await tick()
 
-    expect(templateApi.applyContent).toHaveBeenCalledWith(
-      42,
-      expect.objectContaining({ caseIds: [], caseSetIds: [5] }),
-    )
+    const body = compositeBody()
+    expect(body.caseIds).toEqual([])
+    expect(body.caseSetIds).toEqual([5])
+  })
+
+  it('负责人默认当前用户，随请求一起提交（FR-v5.10-04）', async () => {
+    const root = await mountView()
+    await toReview(root)
+    click(root, '[data-testid="wizard-create"]')
+    await tick()
+
+    expect(compositeBody().ownerId).toBe(1)
+    expect(compositeBody().demo).toBe(false)
+  })
+
+  it('勾选演示项目 → demo=true；不勾 → false（FR-v5.10-04）', async () => {
+    const root = await mountView()
+    await advanceToBasics(root)
+    fill(root, '[data-testid="wizard-code"]', 'QA-2026-009')
+    fill(root, '[data-testid="wizard-name"]', '演示项目')
+    await tick()
+    clickNext(root)
+    await tick()
+
+    const demoBox = root.querySelector<HTMLInputElement>('[data-testid="wizard-demo"]')
+    expect(demoBox).not.toBeNull()
+    demoBox!.checked = true
+    demoBox!.dispatchEvent(new Event('change'))
+    await tick()
+
+    for (let i = 0; i < 8 && !root.querySelector('[data-testid="wizard-create"]'); i += 1) {
+      clickNext(root)
+      await tick()
+    }
+    click(root, '[data-testid="wizard-create"]')
+    await tick()
+
+    expect(compositeBody().demo).toBe(true)
+  })
+
+  it('用户组步：勾选组并选角色 → 组授权随请求提交（FR-v5.10-02）', async () => {
+    const root = await mountView()
+    click(root, '.template-card')
+    await tick()
+    clickNext(root)
+    await tick()
+    fill(root, '[data-testid="wizard-code"]', 'QA-2026-010')
+    fill(root, '[data-testid="wizard-name"]', '组授权项目')
+    await tick()
+    // 走到 groups 步
+    for (let i = 0; i < 4 && !root.querySelector('[data-testid="wizard-group-5"]'); i += 1) {
+      clickNext(root)
+      await tick()
+    }
+    const box = root.querySelector<HTMLInputElement>('[data-testid="wizard-group-5"]')
+    expect(box).not.toBeNull()
+    box!.checked = true
+    box!.dispatchEvent(new Event('change'))
+    await tick()
+    // 步内显示该组成员数
+    expect(root.textContent).toContain('3')
+
+    for (let i = 0; i < 4 && !root.querySelector('[data-testid="wizard-create"]'); i += 1) {
+      clickNext(root)
+      await tick()
+    }
+    click(root, '[data-testid="wizard-create"]')
+    await tick()
+
+    expect(compositeBody().groups).toEqual([{ groupId: 5, roleCode: 'viewer' }])
+  })
+
+  it('资产凭证内联：选中设备后出现两个选择器，可留空（FR-v5.10-03）', async () => {
+    picker.payload = { ...emptyPayload(), assetIds: [9] }
+    const root = await mountView()
+    await advanceToContent(root)
+
+    expect(root.querySelector('[data-testid="wizard-cred-mgmt-9"]')).not.toBeNull()
+    expect(root.querySelector('[data-testid="wizard-cred-bmc-9"]')).not.toBeNull()
+    expect(credentialOptionsApi.options).toHaveBeenCalledWith(9)
+
+    clickNext(root)
+    await tick()
+    click(root, '[data-testid="wizard-create"]')
+    await tick()
+
+    // 留空 → 两面都是 null（后端把 null 当「不动」，不会清掉既有绑定）
+    expect(compositeBody().assets).toEqual([
+      { assetType: 'DEVICE', assetId: 9, managementCredentialId: null, bmcCredentialId: null },
+    ])
   })
 })
 
@@ -409,7 +535,7 @@ describe('W57-13 并发冲突指名 / 返回不丢选择 / 存为模板', () => 
       setIds: [5],
       sets: [{ id: 5, name: '以太网冒烟' }],
     }
-    vi.mocked(templateApi.applyContent).mockRejectedValueOnce(
+    vi.mocked(projectApi.composite).mockRejectedValueOnce(
       new Error('用例集「以太网冒烟」已被删除'),
     )
     const root = await mountView()
@@ -417,8 +543,7 @@ describe('W57-13 并发冲突指名 / 返回不丢选择 / 存为模板', () => 
     click(root, '[data-testid="wizard-create"]')
     await tick()
 
-    const warnings = root.querySelector('.wizard-warnings')?.textContent ?? ''
-    expect(warnings).toContain('以下用例集已被删除')
+    const warnings = root.textContent ?? ''
     expect(warnings).toContain('以太网冒烟')
   })
 
@@ -428,14 +553,27 @@ describe('W57-13 并发冲突指名 / 返回不丢选择 / 存为模板', () => 
       setIds: [7],
       sets: [{ id: 7, name: '回归集' }],
     }
-    vi.mocked(templateApi.applyContent).mockRejectedValueOnce(new Error('网络连接超时'))
+    vi.mocked(projectApi.composite).mockRejectedValueOnce(new Error('网络连接超时'))
     const root = await mountView()
     await toReview(root)
     click(root, '[data-testid="wizard-create"]')
     await tick()
 
-    const warnings = root.querySelector('.wizard-warnings')?.textContent ?? ''
+    const warnings = root.textContent ?? ''
     expect(warnings).not.toContain('以下用例集已被删除')
+    // 顶部错误行要给出原因，不能静默吞掉
+    expect(warnings).toContain('网络连接超时')
+    expect(root.querySelector('.wizard-result')).toBeNull()
+  })
+
+  it('提交失败不落在半成品上：结果区不出现已创建卡片', async () => {
+    vi.mocked(projectApi.composite).mockRejectedValueOnce(new Error('编号生成冲突，请重试'))
+    const root = await mountView()
+    await toReview(root)
+    click(root, '[data-testid="wizard-create"]')
+    await tick()
+
+    expect(root.querySelector('[data-testid="wizard-create"]')).not.toBeNull()
   })
 
   it('content 步返回再进入不丢选择：caseIds / setIds 经 v-model 保持', async () => {

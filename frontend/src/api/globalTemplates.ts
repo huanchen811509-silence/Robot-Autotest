@@ -34,6 +34,17 @@ export interface TemplateRequest {
   kernel?: string
   visibility?: string
   description?: string
+  /**
+   * 模板明细（v5.10.0 / FR-v5.10-05）：`itemType` 取 CASE / CASE_SET / SCENARIO / DEVICE。
+   * 只写两张模板表（引用），不复制用例正文。空数组在 POST 上会被后端按「空模板」处理，
+   * 因此模板向导在没有内容时传 `SCENARIO` 标签或直接依赖复核步的显式确认。
+   */
+  items?: {
+    itemType: string
+    refId: number | null
+    mode: string
+    name: string
+  }[]
 }
 
 export interface ContentResult {
@@ -69,6 +80,12 @@ export const templateApi = {
   },
   remove(id: number) {
     return request<{ deleted: boolean }>(`/global/templates/${id}`, { method: 'DELETE' })
+  },
+  /** 编码前缀注册表（v5.10.0 / FR-v5.10-08）：模板向导第 1 步的前缀下拉。 */
+  prefixes() {
+    return request<{ code: string; meaning: string; builtin: number; used: number }[]>(
+      '/global/templates/prefixes',
+    )
   },
   copy(id: number, code?: string, name?: string) {
     return request<TemplateRow>(`/global/templates/${id}/copy${toQuery({ code, name })}`, {

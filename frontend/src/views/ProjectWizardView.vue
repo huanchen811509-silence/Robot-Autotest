@@ -1,17 +1,23 @@
 <script setup lang="ts">
 /**
- * 创建项目向导（FR-v4.1-04）：模板 → 基本信息 → 运行设置 → 成员 → 确认。
+ * 创建项目向导（FR-v4.1-04 / v5.10.0）：模板 → 基本信息 → 运行设置 → 成员 → 用户组 →
+ * 内容与资产 → 确认。
  *
- * 三条约束：
+ * 四条约束：
  * 1. 模板只做默认值，不写库、不预置用例；创建后仍可在项目管理里改。
- * 2. 无 `user:write` 能力时自动跳过成员步骤，不把越权入口摆出来。
- * 3. 成员添加失败不回滚项目本身：项目已创建是事实，失败项逐条列出。
+ * 2. 无 `user:write` 能力时自动跳过成员与用户组两步，不把越权入口摆出来。
+ * 3. **前六步只在前端持有状态，第七步一次提交**（v5.10.0 / FR-v5.10-10 方案 A）：
+ *    走完不提交 → 库里零新增；提交失败 → 各步状态保留可重试。
+ * 4. 成员添加失败不回滚项目本身：项目已创建是事实，失败项逐条列出（后端 composite
+ *    也按同一口径把这些失败放进 warnings，而不是整体 500）。
  */
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { projectApi, userApi, type UserSummary } from '@/api/iam'
+import { groupsApi, type GroupRow } from '@/api/groups'
+import { credentialOptionsApi, type CredentialOption } from '@/api/credentialOptions'
 import { projectCardsApi } from '@/api/projectCards'
 import { templateApi } from '@/api/globalTemplates'
 import { capabilitiesForRole, roleFromCodes } from '@/config/navigation'
@@ -31,7 +37,15 @@ const isGlobal = computed(
   () => route.query.from === 'global' || (typeof route.path === 'string' && route.path.startsWith('/g/')),
 )
 
-const ALL_STEPS = ['template', 'basics', 'runtime', 'members', 'content', 'review'] as const
+const ALL_STEPS = [
+  'template',
+  'basics',
+  'runtime',
+  'members',
+  'groups',
+  'content',
+  'review',
+] as const
 type StepKey = (typeof ALL_STEPS)[number]
 
 const step = ref(0)
@@ -48,7 +62,32 @@ const form = reactive({
   description: '',
   testKernel: 'robot',
   visibility: 'private',
+  /** 负责人（FR-v5.10-04）：必填，默认当前用户；写 project.owner_id 且同事务补成员行。 */
+  ownerId: null as number | null,
+  /** 演示项目标记（FR-v5.10-04）：默认关，只写 project.is_demo，不改权限。 */
+  demo: false,
 })
+
+/**
+ * 用户组授权（v5.10.0 / FR-v5.10-02）：组 + 该组在本项目的角色。
+ *
+ * <p>这里不发明新的授权语义，提交后由后端走 `GroupService.grant`（与
+ * `POST /groups/grant` 同一个方法、同一张 `project_group_role` 表）。
+ * 步内显示「该组已有 N 名成员」——操作人得知道自己实际授给了多少人。
+ */
+const groupRows = ref<GroupRow[]>([])
+const groupsLoading = ref(false)
+const groupPicks = ref<{ groupId: number; roleCode: string; name: string; memberCount: number }[]>([])
+
+/**
+ * 资产凭证内联绑定（v5.10.0 / FR-v5.10-03）：每台选中设备两个地址面各一个下拉。
+ *
+ * <p>候选来自 `GET /api/global/assets/{id}/credentials/options` —— 与资产页「凭据选择器」
+ * 同一个端点、同一套排序（本设备成功 > 同型号成功 > 已配置 > 其它），不另造匹配逻辑。
+ * 空串表示不绑定（null=不动），与后端 `bindDeviceCredentials` 的哨兵语义一致。
+ */
+const credOptions = ref<Record<number, CredentialOption[]>>({})
+const credPicks = ref<Record<number, { mgmt: string; bmc: string }>>({})
 
 const memberRoles = ref<string[]>(['engineer'])
 const memberUserId = ref<number | null>(null)
@@ -132,12 +171,23 @@ const codeSample = computed(() => {
 const capabilities = computed(() => capabilitiesForRole(roleFromCodes(auth.user?.roles)))
 const canManageMembers = computed(() => capabilities.value.includes('user:write'))
 const steps = computed<StepKey[]>(() =>
-  canManageMembers.value ? ALL_STEPS.slice() : ALL_STEPS.filter((key) => key !== 'members'),
+  canManageMembers.value
+    ? ALL_STEPS.slice()
+    : ALL_STEPS.filter((key) => key !== 'members' && key !== 'groups'),
 )
 const current = computed<StepKey>(() => steps.value[Math.min(step.value, steps.value.length - 1)])
 const selected = computed(() => PROJECT_TEMPLATES.find((tpl) => tpl.key === selectedKey.value))
 
 const codePattern = /^[A-Za-z0-9._-]{2,40}$/
+
+/** 复核步显示负责人姓名（而不是 id）：id 对人没有意义。 */
+const ownerName = computed(() => {
+  if (!form.ownerId) return t('projectWizard.ownerPlaceholder')
+  const hit = users.value.find((user) => user.id === form.ownerId)
+  if (hit) return hit.displayName || hit.username
+  if (form.ownerId === auth.user?.id) return auth.user?.displayName || auth.user?.username || ''
+  return String(form.ownerId)
+})
 const availableUsers = computed(() =>
   users.value.filter((user) => !picked.value.some((member) => member.userId === user.id)),
 )
@@ -157,6 +207,8 @@ function stepProblem(): string | null {
     if (!codePattern.test(form.code.trim())) return t('projectWizard.codeInvalid')
     if (!form.name.trim()) return t('projectWizard.nameRequired')
   }
+  // 负责人必填：前端先拦一道，服务端 `create(... ownerId ...)` 也会 404/400 兜住。
+  if (current.value === 'runtime' && !form.ownerId) return t('projectWizard.ownerRequired')
   return null
 }
 
@@ -188,6 +240,12 @@ async function loadUsers(): Promise<void> {
   }
 }
 
+// 资产是在内容步里才被选中的（进入该步时还是空的），所以除了进入步骤时拉一次，
+// 选择集变化也要补拉——否则用户勾完设备看不到凭证下拉。
+watch(selectedAssetIds, () => {
+  if (current.value === "content") void loadCredentialOptions()
+})
+
 watch(current, async (key) => {
   if (key === 'basics') {
     await ensureCodes()
@@ -195,6 +253,8 @@ watch(current, async (key) => {
     if (!form.code.trim() || form.code === autoCode.value) void regenerateCode()
   }
   if (key === 'members') void loadUsers()
+  if (key === 'groups') void loadGroups()
+  if (key === 'content') void loadCredentialOptions()
 })
 
 // 改内核（robot ↔ pytest）会改编码里的引擎段：只有编码还是自动建议时才跟着换
@@ -205,7 +265,67 @@ watch(
   },
 )
 
-onMounted(() => void loadUsers())
+onMounted(() => {
+  void loadUsers()
+  // 负责人默认当前用户（FR-v5.10-04）：用户不必为了建项目先去下拉里找自己一次。
+  form.ownerId = auth.user?.id ?? null
+})
+
+async function loadGroups(): Promise<void> {
+  if (groupRows.value.length || groupsLoading.value) return
+  groupsLoading.value = true
+  try {
+    groupRows.value = await groupsApi.groups()
+  } catch (e) {
+    error.value = localizeError(e)
+  } finally {
+    groupsLoading.value = false
+  }
+}
+
+function groupPicked(groupId: number): boolean {
+  return groupPicks.value.some((item) => item.groupId === groupId)
+}
+
+function toggleGroup(group: GroupRow): void {
+  if (groupPicked(group.id)) {
+    groupPicks.value = groupPicks.value.filter((item) => item.groupId !== group.id)
+    return
+  }
+  groupPicks.value.push({
+    groupId: group.id,
+    roleCode: 'viewer',
+    name: group.name,
+    memberCount: group.memberCount ?? 0,
+  })
+}
+
+function setGroupRole(groupId: number, roleCode: string): void {
+  const hit = groupPicks.value.find((item) => item.groupId === groupId)
+  if (hit) hit.roleCode = roleCode
+}
+
+/** 内容步里选中的设备 → 逐个拉凭据候选（懒加载，已拉过不重复请求）。 */
+async function loadCredentialOptions(): Promise<void> {
+  for (const assetId of selectedAssetIds.value) {
+    if (credOptions.value[assetId]) continue
+    try {
+      const page = await credentialOptionsApi.options(assetId)
+      credOptions.value = { ...credOptions.value, [assetId]: page.items }
+      if (!credPicks.value[assetId]) {
+        credPicks.value = { ...credPicks.value, [assetId]: { mgmt: '', bmc: '' } }
+      }
+    } catch {
+      // 单台设备拉不到候选不影响其它设备：留空即「不绑定」
+      credOptions.value = { ...credOptions.value, [assetId]: [] }
+    }
+  }
+}
+
+function setCredential(assetId: number, plane: 'mgmt' | 'bmc', value: string): void {
+  const current = credPicks.value[assetId] ?? { mgmt: '', bmc: '' }
+  credPicks.value = { ...credPicks.value, [assetId]: { ...current, [plane]: value } }
+}
 
 function addMember(): void {
   const user = users.value.find((item) => item.id === memberUserId.value)
@@ -240,71 +360,59 @@ async function createProject(): Promise<void> {
   error.value = null
   busy.value = true
   warnings.value = []
+  contentConflicts.value = []
   try {
-    const project = await projectApi.create({
+    // 一次提交（FR-v5.10-10 方案 A）：项目 / 成员 / 组授权 / 内容 / 资产 / 凭证在服务端
+    // 一个事务里写完。任何一环失败前端都不会看到「项目建了但成员没进」这种半成品。
+    const result = await projectApi.composite({
       code: form.code.trim(),
       name: form.name.trim(),
       description: form.description.trim(),
       visibility: form.visibility,
       testKernel: form.testKernel,
+      ownerId: form.ownerId,
+      demo: form.demo,
+      members: picked.value.map((member) => ({
+        userId: member.userId,
+        roleCodes: member.roleCodes,
+      })),
+      groups: groupPicks.value.map((item) => ({
+        groupId: item.groupId,
+        roleCode: item.roleCode,
+      })),
+      // 凭证：空串 = 不绑定（后端把 null 当「不动」、0 当「清空」，这里只表达两个状态）
+      assets: selectedAssetIds.value.map((assetId) => {
+        const pick = credPicks.value[assetId]
+        return {
+          assetType: 'DEVICE',
+          assetId,
+          managementCredentialId: pick && pick.mgmt ? Number(pick.mgmt) : null,
+          bmcCredentialId: pick && pick.bmc ? Number(pick.bmc) : null,
+        }
+      }),
+      caseIds: [...new Set(selectedCaseIds.value)],
+      caseSetIds: [...new Set(selectedSetIds.value)],
+      setName: t('projectWizard.contentSetName'),
     })
-    // 批量成员（FR-v4.4-03）：一次请求，逐人失败原因回显，不回滚项目本身
-    if (picked.value.length) {
-      try {
-        const result = await projectApi.addMembers(
-          project.id,
-          picked.value.map((member) => ({ userId: member.userId, roleCodes: member.roleCodes })),
-        )
-        for (const failure of result.failures) {
-          const member = picked.value.find((item) => item.userId === failure.userId)
-          warnings.value.push(
-            t('projectWizard.memberFailed', {
-              name: member?.username ?? failure.userId,
-              reason: failure.reason,
-            }),
-          )
-        }
-      } catch (e) {
-        const line = localizeError(e)
-        warnings.value.push(t('projectWizard.memberBatchFailed', { reason: line.summary }))
-      }
-    }
-    // 内容步（W57-12/13）：四类来源一次性提交。字段名必须与后端
-    // `ProjectTemplateService.ContentRequest` 严格同名——`caseSetIds` 不是 `setIds`；
-    // 写错会被 Jackson 忽略成 null，建出的项目里集合为空且不报错
-    // （v5.7.0 首版缺陷，见 06-ACCEPTANCE-AUDIT P0-2）。
-    // 模板不在此提交：向导第 1 步选定的模板已在建项目时生效，此处只做只读回显。
-    if (selectedCaseIds.value.length || selectedAssetIds.value.length || selectedSetIds.value.length) {
-      try {
-        const contentPayload = {
-          caseIds: [...new Set(selectedCaseIds.value)],
-          assets: selectedAssetIds.value.map((assetId) => ({ assetType: 'DEVICE', assetId })),
-          setName: t('projectWizard.contentSetName'),
-          caseSetIds: [...new Set(selectedSetIds.value)],
-        }
-        contentConflicts.value = []
-        await templateApi.applyContent(project.id, contentPayload)
-      } catch (e) {
-        const reason = localizeError(e).summary
-        // 集合已删的并发错误要「指名」：按名称 / id 从已选集合里定位，交内容步显示移除入口。
-        const missing = contentSelection.value.sets.filter(
-          (set) => reason.includes(set.name) || reason.includes(String(set.id)),
-        )
-        if (missing.length > 0) {
-          contentConflicts.value = missing
-          warnings.value.push(
-            t('w57.projectWizard.contentConflict', { names: missing.map((set) => set.name).join('、') }),
-          )
-        } else {
-          warnings.value.push(t('projectWizard.contentFailed', { reason }))
-        }
-      }
-    }
+    warnings.value = result.warnings
     await auth.loadProjects()
-    auth.setProject(project.id)
-    created.value = project.id
+    auth.setProject(result.projectId)
+    created.value = result.projectId
     message.value = t('projectWizard.created')
   } catch (e) {
+    const reason = localizeError(e).summary
+    // 集合已删的并发错误要「指名」：按名称 / id 从已选集合里定位，交内容步显示移除入口。
+    const missing = contentSelection.value.sets.filter(
+      (set) => reason.includes(set.name) || reason.includes(String(set.id)),
+    )
+    if (missing.length > 0) {
+      contentConflicts.value = missing
+      warnings.value.push(
+        t('w57.projectWizard.contentConflict', {
+          names: missing.map((set) => set.name).join('、'),
+        }),
+      )
+    }
     error.value = localizeError(e)
   } finally {
     busy.value = false
@@ -497,6 +605,21 @@ async function confirmSaveTemplate(): Promise<void> {
             <span>{{ t('projectWizard.visibilities.public') }}</span>
           </label>
         </fieldset>
+        <label class="wizard-field">
+          <span>{{ t('projectWizard.owner') }}</span>
+          <select v-model="form.ownerId" class="input wide" data-testid="wizard-owner">
+            <option :value="null">{{ t('projectWizard.ownerPlaceholder') }}</option>
+            <option v-for="user in users" :key="user.id" :value="user.id">
+              {{ user.displayName || user.username }}
+            </option>
+          </select>
+          <span class="wizard-hint">{{ t('projectWizard.ownerHint') }}</span>
+        </label>
+        <label class="wizard-check">
+          <input v-model="form.demo" type="checkbox" data-testid="wizard-demo" />
+          <span>{{ t('projectWizard.demo') }}</span>
+        </label>
+        <p class="wizard-hint">{{ t('projectWizard.demoHint') }}</p>
         <p class="wizard-hint">{{ t('projectWizard.runtimeHint') }}</p>
       </section>
 
@@ -546,11 +669,86 @@ async function confirmSaveTemplate(): Promise<void> {
         </ul>
       </section>
 
+      <section v-else-if="current === 'groups'" class="card wizard-card">
+        <h2 class="card-title">{{ t('projectWizard.groupsTitle') }}</h2>
+        <p class="wizard-hint">{{ t('projectWizard.groupsHint') }}</p>
+        <p v-if="groupsLoading" class="wizard-hint">{{ t('common.loading') }}</p>
+        <p v-else-if="groupRows.length === 0" class="wizard-hint">
+          {{ t('projectWizard.noGroups') }}
+        </p>
+        <ul v-else class="wizard-groups">
+          <li v-for="group in groupRows" :key="group.id">
+            <label class="wizard-check">
+              <input
+                type="checkbox"
+                :checked="groupPicked(group.id)"
+                :data-testid="`wizard-group-${group.id}`"
+                @change="toggleGroup(group)"
+              />
+              <span>{{ group.name }}</span>
+            </label>
+            <span class="wizard-hint">
+              {{ t('projectWizard.groupMembers', { count: group.memberCount ?? 0 }) }}
+            </span>
+            <select
+              v-if="groupPicked(group.id)"
+              class="input"
+              :value="groupPicks.find((item) => item.groupId === group.id)?.roleCode"
+              :aria-label="t('projectWizard.groupRole')"
+              @change="setGroupRole(group.id, ($event.target as HTMLSelectElement).value)"
+            >
+              <option v-for="role in ['admin', 'pm', 'engineer', 'viewer']" :key="role" :value="role">
+                {{ t(`admin.projectRole.${role}`) }}
+              </option>
+            </select>
+          </li>
+        </ul>
+      </section>
+
       <section v-else-if="current === 'content'" class="card wizard-card">
         <h2 class="card-title">{{ t('projectWizard.contentTitle') }}</h2>
         <p class="wizard-hint">{{ t('projectWizard.contentHint') }}</p>
         <!-- W57-12/13：四类来源由选择器自管理，选择状态经 v-model 持久在向导顶层 -->
         <WizardContentPicker v-model="contentSelection" :conflicts="contentConflicts" />
+        <!-- v5.10.0 / FR-v5.10-03：每台选中设备两个地址面各一个凭证下拉，可留空。
+             候选来自资产页同一端点（本设备成功 > 同型号成功 > 已配置 > 其它），不另造匹配。 -->
+        <div v-if="selectedAssetIds.length" class="wizard-credentials">
+          <h3 class="card-title">{{ t('projectWizard.credentialsTitle') }}</h3>
+          <p class="wizard-hint">{{ t('projectWizard.credentialsHint') }}</p>
+          <div v-for="assetId in selectedAssetIds" :key="assetId" class="wizard-credential-row">
+            <span class="wizard-credential-row__id">
+              {{ t('projectWizard.assetLabel', { id: assetId }) }}
+            </span>
+            <label class="wizard-field">
+              <span>{{ t('projectWizard.mgmtCredential') }}</span>
+              <select
+                class="input"
+                :value="credPicks[assetId]?.mgmt ?? ''"
+                :data-testid="`wizard-cred-mgmt-${assetId}`"
+                @change="setCredential(assetId, 'mgmt', ($event.target as HTMLSelectElement).value)"
+              >
+                <option value="">{{ t('projectWizard.credentialNone') }}</option>
+                <option v-for="option in credOptions[assetId] ?? []" :key="option.credentialId" :value="String(option.credentialId)">
+                  {{ option.name }}
+                </option>
+              </select>
+            </label>
+            <label class="wizard-field">
+              <span>{{ t('projectWizard.bmcCredential') }}</span>
+              <select
+                class="input"
+                :value="credPicks[assetId]?.bmc ?? ''"
+                :data-testid="`wizard-cred-bmc-${assetId}`"
+                @change="setCredential(assetId, 'bmc', ($event.target as HTMLSelectElement).value)"
+              >
+                <option value="">{{ t('projectWizard.credentialNone') }}</option>
+                <option v-for="option in credOptions[assetId] ?? []" :key="option.credentialId" :value="String(option.credentialId)">
+                  {{ option.name }}
+                </option>
+              </select>
+            </label>
+          </div>
+        </div>
       </section>
 
       <section v-else class="card wizard-card">
@@ -561,6 +759,11 @@ async function confirmSaveTemplate(): Promise<void> {
           <div><dt>{{ t('projectWizard.description') }}</dt><dd>{{ form.description || '—' }}</dd></div>
           <div><dt>{{ t('projectWizard.kernelLabel') }}</dt><dd>{{ t(`projectWizard.kernels.${form.testKernel}`) }}</dd></div>
           <div><dt>{{ t('projectWizard.visibilityLabel') }}</dt><dd>{{ t(`projectWizard.visibilities.${form.visibility}`) }}</dd></div>
+          <div><dt>{{ t('projectWizard.owner') }}</dt><dd>{{ ownerName }}</dd></div>
+          <div>
+            <dt>{{ t('projectWizard.demo') }}</dt>
+            <dd>{{ form.demo ? t('common.yes') : t('common.no') }}</dd>
+          </div>
           <div>
             <dt>{{ t('projectWizard.membersTitle') }}</dt>
             <dd>
@@ -568,6 +771,15 @@ async function confirmSaveTemplate(): Promise<void> {
                 {{ picked.map((member) => `${member.username}(${member.roleCodes.map((role) => t(`admin.projectRole.${role}`)).join('/')})`).join('、') }}
               </template>
               <template v-else>{{ t('projectWizard.noMembers') }}</template>
+            </dd>
+          </div>
+          <div>
+            <dt>{{ t('projectWizard.groupsTitle') }}</dt>
+            <dd>
+              <template v-if="groupPicks.length">
+                {{ groupPicks.map((item) => `${item.name}(${t(`admin.projectRole.${item.roleCode}`)})`).join('、') }}
+              </template>
+              <template v-else>{{ t('projectWizard.noGroupsPicked') }}</template>
             </dd>
           </div>
           <div>

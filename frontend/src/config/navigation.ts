@@ -249,7 +249,10 @@ export const GLOBAL_NAVIGATION: NavNode[] = [
         icon: 'boxes',
         path: '/g/templates',
         query: { kind: 'builtin' },
+        // v5.10.0 / W60-15：`alsoMatch: '/g/templates/'` 会把 `/g/templates/new` 也算进来，
+        // 出现「点模板向导、内置模板也亮」。与项目组同一处理：按分段边界排除。
         alsoMatch: ['/g/templates/'],
+        exclude: ['/g/templates/new'],
         defaultOf: true,
       },
       {
@@ -258,6 +261,13 @@ export const GLOBAL_NAVIGATION: NavNode[] = [
         icon: 'copy',
         path: '/g/templates',
         query: { kind: 'custom' },
+      },
+      {
+        // v5.10.0 / FR-v5.10-05：新建模板向导。一级组数不变、叶数 +1（W60-15 判据）。
+        key: 'global-templates-new',
+        labelKey: 'templateWizard.nav',
+        icon: 'plus',
+        path: '/g/templates/new',
       },
     ],
   },

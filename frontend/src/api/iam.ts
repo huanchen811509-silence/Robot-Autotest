@@ -168,6 +168,41 @@ export const projectApi = {
                   testKernel?: string }) {
     return request<Project>('/projects', { method: 'POST', body: JSON.stringify(body) })
   },
+  /**
+   * 向导一次提交（v5.10.0 / FR-v5.10-10）：项目 + 成员 + 组授权 + 资产 + 凭证 + 内容，
+   * 服务端一个事务。前六步只在前端持有状态，走完不点「创建」库里零新增。
+   */
+  composite(body: {
+    code: string
+    name: string
+    description?: string
+    visibility?: string
+    testKernel?: string
+    kind?: string
+    ownerId?: number | null
+    demo?: boolean
+    members?: { userId: number; roleCodes: string[] }[]
+    groups?: { groupId: number; roleCode: string }[]
+    assets?: {
+      assetType: string
+      assetId: number
+      managementCredentialId?: number | null
+      bmcCredentialId?: number | null
+    }[]
+    caseIds?: number[]
+    caseSetIds?: number[]
+    setName?: string
+  }) {
+    return request<{
+      projectId: number
+      code: string
+      members: number
+      groups: number
+      assets: number
+      cases: number
+      warnings: string[]
+    }>('/projects/composite', { method: 'POST', body: JSON.stringify(body) })
+  },
   update(id: number, body: UpdateProjectRequest) {
     return request<Project>(`/projects/${id}`, { method: 'PUT', body: JSON.stringify(body) })
   },

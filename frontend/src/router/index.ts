@@ -450,6 +450,14 @@ const router = createRouter({
       component: () => import('@/views/global/GlobalTemplatesView.vue'),
     },
     {
+      // v5.10.0 / FR-v5.10-05：新建模板向导。放在 `/g/templates/:id` 之前没有匹配优先级问题
+      // （Vue Router 按静态段优先），但放在列表之后更贴近阅读顺序。
+      path: '/g/templates/new',
+      name: 'global-template-new',
+      meta: { global: true },
+      component: () => import('@/views/global/TemplateWizardView.vue'),
+    },
+    {
       path: '/g/settings',
       name: 'global-settings',
       meta: { global: true },

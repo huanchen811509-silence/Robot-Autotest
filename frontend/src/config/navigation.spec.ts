@@ -446,9 +446,10 @@ describe('v4.11.0 全局菜单两级化', () => {
     ])
     // v5.9.0 / FR-v5.9-04：新增 iam 组 4 叶（角色/用户组/用户/项目关联）；
     // 同时「系统设置 → 用户管理」迁出（`/g/admin` 改为重定向），故设置组 6→5。
-    // 合计 3 + 3 + 2 + 2 + 4 + 5 = 19（PRD 起草时写 20，是把旧入口保留计的；见 TEST-PLAN §8.3）。
-    expect(globalGroups().map((group) => group.children.length)).toEqual([3, 3, 2, 2, 4, 5])
-    expect(globalLeaves()).toHaveLength(19)
+    // v5.10.0 / FR-v5.10-05：模板组新增「模板向导」叶（3），合计
+    // 3 + 3 + 2 + 3 + 4 + 5 = 20（v5.9 时 19 条，PRD 起草写 20 是旧入口口径，见 TEST-PLAN §8.3）。
+    expect(globalGroups().map((group) => group.children.length)).toEqual([3, 3, 2, 3, 4, 5])
+    expect(globalLeaves()).toHaveLength(20)
     for (const group of globalGroups()) {
       expect(group.children.length, `全局组 ${group.key} 退化成单叶`).toBeGreaterThanOrEqual(2)
     }
