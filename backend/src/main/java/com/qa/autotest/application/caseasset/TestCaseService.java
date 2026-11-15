@@ -229,7 +229,13 @@ public class TestCaseService {
         return get(projectId, id);
     }
 
-    @Audited(action = "case:delete", resource = "test_case")
+    /**
+     * 删除前的影响面预览（FR-v5.11-07）。
+     *
+     * <p><b>只读，不加 {@code @Audited}</b>：这个端点只数引用，不改任何数据。
+     * 曾经因为插入位置不当，把 {@code case:delete} 的注解顶到了本方法头上——
+     * 结果是「查一次影响面」被记成一次删除审计，而真正的删除反而没留痕。
+     */
     public CaseImpact impact(long projectId, long id) {
         access.bindProject(projectId);
         access.require(PermissionResource.CASE, PermissionAction.READ);
@@ -239,6 +245,7 @@ public class TestCaseService {
         return new CaseImpact(counts.setRefs(), counts.scriptBindings(), counts.runResults());
     }
 
+    @Audited(action = "case:delete", resource = "test_case")
     public void delete(long projectId, long id) {
         access.bindProject(projectId);
         access.require(PermissionResource.CASE, PermissionAction.DELETE);
