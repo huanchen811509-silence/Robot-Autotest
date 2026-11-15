@@ -47,7 +47,7 @@ ROOT = Path(__file__).resolve().parents[1]
 NAV = ROOT / "frontend" / "src" / "config" / "navigation.ts"
 SETTINGS = ROOT / "frontend" / "src" / "config" / "settingsNav.ts"
 
-GLOBAL_EXPECTED = 5
+GLOBAL_EXPECTED = 6
 PROJECT_EXPECTED = 7
 GLOBAL_MIN_CHILDREN = 2
 # v5.6.0 / FR-v5.6-01、02：全量菜单。pytest 工程与标准工程共用同一套菜单，

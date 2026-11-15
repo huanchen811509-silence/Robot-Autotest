@@ -22,11 +22,15 @@ export interface SettingsNavItem {
 /** 全局命名空间前缀；与 router/index.ts 的 /g/* 路由保持一致。 */
 export const GLOBAL_SETTINGS_PREFIX = '/g'
 
-/** 顺序固定：平台设置 / AI 助手 / 用户管理 / 审计日志 / 关于 / 版本迭代。 */
+/** 顺序固定：平台设置 / AI 助手 / 审计日志 / 关于 / 版本迭代。
+ *
+ * v5.9.0 / FR-v5.9-04：原第三项「用户管理」（`/g/admin`）迁出。角色/用户组/用户/项目关联
+ * 属**管理域**，已独立成一级菜单「用户与权限」（`/g/iam/*`）。这里不保留入口，
+ * 是为了不留第二套写入口——两个页面都能改同一个用户，权限与审计迟早对不上。
+ */
 export const SETTINGS_NAV: readonly SettingsNavItem[] = [
   { key: 'settings-platform', labelKey: 'menu.settingsPlatform', path: '/g/settings', capability: 'settings:read' },
   { key: 'settings-ai', labelKey: 'menu.aiAssistants', path: '/g/settings/ai', capability: 'ai:config' },
-  { key: 'settings-users', labelKey: 'menu.adminUsers', path: '/g/admin', capability: 'user:write' },
   { key: 'settings-audit', labelKey: 'audit.title', path: '/g/admin/audit', capability: 'audit:read' },
   { key: 'settings-about', labelKey: 'menu.about', path: '/g/about', capability: 'public' },
   { key: 'settings-changelog', labelKey: 'menu.changelog', path: '/g/changelog', capability: 'public' },

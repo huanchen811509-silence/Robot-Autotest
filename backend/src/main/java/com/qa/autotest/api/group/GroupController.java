@@ -13,9 +13,11 @@ import com.qa.autotest.common.tenant.TenantContext;
 import com.qa.autotest.domain.execution.RunRecord;
 import java.util.List;
 import java.util.Map;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -66,8 +68,57 @@ public class GroupController {
         if (!access.isAdmin()) {
             throw new BusinessException(ErrorCode.FORBIDDEN, "仅管理员可管理用户组");
         }
-        groups.addMember(request.groupId(), request.userId());
-        return ApiResponse.ok(groups.members(request.groupId()));
+        // FR-v5.9-06：重复添加视为成功跳过（200 + added/skipped），不再返回 409。
+        boolean added = groups.addMemberIfAbsent(request.groupId(), request.userId());
+        return ApiResponse.ok(Map.of(
+                "added", added ? 1 : 0,
+                "skipped", added ? 0 : 1,
+                "members", groups.members(request.groupId())));
+    }
+
+    @GetMapping("/groups/{id}")
+    public ApiResponse<?> detail(@PathVariable long id) {
+        if (!access.isAdmin()) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "仅管理员可管理用户组");
+        }
+        return ApiResponse.ok(groups.detail(id));
+    }
+
+    @PutMapping("/groups/{id}")
+    public ApiResponse<?> rename(@PathVariable long id, @RequestBody GroupRequest request) {
+        if (!access.isAdmin()) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "仅管理员可管理用户组");
+        }
+        groups.rename(id, request.name(), request.description());
+        return ApiResponse.ok(groups.detail(id));
+    }
+
+    @DeleteMapping("/groups/{id}")
+    public ApiResponse<?> delete(@PathVariable long id) {
+        if (!access.isAdmin()) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "仅管理员可管理用户组");
+        }
+        groups.deleteGroup(id);
+        return ApiResponse.ok(null);
+    }
+
+    @DeleteMapping("/groups/{id}/members/{userId}")
+    public ApiResponse<?> removeMember(@PathVariable long id, @PathVariable long userId) {
+        if (!access.isAdmin()) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "仅管理员可管理用户组");
+        }
+        groups.removeMember(id, userId);
+        return ApiResponse.ok(groups.detail(id));
+    }
+
+    /** 撤销组授权（幂等：重复撤销仍 200，`removed=false`）。 */
+    @DeleteMapping("/groups/{id}/grants/{projectId}")
+    public ApiResponse<?> revoke(@PathVariable long id, @PathVariable long projectId) {
+        if (!access.isAdmin()) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "仅管理员可授权");
+        }
+        boolean removed = groups.revoke(projectId, id);
+        return ApiResponse.ok(Map.of("removed", removed));
     }
 
     @PostMapping("/groups/grant")

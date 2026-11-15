@@ -262,6 +262,47 @@ export const GLOBAL_NAVIGATION: NavNode[] = [
     ],
   },
   {
+    // v5.9.0 / FR-v5.9-04：用户与权限独立成一级（D-3）。
+    // 原「系统设置 → 用户管理」把角色/组/用户/项目关联挤在同一个 746 行页面里，
+    // 并且那是「管理域」不是「个人设置」——放进系统设置会让该组撑到 10 项。
+    // 旧入口 `/g/admin` 改为重定向到 `/g/iam/users`（不保留第二套写入口）。
+    key: 'global-iam',
+    labelKey: 'menu.globalIam',
+    icon: 'users',
+    // 组级能力：整组只对具备 user:write 的角色出现。不给组级能力而只给子项，
+    // 过滤后会留下一个「点开是空的」折叠组（只剩标题、没有可点的项）。
+    capability: 'user:write',
+    children: [
+      {
+        key: 'global-iam-roles',
+        labelKey: 'menu.globalIamRoles',
+        icon: 'audit',
+        path: '/g/iam/roles',
+      },
+      {
+        key: 'global-iam-groups',
+        labelKey: 'menu.globalIamGroups',
+        icon: 'users',
+        path: '/g/iam/groups',
+        alsoMatch: ['/g/iam/groups/'],
+      },
+      {
+        key: 'global-iam-users',
+        labelKey: 'menu.globalIamUsers',
+        icon: 'admin',
+        path: '/g/iam/users',
+        alsoMatch: ['/g/iam/users/'],
+      },
+      {
+        key: 'global-iam-projects',
+        labelKey: 'menu.globalIamProjects',
+        icon: 'link',
+        path: '/g/iam/projects',
+        alsoMatch: ['/g/iam/projects/'],
+      },
+    ],
+  },
+  {
     key: 'global-settings',
     labelKey: 'menu.globalSettings',
     icon: 'admin',

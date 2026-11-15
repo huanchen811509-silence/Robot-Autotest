@@ -438,14 +438,17 @@ describe('v4.11.0 全局菜单两级化', () => {
   const globalLeaves = (): NavLeaf[] =>
     GLOBAL_NAVIGATION.flatMap((node) => (isGroup(node) ? node.children : [node]))
 
-  it('5 个一级组、16 个叶子，每组至少 2 项（PRD §4.2；W57-09 补 2 叶）', () => {
-    expect(GLOBAL_NAVIGATION).toHaveLength(5)
+  it('6 个一级组、19 个叶子，每组至少 2 项（v5.9.0 新增「用户与权限」）', () => {
+    expect(GLOBAL_NAVIGATION).toHaveLength(6)
     expect(globalGroups().map((group) => group.key)).toEqual([
-      'global-projects', 'global-cases', 'global-assets', 'global-templates', 'global-settings',
+      'global-projects', 'global-cases', 'global-assets', 'global-templates',
+      'global-iam', 'global-settings',
     ])
-    // W57-09：项目组 +「新建项目」、用例组 +「全局用例集」→ 3 + 3 + 2 + 2 + 6
-    expect(globalGroups().map((group) => group.children.length)).toEqual([3, 3, 2, 2, 6])
-    expect(globalLeaves()).toHaveLength(16)
+    // v5.9.0 / FR-v5.9-04：新增 iam 组 4 叶（角色/用户组/用户/项目关联）；
+    // 同时「系统设置 → 用户管理」迁出（`/g/admin` 改为重定向），故设置组 6→5。
+    // 合计 3 + 3 + 2 + 2 + 4 + 5 = 19（PRD 起草时写 20，是把旧入口保留计的；见 TEST-PLAN §8.3）。
+    expect(globalGroups().map((group) => group.children.length)).toEqual([3, 3, 2, 2, 4, 5])
+    expect(globalLeaves()).toHaveLength(19)
     for (const group of globalGroups()) {
       expect(group.children.length, `全局组 ${group.key} 退化成单叶`).toBeGreaterThanOrEqual(2)
     }
@@ -472,14 +475,14 @@ describe('v4.11.0 全局菜单两级化', () => {
     }
   })
 
-  it('全局「系统设置」组 6 项顺序与 SETTINGS_NAV 逐项一致', () => {
+  it('全局「系统设置」组 5 项顺序与 SETTINGS_NAV 逐项一致', () => {
     const settings = globalGroups().find((group) => group.key === 'global-settings') as NavGroup
     expect(settings.children.map((child) => child.key)).toEqual([
-      'settings-platform', 'settings-ai', 'settings-users', 'settings-audit',
+      'settings-platform', 'settings-ai', 'settings-audit',
       'settings-about', 'settings-changelog',
     ])
     expect(settings.children.map((child) => child.path)).toEqual([
-      '/g/settings', '/g/settings/ai', '/g/admin', '/g/admin/audit', '/g/about', '/g/changelog',
+      '/g/settings', '/g/settings/ai', '/g/admin/audit', '/g/about', '/g/changelog',
     ])
   })
 

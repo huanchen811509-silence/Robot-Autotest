@@ -23,8 +23,38 @@ export function roleRank(role: string): number {
   }
 }
 
+export interface GroupRow {
+  id: number
+  name: string
+  description: string | null
+  memberCount?: number
+  projectCount?: number
+}
+
+export interface GroupInput {
+  name: string
+  description: string
+}
+
 export const groupsApi = {
-  groups: () => request<Record<string, unknown>[]>('/groups'),
+  groups: () => request<GroupRow[]>('/groups'),
+  detail: (id: number) => request<{
+    group: GroupRow | null
+    members: { id: number; username: string; displayName: string }[]
+    projects: { id: number; code: string; name: string; roleCode: string }[]
+  }>(`/groups/${id}`),
+  rename: (id: number, body: GroupInput) =>
+    request<unknown>(`/groups/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+  remove: (id: number) => request<void>(`/groups/${id}`, { method: 'DELETE' }),
+  addMember: (groupId: number, userId: number) =>
+    request<{ added: number; skipped: number; members: number[] }>('/groups/member', {
+      method: 'POST',
+      body: JSON.stringify({ groupId, userId }),
+    }),
+  removeMember: (groupId: number, userId: number) =>
+    request<unknown>(`/groups/${groupId}/members/${userId}`, { method: 'DELETE' }),
+  revoke: (groupId: number, projectId: number) =>
+    request<{ removed: boolean }>(`/groups/${groupId}/grants/${projectId}`, { method: 'DELETE' }),
   create: (name: string, description: string) =>
     request<number>('/groups', { method: 'POST', body: JSON.stringify({ name, description }) }),
   grant: (projectId: number, groupId: number, roleCode: string, userId: number) =>

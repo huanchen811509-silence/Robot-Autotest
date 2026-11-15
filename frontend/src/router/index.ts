@@ -466,10 +466,34 @@ const router = createRouter({
       component: () => import('@/views/AiAssistantsView.vue'),
     },
     {
+      // v5.9.0 / FR-v5.9-04：用户管理迁入「用户与权限」一级菜单，旧入口只做重定向。
+      // 不保留第二套写入口——两个页面都能改同一个用户，权限与审计迟早对不上。
       path: '/g/admin',
-      name: 'global-admin',
-      meta: { global: true },
-      component: () => import('@/views/AdminView.vue'),
+      redirect: '/g/iam/users',
+    },
+    {
+      path: '/g/iam/users',
+      name: 'global-iam-users',
+      meta: { global: true, capability: 'user:write' },
+      component: () => import('@/views/iam/IamUsersView.vue'),
+    },
+    {
+      path: '/g/iam/groups',
+      name: 'global-iam-groups',
+      meta: { global: true, capability: 'user:write' },
+      component: () => import('@/views/iam/IamGroupsView.vue'),
+    },
+    {
+      path: '/g/iam/projects',
+      name: 'global-iam-projects',
+      meta: { global: true, capability: 'user:write' },
+      component: () => import('@/views/iam/IamProjectLinksView.vue'),
+    },
+    {
+      path: '/g/iam/roles',
+      name: 'global-iam-roles',
+      meta: { global: true, capability: 'user:write' },
+      component: () => import('@/views/iam/IamRolesView.vue'),
     },
     {
       path: '/g/admin/audit',

@@ -1,6 +1,9 @@
 /**
  * 系统设置单一数据源（v4.9.2 / OPT-01 / FR-49-01~04）。
- * 纯数据断言：6 项、固定顺序、两模式派生结果深度相等、public 能力。
+ * 纯数据断言：5 项、固定顺序、两模式派生结果深度相等、public 能力。
+ *
+ * v5.9.0 / FR-v5.9-04：「用户管理」迁入「用户与权限」一级菜单，故 6 → 5 项。
+ * 迁移理由不是「少一项更清爽」，而是**不能留第二套写入口**。
  */
 import { describe, expect, it } from 'vitest'
 import {
@@ -17,23 +20,21 @@ function shape(items: readonly SettingsNavItem[]): Pick<SettingsNavItem, 'key' |
 }
 
 describe('SETTINGS_NAV 单一数据源', () => {
-  it('固定 6 项，顺序为平台设置 / AI 助手 / 用户管理 / 审计日志 / 关于 / 版本迭代', () => {
-    expect(SETTINGS_NAV).toHaveLength(6)
+  it('固定 5 项，顺序为平台设置 / AI 助手 / 审计日志 / 关于 / 版本迭代', () => {
+    expect(SETTINGS_NAV).toHaveLength(5)
     expect(SETTINGS_NAV.map((item) => item.key)).toEqual([
       'settings-platform',
       'settings-ai',
-      'settings-users',
       'settings-audit',
       'settings-about',
       'settings-changelog',
     ])
   })
 
-  it('capability 依次为 settings:read / ai:config / user:write / audit:read / public / public', () => {
+  it('capability 依次为 settings:read / ai:config / audit:read / public / public', () => {
     expect(SETTINGS_NAV.map((item) => item.capability)).toEqual([
       'settings:read',
       'ai:config',
-      'user:write',
       'audit:read',
       'public',
       'public',
@@ -53,7 +54,6 @@ describe('SETTINGS_NAV 单一数据源', () => {
     expect(global.map((item) => item.path)).toEqual([
       '/g/settings',
       '/g/settings/ai',
-      '/g/admin',
       '/g/admin/audit',
       '/g/about',
       '/g/changelog',
@@ -61,7 +61,6 @@ describe('SETTINGS_NAV 单一数据源', () => {
     expect(project.map((item) => item.path)).toEqual([
       '/settings',
       '/settings/ai',
-      '/admin',
       '/admin/audit',
       '/about',
       '/changelog',

@@ -120,9 +120,25 @@ export const userApi = {
   },
 }
 
+export interface RoleInput {
+  code: string
+  name: string
+  description?: string | null
+  permissions?: string[]
+}
+
 export const roleApi = {
   list() {
     return request<Role[]>('/roles')
+  },
+  create(body: RoleInput) {
+    return request<Role>('/roles', { method: 'POST', body: JSON.stringify(body) })
+  },
+  update(id: number, body: RoleInput) {
+    return request<Role>(`/roles/${id}`, { method: 'PUT', body: JSON.stringify(body) })
+  },
+  remove(id: number) {
+    return request<void>(`/roles/${id}`, { method: 'DELETE' })
   },
 }
 

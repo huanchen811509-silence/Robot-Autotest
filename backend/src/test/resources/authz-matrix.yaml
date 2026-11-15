@@ -59,7 +59,7 @@ matrix:
   - {role: PM, resource: 审计, action: WRITE, expected: N/A, reason: "审计只增不改，无写动作", case_id: AUTHZ-PM-AUDIT-WRITE}
   - {role: PM, resource: 审计, action: DELETE, expected: N/A, reason: "审计日志不可删除，以保留完整追溯链", case_id: AUTHZ-PM-AUDIT-DELETE}
   - {role: PM, resource: 审计, action: MANAGE, expected: N/A, reason: "审计只增不改，无管理动作", case_id: AUTHZ-PM-AUDIT-MANAGE}
-  - {role: ENGINEER, resource: 用户角色, action: READ, expected: ALLOW, reason: "测试工程师可读用户与角色（协作需要）", case_id: AUTHZ-ENGINEER-USER_ROLE-READ}
+  - {role: ENGINEER, resource: 用户角色, action: READ, expected: DENY, reason: "v5.9.0 起用户与权限为管理域：读自己走 /api/me、看成员走项目成员接口，全局用户清单不再放行", case_id: AUTHZ-ENGINEER-USER_ROLE-READ}
   - {role: ENGINEER, resource: 用户角色, action: WRITE, expected: DENY, reason: "测试工程师不具备用户与角色的写权限", case_id: AUTHZ-ENGINEER-USER_ROLE-WRITE}
   - {role: ENGINEER, resource: 用户角色, action: DELETE, expected: DENY, reason: "测试工程师不具备用户与角色的删权限", case_id: AUTHZ-ENGINEER-USER_ROLE-DELETE}
   - {role: ENGINEER, resource: 用户角色, action: MANAGE, expected: DENY, reason: "测试工程师不具备用户与角色的管理权限", case_id: AUTHZ-ENGINEER-USER_ROLE-MANAGE}

@@ -173,10 +173,15 @@ public final class PermissionMatrix {
                 Map.entry(PermissionResource.SYNC, set(PermissionAction.READ,
                         PermissionAction.EXECUTE))));
 
-        // 测试工程师：读用户（仅自己由服务层细化）、读项目、资产增改、凭据使用、用例全、导入执行；
+        // 测试工程师：读项目、资产增改、凭据使用、用例全、导入执行；
         // 不能进入全局模式；同步只允许预览（READ）。
+        //
+        // v5.9.0 / FR-v5.9-04 / W59-18：**移除 USER_ROLE:READ**。
+        // 原先 ENGINEER 能 `GET /api/users` 拿到全平台账号列表——「用户与权限」独立成管理域后，
+        // 这与「ENGINEER 访问 /g/iam/users 应 403」直接矛盾（后端放行、前端拦住＝两套判据）。
+        // 读自己的信息走 `/api/me`（MeController 不要求 USER_ROLE），不受影响；
+        // 看项目成员走 `/api/projects/{id}/members`，也不受影响。
         matrix.put(RoleCode.ENGINEER, Map.of(
-                PermissionResource.USER_ROLE, set(PermissionAction.READ),
                 PermissionResource.PROJECT, set(PermissionAction.READ),
                 PermissionResource.ASSET, set(PermissionAction.READ, PermissionAction.CREATE,
                         PermissionAction.UPDATE),
