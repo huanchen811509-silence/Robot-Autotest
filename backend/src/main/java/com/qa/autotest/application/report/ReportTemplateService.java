@@ -72,12 +72,26 @@ public class ReportTemplateService {
      * 内联了就是第二份白名单，白名单收紧时界面还能选到已禁用的字段。
      */
     public List<String> selectableFields() {
-        return selectableFields(ReportTemplate.KERNEL_ROBOT);
+        return selectableFields(null);
     }
 
-    /** v5.14.0 / W64-12：按内核给可选字段，仍只来自 ReportFieldWhitelist 一个真源。 */
+    /**
+     * v5.14.0 / W64-12：按内核给可选字段，仍只来自 ReportFieldWhitelist 一个真源。
+     *
+     * <p>W7 真实 HTTP 探针修复：读路径原本直接把入参交给白名单，非法值静默回落成
+     * 21 项 RF 字段（fail-open），而写路径 {@link #requireKernel} 是严格 400。
+     * 现在两条路径共用同一份校验：null / 空白 = 旧客户端默认 robot，其它值必须合法。
+     */
     public List<String> selectableFields(String kernel) {
-        return ReportFieldWhitelist.selectable(kernel);
+        return ReportFieldWhitelist.selectable(selectableKernel(kernel));
+    }
+
+    /** 读路径 kernel 校验的单一真值（静态方法便于零依赖单测）。 */
+    public static String selectableKernel(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return ReportTemplate.KERNEL_ROBOT;
+        }
+        return requireKernel(raw);
     }
 
     public ReportTemplateView get(long projectId, long id) {

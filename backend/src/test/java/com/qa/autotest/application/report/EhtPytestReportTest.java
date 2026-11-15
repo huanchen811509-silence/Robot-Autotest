@@ -162,4 +162,31 @@ class EhtPytestReportTest {
         assertEquals(legacy.hash(), snapshots.build(source(), 1).hash());
         assertTrue(legacy.html().contains("RUN-EHT-0001"));
     }
+
+
+    @Test
+    void sectionMetadataCoversAllTenRequiredKeysAndStillScrubs() {
+        // W7 真实探针：sectionsOf 曾把对外五键子集喂给十项清单，另五项永远「未提供」。
+        Map<String, String> raw = new java.util.LinkedHashMap<>();
+        for (String key : MetadataGate.REQUIRED) {
+            raw.put(key, "10.20.30.40-" + key);
+        }
+        Map<String, String> safe = ReportViewRenderer.safeSectionMetadata(raw);
+        assertEquals(10, safe.size());
+        for (String key : MetadataGate.REQUIRED) {
+            assertTrue(safe.containsKey(key), "三段式缺项: " + key);
+            assertFalse(safe.get(key).contains("10.20.30.40"), "IP 未脱敏: " + key);
+        }
+        // 旧对外视图仍严格五键，零回归。
+        assertEquals(5, ReportViewRenderer.safeMetadata(raw).size());
+        EhtSections s = new EhtSections("pytest", counts(), List.of(), List.of(), safe,
+                MetadataGate.REQUIRED, "abc123", EhtSections.Diff.none());
+        String html = html(s);
+        for (String key : MetadataGate.REQUIRED) {
+            assertTrue(html.contains("<dt>" + key + "</dt>"), "附录缺门禁键: " + key);
+            assertFalse(html.contains("<dt>" + key + "</dt><dd>未提供"),
+                    "十项仍被误判为未提供: " + key);
+        }
+    }
+
 }

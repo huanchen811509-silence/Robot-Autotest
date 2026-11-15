@@ -86,4 +86,18 @@ class ReportTemplateKernelTest {
         // ④ 其它（兜底，仍优先于「没有模板」）
         assertEquals(3, ReportTemplateRepositoryJdbc.rank(0L, "robot", 7L, "pytest"));
     }
+
+
+    @Test
+    void invalidKernelOnReadPathIsRejectedNotSilentlyDowngraded() {
+        // W7 真实探针：GET /fields?kernel=bogus 曾静默返回 21 项。
+        assertEquals("robot", ReportTemplateService.selectableKernel(null));
+        assertEquals("robot", ReportTemplateService.selectableKernel("  "));
+        assertEquals("pytest", ReportTemplateService.selectableKernel(" PyTest "));
+        assertThrows(BusinessException.class,
+                () -> ReportTemplateService.selectableKernel("ruby"));
+        assertEquals(21, ReportFieldWhitelist.selectable(
+                ReportTemplateService.selectableKernel(null)).size());
+    }
+
 }

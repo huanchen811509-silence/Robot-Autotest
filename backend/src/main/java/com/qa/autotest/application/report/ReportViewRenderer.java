@@ -2,6 +2,7 @@ package com.qa.autotest.application.report;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.qa.autotest.common.security.SecretRedactor;
+import com.qa.autotest.domain.report.MetadataGate;
 import com.qa.autotest.domain.report.ReportSnapshot;
 import com.qa.autotest.domain.report.ReportTemplate;
 import java.util.ArrayList;
@@ -267,6 +268,28 @@ public class ReportViewRenderer {
         for (String key : ReportFieldWhitelist.METADATA_ORDER) {
             String value = metadata.get(key);
             if (value != null) {
+                safe.put(key, scrub(value));
+            }
+        }
+        return safe;
+    }
+
+    /**
+     * v5.14.0 / W7 真实 HTTP 探针修复：三段式附录的 metadata 十项口径。
+     *
+     * <p>{@link #safeMetadata(Map)} 是「对外视图」的 C5 五键白名单，不能拿去填
+     * {@code EhtSections.metadataRequired} 的十项清单 —— 否则另外五项永远显示「未提供」，
+     * 即使 run 的 output.xml 真的带了这些值。这里按 {@link MetadataGate#REQUIRED}
+     * 逐项取真值并同样过 {@link #scrub}：只放宽键集合，不放宽脱敏；对外五键口径零改动。
+     */
+    public static Map<String, String> safeSectionMetadata(Map<String, String> metadata) {
+        Map<String, String> safe = new LinkedHashMap<>();
+        if (metadata == null) {
+            return safe;
+        }
+        for (String key : MetadataGate.REQUIRED) {
+            String value = metadata.get(key);
+            if (value != null && !value.isBlank()) {
                 safe.put(key, scrub(value));
             }
         }

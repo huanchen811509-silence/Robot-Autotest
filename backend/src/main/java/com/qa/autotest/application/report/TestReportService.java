@@ -165,7 +165,7 @@ public class TestReportService {
      */
     private EhtSections sectionsOf(ReportRecord detail) {
         return ehtSections.load(detail.projectId(), detail.runId())
-                .withMetadata(ReportViewRenderer.safeMetadata(detail.metadata()));
+                .withMetadata(ReportViewRenderer.safeSectionMetadata(detail.metadata()));
     }
 
     /** 详情页「证据层」卡片的只读数据源：现场装配，字段清单仍以冻结快照为准。 */
