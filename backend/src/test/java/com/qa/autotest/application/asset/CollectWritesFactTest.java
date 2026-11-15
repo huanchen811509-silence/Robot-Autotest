@@ -89,7 +89,7 @@ class CollectWritesFactTest {
     }
 
     @Test
-    @DisplayName("采集器落 FAILED 状态但没有抛异常时，也不算成功事实")
+    @DisplayName("采集器落 FAILED 状态但没有抛异常时，也不算成功事实且带兜底分类")
     void failedStatusIsNotSuccess() {
         HostInventoryRecord failed = new HostInventoryRecord(1L, 0L, 9L, "10.20.30.40",
                 Instant.now(), "FAILED", "{}", "hash", 0, 0, null);
@@ -99,7 +99,7 @@ class CollectWritesFactTest {
         service.collect(9L, 3L, null, true);
 
         verify(verifications).recordCollectResult(eq(9L), eq(3L), eq("MGMT"),
-                eq(false), isNull());
+                eq(false), eq(CredentialVerificationService.FAILURE_UNCLASSIFIED));
     }
 
     @Test

@@ -7,9 +7,10 @@ import java.util.List;
 public interface DeviceCollectProfileRepository {
 
     /**
-     * @param projectId 租户收口用的项目 id（AssetScopeSql 的可见口径）
-     * @param deviceId  可选，单台设备详情用
-     * @param state     可选，派生状态过滤（在 Java 侧过滤，SQL 不复制一份状态公式）
+     * @param projectId  租户收口用的项目 id（AssetScopeSql 的可见口径）
+     * @param platformId 平台项目 id；projectId == platformId 时公共资产恒可见
+     * @param deviceId   可选，单台设备详情用
+     * @param state      可选，派生状态过滤（在 Java 侧过滤，SQL 不复制一份状态公式）
      */
-    List<DeviceCollectProfile> list(long projectId, Long deviceId, String state);
+    List<DeviceCollectProfile> list(long projectId, long platformId, Long deviceId, String state);
 }

@@ -591,7 +591,7 @@ public class GlobalAssetService {
             jdbc.update("UPDATE device SET last_checked_at = NOW(3), updated_by = ? WHERE id = ?",
                     TenantContext.userId(), deviceId);
             boolean ok = record.status() != null && !"FAILED".equalsIgnoreCase(record.status());
-            recordCollectFact(deviceId, usedCredentialId, channel, ok ? record.status() : null, null);
+            recordCollectFact(deviceId, usedCredentialId, channel, record.status(), null);
             if (ok && "MGMT".equals(channel)) {
                 autoBindIfNull(deviceId, usedCredentialId);
             }
@@ -633,9 +633,13 @@ public class GlobalAssetService {
             return;
         }
         try {
-            boolean ok = failure == null && status != null;
-            String kind = failure == null ? null
-                    : CredentialVerificationService.collectFailureKind(failure);
+            // v5.13.0 W7：采集器返回 FAILED 也是失败，必须带 failure_kind（TC-v5.13-07）。
+            // 无异常可分类时归 REJECTED（L-63-04 已登记「四类粗分」的局限），不冒充诊断结论。
+            boolean ok = failure == null && status != null
+                    && !"FAILED".equalsIgnoreCase(status);
+            String kind = ok ? null
+                    : (failure == null ? CredentialVerificationService.FAILURE_UNCLASSIFIED
+                            : CredentialVerificationService.collectFailureKind(failure));
             verifications.recordCollectResult(deviceId, usedCredentialId, channel, ok, kind);
         } catch (RuntimeException ex) {
             LOG.warn("采集验证事实写入失败 deviceId={} credentialId={}",

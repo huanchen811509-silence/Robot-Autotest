@@ -56,6 +56,8 @@ public class CredentialVerificationService {
      */
     public static final String SOURCE_COLLECT = "COLLECT";
     public static final String SOURCE_VERIFY = "VERIFY";
+    /** 采集器返回 FAILED 但没给可分类异常时的兜底枚举（V11_64 四类粗分，见 L-63-04）。 */
+    public static final String FAILURE_UNCLASSIFIED = "REJECTED";
 
     private static final String SQL_DEVICE_TARGET = """
             SELECT management_ip, management_ip_alt, bmc_address, bmc_address_alt
@@ -238,7 +240,7 @@ public class CredentialVerificationService {
             return "UNREACHABLE";
         }
         // 「命令不受支持」在 V11_64 没有独立枚举，归入 REJECTED（登记为 L-63-04 粗分）
-        return "REJECTED";
+        return FAILURE_UNCLASSIFIED;
     }
 
     // ---------------------------------------------------------------- 凭据下拉 options

@@ -23,8 +23,21 @@ public final class AssetScopeSql {
             LEFT JOIN project_asset pa
                    ON pa.asset_id = d.id AND pa.asset_type = 'DEVICE' AND pa.project_id = ?
             """;
-    public static final String DEVICE_WHERE =
-            " WHERE (d.project_id = ? OR (d.owner_scope = 'PLATFORM' AND pa.id IS NOT NULL))";
+    /** 设备可见性公式的唯一真值：项目态与平台态两个 WHERE 都从这里拼，不复制第二份。 */
+    private static final String DEVICE_BODY =
+            "d.project_id = ? OR (d.owner_scope = 'PLATFORM' AND pa.id IS NOT NULL)";
+    public static final String DEVICE_WHERE = " WHERE (" + DEVICE_BODY + ")";
+
+    /**
+     * 平台项目自身：公共资产恒可见（v5.13.0 W7 实测修复）。
+     *
+     * <p>全局资产列表走 {@code owner_scope='PLATFORM'}，从不要求 project_asset 引用；
+     * 画像若只按「本项目已引用」筛，平台项目会因为自己没有 DEVICE 引用而返回空列表
+     * （W7 真实 HTTP 探针：count=0）。这里补的是同一个口径，不是放宽租户边界：
+     * 非平台项目仍走 {@link #DEVICE_WHERE}。
+     */
+    public static final String DEVICE_WHERE_PLATFORM =
+            " WHERE (" + DEVICE_BODY + " OR d.owner_scope = 'PLATFORM')";
 
     /** 链路：主表别名 {@code l}。 */
     public static final String LINK_JOIN = """

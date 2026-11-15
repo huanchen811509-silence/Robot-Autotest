@@ -73,7 +73,7 @@ public class DeviceCollectProfileController {
             }
         }
         access.bindProject(scope);
-        return ApiResponse.ok(profiles.list(scope, deviceId, state));
+        return ApiResponse.ok(profiles.list(scope, platform.id(), deviceId, state));
     }
 
     /**

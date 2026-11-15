@@ -25,7 +25,7 @@ import org.springframework.stereotype.Repository;
 public class DeviceCollectProfileRepositoryJdbc implements DeviceCollectProfileRepository {
 
     /** 包可见：单测直接断言 SQL 形状（含租户条件、不含明文列）。 */
-    static final String BASE_SQL = """
+    static final String SELECT_SQL = """
             SELECT d.id AS device_id, d.project_id, d.owner_scope, d.name, d.management_ip,
                    d.management_credential_id, d.bmc_credential_id,
                    mc.name AS mgmt_cred_name, mc.asset_status AS mgmt_cred_status,
@@ -52,7 +52,19 @@ public class DeviceCollectProfileRepositoryJdbc implements DeviceCollectProfileR
               FROM device d
               LEFT JOIN credential mc ON mc.id = d.management_credential_id
               LEFT JOIN credential bc ON bc.id = d.bmc_credential_id
-            """ + AssetScopeSql.DEVICE_JOIN + AssetScopeSql.DEVICE_WHERE;
+            """;
+
+    static final String BASE_SQL = SELECT_SQL + AssetScopeSql.DEVICE_JOIN
+            + AssetScopeSql.DEVICE_WHERE;
+
+    /** 平台项目自身：公共资产恒可见，不靠「自己引用自己」。 */
+    static final String PLATFORM_SQL = SELECT_SQL + AssetScopeSql.DEVICE_JOIN
+            + AssetScopeSql.DEVICE_WHERE_PLATFORM;
+
+    /** 包可见纯函数：可见性 SQL 只按 scope 选，单测可断言不复制第二份公式。 */
+    static String sqlFor(long projectId, long platformId) {
+        return projectId == platformId ? PLATFORM_SQL : BASE_SQL;
+    }
 
     private final JdbcTemplate jdbc;
 
@@ -61,8 +73,9 @@ public class DeviceCollectProfileRepositoryJdbc implements DeviceCollectProfileR
     }
 
     @Override
-    public List<DeviceCollectProfile> list(long projectId, Long deviceId, String state) {
-        StringBuilder sql = new StringBuilder(BASE_SQL);
+    public List<DeviceCollectProfile> list(long projectId, long platformId,
+                                           Long deviceId, String state) {
+        StringBuilder sql = new StringBuilder(sqlFor(projectId, platformId));
         List<Object> args = new ArrayList<>();
         args.add(projectId);
         args.add(projectId);
