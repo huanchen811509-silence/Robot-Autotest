@@ -15,7 +15,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import org.springframework.stereotype.Service;
 
@@ -51,13 +50,14 @@ public class AccessControlService {
                 .anyMatch(code -> code.equalsIgnoreCase(RoleCode.ADMIN.code()));
     }
 
-    /** 当前用户的有效角色集合：全局角色 ∪ 项目角色（去重，非法值忽略）。 */
+    /** 当前用户的有效角色集合：全局角色 ∪ 项目角色（含组授权），去重，非法值忽略。 */
     public List<RoleCode> effectiveRoles(long userId, Long projectId) {
         Set<RoleCode> roles = new LinkedHashSet<>();
         roles.addAll(parse(users.roleCodesOf(userId)));
         if (projectId != null) {
-            projects.findMember(projectId, userId)
-                    .ifPresent(member -> roles.addAll(parse(member.roleCodes())));
+            // v5.9.0 / FR-v5.9-06：项目角色改读三源并集（成员 ∪ 负责人 ∪ 用户组授权）。
+            // 旧实现只读 project_member_role，组授权因此在判权里完全失效。
+            roles.addAll(parse(projects.effectiveRoleCodes(projectId, userId)));
         }
         return new ArrayList<>(roles);
     }
@@ -139,16 +139,19 @@ public class AccessControlService {
     }
 
     /**
-     * 项目资源级校验：管理员跨项目放行（设计如此），其他人必须是项目成员。
+     * 项目资源级校验：管理员跨项目放行（设计如此），其他人必须三源之一（成员/负责人/组授权）。
      * <b>返回 403 而不是 404</b>，且消息不含项目是否存在的信息，防止枚举探测。
+     *
+     * <p>v5.9.0 / FR-v5.9-04：判据与 {@link #visibleProjects()} 同一份 SQL 片段。
+     * 旧实现只认 {@code project_member}，于是「自己建的项目 / 组授权进来的项目」
+     * 在列表里能看到（如果列表口径松）却在接口上 403——两处口径必须同源。
      */
     public void requireProjectAccess(long projectId) {
         long userId = TenantContext.requireUserId();
         if (isAdmin(userId)) {
             return;
         }
-        Optional<Project> project = projects.findById(projectId);
-        if (project.isEmpty() || !projects.findMember(projectId, userId).isPresent()) {
+        if (!projects.isVisibleTo(projectId, userId)) {
             throw new BusinessException(ErrorCode.FORBIDDEN, "无权访问该项目");
         }
     }

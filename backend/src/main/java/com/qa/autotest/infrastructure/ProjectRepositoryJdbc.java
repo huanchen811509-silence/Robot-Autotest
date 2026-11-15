@@ -1,6 +1,8 @@
 package com.qa.autotest.infrastructure;
 
+import com.qa.autotest.application.iam.ProjectVisibilitySql;
 import com.qa.autotest.application.repository.ProjectRepository;
+import com.qa.autotest.common.tenant.TenantContext;
 import com.qa.autotest.common.tenant.TenantGuard;
 import com.qa.autotest.domain.common.PageResult;
 import com.qa.autotest.domain.iam.Project;
@@ -116,12 +118,36 @@ public class ProjectRepositoryJdbc implements ProjectRepository {
 
     @Override
     public List<Project> findByMember(long userId) {
-        return jdbc.query("""
-                SELECT p.id, p.code, p.name, p.description, p.status, p.owner_id, p.visibility,
-                       p.test_kernel, p.kind, p.code_changed_at
-                  FROM project p JOIN project_member m ON m.project_id = p.id
-                 WHERE m.user_id = ? AND p.kind <> 'platform' ORDER BY p.id
-                """, MAPPER, userId);
+        // v5.9.0 / FR-v5.9-04：三源并集（成员 ∪ 负责人 ∪ 用户组授权），SQL 只有一份。
+        // 旧实现只认 project_member，于是「自己建的 / 组授权进来」的项目全看不到。
+        return jdbc.query(SELECT + """
+                  WHERE id IN (
+                """ + ProjectVisibilitySql.VISIBLE_PROJECT_IDS + """
+                  ) AND kind <> 'platform' ORDER BY id
+                """, MAPPER, userId, userId, userId);
+    }
+
+    @Override
+    public Map<Long, String> visibleSources(long userId) {
+        Map<Long, String> sources = new LinkedHashMap<>();
+        jdbc.query(ProjectVisibilitySql.VISIBLE_SOURCES, rs -> {
+            sources.put(rs.getLong("project_id"), rs.getString("source"));
+        }, userId, userId, userId);
+        return sources;
+    }
+
+    @Override
+    public List<String> effectiveRoleCodes(long projectId, long userId) {
+        return jdbc.queryForList(ProjectVisibilitySql.EFFECTIVE_ROLE_CODES, String.class,
+                projectId, userId, projectId, userId, projectId, userId);
+    }
+
+    @Override
+    public boolean isVisibleTo(long projectId, long userId) {
+        Long count = jdbc.queryForObject("SELECT COUNT(*) FROM project WHERE id = ? AND id IN ("
+                        + ProjectVisibilitySql.VISIBLE_PROJECT_IDS + ")",
+                Long.class, projectId, userId, userId, userId);
+        return count != null && count > 0;
     }
 
     @Override
@@ -130,8 +156,8 @@ public class ProjectRepositoryJdbc implements ProjectRepository {
         jdbc.update(connection -> {
             var ps = connection.prepareStatement("""
                     INSERT INTO project (code, name, description, status, owner_id, visibility,
-                                         test_kernel, kind)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                                         test_kernel, kind, created_by)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """, new String[]{"id"});
             ps.setString(1, project.code());
             ps.setString(2, project.name());
@@ -141,6 +167,9 @@ public class ProjectRepositoryJdbc implements ProjectRepository {
             ps.setString(6, project.visibility() == null ? "private" : project.visibility());
             ps.setString(7, project.testKernel() == null ? "robot" : project.testKernel());
             ps.setString(8, project.kind() == null ? "standard" : project.kind());
+            // v5.9.0 / FR-v5.9-03：创建人取当前请求主体。非请求上下文（迁移脚本、单测直插）
+            // 写 NULL——与存量行同义（「本列上线前/无主体创建」），不猜、不回填。
+            ps.setObject(9, TenantContext.userId(), java.sql.Types.BIGINT);
             return ps;
         }, keyHolder);
         return keyHolder.getKey() == null ? 0 : keyHolder.getKey().longValue();

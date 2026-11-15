@@ -17,6 +17,7 @@ import AppIcon from '@/components/AppIcon.vue'
 import {
   activeGroupKey,
   isGroup,
+  isLeafActiveInGroup,
   isNodeActive,
   isSectionBreak,
   leafTarget,
@@ -68,6 +69,17 @@ function isActive(node: NavNode): boolean {
   return isNodeActive(node, route)
 }
 
+/**
+ * 二级项是否高亮（v5.9.0 / FR-v5.9-01）。
+ *
+ * 必须走**同组消歧**：`/cases` 与 `/cases/sets`、`/g/assets` 的三个页签都是同一批
+ * 兄弟叶子，单叶判定会让两个同时亮。`isNodeActive(group)` 内部已按消歧结果判组头，
+ * 这里只补二级项。
+ */
+function isChildActive(group: NavGroup, child: NavLeaf): boolean {
+  return isLeafActiveInGroup(child, group.children, route)
+}
+
 /** 当前激活组：用于给分组头加 `has-active`（不改变展开态）。 */
 const activeKey = computed(() => activeGroupKey(route, props.nodes))
 </script>
@@ -117,9 +129,9 @@ const activeKey = computed(() => activeGroupKey(route, props.nodes))
             <RouterLink
               :to="leafTarget(child)"
               class="app-nav-item app-nav-sub"
-              :class="{ active: isActive(child) }"
+              :class="{ active: isChildActive(node, child) }"
               :title="t(child.labelKey)"
-              :aria-current="isActive(child) ? 'page' : undefined"
+              :aria-current="isChildActive(node, child) ? 'page' : undefined"
             >
               <AppIcon :name="child.icon" :size="16" />
               <span>{{ t(child.labelKey) }}</span>

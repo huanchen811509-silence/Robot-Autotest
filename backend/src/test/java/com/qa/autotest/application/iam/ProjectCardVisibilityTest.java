@@ -147,6 +147,26 @@ class ProjectCardVisibilityTest {
         }
 
         @Override
+        public java.util.Map<Long, String> visibleSources(long userId) {
+            // v5.9.0：来源列与可见集合同源；测试里只关心「是否在这批里」，来源一律按 MEMBER。
+            java.util.Map<Long, String> sources = new java.util.LinkedHashMap<>();
+            for (Project project : mine) {
+                sources.put(project.id(), "MEMBER");
+            }
+            return sources;
+        }
+
+        @Override
+        public List<String> effectiveRoleCodes(long projectId, long userId) {
+            return List.of();
+        }
+
+        @Override
+        public boolean isVisibleTo(long projectId, long userId) {
+            return mine.stream().anyMatch(project -> project.id() == projectId);
+        }
+
+        @Override
         public PageResult<Project> page(String keyword, int page, int size) {
             List<Project> all = new ArrayList<>(mine);
             all.addAll(hidden);

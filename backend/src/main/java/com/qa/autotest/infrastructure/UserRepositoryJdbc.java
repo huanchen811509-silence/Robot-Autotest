@@ -149,6 +149,11 @@ public class UserRepositoryJdbc implements UserRepository {
 
     @Override
     public void delete(long id) {
+        // v5.9.0 / FR-v5.9-07：project_member_role 与 user_group_member 此前未清，
+        // 有项目角色的用户一删就撞外键 → 接口 500（评估 01 §3.5 的复现）。
+        // 顺序：先子表（角色/组关联），再主表（成员），最后 app_user 本身。
+        jdbc.update("DELETE FROM project_member_role WHERE user_id = ?", id);
+        jdbc.update("DELETE FROM user_group_member WHERE user_id = ?", id);
         jdbc.update("DELETE FROM user_role WHERE user_id = ?", id);
         jdbc.update("DELETE FROM api_token WHERE user_id = ?", id);
         jdbc.update("DELETE FROM project_member WHERE user_id = ?", id);

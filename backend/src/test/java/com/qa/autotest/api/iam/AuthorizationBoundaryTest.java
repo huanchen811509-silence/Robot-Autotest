@@ -639,6 +639,13 @@ class AuthorizationBoundaryTest {
                     .findFirst();
             case "findMember" -> memberOf(((Number) args[0]).longValue(),
                     ((Number) args[1]).longValue());
+            // v5.9.0 / FR-v5.9-04、06：三源并集的判权入口，桩按同一份成员事实回报。
+            case "effectiveRoleCodes" -> memberOf(((Number) args[0]).longValue(),
+                    ((Number) args[1]).longValue())
+                    .map(ProjectMember::roleCodes).orElse(List.of());
+            case "isVisibleTo" -> memberOf(((Number) args[0]).longValue(),
+                    ((Number) args[1]).longValue()).isPresent();
+            case "visibleSources" -> Map.<Long, String>of();
             case "findByMember" -> projectsOf(((Number) args[0]).longValue());
             case "members" -> membersOf(((Number) args[0]).longValue());
             case "page" -> new PageResult<>(List.copyOf(projects.values()), projects.size(),

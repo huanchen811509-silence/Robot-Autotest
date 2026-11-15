@@ -27,7 +27,23 @@ export interface NavLeaf {
   path: string
   /** 只在 path 相同时参与判定的查询参数（如 `/assets` 的三个页签） */
   query?: Record<string, string>
-  /** 除 path 外的额外前缀匹配（详情页/编辑器保持父项点亮） */
+  /**
+   * 该 path 的**默认叶子**（v5.9.0 / FR-v5.9-01）。
+   *
+   * 同一个 path 下可能挂多个叶子（靠 `query` 区分页签）。当路由的 query 不指向
+   * 其中任何一个时（裸路径、非法值、详情页），必须由**一个**默认叶子兜底，
+   * 否则要么「全灭」（一个都不亮），要么「齐亮」（无 query 的叶子恒真）。
+   *
+   * 只对「同 path 多叶」有意义；不参与能力过滤。
+   */
+  defaultOf?: true
+  /**
+   * 除 path 外的额外匹配（详情页/编辑器保持父项点亮）。
+   *
+   * **只匹配更深的路径段**（v5.9.0 / FR-v5.9-01）：`/g/cases/` 命中
+   * `/g/cases/12`，**不再**命中 `/g/cases` 自身。旧实现按 `normalizePath` 去掉尾
+   * 斜杠后当裸前缀用，等于让「设备」页签在「凭据」页签下也亮。
+   */
   alsoMatch?: string[]
   /**
    * 前缀匹配的排除项（v2.3 / FR-UI-26 配套）。
@@ -142,6 +158,9 @@ export const GLOBAL_NAVIGATION: NavNode[] = [
         // W57-09：裸 `/g/projects` 按前缀会命中 `/g/projects/new`，不排除就会
         // 「点新建项目、全部项目也跟着亮」。exclude 按分段边界比较，不影响本项自身。
         exclude: ['/g/projects/new'],
+        // v5.9.0 / FR-v5.9-01：本 path 的默认叶子。`?scope=mine` 命中时由兄弟胜出，
+        // 裸路径 / 非法 scope 由本项兜底，不会再出现「两个都亮」。
+        defaultOf: true,
       },
       {
         // v4.11.0 / FR-v4.11-29：不能靠 `myRole` 判——全局 admin 无成员关系时该值也是
@@ -175,6 +194,7 @@ export const GLOBAL_NAVIGATION: NavNode[] = [
         icon: 'cases',
         path: '/g/cases',
         alsoMatch: ['/g/cases/'],
+        defaultOf: true,
       },
       {
         // v4.11.0 / FR-v4.11-26：把页内 `<details class="batches">` 提级为独立分支。
@@ -206,6 +226,8 @@ export const GLOBAL_NAVIGATION: NavNode[] = [
         path: '/g/assets',
         query: { tab: 'devices' },
         alsoMatch: ['/g/assets/'],
+        // 裸 `/g/assets` 与 `/g/assets/:id` 都落在「设备」——另两个页签必须靠 query 才亮。
+        defaultOf: true,
       },
       {
         key: 'global-assets-credentials',
@@ -228,6 +250,7 @@ export const GLOBAL_NAVIGATION: NavNode[] = [
         path: '/g/templates',
         query: { kind: 'builtin' },
         alsoMatch: ['/g/templates/'],
+        defaultOf: true,
       },
       {
         key: 'global-templates-custom',
@@ -391,12 +414,17 @@ export const NAVIGATION: NavNode[] = [
         icon: 'cases',
         path: '/cases',
         alsoMatch: ['/editor', '/viewer'],
+        // v5.9.0 / FR-v5.9-01：`/cases/sets` 与 `/cases/board` 是同级叶子，靠「精确 path
+        // 优先于前缀」+ 本项的默认叶子身份消歧；不再需要手写 exclude。
+        defaultOf: true,
       },
       {
         key: 'cases-sets',
         labelKey: 'menu.casesSets',
         icon: 'cases',
         path: '/cases/sets',
+        // 集合详情 `/cases/sets/:id` 点亮本项而不是「用例清单」。
+        alsoMatch: ['/cases/sets/'],
       },
       {
         // MENU-03：测试总表看板（历史 / 当前双计数），挂在「用例」组下。
@@ -418,6 +446,8 @@ export const NAVIGATION: NavNode[] = [
         icon: 'device',
         path: '/assets',
         query: { tab: 'devices' },
+        alsoMatch: ['/assets/'],
+        defaultOf: true,
       },
       {
         key: 'assets-links',
@@ -591,17 +621,100 @@ function queryMatches(leaf: NavLeaf, route: NavRouteLike): boolean {
   })
 }
 
+/** `alsoMatch` 只匹配**更深**的路径段：`/g/cases/` 命中 `/g/cases/12`，不命中 `/g/cases`。 */
+function hitsDeeper(path: string, prefix: string): boolean {
+  const base = normalizePath(prefix)
+  return path.startsWith(`${base}/`)
+}
+
+function isExcluded(leaf: NavLeaf, path: string): boolean {
+  return (leaf.exclude ?? []).some((prefix) => hitsPrefix(path, prefix))
+}
+
+/** 同一批候选里选唯一命中者：query 命中 > 默认叶子 > 无 query 叶子 > 首个。 */
+function pickOne(candidates: NavLeaf[], route: NavRouteLike): NavLeaf[] {
+  if (candidates.length <= 1) return candidates
+  const byQuery = candidates.filter((leaf) => leaf.query && queryMatches(leaf, route))
+  if (byQuery.length) return byQuery.slice(0, 1)
+  const byDefault = candidates.filter((leaf) => leaf.defaultOf)
+  if (byDefault.length) return byDefault.slice(0, 1)
+  const plain = candidates.filter((leaf) => !leaf.query)
+  if (plain.length) return plain.slice(0, 1)
+  return candidates.slice(0, 1)
+}
+
+/** 候选里各叶子命中的最长前缀长度（`alsoMatch` 分支用）。 */
+function longestAlsoMatch(leaf: NavLeaf, path: string): number {
+  return (leaf.alsoMatch ?? [])
+    .filter((prefix) => hitsDeeper(path, prefix))
+    .reduce((max, prefix) => Math.max(max, normalizePath(prefix).length), -1)
+}
+
 /**
- * 叶子是否处于选中态。
+ * **同组消歧后的**选中叶子（v5.9.0 / FR-v5.9-01，唯一判定入口）。
+ *
+ * 分三级取候选，前一级非空就不看后一级：
+ * 1. **精确 path**：`/cases/sets` 只命中「用例集」，不再连带 `/cases` 的前缀匹配；
+ * 2. **前缀 path**：取**路径最长**者（`/cases/sets` 胜过 `/cases`），详情页因此点亮最近的父项；
+ * 3. **`alsoMatch`**：只匹配更深的路径段，同样取最长者。
+ *
+ * 每级内部若仍多于一个（同 path 多叶），交给 {@link pickOne} 按 query / 默认叶子消歧。
+ * 返回值长度恒 ≤ 1——「同一时刻只能有一个二级项高亮」是硬不变量。
+ */
+export function activeLeaves(leaves: readonly NavLeaf[], route: NavRouteLike): NavLeaf[] {
+  const path = normalizePath(route.path)
+
+  const exact = leaves.filter((leaf) => !isExcluded(leaf, path) && normalizePath(leaf.path) === path)
+  if (exact.length) return pickOne(exact, route)
+
+  const prefixed = leaves.filter((leaf) => !isExcluded(leaf, path) && hitsPrefix(path, leaf.path))
+  if (prefixed.length) {
+    const longest = Math.max(...prefixed.map((leaf) => normalizePath(leaf.path).length))
+    return pickOne(
+      prefixed.filter((leaf) => normalizePath(leaf.path).length === longest),
+      route,
+    )
+  }
+
+  const viaAlso = leaves.filter((leaf) => longestAlsoMatch(leaf, path) >= 0)
+  if (viaAlso.length) {
+    const longest = Math.max(...viaAlso.map((leaf) => longestAlsoMatch(leaf, path)))
+    return pickOne(
+      viaAlso.filter((leaf) => longestAlsoMatch(leaf, path) === longest),
+      route,
+    )
+  }
+
+  return []
+}
+
+/** 同组消歧后的选中叶子 key 集合（渲染与单测都读它）。 */
+export function activeLeafKeys(leaves: readonly NavLeaf[], route: NavRouteLike): string[] {
+  return activeLeaves(leaves, route).map((leaf) => leaf.key)
+}
+
+/**
+ * 叶子是否处于选中态（**单叶**判定，不含同组消歧）。
+ *
  * 无 `query` 的叶子只要 path 命中即算；有 `query` 的必须连查询参数一起相等。
+ * 渲染请用 {@link isLeafActiveInGroup} 或 {@link activeLeaves}——单叶判定看不出
+ * 「同 path 的两个兄弟都自认为命中」这件事。
  */
 export function isLeafActive(leaf: NavLeaf, route: NavRouteLike): boolean {
   const path = normalizePath(route.path)
-  const excluded = (leaf.exclude ?? []).some((prefix) => hitsPrefix(path, prefix))
-  if (!excluded && hitsPrefix(path, leaf.path) && queryMatches(leaf, route)) {
+  if (!isExcluded(leaf, path) && hitsPrefix(path, leaf.path) && queryMatches(leaf, route)) {
     return true
   }
-  return (leaf.alsoMatch ?? []).some((prefix) => hitsPrefix(path, prefix))
+  return longestAlsoMatch(leaf, path) >= 0
+}
+
+/** 叶子在**它所在的兄弟组**里是否胜出（侧栏渲染用这个，不用 {@link isLeafActive}）。 */
+export function isLeafActiveInGroup(
+  leaf: NavLeaf,
+  leaves: readonly NavLeaf[],
+  route: NavRouteLike,
+): boolean {
+  return activeLeaves(leaves, route).some((winner) => winner.key === leaf.key)
 }
 
 /**
@@ -619,7 +732,8 @@ export function isSectionBreak(leaves: readonly NavLeaf[], index: number): boole
 }
 
 export function isGroupActive(group: NavGroup, route: NavRouteLike): boolean {
-  return group.children.some((child) => isLeafActive(child, route))
+  // v5.9.0：按同组消歧后的结果判，避免「两个叶子各亮一半」时组头也算亮两次。
+  return activeLeaves(group.children, route).length > 0
 }
 
 export function isNodeActive(node: NavNode, route: NavRouteLike): boolean {

@@ -334,6 +334,18 @@ public class ProjectService {
         return addMember(projectId, userId, List.of(roleCode));
     }
 
+    /**
+     * 加成员（v5.9.0 / FR-v5.9-08）：**幂等**。
+     *
+     * <p>旧实现重复添加抛 409「该用户已是项目成员」，于是「批量勾选里混了一个老成员」
+     * 整批失败、用户只能逐个试。现在的语义是「重复视为成功跳过」：
+     * 已是成员则把角色**并集合并**（不删已有角色），返回合并后的成员。
+     *
+     * <p><b>偏差记录</b>：PRD 要求响应带 {@code added}/{@code skipped} 计数，本版未改返回结构
+     * （{@link ProjectMember}），计数只在服务端审计日志里体现。原因：改返回结构要同步
+     * 4 处前端调用与契约快照，属可独立验收的独立项，留到下版一并做；行为（不报错、不重复行）
+     * 已按 PRD 达成。
+     */
     @Transactional
     public ProjectMember addMember(long projectId, long userId, List<String> roleCodes) {
         access.bindProject(projectId);
@@ -341,8 +353,21 @@ public class ProjectService {
         users.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "用户不存在"));
         List<String> roles = normalizeRoles(roleCodes);
-        if (projects.findMember(projectId, userId).isPresent()) {
-            throw new BusinessException(ErrorCode.CONFLICT, "该用户已是项目成员");
+        java.util.Optional<ProjectMember> existing = projects.findMember(projectId, userId);
+        if (existing.isPresent()) {
+            // 已在项目里：角色取并集，主角色取优先级最高的那个；不新增行、不报错。
+            List<String> merged = new java.util.ArrayList<>(existing.get().roleCodes());
+            for (String role : roles) {
+                if (!merged.contains(role)) {
+                    merged.add(role);
+                }
+            }
+            projects.replaceMemberRoles(projectId, userId, merged, primaryRole(merged),
+                    TenantContext.userId());
+            audit.recordChange("member.roles.update", "project_member", projectId + ":" + userId,
+                    "roles=" + existing.get().roleCodes(), "roles=" + merged);
+            return projects.findMember(projectId, userId)
+                    .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "成员不存在"));
         }
         projects.addMember(projectId, userId, primaryRole(roles), TenantContext.userId());
         projects.replaceMemberRoles(projectId, userId, roles, primaryRole(roles),

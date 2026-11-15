@@ -14,12 +14,15 @@ import {
   hasBusinessDomainAsTopLevel,
   secondLevelEntries,
   activeGroupKey,
+  activeLeafKeys,
+  activeLeaves,
   filterNav,
   filterNavByCapabilities,
   isGroup,
   isGroupActive,
   isSectionBreak,
   isLeafActive,
+  isLeafActiveInGroup,
   isNodeActive,
   leafTarget,
   navKeysForRole,
@@ -662,5 +665,112 @@ describe('W57-09 全局新增叶子', () => {
     expect(casesGroup.children.slice(0, 2).map((child) => child.key)).toEqual([
       'global-cases-all', 'global-cases-imports',
     ])
+  })
+})
+
+/* --------------------------------------------------------------------------
+ * v5.9.0 / FR-v5.9-01（W59-13）：命中唯一性不变量
+ *
+ * 大师的原话是「二级菜单会同时被强调色高亮，实际应该只有选中的才能高亮」。
+ * 这三条用例把「只有选中的高亮」写成可机检的形式：
+ *   ① 任一叶子被点击（用它自己的 path+query 访问）→ 只有它亮；
+ *   ② 典型复现路径与详情页 → 亮一个且是预期那个；
+ *   ③ 路由表里所有静态路径扫一遍 → 每棵树同时亮的叶子数 ≤1。
+ *
+ * 在 v5.8.0 收口 commit 上跑这三条必然红（`/g/cases?view=imports` 会亮 2 个、
+ * `/cases/sets` 会亮 2 个、`/g/assets?tab=credentials` 会亮 2 个）。
+ * -------------------------------------------------------------------------- */
+describe('W59-13 命中唯一性：任一时刻每组最多一个二级项高亮', () => {
+  const groupsOf = (nodes: NavNode[]): NavGroup[] => nodes.filter((node) => isGroup(node)) as NavGroup[]
+  const trees: Array<{ name: string; nodes: NavNode[] }> = [
+    { name: 'global', nodes: GLOBAL_NAVIGATION },
+    { name: 'project', nodes: NAVIGATION },
+    { name: 'project+pytest', nodes: navTreeFor('project', 'pytest-suite') },
+  ]
+
+  it('每个叶子用自己的 path+query 访问，只有它自己亮（≥1 且 ≤1）', () => {
+    for (const tree of trees) {
+      for (const group of groupsOf(tree.nodes)) {
+        for (const leaf of group.children) {
+          const active = activeLeafKeys(group.children, { path: leaf.path, query: leaf.query })
+          expect(
+            active,
+            `${tree.name} / ${leaf.key} 访问 ${leaf.path} 时命中 [${active.join(', ')}]`,
+          ).toEqual([leaf.key])
+        }
+      }
+    }
+  })
+
+  it('典型复现路径与详情页：亮且只亮预期那个', () => {
+    const samples: Array<[string, string, Record<string, string>, string]> = [
+      ['global', '/g/cases', { view: 'imports' }, 'global-cases-imports'],
+      ['global', '/g/cases', {}, 'global-cases-all'],
+      ['global', '/g/projects', { scope: 'mine' }, 'global-projects-mine'],
+      ['global', '/g/projects', {}, 'global-projects-all'],
+      ['global', '/g/projects/new', {}, 'global-projects-new'],
+      ['global', '/g/assets', { tab: 'credentials' }, 'global-assets-credentials'],
+      ['global', '/g/assets', {}, 'global-assets-devices'],
+      ['global', '/g/assets/12', {}, 'global-assets-devices'],
+      ['global', '/g/case-sets/12', {}, 'global-cases-sets'],
+      ['global', '/g/templates', { kind: 'custom' }, 'global-templates-custom'],
+      ['project', '/cases', {}, 'cases-list'],
+      ['project', '/cases/sets', {}, 'cases-sets'],
+      ['project', '/cases/sets/12', {}, 'cases-sets'],
+      ['project', '/cases/board', {}, 'cases-board'],
+      ['project', '/reports/templates', {}, 'execution-report-templates'],
+      ['project', '/plans/graph', {}, 'execution-plans'],
+      ['project', '/assets', { tab: 'links' }, 'assets-links'],
+    ]
+    for (const [treeName, path, query, expected] of samples) {
+      const tree = trees.find((item) => item.name === treeName)
+      expect(tree, `未知树 ${treeName}`).toBeTruthy()
+      const active = groupsOf(tree!.nodes).flatMap((group) =>
+        activeLeaves(group.children, { path, query }).map((leaf) => leaf.key),
+      )
+      expect(active, `${treeName} 访问 ${path} 应只亮 ${expected}`).toEqual([expected])
+    }
+  })
+
+  it('路由表全量静态路径：每棵树同时高亮的叶子数 ≤1', () => {
+    for (const tree of trees) {
+      for (const route of router.getRoutes()) {
+        if (route.path.includes(':')) continue
+        const active = groupsOf(tree.nodes).flatMap((group) =>
+          activeLeaves(group.children, { path: route.path }),
+        )
+        expect(
+          active.length,
+          `${tree.name} @ ${route.path} 同时亮了 [${active.map((leaf) => leaf.key).join(', ')}]`,
+        ).toBeLessThanOrEqual(1)
+      }
+    }
+  })
+
+  it('isLeafActiveInGroup 与 activeLeaves 同源（侧栏渲染不会各自判一套）', () => {
+    const group = GLOBAL_NAVIGATION.find((node) => node.key === 'global-assets') as NavGroup
+    const route = { path: '/g/assets', query: { tab: 'credentials' } }
+    const winners = activeLeaves(group.children, route).map((leaf) => leaf.key)
+    for (const leaf of group.children) {
+      expect(isLeafActiveInGroup(leaf, group.children, route)).toBe(winners.includes(leaf.key))
+    }
+    // 旧口径（单叶判定）在这条路径上会把「设备」也点亮——这正是本次修的缺陷。
+    const devices = group.children.find((leaf) => leaf.key === 'global-assets-devices') as NavLeaf
+    expect(isLeafActive(devices, route)).toBe(false)
+  })
+
+  it('alsoMatch 裸前缀回归：切到「凭据」页签时「设备」不再跟着亮', () => {
+    /**
+     * 回放证据用：`alsoMatch: ['/g/assets/']` 旧实现被 `normalizePath` 去掉尾斜杠后
+     * 退化成裸前缀 `/g/assets`，于是**任何** `/g/assets` 路由都命中「设备」。
+     * 在 v5.8.0 收口 commit 上跑本条 → 计数 2 → 红；本版改为「只匹配更深段」后为 1。
+     */
+    const group = GLOBAL_NAVIGATION.find((node) => node.key === 'global-assets') as NavGroup
+    const countLegacy = (route: { path: string; query?: Record<string, string> }): number =>
+      group.children.filter((child) => isLeafActive(child, route)).length
+    expect(countLegacy({ path: '/g/assets', query: { tab: 'credentials' } })).toBe(1)
+    expect(countLegacy({ path: '/g/assets', query: { tab: 'devices' } })).toBe(1)
+    // 详情页仍要点亮「设备」（alsoMatch 的本职不能丢）
+    expect(countLegacy({ path: '/g/assets/12' })).toBe(1)
   })
 })

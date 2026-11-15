@@ -503,6 +503,14 @@ class AuthzMatrixTest {
                     .filter(p -> p.code().equals(String.valueOf(args[0]))).findFirst();
             case "findMember" -> memberOf(((Number) args[0]).longValue(),
                     ((Number) args[1]).longValue());
+            // v5.9.0 / FR-v5.9-04、06：判权与可见性改读三源并集的仓储入口，
+            // 桩按**同一份成员事实**回报，矩阵期望值因此不变（不是把判据放宽）。
+            case "effectiveRoleCodes" -> memberOf(((Number) args[0]).longValue(),
+                    ((Number) args[1]).longValue())
+                    .map(ProjectMember::roleCodes).orElse(List.of());
+            case "isVisibleTo" -> memberOf(((Number) args[0]).longValue(),
+                    ((Number) args[1]).longValue()).isPresent();
+            case "visibleSources" -> Map.<Long, String>of();
             case "findByMember" -> projects.values().stream()
                     .filter(p -> memberships.getOrDefault(p.id(), Map.of())
                             .containsKey(((Number) args[0]).longValue())).toList();

@@ -245,6 +245,25 @@ class ProjectCardServiceTest {
         }
 
         @Override
+        public java.util.Map<Long, String> visibleSources(long userId) {
+            java.util.Map<Long, String> sources = new java.util.LinkedHashMap<>();
+            for (Project project : rows) {
+                sources.put(project.id(), "MEMBER");
+            }
+            return sources;
+        }
+
+        @Override
+        public List<String> effectiveRoleCodes(long projectId, long userId) {
+            return List.of();
+        }
+
+        @Override
+        public boolean isVisibleTo(long projectId, long userId) {
+            return rows.stream().anyMatch(project -> project.id() == projectId);
+        }
+
+        @Override
         public PageResult<Project> page(String keyword, int page, int size) {
             return new PageResult<>(rows, rows.size(), page, size);
         }
