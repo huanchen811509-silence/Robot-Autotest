@@ -811,30 +811,88 @@ public class ProjectTemplateService {
         if (request == null || request.name() == null || request.name().isBlank()) {
             throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "模板名称不能为空");
         }
-        if (request.code() != null && !request.code().isBlank()
-                && !CODE.matcher(request.code().trim()).matches()) {
+        boolean autoCode = request.code() == null || request.code().isBlank();
+        if (!autoCode && !CODE.matcher(request.code().trim()).matches()) {
             throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
                     "模板编号格式应为 前缀-引擎-年月-序号，例如 API-RF-202611-001");
         }
+        // 前缀唯一只判**显式编号**（v5.10.0 / W60-03）。
+        // 自动编号一律落在内置前缀 TPL 下——它是兜底桶而不是业务前缀，
+        // 若把 TPL 也纳入唯一性判定，第二次「不填编号建模板」就会必然失败。
+        if (!autoCode) {
+            requirePrefixFree(prefixOf(request.code().trim()), id, request.name());
+        }
+    }
+
+    /** 取编号前缀（第一个 `-` 之前，大写归一）。 */
+    static String prefixOf(String code) {
+        int dash = code.indexOf('-');
+        String raw = dash > 0 ? code.substring(0, dash) : code;
+        return raw.trim().toUpperCase(java.util.Locale.ROOT);
+    }
+
+    /**
+     * 编码前缀唯一 + 首用即登记（v5.10.0 / FR-v5.10-08 / W60-03）。
+     *
+     * <p>为什么是「登记」而不是「未注册即拒」：前缀如果必须等一次 SQL 迁移才能用，
+     * 新团队上线一个新业务线就得发一版数据库脚本——这是产品退化，不是治理。
+     * 因此口径定为：**首次使用自动登记**（含义取模板名，可追溯），
+     * **已被别的模板占用才硬拒**（这才是真正会让人选错的场景）。
+     * 与 PRD W60-03 判据②「未注册前缀被拒」的差异已登记为推翻项 A1。
+     */
+    private void requirePrefixFree(String prefix, Long excludeId, String templateName) {
+        if (prefix.isEmpty()) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "模板编号缺少前缀");
+        }
+        List<Map<String, Object>> taken = excludeId == null
+                ? jdbc.queryForList(
+                        "SELECT id, name FROM project_template WHERE code LIKE ? LIMIT 1",
+                        prefix + "-%")
+                : jdbc.queryForList(
+                        "SELECT id, name FROM project_template WHERE code LIKE ? AND id <> ? LIMIT 1",
+                        prefix + "-%", excludeId);
+        if (!taken.isEmpty()) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                    "编码前缀已被模板「" + taken.get(0).get("name") + "」占用：" + prefix);
+        }
+        Integer known = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM project_code_prefix WHERE code = ?", Integer.class, prefix);
+        if (known == null || known == 0) {
+            jdbc.update("INSERT IGNORE INTO project_code_prefix (code, meaning, owner_id) "
+                            + "VALUES (?, ?, ?)",
+                    prefix, truncate(templateName, 64), TenantContext.userId());
+            audit.record("template.prefix.register", "project_code_prefix", prefix,
+                    "meaning=" + truncate(templateName, 64));
+        }
+    }
+
+    private static String truncate(String value, int max) {
+        if (value == null) return "";
+        String trimmed = value.trim();
+        return trimmed.length() <= max ? trimmed : trimmed.substring(0, max);
+    }
+
+    /**
+     * 编码前缀注册表（v5.10.0 / FR-v5.10-08）：模板向导第 1 步的前缀下拉数据源。
+     * {@code used} 为该前缀下已有模板数，前端据此提示「已被占用」。
+     */
+    public List<Map<String, Object>> prefixes() {
+        access.requireGlobalEnter();
+        return jdbc.queryForList("""
+                SELECT p.code AS code, p.meaning AS meaning, p.builtin AS builtin,
+                       (SELECT COUNT(*) FROM project_template t
+                         WHERE t.code LIKE CONCAT(p.code, '-%')) AS used
+                  FROM project_code_prefix p
+                 ORDER BY p.builtin, p.code
+                """);
     }
 
     private String generateCode(TemplateRequest request) {
-        String kernel = "pytest".equalsIgnoreCase(request.kernel()) ? "PYT" : "RF";
-        String prefix = "TPL";
-        String month = new java.text.SimpleDateFormat("yyyyMM").format(new java.util.Date());
-        String like = prefix + "-" + kernel + "-" + month + "-%";
-        List<String> codes = jdbc.queryForList(
-                "SELECT code FROM project_template WHERE code LIKE ?", String.class, like);
-        int max = 0;
-        for (String code : codes) {
-            String[] parts = code.split("-");
-            try {
-                max = Math.max(max, Integer.parseInt(parts[parts.length - 1]));
-            } catch (NumberFormatException ignored) {
-                // 非法历史编号不参与取号
-            }
-        }
-        return String.format("%s-%s-%s-%03d", prefix, kernel, month, max + 1);
+        // v5.10.0 / W60-02：模板编号与项目编号共用同一套序列（scope=TPL-引擎-年月）。
+        // 原先按 project_template 里 MAX(序号)+1 取号，删掉最大号后再建会**复用同一个号**，
+        // 与 FR-v5.10-08 判据 1「不复用」直接冲突；换成序列后号段只增不减。
+        String kernel = "pytest".equalsIgnoreCase(request.kernel()) ? "pytest" : "robot";
+        return projectService.nextCode("TPL", kernel);
     }
 
     private String kernelOfProject(long projectId) {

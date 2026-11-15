@@ -8,6 +8,7 @@ import com.qa.autotest.application.iam.AccessControlService;
 import com.qa.autotest.application.iam.AuditService;
 import com.qa.autotest.application.iam.PlatformProjectService;
 import com.qa.autotest.application.repository.ProjectAssetRepository;
+import com.qa.autotest.application.iam.ProjectVisibilitySql;
 import com.qa.autotest.common.BusinessException;
 import com.qa.autotest.common.ErrorCode;
 import com.qa.autotest.common.security.SecretCipher;
@@ -595,6 +596,67 @@ public class GlobalAssetService {
                    ) x
              ORDER BY x.name, x.plane
             """;
+
+    /**
+     * 绑定设备两个地址面的采集凭证（v5.10.0 / FR-v5.10-03 / W60-05）。
+     *
+     * <p>参数语义：{@code null} = 这一面不动；{@code 0} = 清空（解绑）；{@code >0} = 绑到该凭证。
+     * 不能把 {@code null} 兼表「清空」与「不动」——向导里只改 BMC 时会把管理面顺手清掉，
+     * 现场表现为「采集突然连不上」，很难联想到是一次编辑的副作用。凭证 id 恒为正，0 是安全哨兵。
+     *
+     * <p>只写两列：**不复核、不采集**（FR-v5.10-03 判据 5 明确要求
+     * {@code credential_verification} 行数不因向导而增加，验证事实只能由真实采集产生）。
+     */
+    public void bindDeviceCredentials(long deviceId, Long managementCredentialId,
+                                      Long bmcCredentialId) {
+        access.requireGlobalEnter();
+        List<Map<String, Object>> rows = jdbc.queryForList(
+                "SELECT id FROM device WHERE id = ?", deviceId);
+        if (rows.isEmpty()) {
+            throw new BusinessException(ErrorCode.NOT_FOUND, "设备不存在：" + deviceId);
+        }
+        long operator = TenantContext.requireUserId();
+        requireBindableCredential(managementCredentialId, operator);
+        requireBindableCredential(bmcCredentialId, operator);
+
+        StringBuilder sql = new StringBuilder("UPDATE device SET id = id");
+        List<Object> args = new ArrayList<>();
+        if (managementCredentialId != null) {
+            sql.append(", management_credential_id = ?");
+            args.add(managementCredentialId > 0 ? managementCredentialId : null);
+        }
+        if (bmcCredentialId != null) {
+            sql.append(", bmc_credential_id = ?");
+            args.add(bmcCredentialId > 0 ? bmcCredentialId : null);
+        }
+        if (args.isEmpty()) {
+            return;
+        }
+        sql.append(" WHERE id = ?");
+        args.add(deviceId);
+        jdbc.update(sql.toString(), args.toArray());
+        audit.recordChange("asset.credential.bind", "device", String.valueOf(deviceId), null,
+                "mgmt=" + (managementCredentialId == null ? "-" : managementCredentialId)
+                        + ";bmc=" + (bmcCredentialId == null ? "-" : bmcCredentialId)
+                        + ";operator=" + operator);
+    }
+
+    /** 凭证必须存在且对当前用户可见（平台凭据，或本人可见项目下的私有凭据）。 */
+    private void requireBindableCredential(Long credentialId, long operator) {
+        if (credentialId == null || credentialId <= 0) {
+            return;
+        }
+        List<Map<String, Object>> rows = jdbc.queryForList("""
+                SELECT c.id AS id FROM credential c
+                 WHERE c.id = ?
+                   AND (c.owner_scope = 'PLATFORM' OR c.project_id IN (
+                """ + ProjectVisibilitySql.VISIBLE_PROJECT_IDS + """
+                   ))
+                """, credentialId, operator, operator, operator);
+        if (rows.isEmpty()) {
+            throw new BusinessException(ErrorCode.NOT_FOUND, "凭证不存在或不可见：" + credentialId);
+        }
+    }
 
     public List<CredentialDevice> devicesOfCredential(long credentialId) {
         access.requireGlobalEnter();

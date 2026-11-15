@@ -55,6 +55,15 @@ public class ProjectService {
 
     private static final DateTimeFormatter MONTH = DateTimeFormatter.ofPattern("yyyyMM");
 
+    /**
+     * 取号最大尝试次数（v5.10.0 / FR-v5.10-08 / W60-02）。
+     *
+     * <p>号段本身是原子的（{@code project_code_sequence} 唯一键 + {@code LAST_INSERT_ID}），
+     * 撞号只可能来自「同 scope 下已有人手工写入同号编码」。3 次足够跳过零星手工号；
+     * 再多说明不是偶发，继续重试只会把一次必然失败拖成 100 次数据库往返。
+     */
+    private static final int CODE_ALLOCATE_ATTEMPTS = 3;
+
     private final ProjectRepository projects;
     private final UserRepository users;
     private final AccessControlService access;
@@ -107,6 +116,26 @@ public class ProjectService {
     @Transactional
     public Project create(String code, String name, String description, String visibility,
                           String testKernel, String kind) {
+        return create(code, name, description, visibility, testKernel, kind, null, false);
+    }
+
+    /**
+     * 建项目 + 指定负责人 + 演示标记（v5.10.0 / FR-v5.10-04 / W60-06）。
+     *
+     * <p>{@code ownerId} 为空时负责人 = 当前操作人（既有行为）。指定他人时：
+     * <ul>
+     *   <li>目标用户必须真实存在 —— 写进一个查不到的 user_id，项目列表「负责人」列会空白，
+     *       owner 转移也找不到人，比建失败难查得多；</li>
+     *   <li>负责人同时写 {@code project_member} + admin 角色（与 5.9 的 owner 转移同一口径：
+     *       判权走角色表，不是 owner 列）。</li>
+     * </ul>
+     *
+     * <p>{@code demo=true} 只写 {@code project.is_demo}，不改任何权限与可见性（FR-v5.9-09 口径）。
+     */
+    @Audited(action = "project:create", resource = "project")
+    @Transactional
+    public Project create(String code, String name, String description, String visibility,
+                          String testKernel, String kind, Long ownerId, boolean demo) {
         access.require(PermissionResource.PROJECT, PermissionAction.CREATE);
         if (code == null || code.isBlank()) {
             throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "项目编码不能为空");
@@ -114,7 +143,14 @@ public class ProjectService {
         if (projects.codeExists(code.trim(), null)) {
             throw new BusinessException(ErrorCode.CONFLICT, "项目编码已存在：" + code);
         }
-        long ownerId = TenantContext.requireUserId();
+        long operator = TenantContext.requireUserId();
+        long owner = operator;
+        if (ownerId != null && ownerId != operator) {
+            users.findById(ownerId)
+                    .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND,
+                            "负责人不存在：" + ownerId));
+            owner = ownerId;
+        }
         // 类型先校验再落库：拼错的 kind 存进去会变成一个所有分支都不认的工程
         // （菜单树、执行分派、覆盖率口径全按 kind 分支），比建失败难查得多。
         String kindCode;
@@ -124,12 +160,16 @@ public class ProjectService {
             throw new BusinessException(ErrorCode.INVALID_ARGUMENT, e.getMessage());
         }
         long id = projects.insert(new Project(null, code.trim(), name, description, true,
-                ownerId, visibility == null || visibility.isBlank() ? "private" : visibility,
+                owner, visibility == null || visibility.isBlank() ? "private" : visibility,
                 normalizeKernel(testKernel), kindCode, null));
-        projects.addMember(id, ownerId, RoleCode.ADMIN.code(), ownerId);
+        projects.addMember(id, owner, RoleCode.ADMIN.code(), operator);
+        if (demo) {
+            projects.markDemo(id);
+        }
         syncKernelSetting(id, normalizeKernel(testKernel));
         audit.recordChange("project:create", "project", String.valueOf(id), null,
-                "code=" + code + "; name=" + name + "; owner=" + ownerId);
+                "code=" + code + "; name=" + name + "; owner=" + owner
+                        + (demo ? "; demo=1" : ""));
         return projects.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "项目不存在"));
     }
@@ -237,14 +277,20 @@ public class ProjectService {
         String normalizedPrefix = normalizePrefix(prefix);
         String scope = normalizedPrefix + "-" + kernelAbbr(kernel) + "-"
                 + LocalDate.now(ZoneId.of("Asia/Shanghai")).format(MONTH);
-        for (int attempt = 0; attempt < 100; attempt++) {
+        for (int attempt = 1; attempt <= CODE_ALLOCATE_ATTEMPTS; attempt++) {
             long no = projects.nextCodeSequence(scope);
             String code = scope + "-" + String.format(Locale.ROOT, "%03d", no);
             if (!projects.codeExists(code, null)) {
                 return code;
             }
         }
-        throw new BusinessException(ErrorCode.CONFLICT, "编码序号分配失败，请重试");
+        // 降级预案（FR-v5.10-08）：409 + 人话，绝不让前端看到 500。
+        // 走到这里说明同一 scope 下连续撞号，通常是有人在库里手工写过编码，
+        // 再重试只是把失败拖长——记一条审计，让下一个人能查到是哪一段号段被占。
+        audit.recordChange("project.code.exhausted", "project_code_sequence", scope, null,
+                "attempts=" + CODE_ALLOCATE_ATTEMPTS);
+        throw new BusinessException(ErrorCode.CONFLICT,
+                "编号生成冲突，请重试：" + scope + " 连续 " + CODE_ALLOCATE_ATTEMPTS + " 次撞号");
     }
 
     static String normalizePrefix(String prefix) {

@@ -367,6 +367,12 @@ public class ProjectRepositoryJdbc implements ProjectRepository {
     }
 
     @Override
+    public void markDemo(long projectId) {
+        // 只动 is_demo 一位：不碰 status / owner / 可见性（FR-v5.9-09 口径）
+        jdbc.update("UPDATE project SET is_demo = 1 WHERE id = ?", projectId);
+    }
+
+    @Override
     public boolean codeExists(String code, Long excludeId) {
         Integer count = jdbc.queryForObject("""
                 SELECT COUNT(*) FROM project WHERE code = ? AND id <> ?

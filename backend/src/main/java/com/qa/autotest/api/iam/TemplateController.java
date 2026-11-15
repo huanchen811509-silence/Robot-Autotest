@@ -40,6 +40,12 @@ public class TemplateController {
         return ApiResponse.ok(service.list(keyword, visibility));
     }
 
+    /** 编码前缀注册表（v5.10.0 / FR-v5.10-08）：模板向导第 1 步下拉数据源。 */
+    @GetMapping("/prefixes")
+    public ApiResponse<List<Map<String, Object>>> prefixes() {
+        return ApiResponse.ok(service.prefixes());
+    }
+
     @GetMapping("/{id}")
     public ApiResponse<ProjectTemplateService.TemplateDetail> get(@PathVariable long id) {
         return ApiResponse.ok(service.get(id));

@@ -87,4 +87,15 @@ public interface ProjectRepository {
     long nextCodeSequence(String scope);
 
     boolean codeExists(String code, Long excludeId);
+
+    /**
+     * 标记 / 取消演示项目（v5.10.0 / FR-v5.10-04）。
+     *
+     * <p>默认空实现：{@code Project} 记录里没有 demo 位（它是 5.9 才加的库列，不进域对象，
+     * 避免为一个管理标记改十个构造调用点）。接口给 default 而不是抽象方法，
+     * 是为了让既有测试桩零改动 —— 生产实现见 {@code ProjectRepositoryJdbc}。
+     */
+    default void markDemo(long projectId) {
+        // 测试桩默认不实现
+    }
 }
