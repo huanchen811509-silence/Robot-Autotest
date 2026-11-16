@@ -114,6 +114,7 @@ check_structure() {
   # 60–61 为 v5.19.0 可用性门禁（只增不删）：少了就等于"页面能不能用"又没人守了。
   grep -qE '^run 60 list_reachability ' "$file" || { echo "STRUCT_FAIL 缺少步骤 60 list_reachability"; bad=1; }
   grep -qE '^run 61 frontend_contract ' "$file" || { echo "STRUCT_FAIL 缺少步骤 61 frontend_contract"; bad=1; }
+  grep -qE '^run 62 list_state ' "$file" || { echo "STRUCT_FAIL 缺少步骤 62 list_state"; bad=1; }
   return "$bad"
 
 }
@@ -522,6 +523,13 @@ run 60 list_reachability "node scripts/ux-probes/row-hit.mjs --pages cases,runs,
 #    另加全站字面量扫描（undefined / NaN / [object Object]）与导出物健康。
 #    三条都是"单测绿、门禁绿、用户用不了"那一类缺陷的唯一自动守门手段。
 run 61 frontend_contract "python3 tools/check_menu_capability_contract.py && python3 tools/check_menu_capability_contract.py --self-test && node scripts/ux-probes/text-scan.mjs --routes /reports,/runs,/cases,/cases/sets,/test-reports && python3 tools/check_export_floor.py"
+
+# ---- v5.20.0 体验门禁（62）------------------------------------------------
+# 62 列表四态（v5.20.0 / FR-v5.20-01）：搜不到必须说条件 + 给清空出口；接口 500 必须
+#    失败态 + 重试；禁用按钮必须带 title 说明原因（纯分页导航按钮豁免）。
+#    另加复用度机检：≥5 个页面用同一个列表壳，且至少 3 个接了空态出口动作。
+#    两段都有 self-test（注入覆盖层 / 抬阈值），必须能判红。
+run 62 list_state "node scripts/ux-probes/list-state.mjs --routes /cases,/runs,/test-reports,/execution-plans && node scripts/ux-probes/list-state.mjs --routes /cases --self-test && python3 tools/check_list_state_usage.py && python3 tools/check_list_state_usage.py --self-test"
 
 printf '\nGATES_RESULT FAILS=%s UNJUDGED=%s\n' "$FAILS" "${UNJUDGED:-0}"
 

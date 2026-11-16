@@ -497,6 +497,28 @@ function clearFilters(): void {
   activeViewId.value = null
 }
 
+/**
+ * v5.20.0 / FR-v5.20-01：无结果态必须说清「是哪些条件把结果滤空了」。
+ *
+ * 只列真正生效的条件（空串不算），否则会拼出「当前条件：（空）」这种等于没说的一句。
+ * 判据要求"显示筛选摘要 + 清空筛选出口"——摘要的作用就是让用户知道该去掉哪一项。
+ */
+const activeFilterParts = computed<string[]>(() => {
+  const parts: string[] = []
+  if (keyword.value.trim()) parts.push(`${t('common.search')}=${keyword.value.trim()}`)
+  if (domain.value) parts.push(`${t('cases.domain')}=${domain.value}`)
+  if (priority.value) parts.push(`${t('cases.priority')}=${priority.value}`)
+  if (safetyLevel.value) parts.push(`${t('cases.safetyLevel')}=${safetyLevel.value}`)
+  if (reviewStatus.value) parts.push(`${t('cases.status')}=${reviewStatus.value}`)
+  return parts
+})
+
+const hasActiveFilter = computed(() => activeFilterParts.value.length > 0)
+
+const noResultHint = computed(() =>
+  hasActiveFilter.value ? activeFilterParts.value.join(' · ') : '',
+)
+
 function openSaveView(): void {
   showViewMenu.value = false
   viewName.value = ''
@@ -1506,9 +1528,26 @@ async function runCommit(): Promise<void> {
           :empty-description="projectId ? undefined : t('overview.noProject')"
           empty-icon="cases"
           :error="Boolean(error)"
-          :empty-illustration="keyword ? 'no-result' : 'no-data'"
+          :forbidden="Boolean(error?.forbidden)"
+          :no-result-hint="noResultHint"
+          :empty-illustration="hasActiveFilter ? 'no-result' : 'no-data'"
           flex-height
-        />
+        >
+          <!-- v5.20.0 / FR-v5.20-01：空态必须有出口动作，三种态三种动作，不给通用按钮 -->
+          <template #emptyAction>
+            <NButton v-if="hasActiveFilter" size="small" @click="clearFilters">
+              {{ t('common.clearFilters') }}
+            </NButton>
+            <NButton
+              v-else-if="error && !error.forbidden"
+              size="small"
+              data-testid="cases-empty-retry"
+              @click="load"
+            >
+              {{ t('common.retry') }}
+            </NButton>
+          </template>
+        </DataTable>
       </div>
 
       <!-- 详情固定在表格正下方（FR-v5.11-01）：不是弹窗、不是抽屉、不跳页 -->

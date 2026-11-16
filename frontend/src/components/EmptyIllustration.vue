@@ -1,10 +1,14 @@
 <script lang="ts">
 /**
- * 空态插图（UX-05）。三种状态在语义上必须分开，否则用户读不出「该做什么」：
+ * 空态插图（UX-05；v5.20.0 / FR-v5.20-01 加第四态）。
+ *
+ * 四种状态在语义上必须分开，否则用户读不出「该做什么」：
  *
  * - `no-data`：这里本来就还没有东西 → 引导去创建；
  * - `no-result`：有数据但被筛选/搜索滤空了 → 引导改条件或清空；
- * - `error`：拿不到数据 → 引导重试，**不能**写成「暂无数据」（那是在说「一切正常，就是空的」）。
+ * - `error`：拿不到数据 → 引导重试，**不能**写成「暂无数据」（那是在说「一切正常，就是空的」）；
+ * - `forbidden`：接口明确拒绝（403）→ 引导去找人开权限，**不能**引导重试
+ *   （重试一万次也还是 403，那是最消耗信任的一种"提示"）。
  *
  * 为什么是几何线稿而不是插画图：本项目没有插画师，位图/复杂 SVG 在暗色下要另做一套，
  * 且体积会突破图标预算。几何形只用 3~5 个图元、颜色全走 token，亮暗两套自动成立。
@@ -12,7 +16,7 @@
  * 类型单独放在普通 `<script>` 块里：`<script setup>` 中不允许 `export`，
  * 而 `EmptyState` 与 `DataTable` 都要 import 这个联合类型。
  */
-export type IllustrationName = 'no-data' | 'no-result' | 'error'
+export type IllustrationName = 'no-data' | 'no-result' | 'error' | 'forbidden'
 </script>
 
 <script setup lang="ts">
@@ -47,10 +51,19 @@ withDefaults(defineProps<{ name?: IllustrationName; width?: number }>(), {
     </template>
 
     <!-- 出错：一个断开的方框（"链路断了，不是没有"） -->
-    <template v-else>
+    <template v-else-if="name === 'error'">
       <rect class="empty-illustration__plate" x="24" y="18" width="48" height="36" rx="6" />
       <path class="empty-illustration__line" d="M36 36h8M52 36h8" />
       <path class="empty-illustration__bolt" d="M47 29l-5 9h6l-2 7 7-10h-6z" />
+    </template>
+
+    <!-- 无权限：一把锁扣在文档上（"内容存在，但你没钥匙"） -->
+    <template v-else>
+      <rect class="empty-illustration__plate" x="24" y="14" width="48" height="44" rx="6" />
+      <path class="empty-illustration__line" d="M34 24h14M34 32h10" />
+      <rect class="empty-illustration__plate" x="48" y="38" width="18" height="14" rx="3" />
+      <path class="empty-illustration__line" d="M52 38v-4a5 5 0 0 1 10 0v4" />
+      <path class="empty-illustration__accent" d="M57 45v2" />
     </template>
   </svg>
 </template>

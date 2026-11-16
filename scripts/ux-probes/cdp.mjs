@@ -25,6 +25,8 @@ class Session {
     this.ws = ws
     this.id = 0
     this.pending = new Map()
+    /** 事件订阅（v5.20.0）：Fetch.requestPaused 这类"服务端主动推"的事件必须有地方接。 */
+    this.handlers = new Map()
     ws.addEventListener('message', (ev) => {
       const msg = JSON.parse(ev.data)
       if (msg.id && this.pending.has(msg.id)) {
@@ -32,8 +34,25 @@ class Session {
         this.pending.delete(msg.id)
         if (msg.error) reject(new Error(`${msg.error.message} (${msg.error.code})`))
         else resolve(msg.result)
+        return
+      }
+      if (msg.method && this.handlers.has(msg.method)) {
+        for (const handler of this.handlers.get(msg.method)) {
+          try {
+            handler(msg.params)
+          } catch (err) {
+            log(`[cdp] 事件处理异常 ${msg.method}: ${err.message}`)
+          }
+        }
       }
     })
+  }
+
+  /** 订阅 CDP 事件；返回取消订阅函数。 */
+  on(method, handler) {
+    if (!this.handlers.has(method)) this.handlers.set(method, new Set())
+    this.handlers.get(method).add(handler)
+    return () => this.handlers.get(method)?.delete(handler)
   }
 
   send(method, params = {}) {

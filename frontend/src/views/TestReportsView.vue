@@ -438,7 +438,12 @@ onMounted(load)
         :placeholder="t('testReports.titlePlaceholder')"
         data-testid="draft-title"
       />
-      <button class="btn" type="submit" :disabled="!canSubmit">
+      <button
+        class="btn"
+        type="submit"
+        :disabled="!canSubmit"
+        :title="canSubmit ? undefined : t('testReports.createDisabledWhy')"
+      >
         {{ t('testReports.create') }}
       </button>
       <button
@@ -502,7 +507,20 @@ onMounted(load)
           :filter-columns="reportFilterColumns"
           :filters="reportFilterValues"
           @update:filters="onReportFilterChange"
-        />
+        >
+          <!-- v5.20.0 / FR-v5.20-01：无结果给出口（清筛选），不让人对着空屏发呆 -->
+          <template #emptyAction>
+            <button
+              v-if="reportFiltered"
+              class="btn small"
+              type="button"
+              data-testid="test-reports-empty-clear"
+              @click="reportFilters.clearAll()"
+            >
+              {{ t('common.clearFilters') }}
+            </button>
+          </template>
+        </DataTable>
       </template>
     </ListScaffold>
 

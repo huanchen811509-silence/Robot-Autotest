@@ -62,6 +62,16 @@ const props = withDefaults(
      */
     error?: boolean
     /**
+     * 接口明确拒绝（403）。与 `error` 分开：403 的正确动作是"找人开权限"，
+     * 不是"重试"。传 true 时空态改用 `forbidden` 插图与无权限文案。
+     */
+    forbidden?: boolean
+    /**
+     * 无结果时的筛选摘要（如「关键词=abc · 安全级=L0」）。
+     * 只在 `emptyIllustration === 'no-result'` 时被采用；没传则退回通用提示。
+     */
+    noResultHint?: string
+    /**
      * 窗口化（FR-3.2-06）：不传按行数自动（≥200 行开启）；false 关闭；true 强制。
      * 整页滚动（maxHeight=null）时始终关闭。
      */
@@ -96,6 +106,8 @@ const props = withDefaults(
     emptyIcon: 'inbox',
     emptyIllustration: 'no-data',
     error: false,
+    forbidden: false,
+    noResultHint: '',
     virtualScroll: undefined,
     flexHeight: false,
     filterable: false,
@@ -137,15 +149,18 @@ const virtualScroll = computed(() =>
 const showSkeleton = computed(() => props.loading && props.data.length === 0)
 
 /**
- * 空态语义三选一：出错 / 搜不到 / 本来就没有。
- * 三者混用的后果是「数据取不到」被读成「没有数据」，用户不会去重试。
+ * 空态语义四选一：无权限 / 出错 / 搜不到 / 本来就没有。
+ * 前三者混用的后果分别是：去点重试（403 重试无用）、当成空数据（不会重试）、
+ * 以为是全库为空（不会去清筛选）。每一种都会让用户做出错误动作。
  */
 const emptyMode = computed<IllustrationName>(() => {
+  if (props.forbidden) return 'forbidden'
   if (props.error) return 'error'
   return props.emptyIllustration
 })
 
 const emptyTitle = computed(() => {
+  if (props.forbidden) return t('common.forbiddenTitle')
   if (props.error) return t('common.loadFailed')
   // 搜不到 ≠ 这一页没有数据：此时标题必须由「搜索」这件事决定，
   // 而不是沿用列表自己的专属文案（那会说成「暂无数据」或「还没有计划」）
@@ -154,9 +169,12 @@ const emptyTitle = computed(() => {
 })
 
 const emptyDescription = computed(() => {
+  if (props.forbidden) return props.emptyDescription || t('common.forbiddenHint')
   if (props.error) return props.emptyDescription || t('common.loadFailedHint')
   if (props.emptyIllustration === 'no-result') {
-    return props.emptyDescription || t('common.noResultHint')
+    // v5.20.0 / FR-v5.20-01：无结果时必须把「当前筛选条件摘要」说出来，
+    // 否则用户只看到"没有匹配"，却不知道自己到底筛了什么。
+    return props.emptyDescription || props.noResultHint || t('common.noResultHint')
   }
   return props.emptyDescription
 })

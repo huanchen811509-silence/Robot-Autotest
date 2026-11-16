@@ -518,8 +518,20 @@ watch(
         :empty-description="projectId ? undefined : t('overview.noProject')"
         empty-icon="reports"
         :error="Boolean(error)"
+        :forbidden="Boolean(error?.forbidden)"
         flex-height
-      />
+      >
+        <template #emptyAction>
+          <NButton
+            v-if="error && !error.forbidden"
+            size="small"
+            data-testid="reports-empty-retry"
+            @click="load"
+          >
+            {{ t('common.retry') }}
+          </NButton>
+        </template>
+      </DataTable>
     </div>
 
     <NPagination

@@ -834,11 +834,28 @@ void load()
       :empty-description="projectId ? t('caseSets.emptyHint') : t('overview.noProject')"
       empty-icon="cases"
       :error="Boolean(error)"
+      :forbidden="Boolean(error?.forbidden)"
+      :empty-illustration="setsFilters.isFiltered.value ? 'no-result' : 'no-data'"
       filterable
       :filter-columns="setsFilterColumns"
       :filters="setsFilterValues"
       @update:filters="onSetsFilterChange"
-    />
+    >
+      <!-- v5.20.0 / FR-v5.20-01：无结果 → 清筛选；加载失败 → 重试 -->
+      <template #emptyAction>
+        <NButton v-if="setsFilters.isFiltered.value" size="small" @click="setsFilters.clearAll()">
+          {{ t('common.clearFilters') }}
+        </NButton>
+        <NButton
+          v-else-if="error && !error.forbidden"
+          size="small"
+          data-testid="case-sets-empty-retry"
+          @click="load"
+        >
+          {{ t('common.retry') }}
+        </NButton>
+      </template>
+    </DataTable>
 
     <NPagination
       v-if="total > 0"

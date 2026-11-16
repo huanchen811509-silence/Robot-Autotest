@@ -39,6 +39,8 @@ const props = withDefaults(
     /** 批量选择是否激活：激活时渲染批量条并隐藏筛选区 */
     batchActive?: boolean
     error?: boolean
+    /** 接口明确拒绝（403）：与 error 分开，403 该找人开权限而不是重试（v5.20.0 / FR-v5.20-01） */
+    forbidden?: boolean
     emptyTitle?: string
     emptyDescription?: string
     emptyIcon?: IconName
@@ -54,6 +56,7 @@ const props = withDefaults(
     filtered: false,
     batchActive: false,
     error: false,
+    forbidden: false,
     emptyTitle: undefined,
     emptyDescription: '',
     emptyIcon: 'inbox',
@@ -73,12 +76,13 @@ const resolvedTableProps = computed<Record<string, unknown>>(() => {
   merged.loading = props.loading
   if (props.rowKey) merged.rowKey = props.rowKey
   if (props.error) merged.error = true
+  if (props.forbidden) merged.forbidden = true
   if (props.emptyTitle && merged.emptyTitle === undefined) merged.emptyTitle = props.emptyTitle
   if (props.emptyDescription && merged.emptyDescription === undefined) {
     merged.emptyDescription = props.emptyDescription
   }
   if (merged.emptyIcon === undefined) merged.emptyIcon = props.emptyIcon
-  if (props.error) return merged
+  if (props.error || props.forbidden) return merged
 
   if (props.filtered) {
     // 被筛空 ≠ 本来没数据；DataTable 见到 no-result 会显示「没有匹配的记录」而不是列表专属文案

@@ -183,6 +183,20 @@ const canStart = computed(
 const starting = ref(false)
 const startError = ref('')
 
+/**
+ * v5.20.0 / FR-v5.20-01 判据 4：按钮禁用时必须说明「为什么现在不能点」。
+ * 这三条覆盖了 canStart 的全部 false 分支——文案和判定写在同一个文件里，
+ * 以后改判定忘了改文案，会在这条 computed 上暴露（漏一支就是空字符串，探针判红）。
+ */
+const startDisabledWhy = computed<string>(() => {
+  if (starting.value) return t('executionPlans.whyStarting')
+  if (selectedCount.value === 0 && !(mode.value === 'ALL' && allSelected.value)) {
+    return t('executionPlans.whyNoCase')
+  }
+  if (precheck.value?.allowed === false) return t('executionPlans.whyBlocked')
+  return ''
+})
+
 let precheckSeq = 0
 async function runPrecheck(): Promise<void> {
   if (!projectId.value || selectedCaseIds.value.length === 0) {
@@ -302,6 +316,7 @@ onMounted(async () => {
         class="btn btn-primary"
         type="button"
         :disabled="!canStart"
+        :title="canStart ? undefined : startDisabledWhy"
         data-testid="start-run"
         @click="start"
       >

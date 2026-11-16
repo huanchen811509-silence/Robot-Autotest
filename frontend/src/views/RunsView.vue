@@ -326,6 +326,17 @@ const visibleRuns = computed<ExecutionRun[]>(() => {
 })
 const runFiltered = runFilters.isFiltered
 
+/** v5.20.0 / FR-v5.20-01：无结果态列出真正生效的筛选条件（空值不列）。 */
+const runNoResultHint = computed<string>(() => {
+  const parts: string[] = []
+  if (runFilters.q.value.trim()) parts.push(`${t('common.search')}=${runFilters.q.value.trim()}`)
+  if (runFilters.texts.value.runId) parts.push(`${t('w57.runs.colRunId')}=${runFilters.texts.value.runId}`)
+  if (runFilters.texts.value.failureReason) {
+    parts.push(`${t('w57.runs.colFailureReason')}=${runFilters.texts.value.failureReason}`)
+  }
+  return parts.join(' · ')
+})
+
 /* ---------------------------------------------------------------- W57-32/35~37 B 类 CRUD */
 /**
  * 运行记录是系统产物：不渲染「新增」（既有「手动执行」是发起执行，不是新增记录），
@@ -1132,12 +1143,29 @@ onBeforeUnmount(() => {
         :empty-illustration="runFiltered ? 'no-result' : 'no-data'"
         empty-icon="runs"
         :error="Boolean(error)"
+        :forbidden="Boolean(error?.forbidden)"
+        :no-result-hint="runNoResultHint"
         filterable
         :filter-columns="runFilterColumns"
         :filters="runFilterValues"
         flex-height
         @update:filters="onRunFilterChange"
-      />
+      >
+        <!-- v5.20.0 / FR-v5.20-01：无结果 → 清筛选；加载失败 → 重试；无权限 → 不给动作 -->
+        <template #emptyAction>
+          <NButton v-if="runFiltered" size="small" @click="runFilters.clearAll()">
+            {{ t('common.clearFilters') }}
+          </NButton>
+          <NButton
+            v-else-if="error && !error.forbidden"
+            size="small"
+            data-testid="runs-empty-retry"
+            @click="load"
+          >
+            {{ t('common.retry') }}
+          </NButton>
+        </template>
+      </DataTable>
     </div>
 
     <NPagination

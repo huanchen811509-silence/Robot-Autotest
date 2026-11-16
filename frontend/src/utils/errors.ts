@@ -28,6 +28,14 @@ export interface ErrorLine {
   summary: string
   /** 折叠里显示的原始信息，无内容时为 null（不渲染折叠条）。 */
   detail: string | null
+  /**
+   * 服务端是否明确拒绝（`FORBIDDEN` / 40300）。
+   *
+   * v5.20.0 / FR-v5.20-01：无权限与"加载失败"要分开表达——403 的正确动作是
+   * 找人开权限，引导"重试"是错的（重试一万次还是 403）。这里保留判定，
+   * 避免每个页面各自去比 `codeName` 字符串。
+   */
+  forbidden?: boolean
 }
 
 function translate(key: string): string | null {
@@ -47,6 +55,7 @@ export function localizeError(e: unknown): ErrorLine {
     return { summary: text.trim() || unknown, detail: null }
   }
 
+  const forbidden = e.codeName === 'FORBIDDEN' || e.code === 40300
   const localized = translate(`error.${e.codeName}`)
   const code = `${e.codeName} (${e.code})`
   // v4.9.1 / T49-17：追踪号一并展示，用户可直接复制给运维定位。
@@ -63,11 +72,13 @@ export function localizeError(e: unknown): ErrorLine {
     return {
       summary: e.message.trim() || localized || unknown,
       detail: [code, trace].filter((part) => part && part.length > 0).join(' · '),
+      forbidden,
     }
   }
   return {
     summary: localized ?? unknown,
     detail: [e.message.trim(), code, trace].filter((part) => part && part.length > 0).join('\n'),
+    forbidden,
   }
 }
 
