@@ -1,0 +1,61 @@
+# v5.21.0 落号收口读数（2026-11-16 23:1x–23:5x GMT+8）
+
+本文件是「落号」这一轮动作的读数快照，与 `w8-gates-release.log`（收口复跑日志）互补：
+日志记录 67 步明细，本文件记录**落号后**的版本同源、部署自校验与交付包三方一致性。
+
+## 1 版本同源（门禁第 23 步 + 运行期实查）
+
+| 位置 | 读数 |
+|---|---|
+| `VERSION` | 5.21.0 |
+| `CHANGELOG.md` 首条 | `## v5.21.0（2026-11-16） <!-- current -->` |
+| `frontend/public/CHANGELOG.md` 首条 | 同上（逐字一致） |
+| `docs/contracts/openapi.json` `info.version` | 5.21.0（`tools/gen_api_contract.py` 重生成，diff 仅 version 一行） |
+| 运行期 `/api/_ping` | version=5.21.0 |
+| jar 内 `build-info.properties` | app.version=5.21.0 / git.commit=e5bc9b6 |
+
+## 2 部署自校验（`scripts/deploy.sh --verify`，四项独立判定）
+
+```text
+[verify] PASS 1/4 构建：jar commit=e5bc9b6 与 HEAD 一致
+[verify] PASS 2/4 重启：进程 1911164 起于 11-16 23:19:10，晚于 jar
+[verify] PASS 3/4 健康：8081 /api/_ping=200，8001 /healthz=200
+[verify] PASS 4/4 运行期：version=5.21.0，commit=e5bc9b6 与 HEAD 一致
+[verify] 结论：PASS=4 FAIL=0 SKIP=0
+```
+
+## 3 交付包（`scripts/package-release.sh`）
+
+| 项 | 值 |
+|---|---|
+| 包名 | `robot-autotest-5.21.0-e5bc9b6-linux-x64.tar.gz` |
+| 大小 | 49582957 B（47.3 MiB） |
+| 文件数 | 478 |
+| sha256（记录 vs 实算） | `f1908c4b898337315f241354c6ba564430b6f23ba93d41ed5057b995acd595b5` **一致** |
+| MANIFEST | `version=5.21.0 commit=e5bc9b6 files=478` |
+
+## 4 落号后全量门禁
+
+```text
+GATES_RESULT FAILS=0 UNJUDGED=0
+```
+
+67 步（01–67）全 PASS，含第 23 步 `version_consistency`（静态 + 运行期）、
+第 30 步 `delivery_bundle`（比对新包的 MANIFEST 与 `VERSION`）。
+耗时合计约 24m，其中 62 `list_state` 456s / 64 `role_surface` 126s / 65 `project_matrix` 223s。
+
+## 5 提交与同步
+
+| 项 | sha |
+|---|---|
+| 落号前（5.21 代码收口） | `c01074b` |
+| 落号提交（VERSION / CHANGELOG 三段 / 契约 / public 副本） | `e5bc9b6` |
+| 本地 / origin / github | 三处一致（见 `git ls-remote` 实查） |
+| E 盘工作区 | 快进到同一 sha，dirty=0 |
+
+## 6 口径（不得越线）
+
+- 落号 ≠ 判 G 门：G 门仍未判定，界面与文档**不得称 GA**。
+- 三版（5.19 / 5.20 / 5.21）各自六份产物齐备；
+  `5.19` 5 达成 3 降级、`5.20` 3 达成 3 部分 1 未达成、`5.21` 6 条全达成。
+- 遗留台账：`L-19-05~07` / `L-20-01~07` / `L-21-01~06`，下一版 v5.22.0 接手。
