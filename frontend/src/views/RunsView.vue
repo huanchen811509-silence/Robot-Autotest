@@ -43,7 +43,7 @@ import { localizeError, type ErrorLine } from '@/utils/errors'
 import { EMPTY, formatDateTime } from '@/utils/format'
 import { formatEta } from '@/utils/eta'
 import { groupPrechecks, isPrecheckBlocked, needsPrecheck } from '@/utils/precheck'
-import { RUN_STATUSES, runStatusLabel, runStatusTone } from '@/utils/statusLabels'
+import { RUN_STATUSES, failureReasonLabel, runStatusLabel, runStatusTone } from '@/utils/statusLabels'
 
 const { t } = useI18n()
 const auth = useAuthStore()
@@ -521,7 +521,12 @@ const columns = computed<DataTableColumns<ExecutionRun>>(() => [
     key: 'failureReason',
     minWidth: 200,
     ellipsis: { tooltip: true },
-    render: (row) => row.failureReason || EMPTY,
+    // v5.20.0 / FR-v5.20-04：列里给人话（「内核返回失败（exit 1）」），
+    // 原始 token 留在 title 里——排障时仍能对上日志，不用去后台翻。
+    render: (row) =>
+      row.failureReason
+        ? h('span', { title: row.failureReason }, failureReasonLabel(row.failureReason))
+        : EMPTY,
   },
   {
     title: t('execution.startedAt'),

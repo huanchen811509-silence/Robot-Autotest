@@ -17,7 +17,7 @@ import { useAuthStore } from '@/stores/auth'
 import ExecutionPlansView from '@/views/ExecutionPlansView.vue'
 import { caseApi, caseSetApi } from '@/api/cases'
 import { executionApi } from '@/api/execution'
-import { runLaunchApi } from '@/api/runLaunch'
+import { runLaunchApi, type RunPreview } from '@/api/runLaunch'
 import { ApiError } from '@/api/http'
 
 vi.mock('@/api/cases', () => ({
@@ -279,6 +279,37 @@ describe('ExecutionPlansView 发起', () => {
     start.click()
     await new Promise((resolve) => setTimeout(resolve, 0))
     expect(runCases).not.toHaveBeenCalled()
+  })
+
+  /**
+   * v5.20.0 / FR-v5.20-03 判据 1：连点 3 次只能产生 1 条运行记录。
+   *
+   * 这里拦的是"手快"：`starting` 必须在第一个 await 之前置 true，否则三次点击
+   * 会在同一帧里都通过 `canStart` 检查，各自发一遍 preview + confirm——
+   * 后端虽然有 runRequestId 幂等键，但三次请求带的是三个不同 requestId，照样会建三条。
+   */
+  it('连点 3 次「发起执行」只提交一次（starting 在 await 前就置位）', async () => {
+    let releasePreview: (v: RunPreview) => void = () => {}
+    vi.mocked(runLaunchApi.preview).mockImplementation(
+      () => new Promise((resolve) => { releasePreview = resolve }),
+    )
+    vi.mocked(runLaunchApi.confirmAndStart).mockResolvedValue({ runId: 'RUN-EP-ONCE' } as never)
+    const root = await mountView()
+    await selectOne(root)
+
+    const start = root.querySelector<HTMLButtonElement>('[data-testid="start-run"]')!
+    start.click()
+    start.click()
+    start.click()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    // 第一次已进入 awaiting，按钮必须已经禁用；后两次点击不该产生新请求
+    expect(start.disabled).toBe(true)
+    expect(runLaunchApi.preview).toHaveBeenCalledTimes(1)
+
+    releasePreview(previewOf(88, [11]))
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(runLaunchApi.confirmAndStart).toHaveBeenCalledTimes(1)
   })
 
   it('安全预检 blocked 时：列出用例码，且按钮禁用', async () => {

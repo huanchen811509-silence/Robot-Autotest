@@ -443,6 +443,18 @@ export default {
       l2: 'L2 高危',
       lx: 'LX 未判定',
     },
+    // v5.20.0 / FR-v5.20-04：把 REVOKED / PARTIAL 这类裸值收进字典
+    reportStatus: {
+      draft: '草稿',
+      frozen: '已冻结',
+      revoked: '已作废',
+      archived: '已归档',
+    },
+    collectStatus: {
+      ok: '采集成功',
+      partial: '部分成功',
+      failed: '采集失败',
+    },
   },
   menu: {
     label: '主导航',
@@ -538,6 +550,7 @@ export default {
     starting: '发起中…',
     whyNoCase: '先选择要执行的用例或用例集，再发起执行',
     envHint: '可留空。填的是环境快照编号，在「环境与拓扑 → 环境快照」里能查到',
+    runIdRule: '运行号由系统生成，格式 RUN-年月日时分秒-6 位序列（如 RUN-20261116204500-a10001），不需要手填',
     whyBlocked: '预检未通过：存在不可执行的用例，按上方提示处理后重试',
     whyStarting: '正在提交，请等待后端受理',
     startFailed: '发起失败',
@@ -2523,6 +2536,19 @@ export default {
     unassessed: '未评估',
   },
   env: {
+    // v5.20.0 / FR-v5.20-04：失败原因人话化（原始 token 留在悬浮里）
+    failure: {
+      pytestExit0: '内核返回成功（exit 0）',
+      pytestExit1: '内核返回失败（exit 1）：有用例未通过',
+      pytestExit2: '内核被中断（exit 2）',
+      pytestExit3: '内核内部错误（exit 3）',
+      pytestExit4: '内核用法错误（exit 4）',
+      pytestExit5: '内核未收集到用例（exit 5）',
+      timeout: '执行超时被终止',
+      canceled: '被人工取消',
+      nodeLost: '执行节点失联',
+      safetyBlocked: '安全级拦截，未执行',
+    },
     common: {
       subtitle: '环境与拓扑 · 真实数据 · 只读页不发写请求',
       empty: '0 条',

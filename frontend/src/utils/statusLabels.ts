@@ -28,6 +28,13 @@ export const TRIGGER_TYPES = ['manual', 'schedule', 'ci'] as const
 export const MEMBER_ROLES = ['owner', 'admin', 'pm', 'engineer', 'member', 'viewer'] as const
 /** 执行安全级（ADR-0013）：L0 只读 / L1 可逆写 / L2 高危 / LX 未判定 */
 export const SAFETY_LEVELS = ['L0', 'L1', 'L2', 'LX'] as const
+/**
+ * 测试报告状态（v5.20.0 / FR-v5.20-04）：与后端 `ReportState` 同值域。
+ * 之前这一列直接把 `REVOKED` 印给用户看。
+ */
+export const REPORT_STATUSES = ['draft', 'frozen', 'revoked', 'archived'] as const
+/** 环境采集状态（v5.20.0 / FR-v5.20-04）：`HostInventorySpec.status` 的三个值。 */
+export const COLLECT_STATUSES = ['ok', 'partial', 'failed'] as const
 
 export type ReviewStatus = (typeof REVIEW_STATUSES)[number]
 export type RunStatus = (typeof RUN_STATUSES)[number]
@@ -35,6 +42,8 @@ export type Priority = (typeof PRIORITIES)[number]
 export type TriggerType = (typeof TRIGGER_TYPES)[number]
 export type MemberRole = (typeof MEMBER_ROLES)[number]
 export type SafetyLevel = (typeof SAFETY_LEVELS)[number]
+export type ReportStatus = (typeof REPORT_STATUSES)[number]
+export type CollectStatus = (typeof COLLECT_STATUSES)[number]
 
 /**
  * 组名 → 取值集合。守门脚本读这份声明。
@@ -48,6 +57,8 @@ export const ENUM_GROUPS = {
   triggerType: TRIGGER_TYPES,
   memberRole: MEMBER_ROLES,
   safetyLevel: SAFETY_LEVELS,
+  reportStatus: REPORT_STATUSES,
+  collectStatus: COLLECT_STATUSES,
 } as const
 
 export type EnumGroup = keyof typeof ENUM_GROUPS
@@ -88,6 +99,59 @@ export function memberRoleLabel(value: string | null | undefined): string {
 /** 执行安全级：L0 只读 / L1 可逆写 / L2 高危 / LX 未判定 */
 export function safetyLevelLabel(value: string | null | undefined): string {
   return lookup('safetyLevel', value)
+}
+
+/** 测试报告状态：draft / frozen / revoked / archived（v5.20.0 / FR-v5.20-04） */
+export function reportStatusLabel(value: string | null | undefined): string {
+  return lookup('reportStatus', value)
+}
+
+/** 环境采集状态：ok / partial / failed（v5.20.0 / FR-v5.20-04） */
+export function collectStatusLabel(value: string | null | undefined): string {
+  return lookup('collectStatus', value)
+}
+
+/**
+ * 运行失败原因的人话化（v5.20.0 / FR-v5.20-04）。
+ *
+ * 后端 `failureReason` 落的是内核原始 token（`pytest_exit_1`、`TIMEOUT`…），
+ * 列里直接印等于把日志贴到列表上。这里给出**一句人话**，同时调用方保留原值做悬浮，
+ * 方便排障时对日志。
+ *
+ * 未知 token **不吞掉**：原样返回。宁可看到不认识的英文，也不要看到空白——
+ * 空白会让"没采集到原因"和"原因不认识"分不清。
+ */
+const FAILURE_REASONS: Record<string, string> = {
+  pytest_exit_0: 'env.failure.pytestExit0',
+  pytest_exit_1: 'env.failure.pytestExit1',
+  pytest_exit_2: 'env.failure.pytestExit2',
+  pytest_exit_3: 'env.failure.pytestExit3',
+  pytest_exit_4: 'env.failure.pytestExit4',
+  pytest_exit_5: 'env.failure.pytestExit5',
+  TIMEOUT: 'env.failure.timeout',
+  CANCELED: 'env.failure.canceled',
+  NODE_LOST: 'env.failure.nodeLost',
+  SAFETY_LEVEL_BLOCKED: 'env.failure.safetyBlocked',
+}
+
+export function failureReasonLabel(value: string | null | undefined): string {
+  if (!value) return '—'
+  const token = value.trim()
+  // 退出码可能带后缀（`pytest_exit_1 (3 failed)`），按前缀匹配，避免一个变体就漏翻
+  const exact = FAILURE_REASONS[token]
+  if (exact && i18n.global.te(exact)) return i18n.global.t(exact)
+  const base = token.split(/[\s(]/)[0]
+  const mapped = FAILURE_REASONS[base]
+  if (mapped && i18n.global.te(mapped)) return i18n.global.t(mapped)
+  return token
+}
+
+/** 失败原因是否已知（已知才给悬浮原始 token，未知本来就显示原样） */
+export function hasFailureReasonLabel(value: string | null | undefined): boolean {
+  if (!value) return false
+  const token = value.trim()
+  const base = token.split(/[\s(]/)[0]
+  return Boolean(FAILURE_REASONS[token] || FAILURE_REASONS[base])
 }
 
 /** 执行安全级 → 色档：L2 红、LX 黄（按 L2 对待）、L1 绿、L0 灰。 */

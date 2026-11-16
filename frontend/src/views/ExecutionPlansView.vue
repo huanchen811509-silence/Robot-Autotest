@@ -311,6 +311,8 @@ onMounted(async () => {
       <div>
         <h1>{{ t('executionPlans.title') }}</h1>
         <p class="muted">{{ t('executionPlans.hint') }}</p>
+        <!-- v5.20.0 / FR-v5.20-03：运行号是自动生成的，得说清规则，否则用户会去猜能不能自己填 -->
+        <p class="muted run-id-hint" data-testid="run-id-hint">{{ t('executionPlans.runIdRule') }}</p>
       </div>
       <button
         class="btn btn-primary"

@@ -20,6 +20,7 @@ import {
   type HostInventoryItem, type HostInventoryRecord, type HostInventorySpec,
 } from '@/api/environment'
 import { formatDateTime } from '@/utils/format'
+import { collectStatusLabel } from '@/utils/statusLabels'
 
 interface ItemRow extends HostInventoryItem {
   id: string
@@ -211,8 +212,10 @@ watch(projectId, () => { selectedId.value = null; spec.value = null; load() })
       <div v-if="history.length" class="history" data-testid="collect-history">
         <NButton v-for="record in history" :key="record.id" size="tiny"
           :tertiary="record.id !== selectedId" :type="record.id === selectedId ? 'primary' : 'default'"
-          data-testid="collect-history-item" @click="select(record.id)">
-          {{ record.status }} · {{ formatDateTime(record.collectedAt) }}
+          data-testid="collect-history-item" :title="`${record.host} · ${record.status} · #${record.id}`"
+          @click="select(record.id)">
+          <!-- v5.20.0 / FR-v5.20-04：PARTIAL/OK 是人话不是界面词；原始值留在 title 里 -->
+          {{ record.host }} · {{ collectStatusLabel(record.status) }} · {{ formatDateTime(record.collectedAt) }}
         </NButton>
       </div>
       <p v-else-if="!loading" class="empty" data-testid="collect-history-empty">
@@ -221,7 +224,7 @@ watch(projectId, () => { selectedId.value = null; spec.value = null; load() })
     </section>
 
     <section class="panel">
-      <h2>{{ t('env.collect.panel') }}<span v-if="spec" class="muted"> · {{ spec.host }} · {{ spec.status }}</span></h2>
+      <h2>{{ t('env.collect.panel') }}<span v-if="spec" class="muted"> · {{ spec.host }} · {{ collectStatusLabel(spec.status) }}</span></h2>
       <DataTable :columns="columns" :data="itemRows" :row-key="(row: ItemRow) => row.id">
         <template #empty>
           <p class="empty" data-testid="collect-empty">{{ t('env.common.empty') }}</p>

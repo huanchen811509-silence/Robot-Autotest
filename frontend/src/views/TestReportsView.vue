@@ -27,6 +27,7 @@ import CaseSetPicker from '@/components/CaseSetPicker.vue'
 import ReportExportBar from '@/components/ReportExportBar.vue'
 import { useAuthStore } from '@/stores/auth'
 import { testReportsApi, type TestReportItem } from '@/api/testReports'
+import { reportStatusLabel } from '@/utils/statusLabels'
 import type { TestSet } from '@/api/cases'
 import type { ExecutionRun } from '@/api/execution'
 import { formatDateTime } from '@/utils/format'
@@ -265,7 +266,13 @@ const columns = computed<DataTableColumns<TestReportItem>>(() => [
     minWidth: 130,
     render: (row) => sourceLabel(row),
   },
-  { title: t('testReports.colState'), key: 'state', minWidth: 90 },
+  {
+    title: t('testReports.colState'),
+    key: 'state',
+    minWidth: 90,
+    // v5.20.0 / FR-v5.20-04：原来直接把 `REVOKED` 印给用户看；原始值留在 title 里方便排障
+    render: (row) => h('span', { title: row.state }, reportStatusLabel(row.state)),
+  },
   { title: t('testReports.colVersion'), key: 'version', minWidth: 80 },
   {
     title: t('testReports.colCreatedAt'),

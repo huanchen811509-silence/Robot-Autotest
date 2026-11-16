@@ -33,12 +33,13 @@ const DEFAULT_ROUTES = [
 const PATTERNS = ['undefined', 'NaN', '[object Object]']
 
 function parseArgs(argv) {
-  const out = { routes: DEFAULT_ROUTES, json: false, selfTest: false, project: process.env.QA_PROJECT_ID ?? '95' }
+  const out = { routes: DEFAULT_ROUTES, json: false, selfTest: false, regex: null, project: process.env.QA_PROJECT_ID ?? '95' }
   for (let i = 0; i < argv.length; i += 1) {
     const a = argv[i]
     if (a === '--routes') out.routes = argv[++i].split(',')
     else if (a === '--json') out.json = true
     else if (a === '--self-test') out.selfTest = true
+    else if (a === '--regex') out.regex = argv[++i]
     else if (a === '--project') out.project = argv[++i]
   }
   return out
@@ -88,12 +89,24 @@ async function main() {
         })()`)
       }
       const text = await s.evaluate(TEXT_EXPR)
-      for (const p of PATTERNS) {
-        let idx = text.indexOf(p)
-        while (idx !== -1) {
-          const ctx = text.slice(Math.max(0, idx - 40), idx + p.length + 40).replace(/\s+/g, ' ')
-          findings.push({ route, pattern: p, ctx })
-          idx = text.indexOf(p, idx + p.length)
+      if (args.regex) {
+        // --regex：按正则扫（用于裸英文状态词这类"多个词一个判据"的场景）。
+        // 与默认字面量扫描分开：字面量里的 `[object Object]` 含方括号，不能直接当正则。
+        const re = new RegExp(args.regex, 'g')
+        let m
+        while ((m = re.exec(text)) !== null) {
+          const ctx = text.slice(Math.max(0, m.index - 40), m.index + m[0].length + 40).replace(/\s+/g, ' ')
+          findings.push({ route, pattern: m[0], ctx })
+          if (m[0].length === 0) re.lastIndex += 1
+        }
+      } else {
+        for (const p of PATTERNS) {
+          let idx = text.indexOf(p)
+          while (idx !== -1) {
+            const ctx = text.slice(Math.max(0, idx - 40), idx + p.length + 40).replace(/\s+/g, ' ')
+            findings.push({ route, pattern: p, ctx })
+            idx = text.indexOf(p, idx + p.length)
+          }
         }
       }
       if (args.selfTest) await s.evaluate(`(() => { const d = document.getElementById('__scan_selftest'); if (d) d.remove(); return 1 })()`)
@@ -118,10 +131,14 @@ async function main() {
   }
 
   if (findings.length) {
-    console.error(`\n[FAIL] ${findings.length} 处字面量命中（${args.routes.length} 路由）`)
+    console.error(`\n[FAIL] ${findings.length} 处命中（${args.routes.length} 路由）${args.regex ? `，正则 /${args.regex}/` : ''}`)
     process.exit(1)
   }
-  console.log(`[PASS] ${args.routes.length} 个路由无 undefined / NaN / [object Object]`)
+  console.log(
+    args.regex
+      ? `[PASS] ${args.routes.length} 个路由无 /${args.regex}/ 命中`
+      : `[PASS] ${args.routes.length} 个路由无 undefined / NaN / [object Object]`,
+  )
 }
 
 main().catch((e) => {

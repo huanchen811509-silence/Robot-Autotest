@@ -429,6 +429,17 @@ export default {
       l2: 'L2 destructive',
       lx: 'LX unclassified',
     },
+    reportStatus: {
+      draft: 'Draft',
+      frozen: 'Frozen',
+      revoked: 'Revoked',
+      archived: 'Archived',
+    },
+    collectStatus: {
+      ok: 'Collected',
+      partial: 'Partly collected',
+      failed: 'Collection failed',
+    },
     memberRole: {
       owner: 'Owner',
       admin: 'Admin',
@@ -532,6 +543,7 @@ export default {
     starting: 'Starting…',
     whyNoCase: 'Select cases or a case set before starting a run',
     envHint: 'Optional. This is an environment snapshot ID; find it under Environment & Topology → Snapshots',
+    runIdRule: 'The run ID is generated automatically: RUN-<yyyymmddHHMMSS>-<6 hex chars>, e.g. RUN-20261116204500-a10001',
     whyBlocked: 'Pre-check failed: some cases cannot run. Fix the issues listed above, then retry.',
     whyStarting: 'Submitting — waiting for the backend to accept the run',
     startFailed: 'Failed to start the run',
@@ -2514,6 +2526,18 @@ export default {
     unassessed: 'Unassessed',
   },
   env: {
+    failure: {
+      pytestExit0: 'Kernel finished successfully (exit 0)',
+      pytestExit1: 'Kernel failed (exit 1): some tests did not pass',
+      pytestExit2: 'Kernel interrupted (exit 2)',
+      pytestExit3: 'Kernel internal error (exit 3)',
+      pytestExit4: 'Kernel usage error (exit 4)',
+      pytestExit5: 'Kernel collected no tests (exit 5)',
+      timeout: 'Run timed out and was terminated',
+      canceled: 'Canceled by a user',
+      nodeLost: 'Execution node lost',
+      safetyBlocked: 'Blocked by safety level; not executed',
+    },
     common: {
       subtitle: 'Environment & topology · real data · read-only pages send no writes',
       empty: '0 records',
