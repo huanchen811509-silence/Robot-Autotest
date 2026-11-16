@@ -14,7 +14,98 @@
 > 门禁如实 `FAILS=1`（第 13 步 CDP）。正式成件见 `docs/release/v5.0.0/`，过程件见
 > `docs/plan/v5.0.X存量打磨-归档索引-20261112.md`。
 
-## v5.18.0（2026-11-16） <!-- current -->
+## v5.21.0（2026-11-16） <!-- current -->
+
+> **落号说明（2026-11-16）**：本版与 v5.19.0 / v5.20.0 同批收口后**一次性落号**（三版各自六份
+> 产物齐备，门禁分别为 61 / 62 / 67 步 `GATES_RESULT FAILS=0 UNJUDGED=0`）。
+> **发版 ≠ 判 G 门**：G 门仍未判定，界面与文档不得称 GA。未闭合项见各版 `05-TEST-REPORT.md`
+> 的遗留段（L-19-05~07 / L-20-01~07 / L-21-01~06）。
+
+### 新增 <!-- added -->
+- **四内置角色落库且可在界面分配**：`role` 表由 1 行（仅管理员）补为 4 行（管理员 / 项目经理 / 工程师 / 只读访客），启动自检只补缺、不覆盖已改名的角色；用户管理「新建用户」的角色下拉由 1 项变 4 项
+- **`v-can` 能力指令与 `useCan` 组合式**：写操作按角色显隐，覆盖新建 / 编辑 / 删除 / 导入 / 提交评审 / 执行 / 导出 / 授权 8 类；viewer 在用例库与用例集的写按钮数为 0
+- **403 拦截页**：越权直达受限路由落 `/403`，页面写明角色中文名与「返回工作台」；接口 403 时列表走 `forbidden` 空态而不是空白
+- **导航与路由能力白名单机检**：`check_nav_capability.py`（每个导航叶子必须声明 `capability` 或 `public`）、`check_route_capability.py`（每条非公开路由必须带 `meta.capability`），两者均带 `--self-test` 真注入判红
+- **用例软删除**：`test_case` 增加 `deleted_at` / `deleted_by` 与 `idx_test_case_deleted`，配套 `check_case_soft_delete.py` 守「不得有未豁免的物理删除」
+- **角色矩阵 / 表面 / 工程矩阵 / 软删证据四类探针**：`role-matrix.mjs`（4 角色 × 9 接口 36 格）、`role-buttons.mjs`、`role-routes.mjs`、`project-matrix.mjs`（5 工程 × 6 页面 30 格）、`set-row-actions.mjs`（4 右栏状态 × 3 视口 12 组）、`soft-delete-proof.mjs`
+- **门禁第 63–67 步**：`role_matrix` / `role_surface` / `project_matrix` / `route_capability` / `case_soft_delete`，全部含自检
+- **夹具账号幂等脚本** `scripts/seed-qa-accounts.sh`：建 4 个 `qa-e2e-*` 账号并加入夹具工程，连跑两次计数不变
+
+### 变更 <!-- changed -->
+- **角色代码统一小写**：`GroupService` 原先写 `toUpperCase()`、`ProjectRepositoryJdbc` 写小写，分裂成两种形态；写入口统一 `toLowerCase()`，存量按 `V11_81` 迁移，读路径大小写兼容
+- **无全局角色账号的菜单收窄**：能力集变为 `["about","changelog"]`，侧栏 3 个叶子（此前空能力被放大成全量 19 项）
+- **路由守卫判定时序**：先 `await auth.loadMe()` 再判能力，刷新瞬间不再因 `user` 为空而放行
+- **资产页表格高度链**：`.asset-workspace` 纳入 `.page.is-list > .list-fill` 链路，且 `v-if` 掉的表格外壳不再占 240px 最小高度（表高 44px → 612px）
+- **用例集行内操作固定在列表右缘**（sticky right），4 种右栏状态 × 3 视口 12 组全部可命中
+
+### 修复 <!-- fixed -->
+- viewer / engineer 手输 `/execution-plans`、`/runs`、`/g/iam/users` 能直接进入（守卫在 `user` 为 null 时放行）
+- 无角色账号清不掉角色：编辑路径把空数组当「没填」回落到 viewer，现为空数组即明确清空（新建仍兜底）
+- 403 页角色显示 `viewer` 而非「只读成员」（i18n 键前缀写错，`memberRole.*` 实为 `enum.memberRole.*`）
+- 资产页设备表首行点不到（表格 44px 塌陷 + 两处表格外壳仍占位）
+- 用例集页成员面板被全局 `.card` 的 `max-width: 520px` 限死（7 列表格挤成一列）
+
+### 破坏性变更 <!-- breaking -->
+- **用例删除改为软删除**：`DELETE` 不再物理删行，改为置 `deleted_at` / `deleted_by`；项目内不再显示，全局公共用例池仍保留。依赖「删除后行消失」的对账脚本需改判 `deleted_at IS NULL`
+- **软删行仍占用唯一键**（`project_id + code`）：同编号重建走「复活」路径，批量导入遇到大量软删行时未压测
+- **角色代码统一小写**：`role` / `project_member_role` / `project_group_role` 三表存量已迁移；外部集成方若写入大写角色码，将被视为不同角色
+- **无角色账号不再拿到全量菜单**：此前是权限漏洞（无角色 = 全开），现在只给 `about` / `changelog`；依赖该行为的自动化脚本需补角色
+
+## v5.20.0（2026-11-16）
+
+> **落号说明（2026-11-16）**：体验基线版，8/8 WBS 落地；7 条 FR 中 3 达成、3 部分、1 未达成
+> （FR-06 整条未做 → L-20-07）。门禁 62 步 `FAILS=0`。
+
+### 新增 <!-- added -->
+- **列表四态组件**：`EmptyIllustration` 增加第四态 `forbidden`（锁形图，403 引导找人开权限而不是重试）；`DataTable` / `ListScaffold` 透传，空态优先级 `forbidden > error > no-result > no-data`；用例库无结果态显示「没有匹配的记录 / 搜索=… / 清空筛选条件」
+- **`EntityPicker` 可搜索选择器**：可搜索下拉 + 「高级：手输 ID」兜底，选项文案统一「名称（ID）· 补充信息」；环境采集的「凭据 ID」由手填数字改为选择
+- **采集结果结构化** `utils/collectFormat.ts`：CPU「16 核 · 型号」、内存「共 15.5 GB（已用 1.7 / 可用 13.8）」、磁盘「根分区已用 5%，共 3 块」、网卡「N 个（up M）」；原始 JSON 收进「原始值」折叠
+- **探针与机检**：`list-state.mjs`（四态 + 禁用按钮 title 扫描 + `--self-test`）、`entity-picker.mjs`、`login-brand.mjs`（亮度算法判暗色）、`text-scan.mjs --regex`、`check_list_state_usage.py`
+- **门禁第 62 步** `list_state`
+
+### 变更 <!-- changed -->
+- 环境采集「立即采集」区前置到命令白名单之前（首屏 `top=218` 可见）
+- 受控状态词表 27 → 34 值，补报告状态（draft/frozen/revoked/archived）与采集状态（ok/partial/failed）；失败原因 `pytest_exit_1` → 「内核返回失败（exit 1）：有用例未通过」，原始值保留在 `title`
+- 登录页页脚显示版本号（与 `/_ping` 同源）并加「登录遇到问题」帮助入口（帮助入口 3/3：登录页 / 账户菜单 / `?` 面板）
+
+### 修复 <!-- fixed -->
+- 搜不到记录时表格区一片空白（无结果 = 空，用户不知道是筛没了还是坏了）
+- 禁用按钮点了没反应且不说明原因（7 页扫描后业务按钮 100% 带 `title`）
+- 测试报告状态印 `REVOKED`、采集历史印 `PARTIAL`、运行记录印 `pytest_exit_1`（裸英文 token 直接暴露）
+- 采集值列显示 `{"cores":16,"model":"…"}` 原始 JSON
+- 暗色主题下登录页白屏，与工作台割裂
+
+### 破坏性变更 <!-- breaking -->
+- 无。术语中文化后原始 token 只在 `title` 中保留，若有脚本按可见文本匹配状态词需改读 `title` 或接口原值
+
+## v5.19.0（2026-11-16）
+
+> **落号说明（2026-11-16）**：可用性止血版，12 个 WBS 全部落地；8 条 FR 中 5 达成、3 降级
+> （L-19-05 导出内容量 / L-19-06 计数真源 / L-19-07 pytest 绑定不可自证）。门禁 61 步
+> `FAILS=0 UNJUDGED=0`。
+
+### 新增 <!-- added -->
+- **报告元数据补录前端接线**：`GET/PATCH /api/execution/runs/{runId}/metadata` 后端早已存在、前端零调用；补齐 10 项后 `exportable` 由 `false` 转 `true`
+- **导出物健康机检** `tools/check_export_floor.py`：守「确定的坏」（5xx / 0 字节 / 非法文件头），4xx 拒导视为正确
+- **门禁第 60 / 61 步** `list_reachability`（首行可命中、行内操作可命中）、`frontend_contract`
+- **真实链路探针** `scripts/ux-probes/journey.mjs`：登录 → 用例库 → 用例集 → 执行计划 → 运行记录 → 报告 → 详情 → 导出，8 图落 `docs/evidence/v5.19.0/journey/`
+
+### 变更 <!-- changed -->
+- 用例库表格高度链修复：`.page.is-list > .list-fill` 只在 `list-fill` 为 `.page` 直接子项时生效，`CasesView` 多包一层 `.list-area` 导致表体塌成 44px
+- 用例集窄屏（≤1400px）改抽屉形态（1080px + 遮罩），宽屏行为不变
+- 运行记录计数改三段式（通过 / 失败 / 跳过），`null` 显 `—`，不再把「未采集」当 0
+- **权限矩阵 7 → 9 个能力码**：补 `execution:read` 与 `project:create`
+
+### 修复 <!-- fixed -->
+- **用例库表体不可见**（高 44px，tbody 溢出被裁，`elementFromPoint` 命中容器而非行，1440/1366/1920 三档全复现）
+- **`execution:read` 从未定义**：5 个执行态叶子（执行计划 / 运行记录 / 测试计划 / 执行节点 / 执行内核）对所有角色恒隐藏，含 admin
+- **执行报告 PASS/FAIL/SKIP 渲染 `undefined`**：后端 `counts:{pass,fail,skip}` 正确，前端读平铺字段
+- 用例集页 `set-item` 只声明 4 列 grid 但实际有 8 个子元素，前四个挤在第一行、第一列被压成两行
+
+### 破坏性变更 <!-- breaking -->
+- **权限矩阵新增两个能力码**（7 → 9）：自定义角色若自行维护能力清单需同步补 `execution:read` / `project:create`，否则执行态菜单与建项目入口不可见
+
+## v5.18.0（2026-11-16）
 
 > **落号说明（2026-11-16）**：本版与 v5.17.0 同批按大师授权推进「补缺专项」，两版各自六份
 > 产物齐备（`docs/release/v5.18.0/`、`docs/release/v5.17.0/`），门禁 **59 步
