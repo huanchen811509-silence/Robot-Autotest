@@ -16,7 +16,7 @@ import ErrorLineView from '@/components/ErrorLine.vue'
 import StatusTag from '@/components/StatusTag.vue'
 import AppIcon from '@/components/AppIcon.vue'
 import { localizeError, type ErrorLine } from '@/utils/errors'
-import { formatBytes } from '@/utils/format'
+import { formatBytes, countTriple } from '@/utils/format'
 import { runStatusLabel, runStatusTone } from '@/utils/statusLabels'
 import { confirmAction } from '@/composables/useConfirm'
 
@@ -84,14 +84,18 @@ const columns = computed<DataTableColumns<ReportListItem>>(() => [
     title: t('reports.counts'),
     key: 'counts',
     width: 130,
-    render: (row) =>
-      h('span', { class: 'mono' }, [
-        h('span', { class: 'text-ok' }, String(row.passCount)),
+    // W69-03：接口返回的是 `counts:{pass,fail,skip}`，原先读 `row.passCount` 等平铺字段
+    // → 三格全是 `undefined`。改为 countTriple 统一取值 + 缺值兜底 `—`。
+    render: (row: ReportListItem) => {
+      const [pass, fail, skip] = countTriple(row)
+      return h('span', { class: 'mono' }, [
+        h('span', { class: 'text-ok' }, pass),
         ' / ',
-        h('span', { class: 'text-fail' }, String(row.failCount)),
+        h('span', { class: 'text-fail' }, fail),
         ' / ',
-        h('span', { class: 'muted' }, String(row.skipCount)),
-      ]),
+        h('span', { class: 'muted' }, skip),
+      ])
+    },
   },
   {
     title: t('reports.suiteCount'),

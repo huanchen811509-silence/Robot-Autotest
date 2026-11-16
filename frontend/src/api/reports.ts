@@ -426,6 +426,24 @@ export const reportsApi = {
     )
   },
 
+  /**
+   * metadata 补录（v5.19.0 / W69-08）。
+   *
+   * <p>后端 `GET/PATCH /api/execution/runs/{runId}/metadata` 与 `MetadataOverlay`
+   * （读取时重算闸门）早就存在，缺的只是调用方——所以「缺 9 项元数据 → 全部不可对外」
+   * 在界面上是一条死路。空串表示删除该项。
+   */
+  patchMetadata(
+    projectId: number,
+    runId: string,
+    metadata: Record<string, string>,
+  ): Promise<Record<string, string>> {
+    return request<Record<string, string>>(
+      `/execution/runs/${encodeURIComponent(runId)}/metadata${toQuery({ projectId })}`,
+      { method: 'PATCH', body: JSON.stringify({ metadata }) },
+    )
+  },
+
   /** 下载导出文件（返回 Blob，由页面触发浏览器保存）。 */
   downloadExport(downloadUrl: string): Promise<Blob> {
     return requestBlob(downloadUrl)

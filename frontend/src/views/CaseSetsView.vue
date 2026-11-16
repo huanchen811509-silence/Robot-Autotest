@@ -224,6 +224,8 @@ const columns = computed<DataTableColumns<TestSet>>(() => [
   {
     title: t('common.actions'),
     key: 'actions',
+    // W69-04/W69-05：三栏版式下表宽 964px 装在 764px 容器里，操作列原被右栏盖住
+    fixed: 'right',
     width: 300,
     render: (row) =>
       h('div', { class: 'row-actions' }, [

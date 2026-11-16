@@ -666,6 +666,9 @@ const columns = computed<DataTableColumns<TestCase>>(() => [
   {
     title: t('common.actions'),
     key: 'actions',
+    // W69-04：操作列固定在右缘。表宽 1386px > 容器 1174px 时，操作列会落到视口外，
+    // 行内按钮"存在但点不到"（实测 24 个按钮只有 8 个可命中）。
+    fixed: 'right',
     width: 240,
     render: (row) =>
       h('div', { class: 'row-actions' }, [
@@ -1548,6 +1551,20 @@ async function runCommit(): Promise<void> {
   display: flex;
   flex-direction: column;
   flex: 1;
+  min-height: 0;
+}
+/* W69-01：全局 `.page.is-list > .list-fill` 要求 list-fill 是 .page 的直接子项，
+   本页中间多了一层 .list-area，规则命中不到 → list-fill 高度退化为内容高度，
+   表格的 flex-height 拿不到参照，只剩表头 44px（实测 tbody 880px 溢出不滚）。
+   这一条把高度链接回来：list-fill 吃 list-area 的剩余空间，表格再吃 list-fill 的。 */
+.list-area > .list-fill {
+  flex: 1 1 auto;
+  min-height: 240px;
+  display: flex;
+  flex-direction: column;
+}
+.list-area > .list-fill > :deep(.data-table) {
+  flex: 1 1 auto;
   min-height: 0;
 }
 /* 操作列多个 text 按钮并排：h() 渲染的节点拿不到 scoped 类，用 :deep 兜 */

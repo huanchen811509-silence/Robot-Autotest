@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import {
   NButton,
   NCheckbox,
+  NInput,
   NRadioButton,
   NRadioGroup,
   NSelect,
@@ -140,6 +141,42 @@ function metadataValue(key: string): string {
 
 function metadataMissing(key: string): boolean {
   return metadataValue(key).trim().length === 0
+}
+
+/* ---- W69-08：元数据就地补录 -------------------------------------------------
+ * 后端早就有 PATCH，缺的是入口。这里做「点编辑 → 每行变输入框 → 保存 → 重新拉详情」，
+ * 保存后 exportable / metadataMissing 由后端重算（MetadataOverlay），前端不自己推断。 */
+const metaEditing = ref(false)
+const metaBusy = ref(false)
+const metaDraft = ref<Record<string, string>>({})
+const metaError = ref<ErrorLine | null>(null)
+
+function startEditMeta(): void {
+  const base: Record<string, string> = {}
+  for (const key of REPORT_METADATA_KEYS) base[key] = metadataValue(key)
+  metaDraft.value = base
+  metaError.value = null
+  metaEditing.value = true
+}
+
+function cancelEditMeta(): void {
+  metaEditing.value = false
+  metaError.value = null
+}
+
+async function saveMeta(): Promise<void> {
+  if (!projectId.value || !runId.value) return
+  metaBusy.value = true
+  metaError.value = null
+  try {
+    await reportsApi.patchMetadata(projectId.value, runId.value, metaDraft.value)
+    metaEditing.value = false
+    await loadAll()
+  } catch (e) {
+    metaError.value = localizeError(e)
+  } finally {
+    metaBusy.value = false
+  }
 }
 
 /**
@@ -754,16 +791,43 @@ watch(granularity, () => {
       </div>
 
       <section class="card wide-card">
-        <h2 class="card-title">{{ t('reports.metadataTitle') }}</h2>
+        <div class="meta-head">
+          <h2 class="card-title">{{ t('reports.metadataTitle') }}</h2>
+          <div v-if="!metaEditing" class="meta-actions">
+            <NButton size="small" secondary :disabled="metaBusy" @click="startEditMeta">
+              {{ t('common.edit') }}
+            </NButton>
+          </div>
+          <div v-else class="meta-actions">
+            <NButton size="small" type="primary" :loading="metaBusy" @click="saveMeta">
+              {{ t('common.save') }}
+            </NButton>
+            <NButton size="small" :disabled="metaBusy" @click="cancelEditMeta">
+              {{ t('common.cancel') }}
+            </NButton>
+          </div>
+        </div>
+        <ErrorLineView v-if="metaError" :error="metaError" />
         <div class="table-scroll">
           <table class="table meta-table">
             <tbody>
               <tr v-for="key in REPORT_METADATA_KEYS" :key="key">
                 <th>{{ key }}</th>
-                <td v-if="metadataMissing(key)" class="text-fail">
-                  {{ t('reports.missingValue') }}
-                </td>
-                <td v-else>{{ metadataValue(key) }}</td>
+                <template v-if="metaEditing">
+                  <td>
+                    <NInput
+                      v-model:value="metaDraft[key]"
+                      size="small"
+                      :placeholder="t('reports.missingValue')"
+                    />
+                  </td>
+                </template>
+                <template v-else>
+                  <td v-if="metadataMissing(key)" class="text-fail">
+                    {{ t('reports.missingValue') }}
+                  </td>
+                  <td v-else>{{ metadataValue(key) }}</td>
+                </template>
               </tr>
             </tbody>
           </table>
@@ -1052,6 +1116,24 @@ watch(granularity, () => {
   width: 140px;
   color: var(--text-muted);
   font-weight: 500;
+}
+
+/* W69-08：元数据卡片标题与「编辑/保存/取消」同排，避免按钮另起一行把表格往下推 */
+.meta-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+.meta-head .card-title {
+  margin: 0;
+}
+
+.meta-actions {
+  display: flex;
+  gap: var(--space-2);
 }
 
 .trend-case {

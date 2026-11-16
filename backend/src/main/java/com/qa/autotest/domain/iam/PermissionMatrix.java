@@ -37,10 +37,18 @@ public final class PermissionMatrix {
      * <p>v5.7.0 / 复核 P1-1 追加 {@code case:write}：前端「平台用例集能不能写」原先按
      * {@code roles.includes('admin')} 判，而服务端用的是 {@code CASE:UPDATE}——两套口径
      * 导致 PM 有写权限却看不到入口。能力码与资源矩阵保持单一真源：见 {@link #menuAllows}。
+     *
+     * <p>v5.19.0 / W69-02 追加 {@code execution:read}：前端 5 个执行态叶子
+     * （执行计划 / 运行记录 / 测试计划 / 执行节点 / 执行内核）依赖它，而白名单里**从未定义**，
+     * 于是对所有角色恒隐藏（含 admin）——主链路第一跳就断，用户只能手输 URL。
+     * 授予口径与 {@link #MATRIX} 的 {@code EXECUTION:READ} 一致：ADMIN / PM / ENGINEER 有，VIEWER 无。
+     *
+     * <p>v5.19.0 / W69-02 同时补 {@code project:create}：前端「新建项目」入口用的就是这个能力码，
+     * 而后端白名单里也没有它——同一次契约机检把两处一起抓出来，避免只修一个再犯一次。
      */
     public static final List<String> MENU_CAPABILITIES = List.of(
             "settings:read", "ai:config", "user:write", "audit:read", "about", "changelog",
-            "case:write");
+            "case:write", "execution:read", "project:create");
 
     private PermissionMatrix() {
     }
@@ -113,11 +121,13 @@ public final class PermissionMatrix {
     private static Map<RoleCode, Set<String>> buildMenuMatrix() {
         Map<RoleCode, Set<String>> matrix = new EnumMap<>(RoleCode.class);
         matrix.put(RoleCode.ADMIN, new LinkedHashSet<>(List.of(
-                "settings:read", "ai:config", "user:write", "audit:read", "about", "changelog")));
+                "settings:read", "ai:config", "user:write", "audit:read", "about", "changelog",
+                "case:write", "execution:read", "project:create")));
         matrix.put(RoleCode.PM, new LinkedHashSet<>(List.of(
-                "settings:read", "audit:read", "about", "changelog")));
+                "settings:read", "audit:read", "about", "changelog", "case:write",
+                "execution:read", "project:create")));
         matrix.put(RoleCode.ENGINEER, new LinkedHashSet<>(List.of(
-                "settings:read", "about", "changelog")));
+                "settings:read", "about", "changelog", "case:write", "execution:read")));
         matrix.put(RoleCode.VIEWER, new LinkedHashSet<>(List.of(
                 "settings:read", "about", "changelog")));
         return matrix;

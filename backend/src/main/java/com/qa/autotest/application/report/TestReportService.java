@@ -225,6 +225,15 @@ public class TestReportService {
      */
     public byte[] export(long id, String format) {
         TestReport report = find(id);
+        // W69-07：空快照必须拒导，而不是渲染出一份"看着像报告、其实没内容"的文件。
+        // 实测对外导出 PDF 恒定 1,521 字节（两个不同报告字节数完全相同）——
+        // 根因是 snapshotJson 为空串时 snapshotOf 只判 null 就放行，渲染器拿到空快照
+        // 仍会吐出一个只有表头/水印的壳。空白也拒，并给出可操作的下一步。
+        String raw = report.snapshotJson();
+        if (raw == null || raw.isBlank()) {
+            throw new BusinessException(ErrorCode.CONFLICT,
+                    "报告尚未物化快照（无法导出）。请先在报告详情点「冻结」再导出");
+        }
         ReportSnapshot snapshot = snapshotOf(report);
         Map<String, Object> view = renderer.external(snapshot, report.id(), report.title(),
                 report.frozenAt() == null ? "" : report.frozenAt().toString(),

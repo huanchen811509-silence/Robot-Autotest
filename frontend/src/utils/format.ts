@@ -116,3 +116,34 @@ export function formatNumber(value: number | null | undefined, fallback = EMPTY)
     return String(value)
   }
 }
+
+/**
+ * 计数类字段的兜底格式化（v5.19.0 / W69-03）。
+ *
+ * <p>为什么单独一个函数而不是直接用 `formatNumber`：计数来的地方五花八门——
+ * 后端 `counts:{pass,fail,skip}`、历史行的平铺 `passCount`、某些视图还会给字符串。
+ * 这里统一收口成「数字就格式化、缺值/非法一律 `—`」，**绝不把 `undefined` 或 `NaN`
+ * 打到界面上**。报告页曾因此显示 `undefined / undefined / undefined`，
+ * 后端数据是对的，只是前端读了不存在的字段。
+ */
+export function fmtCount(value: unknown, fallback = EMPTY): string {
+  if (value === null || value === undefined || value === '') return fallback
+  const n = typeof value === 'number' ? value : Number(value)
+  if (!Number.isFinite(n)) return fallback
+  return formatNumber(n, fallback)
+}
+
+/** 三段式计数的取值顺序：`counts.{pass,fail,skip}` 优先，回退到平铺字段（兼容历史行）。 */
+export function countTriple(row: {
+  counts?: { pass?: unknown; fail?: unknown; skip?: unknown } | null
+  passCount?: unknown
+  failCount?: unknown
+  skipCount?: unknown
+}): [string, string, string] {
+  const c = row?.counts ?? {}
+  return [
+    fmtCount(c.pass ?? row?.passCount),
+    fmtCount(c.fail ?? row?.failCount),
+    fmtCount(c.skip ?? row?.skipCount),
+  ]
+}

@@ -276,6 +276,8 @@ const columns = computed<DataTableColumns<TestReportItem>>(() => [
   {
     title: t('w57.testReports.colActions'),
     key: 'actions',
+    // W69-04：与用例库/运行记录同批，操作列固定在右缘
+    fixed: 'right',
     width: 320,
     render: (row) => {
       // v5.14.0 / W64-07：冻结件才是正式交付物，导出入口不能只给草稿。
