@@ -89,7 +89,17 @@ describe('同源断言（源码里只允许一处 public 特判）', () => {
     expect(keepEnd).toBeGreaterThan(keepStart)
     const keepBody = source.slice(keepStart, keepEnd)
     expect(keepBody).not.toContain("=== 'public'")
-    expect(keepBody).toContain('capabilitySatisfied(')
+    // v5.21.0 / W71-04：叶子可见性走 navNodeVisible（白名单），它内部再调 capabilitySatisfied，
+    // public 字符串特判仍然只有一处。
+    expect(keepBody).toContain('navNodeVisible(')
+    const visibleStart = source.indexOf('export function navNodeVisible')
+    // 切到「下一个函数的注释开头为止」：filterNavByCapabilityPredicate 的 javadoc 里
+    // 也写了一句 public 字符串比较（说明文字），不切掉会误判。
+    const visibleEnd = source.indexOf('/**', visibleStart)
+    const visibleBody = source.slice(visibleStart, visibleEnd)
+    expect(visibleStart).toBeGreaterThan(-1)
+    expect(visibleBody).not.toContain("=== 'public'")
+    expect(visibleBody).toContain('capabilitySatisfied(')
   })
 
   it('路由守卫不再自己拼 includes(capability)', () => {

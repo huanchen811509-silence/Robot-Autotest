@@ -1,0 +1,10 @@
+{
+  "generatedAt": "2026-11-16T21:30:06+08:00",
+  "accounts": [
+    {"account":"admin","expectRole":"admin","menuCapabilities":["settings:read","ai:config","user:write","audit:read","about","changelog","case:write","execution:read","project:create","project:read","case:read","asset:read","report:read","env:read","execution:write","project:write"]},
+    {"account":"qa-e2e-pm","expectRole":"pm","menuCapabilities":["settings:read","audit:read","about","changelog","case:write","execution:read","project:create","project:read","case:read","asset:read","report:read","env:read","execution:write","project:write"]},
+    {"account":"qa-e2e-engineer","expectRole":"engineer","menuCapabilities":["settings:read","about","changelog","case:write","execution:read","project:read","case:read","asset:read","report:read","env:read","execution:write"]},
+    {"account":"qa-e2e-viewer","expectRole":"viewer","menuCapabilities":["settings:read","about","changelog","project:read","case:read","asset:read","report:read","env:read"]},
+    {"account":"qa-e2e-nobody","expectRole":"nobody","menuCapabilities":["about","changelog"]}
+  ]
+}

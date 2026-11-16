@@ -99,10 +99,19 @@ public class AccessControlService {
     /**
      * 当前登录用户的菜单能力集（v4.9.2 / OPT-08 / FR-49-32）：服务端按最高优先级全局角色
      * 求值，不信任前端传来的能力表；前端导航只按此数组做显隐。
+     *
+     * <p>v5.21.0 / FR-v5.21-02 / W71-03：**无全局角色时返回最小集**。
+     * 旧实现走到这里返回空数组——前端把空数组当"还没加载完"，于是侧栏一个字都不显示，
+     * 用户看到的是一个没有任何入口的页面（v5.21 调研 F-21-07）。现在明确给最小集：
+     * 只读「关于 / 版本迭代」，并且**不放大**（既不是全量，也不是空集）。
      */
     public List<String> currentMenuCapabilities() {
         long userId = TenantContext.requireUserId();
-        return PermissionMatrix.menuCapabilities(effectiveRole(userId, null));
+        RoleCode role = effectiveRole(userId, null);
+        if (role == null) {
+            return PermissionMatrix.minimalMenuCapabilities();
+        }
+        return PermissionMatrix.menuCapabilities(role);
     }
 
     /**

@@ -115,6 +115,13 @@ check_structure() {
   grep -qE '^run 60 list_reachability ' "$file" || { echo "STRUCT_FAIL 缺少步骤 60 list_reachability"; bad=1; }
   grep -qE '^run 61 frontend_contract ' "$file" || { echo "STRUCT_FAIL 缺少步骤 61 frontend_contract"; bad=1; }
   grep -qE '^run 62 list_state ' "$file" || { echo "STRUCT_FAIL 缺少步骤 62 list_state"; bad=1; }
+  # 63–66 为 v5.21.0 角色与同构门禁（只增不删）：删掉它们，角色边界与四工程一致性
+  # 就又回到"只有单测绿"的状态。
+  grep -qE '^run 63 role_matrix ' "$file" || { echo "STRUCT_FAIL 缺少步骤 63 role_matrix"; bad=1; }
+  grep -qE '^run 64 role_surface ' "$file" || { echo "STRUCT_FAIL 缺少步骤 64 role_surface"; bad=1; }
+  grep -qE '^run 65 project_matrix ' "$file" || { echo "STRUCT_FAIL 缺少步骤 65 project_matrix"; bad=1; }
+  grep -qE '^run 66 route_capability ' "$file" || { echo "STRUCT_FAIL 缺少步骤 66 route_capability"; bad=1; }
+  grep -qE '^run 67 case_soft_delete ' "$file" || { echo "STRUCT_FAIL 缺少步骤 67 case_soft_delete"; bad=1; }
   return "$bad"
 
 }
@@ -530,6 +537,28 @@ run 61 frontend_contract "python3 tools/check_menu_capability_contract.py && pyt
 #    另加复用度机检：≥5 个页面用同一个列表壳，且至少 3 个接了空态出口动作。
 #    两段都有 self-test（注入覆盖层 / 抬阈值），必须能判红。
 run 62 list_state "node scripts/ux-probes/list-state.mjs --routes /cases,/runs,/test-reports,/execution-plans && node scripts/ux-probes/list-state.mjs --routes /cases --self-test && node scripts/ux-probes/entity-picker.mjs && node scripts/ux-probes/login-brand.mjs && node scripts/ux-probes/text-scan.mjs --routes /runs,/reports,/test-reports,/cases,/environment/collect --regex 'PARTIAL|REVOKED|pytest_exit|UNBOUND|BOUND_UNVERIFIED' && python3 tools/check_list_state_usage.py && python3 tools/check_list_state_usage.py --self-test"
+
+# ---- v5.21.0 角色与同构门禁（63–66）---------------------------------------
+# 63 角色 × 接口期望码表（NFR-v5.21-03）：4 角色 × 9 接口 = 36 格。单测里的权限矩阵
+#    写错一个格子会跟着改一起绿；这里用**真实账号打真实接口**，错一格就红。
+#    前置：bash scripts/seed-qa-accounts.sh（幂等，见脚本内说明）。
+run 63 role_matrix "node scripts/ux-probes/role-matrix.mjs && node scripts/ux-probes/role-matrix.mjs --self-test"
+
+# 64 角色可见面（FR-v5.21-03 判据 1/2/4/5）：viewer 写按钮数必须为 0、直达受限路由必须
+#    落 403 且文案带角色名。两条都带 self-test（注入假按钮 / 抹掉角色行）。
+run 64 role_surface "node scripts/ux-probes/role-buttons.mjs && node scripts/ux-probes/role-buttons.mjs --self-test && node scripts/ux-probes/role-routes.mjs && node scripts/ux-probes/role-routes.mjs --self-test"
+
+# 65 工程 × 页面矩阵（FR-v5.21-04/05）：每格"表高 ≥300 或空态可见"+"首行可命中"；
+#    另加用例集行内操作 4 状态 × 3 视口（窄屏抽屉覆盖按设计豁免）。
+run 65 project_matrix "node scripts/ux-probes/project-matrix.mjs && node scripts/ux-probes/project-matrix.mjs --self-test && node scripts/ux-probes/set-row-actions.mjs --project '$QA_SET_PROJECT' && node scripts/ux-probes/set-row-actions.mjs --project '$QA_SET_PROJECT' --self-test"
+
+# 66 路由/导航能力白名单（FR-v5.21-03 判据 7、FR-v5.21-02）：每条非公开路由必须有
+#    meta.capability，每个导航叶子必须有 capability 或 public；两条都带 self-test。
+run 66 route_capability "python3 tools/check_route_capability.py && python3 tools/check_route_capability.py --self-test && python3 tools/check_nav_capability.py && python3 tools/check_nav_capability.py --self-test"
+
+# 67 用例软删（FR-v5.21-03 判据 9）：用户删除必须软删，物理删除只允许"撤销自己刚插入的行"
+#    （需就地写 soft-delete-exempt 并说明理由）。静态扫描能挡住藏在回滚分支里的物理删。
+run 67 case_soft_delete "python3 tools/check_case_soft_delete.py && python3 tools/check_case_soft_delete.py --self-test"
 
 printf '\nGATES_RESULT FAILS=%s UNJUDGED=%s\n' "$FAILS" "${UNJUDGED:-0}"
 

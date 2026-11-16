@@ -1,0 +1,31 @@
+工程,类型,页面,路径,行数,表高,首行可命中,空态,判定
+EHT pytest 用例库工程,pytest-suite,用例库,/cases,20,524,true,-,PASS
+EHT pytest 用例库工程,pytest-suite,用例集,/cases/sets,0,311,-,有,仅验空态
+EHT pytest 用例库工程,pytest-suite,测试资产,/assets,4,44,false,-,FAIL
+EHT pytest 用例库工程,pytest-suite,环境采集,/environment/collect,10,604,false,-,FAIL
+EHT pytest 用例库工程,pytest-suite,执行计划,/execution-plans,0,272,-,有,仅验空态
+EHT pytest 用例库工程,pytest-suite,执行报告,/reports,3,637,true,-,PASS
+演示项目-Pytest,standard,用例库,/cases,12,524,true,-,PASS
+演示项目-Pytest,standard,用例集,/cases/sets,0,311,-,有,仅验空态
+演示项目-Pytest,standard,测试资产,/assets,1,44,false,-,FAIL
+演示项目-Pytest,standard,环境采集,/environment/collect,0,187,-,-,FAIL
+演示项目-Pytest,standard,执行计划,/execution-plans,0,272,-,有,仅验空态
+演示项目-Pytest,standard,执行报告,/reports,6,637,true,-,PASS
+ED202 公共用例库,standard,用例库,/cases,20,524,true,-,PASS
+ED202 公共用例库,standard,用例集,/cases/sets,7,364,true,-,PASS
+ED202 公共用例库,standard,测试资产,/assets,0,44,-,有,仅验空态
+ED202 公共用例库,standard,环境采集,/environment/collect,0,187,-,-,FAIL
+ED202 公共用例库,standard,执行计划,/execution-plans,0,272,-,有,仅验空态
+ED202 公共用例库,standard,执行报告,/reports,0,681,-,有,仅验空态
+NODX-03 fixture,standard,用例库,/cases,5,524,true,-,PASS
+NODX-03 fixture,standard,用例集,/cases/sets,0,311,-,有,仅验空态
+NODX-03 fixture,standard,测试资产,/assets,0,44,-,有,仅验空态
+NODX-03 fixture,standard,环境采集,/environment/collect,10,604,false,-,FAIL
+NODX-03 fixture,standard,执行计划,/execution-plans,0,272,-,有,仅验空态
+NODX-03 fixture,standard,执行报告,/reports,20,637,true,-,PASS
+演示项目-RobotFramework,standard,用例库,/cases,20,524,true,-,PASS
+演示项目-RobotFramework,standard,用例集,/cases/sets,0,311,-,有,仅验空态
+演示项目-RobotFramework,standard,测试资产,/assets,4,44,false,-,FAIL
+演示项目-RobotFramework,standard,环境采集,/environment/collect,0,187,-,-,FAIL
+演示项目-RobotFramework,standard,执行计划,/execution-plans,0,272,-,有,仅验空态
+演示项目-RobotFramework,standard,执行报告,/reports,3,637,true,-,PASS

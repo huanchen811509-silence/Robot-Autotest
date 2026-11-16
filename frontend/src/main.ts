@@ -3,6 +3,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
 import { i18n } from './locales'
+import { can } from './directives/can'
 // fonts.css 由 tools/subset_font.py 生成：三片 woff2 + unicode-range 分包 + font-display: swap。
 // 放在 theme.css 之前，保证首帧解析 @font-face 时语义变量也已就位。
 import './styles/fonts.css'
@@ -19,4 +20,6 @@ setActivePinia(pinia)
 app.use(pinia)
 app.use(router)
 app.use(i18n)
+// v5.21.0 / FR-v5.21-03：写操作按角色显隐的统一入口（判据与服务端能力集同源）。
+app.directive('can', can)
 app.mount('#app')

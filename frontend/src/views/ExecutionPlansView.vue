@@ -315,6 +315,7 @@ onMounted(async () => {
         <p class="muted run-id-hint" data-testid="run-id-hint">{{ t('executionPlans.runIdRule') }}</p>
       </div>
       <button
+        v-can="'execution:write'"
         class="btn btn-primary"
         type="button"
         :disabled="!canStart"

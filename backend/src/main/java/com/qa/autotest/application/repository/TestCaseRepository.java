@@ -54,7 +54,18 @@ public interface TestCaseRepository {
 
     void update(TestCase testCase, Long operatorId);
 
-    void delete(long projectId, long id);
+    /**
+     * 删除（v5.21.0 / FR-v5.21-03：**软删除**，置 `deleted_at`，不物理删）。
+     *
+     * @param operatorId 操作人，落 `deleted_by`；可为 null（系统任务）
+     */
+    void delete(long projectId, long id, Long operatorId);
+
+    /** 同编号的已软删行 id；用于「删了又想建回来」时复活原行（唯一键仍被它占着）。 */
+    Optional<Long> findSoftDeletedId(long projectId, String caseCode);
+
+    /** 复活一行软删用例（清 `deleted_at`/`deleted_by`）。 */
+    void restore(long projectId, long id, Long operatorId);
 
     List<TestCaseStep> steps(long testCaseId);
 

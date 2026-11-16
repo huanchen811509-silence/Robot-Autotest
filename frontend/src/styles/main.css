@@ -1154,6 +1154,31 @@ select option:disabled {
   min-height: 0;
 }
 
+/* v5.21.0 / FR-v5.21-04 / W71-07：资产页的表格被封进 AssetWorkspace，
+ * 高度链比别的列表页多一层容器——`.page.is-list > .list-fill` 这条选择器
+ * 命中不到里层，于是表格塌成 44px（4 行数据挤在一条缝里，首行点不到）。
+ * 这里把中间那层也接上，判据是「4 个工程的资产页首行都可命中」（探针 project-matrix）。 */
+.page.is-list > .asset-workspace {
+  flex: 1 1 auto;
+  /* min-height 用 0 而不是给个下限：这一层是"容器"，有下限会让短视口下整页滚动；
+     需要"别塌成一条线"的是里面的 .list-fill（已有 240px 下限）。 */
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.page.is-list > .asset-workspace > .list-fill {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.page.is-list > .asset-workspace > .list-fill > .data-table {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 /* ============ v2.3 / UI-04：顶栏四段 + 28px 栅格 ============ */
 /* 这一段解决的是「10 个元素等距平铺、读不出亲疏关系」：旧顶栏统一 gap:10px，
    而  在样式里**没有任何定义**——模板靠双写 class="app-project app-lang"

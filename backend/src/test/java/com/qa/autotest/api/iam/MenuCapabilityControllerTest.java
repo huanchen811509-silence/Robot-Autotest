@@ -71,11 +71,14 @@ class MenuCapabilityControllerTest {
     }
 
     @Test
-    @DisplayName("ADMIN：9 个能力全下发（含 execution:read/project:create）")
+    @DisplayName("ADMIN：16 个能力全下发（含 5 个只读码与 execution:write/project:write）")
     void adminCapabilities() throws Exception {
         asRole(1L, "admin");
+        // v5.21.0 / W71-03~05：顺序与 MENU_CAPABILITIES 完全一致，多一个少一个都判红。
         assertThat(capabilities()).containsExactly("settings:read", "ai:config", "user:write",
-                "audit:read", "about", "changelog", "case:write", "execution:read", "project:create");
+                "audit:read", "about", "changelog", "case:write", "execution:read",
+                "project:create", "project:read", "case:read", "asset:read", "report:read",
+                "env:read", "execution:write", "project:write");
     }
 
     @Test
@@ -83,7 +86,9 @@ class MenuCapabilityControllerTest {
     void pmCapabilities() throws Exception {
         asRole(2L, "pm");
         assertThat(capabilities()).containsExactly("settings:read", "audit:read", "about",
-                "changelog", "case:write", "execution:read", "project:create");
+                "changelog", "case:write", "execution:read", "project:create",
+                "project:read", "case:read", "asset:read", "report:read", "env:read",
+                "execution:write", "project:write");
     }
 
     @Test
@@ -91,14 +96,16 @@ class MenuCapabilityControllerTest {
     void engineerCapabilities() throws Exception {
         asRole(3L, "engineer");
         assertThat(capabilities()).containsExactly("settings:read", "about", "changelog", "case:write",
-                "execution:read");
+                "execution:read", "project:read", "case:read", "asset:read", "report:read",
+                "env:read", "execution:write");
     }
 
     @Test
     @DisplayName("VIEWER：仅 settings:read/about/changelog")
     void viewerCapabilities() throws Exception {
         asRole(4L, "viewer");
-        assertThat(capabilities()).containsExactly("settings:read", "about", "changelog");
+        assertThat(capabilities()).containsExactly("settings:read", "about", "changelog",
+                "project:read", "case:read", "asset:read", "report:read", "env:read");
     }
 
     // ------------------------------------------------------------------ 服务端逐页鉴权（FR-49-33）

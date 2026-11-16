@@ -81,7 +81,7 @@ public class TestCaseRepositoryJdbc implements TestCaseRepository {
     public PageResult<TestCase> page(long projectId, String keyword, String domain, String priority,
                                      String reviewStatus, String capability, String safetyLevel,
                                      PageQuery paging) {
-        StringBuilder where = new StringBuilder(" WHERE project_id = ?");
+        StringBuilder where = new StringBuilder(" WHERE project_id = ? AND deleted_at IS NULL");
         List<Object> args = new ArrayList<>();
         args.add(projectId);
         if (keyword != null && !keyword.isBlank()) {
@@ -137,16 +137,45 @@ public class TestCaseRepositoryJdbc implements TestCaseRepository {
 
     @Override
     public Optional<TestCase> find(long projectId, long id) {
-        String sql = SELECT + " WHERE project_id = ? AND id = ?";
+        String sql = SELECT + " WHERE project_id = ? AND id = ? AND deleted_at IS NULL";
         TenantGuard.requireProjectScope(sql, "test_case");
         return JdbcSupport.first(jdbc.query(sql, MAPPER, projectId, id));
     }
 
     @Override
     public Optional<TestCase> findByCode(long projectId, String caseCode) {
-        String sql = SELECT + " WHERE project_id = ? AND case_code = ?";
+        String sql = SELECT + " WHERE project_id = ? AND case_code = ? AND deleted_at IS NULL";
         TenantGuard.requireProjectScope(sql, "test_case");
         return JdbcSupport.first(jdbc.query(sql, MAPPER, projectId, caseCode));
+    }
+
+    /**
+     * 同编号的**已软删**行 id（v5.21.0 / FR-v5.21-03）。
+     *
+     * <p>为什么需要它：`uk_test_case_project_code` 是物理唯一键，软删行仍然占着这个编号。
+     * 用户删掉 X 再想建回 X（或重新导入同一批）时，若直接 insert 会撞唯一键报 500/冲突，
+     * 而按编号又查不到可见行——用户会看到「编号已存在」却找不到它。这里把这种情况
+     * 变成「复活那一行」。
+     */
+    @Override
+    public Optional<Long> findSoftDeletedId(long projectId, String caseCode) {
+        String sql = """
+                SELECT id FROM test_case
+                 WHERE project_id = ? AND case_code = ? AND deleted_at IS NOT NULL
+                 LIMIT 1
+                """;
+        TenantGuard.requireProjectScope(sql, "test_case");
+        return JdbcSupport.first(jdbc.queryForList(sql, Long.class, projectId, caseCode));
+    }
+
+    @Override
+    public void restore(long projectId, long id, Long operatorId) {
+        String sql = """
+                UPDATE test_case SET deleted_at = NULL, deleted_by = NULL, updated_by = ?
+                 WHERE project_id = ? AND id = ?
+                """;
+        TenantGuard.requireProjectScope(sql, "test_case");
+        jdbc.update(sql, operatorId, projectId, id);
     }
 
     @Override
@@ -197,22 +226,22 @@ public class TestCaseRepositoryJdbc implements TestCaseRepository {
     }
 
     @Override
-    public void delete(long projectId, long id) {
-        String delSteps = """
-                DELETE FROM test_case_step WHERE test_case_id = ?
-                  AND test_case_id IN (SELECT id FROM test_case WHERE project_id = ? AND id = ?)
-                """;
-        TenantGuard.requireProjectScope(delSteps, "test_case_step");
-        jdbc.update(delSteps, id, projectId, id);
+    public void delete(long projectId, long id, Long operatorId) {
+        // v5.21.0 / FR-v5.21-03 判据 8/9（大师 2026-11-16 拍板）：**软删除**，不物理删。
+        // 步骤（test_case_step）与内容全部保留——全局公共用例池还要能按编号查到它；
+        // 只从用例集成员关系里摘掉（test_set_item 是纯关联，留着会让用例集继续显示已删用例）。
         String delItems = """
                 DELETE FROM test_set_item WHERE test_case_id = ?
                   AND test_case_id IN (SELECT id FROM test_case WHERE project_id = ? AND id = ?)
                 """;
         TenantGuard.requireProjectScope(delItems, "test_set_item");
         jdbc.update(delItems, id, projectId, id);
-        String delCase = "DELETE FROM test_case WHERE project_id = ? AND id = ?";
-        TenantGuard.requireProjectScope(delCase, "test_case");
-        jdbc.update(delCase, projectId, id);
+        String softDelete = """
+                UPDATE test_case SET deleted_at = CURRENT_TIMESTAMP(3), deleted_by = ?
+                 WHERE project_id = ? AND id = ? AND deleted_at IS NULL
+                """;
+        TenantGuard.requireProjectScope(softDelete, "test_case");
+        jdbc.update(softDelete, operatorId, projectId, id);
     }
 
     @Override
@@ -349,7 +378,8 @@ public class TestCaseRepositoryJdbc implements TestCaseRepository {
 
     @Override
     public long countByProject(long projectId) {
-        String sql = "SELECT COUNT(*) FROM test_case WHERE project_id = ?";
+        // v5.21.0 / FR-v5.21-03：软删行不计入项目用例数（卡片上的条数要与列表一致）。
+        String sql = "SELECT COUNT(*) FROM test_case WHERE project_id = ? AND deleted_at IS NULL";
         TenantGuard.requireProjectScope(sql, "test_case");
         Long count = jdbc.queryForObject(sql, Long.class, projectId);
         return count == null ? 0 : count;
@@ -357,14 +387,15 @@ public class TestCaseRepositoryJdbc implements TestCaseRepository {
 
     @Override
     public List<String> listCaseCodes(long projectId) {
-        String sql = "SELECT case_code FROM test_case WHERE project_id = ? ORDER BY case_code";
+        String sql = "SELECT case_code FROM test_case WHERE project_id = ? AND deleted_at IS NULL"
+                + " ORDER BY case_code";
         TenantGuard.requireProjectScope(sql, "test_case");
         return jdbc.queryForList(sql, String.class, projectId);
     }
 
     @Override
     public java.util.Map<Long, String> idToCode(long projectId) {
-        String sql = "SELECT id, case_code FROM test_case WHERE project_id = ?";
+        String sql = "SELECT id, case_code FROM test_case WHERE project_id = ? AND deleted_at IS NULL";
         TenantGuard.requireProjectScope(sql, "test_case");
         java.util.Map<Long, String> result = new java.util.LinkedHashMap<>();
         jdbc.query(sql, rs -> {
@@ -424,7 +455,8 @@ public class TestCaseRepositoryJdbc implements TestCaseRepository {
         // 空白串在库里既不等于 NULL 也不等于 ''，会被当成能力桶渲染出空标签，故按 trim 后判空
         String sql = """
                 SELECT capability, COUNT(*) AS cnt FROM test_case
-                 WHERE project_id = ? AND capability IS NOT NULL AND TRIM(capability) <> ''
+                 WHERE project_id = ? AND deleted_at IS NULL
+                   AND capability IS NOT NULL AND TRIM(capability) <> ''
                  GROUP BY capability ORDER BY cnt DESC, capability
                 """;
         TenantGuard.requireProjectScope(sql, "test_case");

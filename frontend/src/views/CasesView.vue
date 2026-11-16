@@ -53,6 +53,8 @@ import { EMPTY } from '@/utils/format'
 import { useServerSelection } from '@/composables/useServerSelection'
 import { useDraft, isDraftDirty } from '@/composables/useDraft'
 import { confirmAction } from '@/composables/useConfirm'
+// v5.21.0 / FR-v5.21-03 / W71-05：写操作按角色显隐（判据与服务端能力集同源）。
+import { useCan } from '@/composables/useCan'
 import {
   PRIORITIES,
   REVIEW_STATUSES,
@@ -660,6 +662,9 @@ const dataColumns = computed<Record<CaseColumnKey, DataTableColumns<TestCase>[nu
   },
 }))
 
+/** 写操作判定（v5.21.0 / W71-05）：行内按钮由模板里的 h() 渲染，用不了 v-can，走同一 composable。 */
+const { can } = useCan()
+
 const columns = computed<DataTableColumns<TestCase>>(() => [
   // v5.11.0 / FR-v5.11-01/02：行内 `expand` 已删除，详情统一走表格下方的 DetailDock。
   // 两套详情形态并存时，用户永远要先想「这次该点哪个箭头」。
@@ -693,7 +698,9 @@ const columns = computed<DataTableColumns<TestCase>>(() => [
     fixed: 'right',
     width: 240,
     render: (row) =>
-      h('div', { class: 'row-actions' }, [
+      // v5.21.0 / FR-v5.21-03：viewer 一个写按钮都不渲染——原来能点开编辑表单、保存才 403。
+      can('case:write')
+        ? h('div', { class: 'row-actions' }, [
         (row.reviewStatus === 'draft' || row.reviewStatus === 'rejected') &&
           h(
             NButton,
@@ -747,7 +754,8 @@ const columns = computed<DataTableColumns<TestCase>>(() => [
           },
           { default: () => t('common.delete') },
         ),
-      ]),
+      ])
+        : h('span', { class: 'row-actions row-actions--readonly' }, '—'),
   },
 ])
 
@@ -1257,12 +1265,13 @@ async function runCommit(): Promise<void> {
           {{ t('ui.columnSettings') }}
         </NButton>
         <NButton
+          v-can="'case:write'"
           :type="showForm ? 'default' : 'primary'"
           @click="showForm ? closeForm() : openCreateForm()"
         >
           {{ showForm ? t('common.cancel') : t('common.create') }}
         </NButton>
-        <NButton quaternary @click="showImport = !showImport">{{ t('cases.import.title') }}</NButton>
+        <NButton v-can="'case:write'" quaternary @click="showImport = !showImport">{{ t('cases.import.title') }}</NButton>
         <RouterLink v-slot="{ navigate }" to="/cases/sets" custom>
           <NButton quaternary @click="navigate">{{ t('caseSets.title') }}</NButton>
         </RouterLink>

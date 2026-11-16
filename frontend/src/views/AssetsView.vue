@@ -614,9 +614,12 @@ function turnPage(next: number): void {
       </form>
     </div>
 
-    <div class="list-fill">
+    <!-- v5.21.0 / FR-v5.21-04：外壳必须跟着页签走。
+         这两个 .list-fill 原来无条件渲染，各带 240px 最小高度——在「设备」页签下
+         白占 480px，把设备表压到 132px（4 行只露出 2 行）。表格 v-if 掉了，
+         容器却还在，是「表格塌陷」的另一半原因。 -->
+    <div v-if="tab === 'links' && !topologyMode" class="list-fill">
       <DataTable
-        v-if="tab === 'links' && !topologyMode"
         :columns="linkColumns"
         :data="links"
         :loading="loading"
@@ -651,9 +654,8 @@ function turnPage(next: number): void {
       租约只读（FR-v0.4-09）：搜索框与「新建」在这一页无意义——后端没有关键词参数，
       租约也只能由执行产生，所以工具栏里两个控件都隐掉，只留刷新。
     -->
-    <div class="list-fill">
+    <div v-if="tab === 'leases'" class="list-fill">
       <DataTable
-        v-if="tab === 'leases'"
         :columns="leaseColumns"
         :data="leases"
         :loading="loading"

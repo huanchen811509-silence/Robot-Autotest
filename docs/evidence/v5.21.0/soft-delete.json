@@ -1,0 +1,56 @@
+{
+  "project": 29,
+  "caseCode": "QA-DEL-35060798",
+  "caseId": 32574,
+  "before": 7,
+  "afterCreate": 8,
+  "afterDelete": 7,
+  "checks": [
+    {
+      "name": "建用例成功",
+      "ok": true,
+      "detail": "status=200 id=32574"
+    },
+    {
+      "name": "列表总数 +1",
+      "ok": true,
+      "detail": "7 → 8"
+    },
+    {
+      "name": "删除成功",
+      "ok": true,
+      "detail": "status=200"
+    },
+    {
+      "name": "列表总数回到原值",
+      "ok": true,
+      "detail": "8 → 7"
+    },
+    {
+      "name": "项目内列表查不到该编号",
+      "ok": true,
+      "detail": "total=0"
+    },
+    {
+      "name": "按 id 详情仍可打开（历史深链不悬空）",
+      "ok": true,
+      "detail": "status=200"
+    },
+    {
+      "name": "公共库用例删除后全局池仍可查到",
+      "ok": true,
+      "detail": "code=QA-PLAT-35061243 id=32575"
+    }
+  ],
+  "platform": {
+    "checked": true,
+    "caseCode": "QA-PLAT-35061243",
+    "caseId": 32575,
+    "created": true,
+    "deleted": true,
+    "foundInGlobalPool": true,
+    "globalTotal": 1,
+    "cleanupSql": "DELETE FROM test_case WHERE case_code = 'QA-PLAT-35061243';"
+  },
+  "fails": 0
+}

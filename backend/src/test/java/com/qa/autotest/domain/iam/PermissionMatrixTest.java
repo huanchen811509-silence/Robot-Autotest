@@ -212,17 +212,33 @@ class PermissionMatrixTest {
         // 含 ADMIN。此处的期望值按 PRD 口径同步：execution:read 授予 ADMIN/PM/ENGINEER
         // （⇄ EXECUTION:READ，VIEWER 也有读权限但执行态菜单按"能发起"收口，故不授）；
         // project:create 只授 ADMIN/PM（⇄ PROJECT:CREATE）。
-        matrix.put(RoleCode.ADMIN, Set.of(
+        // v5.21.0 / FR-v5.21-02/03（W71-03/04/05）：白名单制要求每个导航叶子声明能力，
+        // 于是把"只读"这档命名出来（project/case/asset/report/env:read），并补两类写能力
+        // （execution:write ⇄ EXECUTION:CREATE；project:write ⇄ PROJECT:UPDATE）。
+        // 授予口径与 MATRIX 同源：5 个只读码四角色都有；execution:write 除 VIEWER；
+        // project:write 只 ADMIN/PM（ENGINEER 不能改成员）。这里按真实矩阵同步，不是放宽。
+        java.util.Set<String> readOnly = java.util.Set.of(
+                "project:read", "case:read", "asset:read", "report:read", "env:read");
+        matrix.put(RoleCode.ADMIN, concat(Set.of(
                 "settings:read", "ai:config", "user:write", "audit:read", "about", "changelog",
-                "case:write", "execution:read", "project:create"));
-        matrix.put(RoleCode.PM, Set.of(
+                "case:write", "execution:read", "project:create", "execution:write",
+                "project:write"), readOnly));
+        matrix.put(RoleCode.PM, concat(Set.of(
                 "settings:read", "audit:read", "about", "changelog", "case:write",
-                "execution:read", "project:create"));
-        matrix.put(RoleCode.ENGINEER, Set.of(
-                "settings:read", "about", "changelog", "case:write", "execution:read"));
-        matrix.put(RoleCode.VIEWER, Set.of(
-                "settings:read", "about", "changelog"));
+                "execution:read", "project:create", "execution:write", "project:write"),
+                readOnly));
+        matrix.put(RoleCode.ENGINEER, concat(Set.of(
+                "settings:read", "about", "changelog", "case:write", "execution:read",
+                "execution:write"), readOnly));
+        matrix.put(RoleCode.VIEWER, concat(Set.of(
+                "settings:read", "about", "changelog"), readOnly));
         return matrix;
+    }
+
+    private static Set<String> concat(Set<String> head, Set<String> tail) {
+        Set<String> all = new java.util.HashSet<>(head);
+        all.addAll(tail);
+        return all;
     }
 
     static Stream<Arguments> menuCells() {
@@ -236,16 +252,16 @@ class PermissionMatrixTest {
     }
 
     @Test
-    @DisplayName("MENU 矩阵维度：4 角色 × 9 能力 = 36 格")
+    @DisplayName("MENU 矩阵维度：4 角色 × 16 能力 = 64 格")
     void menu矩阵维度() {
         assertThat(MENU_EXPECTED.keySet()).hasSize(4);
-        assertThat(PermissionMatrix.MENU_CAPABILITIES).hasSize(9);
-        assertThat(menuCells().count()).isEqualTo(36);
+        assertThat(PermissionMatrix.MENU_CAPABILITIES).hasSize(16);
+        assertThat(menuCells().count()).isEqualTo(64);
     }
 
     @ParameterizedTest(name = "{0} / {1} -> {2}")
     @MethodSource("menuCells")
-    @DisplayName("36 格逐格断言：menuAllows 与 menuCapabilities 口径一致")
+    @DisplayName("64 格逐格断言：menuAllows 与 menuCapabilities 口径一致")
     void menu逐格断言(RoleCode role, String capability, boolean expected) {
         assertThat(PermissionMatrix.menuAllows(role, capability))
                 .as("menuAllows %s / %s", role, capability).isEqualTo(expected);

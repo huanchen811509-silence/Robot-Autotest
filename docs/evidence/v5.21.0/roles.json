@@ -1,0 +1,40 @@
+{
+  "code": 0,
+  "codeName": "OK",
+  "message": "OK",
+  "data": [
+    {
+      "id": 1,
+      "code": "admin",
+      "name": "管理员",
+      "description": "平台管理员",
+      "builtIn": true,
+      "permissionsJson": null
+    },
+    {
+      "id": 2,
+      "code": "pm",
+      "name": "项目经理",
+      "description": "可管理自己项目的用例、资产与执行；可建项目",
+      "builtIn": true,
+      "permissionsJson": null
+    },
+    {
+      "id": 3,
+      "code": "engineer",
+      "name": "工程师",
+      "description": "可编写与执行用例、维护资产；不能建项目、不能管用户",
+      "builtIn": true,
+      "permissionsJson": null
+    },
+    {
+      "id": 4,
+      "code": "viewer",
+      "name": "只读访客",
+      "description": "只读：可看用例、报告与环境，不能做任何写操作",
+      "builtIn": true,
+      "permissionsJson": null
+    }
+  ],
+  "success": true
+}

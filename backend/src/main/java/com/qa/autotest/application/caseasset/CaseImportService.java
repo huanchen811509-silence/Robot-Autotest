@@ -571,15 +571,31 @@ public class CaseImportService {
         int imported = 0;
         try {
             for (ImportRow row : rows) {
+                Long resurrectId = null;
                 if (cases.codeExists(projectId, row.caseCode(), null)) {
-                    throw new BusinessException(ErrorCode.CONFLICT,
-                            "第 " + row.rowNum() + " 行编号已存在：" + row.caseCode());
+                    // v5.21.0 / FR-v5.21-03：软删行仍占唯一键 → 复活它继续导入，
+                    // 而不是报「编号已存在」把整批回滚（用户看不到那条被删的用例，
+                    // 只看到"已存在"会以为系统坏了）。
+                    var deletedId = cases.findSoftDeletedId(projectId, row.caseCode());
+                    if (deletedId.isEmpty()) {
+                        throw new BusinessException(ErrorCode.CONFLICT,
+                                "第 " + row.rowNum() + " 行编号已存在：" + row.caseCode());
+                    }
+                    resurrectId = deletedId.get();
+                    cases.restore(projectId, resurrectId, TenantContext.userId());
                 }
-                TestCase entity = new TestCase(null, projectId, row.caseCode().trim(), row.title(),
-                        row.category(), Priority.from(row.priority()).name(), row.precondition(),
-                        row.expected(), row.domainTag(), ReviewStatus.DRAFT.code(), "excel",
-                        row.capability(), row.description(), SafetyLevel.from(row.safetyLevel()).name());
-                long caseId = cases.insert(entity, TenantContext.userId());
+                TestCase entity = new TestCase(resurrectId, projectId, row.caseCode().trim(),
+                        row.title(), row.category(), Priority.from(row.priority()).name(),
+                        row.precondition(), row.expected(), row.domainTag(),
+                        ReviewStatus.DRAFT.code(), "excel", row.capability(), row.description(),
+                        SafetyLevel.from(row.safetyLevel()).name());
+                long caseId;
+                if (resurrectId != null) {
+                    cases.update(entity, TenantContext.userId());
+                    caseId = resurrectId;
+                } else {
+                    caseId = cases.insert(entity, TenantContext.userId());
+                }
                 Long operatorId = TenantContext.userId();
                 if (hasExtendedData(row)) {
                     cases.writeImportMetadata(projectId, caseId, new TestCaseRepository.ImportMetadata(

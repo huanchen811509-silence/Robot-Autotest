@@ -12,6 +12,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createApp, nextTick, type App } from 'vue'
 import { createPinia, setActivePinia, type Pinia } from 'pinia'
+import { seedMenuCapabilities } from '@/test/seedMenuCapabilities'
 import { i18n } from '@/locales'
 import { useAuthStore } from '@/stores/auth'
 import ExecutionPlansView from '@/views/ExecutionPlansView.vue'
@@ -150,6 +151,7 @@ beforeEach(() => {
 
   pinia = createPinia()
   setActivePinia(pinia)
+  seedMenuCapabilities()
   const auth = useAuthStore()
   auth.projectId = 93
   auth.user = {

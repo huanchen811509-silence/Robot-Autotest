@@ -90,7 +90,11 @@ public class UserService {
         }
         users.updateProfile(id, displayName, email, orgId, enabled, TenantContext.userId());
         if (roleIds != null) {
-            users.replaceRoles(id, defaultRoles(roleIds), TenantContext.userId());
+            // v5.21.0 / W71-02：**编辑时不做 viewer 兜底**。`defaultRoles` 的兜底语义只对
+            // 新建成立（新账号至少给个最小角色）；到了编辑，传 `[]` 是管理员的明确意图——
+            // 把角色清空（v5.21 判据要用"无全局角色账号"验证最小能力集，见 FR-02 判据 1）。
+            // 旧写法把 `[]` 当"没填"，于是清角色永远清不掉，nobody 账号实际一直是 viewer。
+            users.replaceRoles(id, roleIds, TenantContext.userId());
         }
         audit.record("user.update", "app_user", String.valueOf(id), "username=" + user.username());
         return get(id);

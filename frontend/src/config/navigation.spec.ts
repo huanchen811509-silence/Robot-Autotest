@@ -164,7 +164,10 @@ describe('v2.0 六域 IA 与能力驱动过滤（NAV-01 / FR-v2.0-07、08）', (
     const keys = visibleNavByCapabilities([]).flatMap((node) =>
       isGroup(node) ? [node.key, ...node.children.map((child) => child.key)] : [node.key],
     )
-    expect(keys).toContain('workbench-board')
+    // v5.21.0 / W71-04：白名单制下能力为空只剩 public 叶子（工作台落地面）。
+    // 工作台看板 / 项目工作区要 project:read，不再没声明就人人可见。
+    expect(keys).toContain('workbench-overview')
+    expect(keys).not.toContain('workbench-board')
     expect(keys).not.toContain('settings-audit')
     expect(keys).not.toContain('settings-platform')
     expect(keys).not.toContain('execution-runs')
@@ -306,8 +309,10 @@ describe('v2.3 菜单 IA 与执行/报告合并', () => {
       'execution-launch', 'execution-runs', 'execution-plans', 'execution-nodes',
       'execution-kernels',
     ])
+    // v5.21.0 / W71-04：白名单制要求每个叶子声明能力，报告态三页改用 report:read
+    // （四角色都有，所以 viewer 的报告入口不会因此消失）。
     const reportItems = execution.children.filter((child) => child.section === 'report')
-    expect(reportItems.every((child) => child.capability === undefined)).toBe(true)
+    expect(reportItems.every((child) => child.capability === 'report:read')).toBe(true)
   })
 
   it('角色矩阵：viewer 仍见 3 个报告项、不见 4 个运行项；engineer 7 项全见（V-UI-11）', () => {
@@ -513,10 +518,10 @@ describe('v4.11.0 全局菜单两级化', () => {
     const settings = onlyPublic.find((node) => node.key === 'global-settings') as NavGroup
     expect(settings).toBeTruthy()
     expect(settings.children.map((child) => child.key)).toEqual(['settings-about', 'settings-changelog'])
-    // 4 个内容组不含 capability，public 账号仍可见
-    expect(onlyPublic.map((node) => node.key)).toEqual([
-      'global-projects', 'global-cases', 'global-assets', 'global-templates', 'global-settings',
-    ])
+    // v5.21.0 / W71-04：白名单制下，4 个内容组的叶子全都有 capability，
+    // 只有 public 的账号连组都看不到（子项全被过滤 → 整组隐藏）。
+    // 旧断言写的是"4 个内容组不含 capability，所以 public 账号仍可见"——那正是黑名单口径。
+    expect(onlyPublic.map((node) => node.key)).toEqual(['global-settings'])
   })
 
   it('能力过滤后为空的组整组隐藏（不留空折叠组）', () => {

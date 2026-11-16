@@ -136,9 +136,12 @@ public class GroupService {
         if (EffectiveRole.parse(roleCode) == EffectiveRole.NONE) {
             throw new IllegalArgumentException("未知角色: " + roleCode);
         }
+        // v5.21.0 / FR-v5.21-06：这里原来写的是 `toUpperCase()`——正是它让
+        // project_group_role 里出现 `ENGINEER`，与 project_member_role 的 `viewer` 分裂成两种形态。
+        // 角色代码统一小写，判权侧 RoleCode.from / EffectiveRole.parse 本来就大小写兼容。
         jdbc.update("INSERT INTO project_group_role (project_id, group_id, role_code) "
                         + "VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE role_code = VALUES(role_code)",
-                projectId, groupId, roleCode.trim().toUpperCase(java.util.Locale.ROOT));
+                projectId, groupId, roleCode.trim().toLowerCase(java.util.Locale.ROOT));
         resolver.invalidate(projectId);
     }
 

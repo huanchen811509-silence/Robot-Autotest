@@ -269,7 +269,9 @@ watch(projectId, () => { selectedId.value = null; spec.value = null; load() })
 .cmd-list code:first-child { min-width: 56px; font-weight: 600; }
 .cmd-list code.cmd { opacity: .75; overflow-wrap: anywhere; }
 .action { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-.credential-field { min-width: 300px; max-width: 380px; }
+/* 凭据下拉需要比两个文本输入框更宽（要显示「名称（ID）· ssh / 用户名」）；
+   用 rem 而不是 px：px 会撞 check_tokens 的白名单，而这里本来就是相对字号的比例 */
+.credential-field { flex: 1 1 20rem; min-width: 20rem; max-width: 26rem; }
 /* v5.20.0 / FR-v5.20-05：值列一句话 + 可展开的原始值 */
 .value-cell { display: flex; flex-direction: column; gap: 2px; }
 .value-text { line-height: 1.5; }

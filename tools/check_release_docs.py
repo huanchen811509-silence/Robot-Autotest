@@ -49,7 +49,11 @@ def detect_prefix(text, base):
 
     版本号不硬编码，避免目录改名后脚本失效。
     """
-    hits = re.findall(re.escape(base) + r"-(v[\d.]+)-\d+", text)
+    # v5.21.0 / W71-08：必须挡住 "NFR-v5.21-07" 这种"包含关系"——
+    # 旧写法 re.escape("FR") 会在 NFR 里也命中，于是 NFR-07/08 被当成两条 FR，
+    # 判成"孤儿 FR 未在 TEST-PLAN 覆盖"（误报）。
+    boundary = r"(?<![A-Za-z])" + re.escape(base)
+    hits = re.findall(boundary + r"-(v[\d.]+)-\d+", text)
     if not hits:
         return None
     most = max(set(hits), key=hits.count)
@@ -74,11 +78,12 @@ def extract_ids(text, prefix):
     按单条匹配会误报成孤儿，因此必须先展开。
     """
     found = set()
+    # 同上：编号前不能紧挨字母（避免 NFR-v5.21-07 被当成 FR-v5.21-07）
+    boundary = r"(?<![A-Za-z])" + re.escape(prefix)
 
     # 区间：prefix-NN [~/-] M[、, ｜] ...
     for m in re.finditer(
-        re.escape(prefix) + r"-(\d+)\s*[~～]\s*(\d+)|"
-        + re.escape(prefix) + r"-(\d+)-(\d+)",
+        boundary + r"-(\d+)\s*[~～]\s*(\d+)",
         text,
     ):
         a = m.group(1) or m.group(3)
@@ -93,7 +98,7 @@ def extract_ids(text, prefix):
                 found.add("{0}-{1:0{2}d}".format(prefix, i, width))
 
     # 单条
-    for m in re.finditer(re.escape(prefix) + r"-(\d+)", text):
+    for m in re.finditer(boundary + r"-(\d+)", text):
         n = m.group(1)
         found.add("{0}-{1}".format(prefix, n))
 

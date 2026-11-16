@@ -61,8 +61,23 @@ export interface NavLeaf {
   section?: 'run' | 'report'
   /** 旧口径：仅管理员可见。保留给 v1.0 的审计入口，新增项一律用 capability。 */
   adminOnly?: boolean
-  /** v2.0 能力键（`resource:action`）；不填 = 所有登录用户可见。 */
+  /**
+   * v2.0 能力键（`resource:action`）。
+   *
+   * v5.21.0 / FR-v5.21-02 / W71-04 起改为**白名单制**：叶子必须二选一——
+   * 声明 `capability`，或声明 `public: true`；**两者都没有 = 不可见**。
+   * 旧口径是"不填 = 所有登录用户可见"，那就是黑名单：新增叶子忘了写能力，
+   * 结果是所有角色都看得见（安全默认值反了）。机检 `tools/check_nav_capability.py` 守这条。
+   */
   capability?: string
+  /**
+   * v5.21.0 / W71-04：公开叶子（对所有已登录用户可见，不需要任何能力码）。
+   *
+   * 仅用于「不含业务数据」的入口（工作台落地页、关于、版本迭代、我的设置）。
+   * 与 `capability: 'public'` 等价，保留两种写法是因为设置项数组来自 `settingsNav.ts`，
+   * 那里用的是字符串口径。
+   */
+  public?: boolean
 }
 
 /** 分组节点：只有子项，自身不可导航。 */
@@ -72,6 +87,11 @@ export interface NavGroup {
   icon: IconName
   adminOnly?: boolean
   capability?: string
+  /**
+   * v5.21.0 / W71-04：分组声明 public 相当于"无条件显示组本身"，子项仍各自判。
+   * 常见用法是给"整组公开"的容器用；不声明时分组按容器规则处理（子项全被过滤才隐藏）。
+   */
+  public?: boolean
   children: NavLeaf[]
 }
 
@@ -156,6 +176,9 @@ export const GLOBAL_NAVIGATION: NavNode[] = [
         labelKey: 'menu.globalProjectsAll',
         icon: 'dashboard',
         path: '/g/projects',
+        // v5.21.0 / W71-04：白名单制下每个叶子都要有码。「全部项目」是只读列表，
+        // 用 project:read（四角色都有），而不是复用 settings:read。
+        capability: 'project:read',
         // W57-09：裸 `/g/projects` 按前缀会命中 `/g/projects/new`，不排除就会
         // 「点新建项目、全部项目也跟着亮」。exclude 按分段边界比较，不影响本项自身。
         exclude: ['/g/projects/new'],
@@ -171,6 +194,7 @@ export const GLOBAL_NAVIGATION: NavNode[] = [
         icon: 'users',
         path: '/g/projects',
         query: { scope: 'mine' },
+        capability: 'project:read',
       },
       {
         // W57-09：独立 path `/g/projects/new`（不复用项目树的 `/projects/new`），
@@ -195,6 +219,7 @@ export const GLOBAL_NAVIGATION: NavNode[] = [
         icon: 'cases',
         path: '/g/cases',
         defaultOf: true,
+        capability: 'case:read',
       },
       {
         // v4.11.0 / FR-v4.11-26：把页内 `<details class="batches">` 提级为独立分支。
@@ -203,6 +228,7 @@ export const GLOBAL_NAVIGATION: NavNode[] = [
         icon: 'download',
         path: '/g/cases',
         query: { view: 'imports' },
+        capability: 'case:read',
       },
       {
         // W57-09：全局用例集二级入口。
@@ -212,6 +238,7 @@ export const GLOBAL_NAVIGATION: NavNode[] = [
         labelKey: 'w57.nav.globalCaseSets',
         icon: 'cases',
         path: '/g/case-sets',
+        capability: 'case:read',
       },
     ],
   },
@@ -227,6 +254,7 @@ export const GLOBAL_NAVIGATION: NavNode[] = [
         path: '/g/assets',
         query: { tab: 'devices' },
         alsoMatch: ['/g/assets/'],
+        capability: 'asset:read',
         // 裸 `/g/assets` 与 `/g/assets/:id` 都落在「设备」——另两个页签必须靠 query 才亮。
         defaultOf: true,
       },
@@ -236,6 +264,7 @@ export const GLOBAL_NAVIGATION: NavNode[] = [
         icon: 'credential',
         path: '/g/assets',
         query: { tab: 'credentials' },
+        capability: 'asset:read',
       },
     ],
   },
@@ -250,6 +279,7 @@ export const GLOBAL_NAVIGATION: NavNode[] = [
         icon: 'boxes',
         path: '/g/templates',
         query: { kind: 'builtin' },
+        capability: 'asset:read',
         // v5.10.0 / W60-15：`alsoMatch: '/g/templates/'` 会把 `/g/templates/new` 也算进来，
         // 出现「点模板向导、内置模板也亮」。与项目组同一处理：按分段边界排除。
         alsoMatch: ['/g/templates/'],
@@ -262,6 +292,7 @@ export const GLOBAL_NAVIGATION: NavNode[] = [
         icon: 'copy',
         path: '/g/templates',
         query: { kind: 'custom' },
+        capability: 'asset:read',
       },
       {
         // v5.10.0 / FR-v5.10-05：新建模板向导。一级组数不变、叶数 +1（W60-15 判据）。
@@ -269,6 +300,7 @@ export const GLOBAL_NAVIGATION: NavNode[] = [
         labelKey: 'templateWizard.nav',
         icon: 'plus',
         path: '/g/templates/new',
+        capability: 'asset:read',
       },
     ],
   },
@@ -289,6 +321,9 @@ export const GLOBAL_NAVIGATION: NavNode[] = [
         labelKey: 'menu.globalIamRoles',
         icon: 'audit',
         path: '/g/iam/roles',
+        // 组级已有 user:write，叶子仍逐条声明：白名单机检按叶子扫，
+        // 「靠祖辈能力兜住」会让同组新增叶子时漏掉声明。
+        capability: 'user:write',
       },
       {
         key: 'global-iam-groups',
@@ -296,6 +331,7 @@ export const GLOBAL_NAVIGATION: NavNode[] = [
         icon: 'users',
         path: '/g/iam/groups',
         alsoMatch: ['/g/iam/groups/'],
+        capability: 'user:write',
       },
       {
         key: 'global-iam-users',
@@ -303,6 +339,7 @@ export const GLOBAL_NAVIGATION: NavNode[] = [
         icon: 'admin',
         path: '/g/iam/users',
         alsoMatch: ['/g/iam/users/'],
+        capability: 'user:write',
       },
       {
         key: 'global-iam-projects',
@@ -310,6 +347,7 @@ export const GLOBAL_NAVIGATION: NavNode[] = [
         icon: 'link',
         path: '/g/iam/projects',
         alsoMatch: ['/g/iam/projects/'],
+        capability: 'user:write',
       },
     ],
   },
@@ -339,6 +377,9 @@ export const NAVIGATION: NavNode[] = [
         labelKey: 'menu.workbenchOverview',
         icon: 'boxes',
         path: '/workbench',
+        // v5.21.0 / W71-04：登录后的落地面，不含任何业务数据，对所有已登录用户可见。
+        // 不给 public 的话，无全局角色的账号一登录就被自己的落地页挡在 403（F-21-08）。
+        public: true,
       },
       {
         // v4.1 / FR-v4.1-05：项目工作区导出 / 导入 / 任务中心。
@@ -346,12 +387,14 @@ export const NAVIGATION: NavNode[] = [
         labelKey: 'menu.projectWorkspace',
         icon: 'download',
         path: '/workspace',
+        capability: 'project:read',
       },
       {
         key: 'workbench-board',
         labelKey: 'menu.overview',
         icon: 'reports',
         path: '/overview',
+        capability: 'project:read',
       },
       {
         // v4.3.0 / FR-v4.3-01：项目创建从「系统设置」口径独立出来。
@@ -435,6 +478,9 @@ export const NAVIGATION: NavNode[] = [
         icon: 'reports',
         path: '/reports',
         exclude: ['/reports/templates'],
+        // v5.21.0 / W71-04：报告态三页用 report:read（四角色都有）。
+        // 它们此前"无能力 = 所有人可见"，白名单制下必须显式声明，否则 viewer 会静默丢失报告入口。
+        capability: 'report:read',
         section: 'report',
       },
       {
@@ -442,6 +488,7 @@ export const NAVIGATION: NavNode[] = [
         labelKey: 'menu.reportTemplates',
         icon: 'copy',
         path: '/reports/templates',
+        capability: 'report:read',
         section: 'report',
       },
       {
@@ -451,6 +498,7 @@ export const NAVIGATION: NavNode[] = [
         labelKey: 'menu.externalReports',
         icon: 'external',
         path: '/test-reports',
+        capability: 'report:read',
         section: 'report',
       },
     ],
@@ -466,6 +514,7 @@ export const NAVIGATION: NavNode[] = [
         icon: 'cases',
         path: '/cases',
         alsoMatch: ['/editor', '/viewer'],
+        capability: 'case:read',
         // v5.9.0 / FR-v5.9-01：`/cases/sets` 是同级叶子，靠「精确 path 优先于前缀」
         // + 本项的默认叶子身份消歧；不再需要手写 exclude。
         defaultOf: true,
@@ -475,6 +524,7 @@ export const NAVIGATION: NavNode[] = [
         labelKey: 'menu.casesSets',
         icon: 'cases',
         path: '/cases/sets',
+        capability: 'case:read',
         // 集合详情 `/cases/sets/:id` 点亮本项而不是「用例清单」。
         alsoMatch: ['/cases/sets/'],
       },
@@ -492,6 +542,7 @@ export const NAVIGATION: NavNode[] = [
         path: '/assets',
         query: { tab: 'devices' },
         alsoMatch: ['/assets/'],
+        capability: 'asset:read',
         defaultOf: true,
       },
       {
@@ -500,6 +551,7 @@ export const NAVIGATION: NavNode[] = [
         icon: 'link',
         path: '/assets',
         query: { tab: 'links' },
+        capability: 'asset:read',
       },
       {
         key: 'assets-credentials',
@@ -507,6 +559,7 @@ export const NAVIGATION: NavNode[] = [
         icon: 'credential',
         path: '/assets',
         query: { tab: 'credentials' },
+        capability: 'asset:read',
       },
     ],
   },
@@ -517,9 +570,9 @@ export const NAVIGATION: NavNode[] = [
     labelKey: 'menu.environment',
     icon: 'system',
     children: [
-      { key: 'environment-overview', labelKey: 'menu.envOverview', icon: 'dashboard', path: '/environment/overview' },
-      { key: 'environment-collect', labelKey: 'menu.envCollect', icon: 'database', path: '/environment/collect' },
-      { key: 'environment-topology', labelKey: 'menu.envTopology', icon: 'link', path: '/environment/topology' },
+      { key: 'environment-overview', labelKey: 'menu.envOverview', icon: 'dashboard', path: '/environment/overview', capability: 'env:read' },
+      { key: 'environment-collect', labelKey: 'menu.envCollect', icon: 'database', path: '/environment/collect', capability: 'env:read' },
+      { key: 'environment-topology', labelKey: 'menu.envTopology', icon: 'link', path: '/environment/topology', capability: 'env:read' },
         {
         // v4.3.0 / FR-v4.3-07：连接与拓扑（只读派生页），数据来自 `/asset-info`。
         // 不做连接编辑：连接由链路定义，编辑入口仍在「测试资产 → 链路」。
@@ -527,6 +580,7 @@ export const NAVIGATION: NavNode[] = [
         labelKey: 'menu.envConnections',
         icon: 'link',
         path: '/environment/connections',
+        capability: 'env:read',
       },
     ],
   },
@@ -541,16 +595,17 @@ export const NAVIGATION: NavNode[] = [
     labelKey: 'menu.ops',
     icon: 'audit',
     children: [
-      { key: 'ops-health', labelKey: 'menu.opsHealth', icon: 'info', path: '/ops/health' },
-      { key: 'ops-backup', labelKey: 'menu.opsBackup', icon: 'database', path: '/ops/backup' },
-      { key: 'ops-archive', labelKey: 'menu.opsArchive', icon: 'search', path: '/ops/archive' },
-      { key: 'ops-upgrade', labelKey: 'menu.opsUpgrade', icon: 'download', path: '/ops/upgrade' },
+      { key: 'ops-health', labelKey: 'menu.opsHealth', icon: 'info', path: '/ops/health', capability: 'settings:read' },
+      { key: 'ops-backup', labelKey: 'menu.opsBackup', icon: 'database', path: '/ops/backup', capability: 'settings:read' },
+      { key: 'ops-archive', labelKey: 'menu.opsArchive', icon: 'search', path: '/ops/archive', capability: 'settings:read' },
+      { key: 'ops-upgrade', labelKey: 'menu.opsUpgrade', icon: 'download', path: '/ops/upgrade', capability: 'settings:read' },
       {
         // v4.9.0 / FR-v4.9-01：存量同步。v5.16.0 起挂在「运维」组（原维护组同位置）。
         key: 'ops-sync',
         labelKey: 'menu.mntSync',
         icon: 'download',
         path: '/sync',
+        capability: 'settings:read',
       },
     ],
   },
@@ -857,15 +912,18 @@ export function roleFromCodes(codes: string[] | undefined | null): NavRole {
  * 不再有导出的常量表，源码中也不再出现该表的字面量。
  */
 export function capabilitiesForRole(role: NavRole): string[] {
+  // v5.21.0 / W71-04：补齐 5 个只读码（project/case/asset/report/env），与后端
+  // `MENU_CAPABILITIES` 的授予口径一致。这张表只服务"能力集还没拿到"的兜底场景
+  // （单测 / 命令面板）；**导航渲染与路由守卫已经改读服务端能力集**，不再以此为准。
   switch (role) {
     case 'admin':
-      return ['execution:read', 'asset:read', 'audit:read', 'settings:read', 'user:write', 'case:write', 'ai:config', 'project:create']
+      return ['execution:read', 'asset:read', 'audit:read', 'settings:read', 'user:write', 'case:write', 'ai:config', 'project:create', 'project:read', 'case:read', 'report:read', 'env:read']
     case 'pm':
-      return ['execution:read', 'asset:read', 'settings:read', 'case:write', 'project:create']
+      return ['execution:read', 'asset:read', 'settings:read', 'case:write', 'project:create', 'project:read', 'case:read', 'report:read', 'env:read']
     case 'engineer':
-      return ['execution:read', 'asset:read', 'case:write']
+      return ['execution:read', 'asset:read', 'case:write', 'settings:read', 'project:read', 'case:read', 'report:read', 'env:read']
     case 'viewer':
-      return ['asset:read']
+      return ['asset:read', 'settings:read', 'project:read', 'case:read', 'report:read', 'env:read']
     default:
       return ['asset:read']
   }
@@ -893,7 +951,25 @@ export function capabilitySatisfied(
 }
 
 /**
- * 按能力谓词过滤节点（v4.9.2 / OPT-08 权威口径）。
+ * 导航叶子可见性（v5.21.0 / FR-v5.21-02 / W71-04：**白名单制**）。
+ *
+ * 与 {@link capabilitySatisfied} 的区别就在"什么都没声明"这一支：
+ * - 路由守卫用 `capabilitySatisfied`：路由没声明能力 = 不设卡（后端 403 兜底），保持旧行为；
+ * - 导航渲染用本函数：**没声明 = 不可见**。叶子是产品主动摆出来的入口，
+ *   忘了声明能力就不该默认对所有角色放行——否则新增一个管理页，忘了加码，
+ *   全公司都能从侧栏点进去。
+ */
+export function navNodeVisible(
+  node: { capability?: string; public?: boolean },
+  has: (capability: string) => boolean,
+): boolean {
+  if (node.public === true) return true
+  if (!node.capability) return false
+  return capabilitySatisfied(node.capability, has)
+}
+
+/**
+ * 按能力谓词过滤节点（v4.9.2 / OPT-08 权威口径；v5.21.0 改白名单制）。
  *
  * `has` 通常由 `stores/menuCapabilities.has` 提供；`capability === 'public'`
  * 对所有角色可见。分组自身能力不满足时整组隐藏，子项过滤后为空也整组隐藏。
@@ -903,7 +979,13 @@ export function filterNavByCapabilityPredicate(
   has: (capability: string) => boolean,
 ): NavNode[] {
   const keep = (node: NavNode): boolean => {
-    if (!capabilitySatisfied(node.capability, has)) return false
+    // v5.21.0 / W71-04：分组是"容器"，不声明能力时由子项决定存亡（子项全被过滤就整组消失）。
+    // 叶子相反：不声明 = 不可见。两类节点的默认值必须不一样——分组漏写不影响可见性，
+    // 叶子漏写才是真事故（把入口发给所有角色）。
+    if (isGroup(node) && !node.capability && node.public !== true) {
+      return node.adminOnly ? has('audit:read') : true
+    }
+    if (!navNodeVisible(node, has)) return false
     if (node.adminOnly && !has('audit:read')) return false
     return true
   }

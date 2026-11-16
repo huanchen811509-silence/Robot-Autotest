@@ -1,0 +1,377 @@
+{
+  "projectId": 77,
+  "rows": [
+    {
+      "state": "未选中集合",
+      "width": 1440,
+      "rows": 7,
+      "buttons": [
+        {
+          "label": "管理用例",
+          "hit": true,
+          "blocker": null
+        },
+        {
+          "label": "编辑",
+          "hit": true,
+          "blocker": null
+        },
+        {
+          "label": "立即执行",
+          "hit": true,
+          "blocker": null
+        },
+        {
+          "label": "删除",
+          "hit": true,
+          "blocker": null
+        }
+      ],
+      "allHit": true,
+      "drawer": false,
+      "ok": true,
+      "verdict": ""
+    },
+    {
+      "state": "未选中集合",
+      "width": 1366,
+      "rows": 7,
+      "buttons": [
+        {
+          "label": "管理用例",
+          "hit": true,
+          "blocker": null
+        },
+        {
+          "label": "编辑",
+          "hit": true,
+          "blocker": null
+        },
+        {
+          "label": "立即执行",
+          "hit": true,
+          "blocker": null
+        },
+        {
+          "label": "删除",
+          "hit": true,
+          "blocker": null
+        }
+      ],
+      "allHit": true,
+      "drawer": false,
+      "ok": true,
+      "verdict": ""
+    },
+    {
+      "state": "未选中集合",
+      "width": 1920,
+      "rows": 7,
+      "buttons": [
+        {
+          "label": "管理用例",
+          "hit": true,
+          "blocker": null
+        },
+        {
+          "label": "编辑",
+          "hit": true,
+          "blocker": null
+        },
+        {
+          "label": "立即执行",
+          "hit": true,
+          "blocker": null
+        },
+        {
+          "label": "删除",
+          "hit": true,
+          "blocker": null
+        }
+      ],
+      "allHit": true,
+      "drawer": false,
+      "ok": true,
+      "verdict": ""
+    },
+    {
+      "state": "已选中（成员面板）",
+      "width": 1440,
+      "rows": 7,
+      "buttons": [
+        {
+          "label": "管理用例",
+          "hit": true,
+          "blocker": null
+        },
+        {
+          "label": "编辑",
+          "hit": true,
+          "blocker": null
+        },
+        {
+          "label": "立即执行",
+          "hit": true,
+          "blocker": null
+        },
+        {
+          "label": "删除",
+          "hit": true,
+          "blocker": null
+        }
+      ],
+      "allHit": true,
+      "drawer": false,
+      "ok": true,
+      "verdict": ""
+    },
+    {
+      "state": "已选中（成员面板）",
+      "width": 1366,
+      "rows": 7,
+      "buttons": [
+        {
+          "label": "管理用例",
+          "hit": false,
+          "blocker": "SPAN.set-item-priority"
+        },
+        {
+          "label": "编辑",
+          "hit": false,
+          "blocker": "SPAN.script-tag"
+        },
+        {
+          "label": "立即执行",
+          "hit": false,
+          "blocker": "SPAN.set-item-script"
+        },
+        {
+          "label": "删除",
+          "hit": false,
+          "blocker": "SPAN.set-item-script"
+        }
+      ],
+      "allHit": false,
+      "drawer": true,
+      "ok": true,
+      "verdict": "（窄屏抽屉：列表被遮罩有意覆盖）"
+    },
+    {
+      "state": "已选中（成员面板）",
+      "width": 1920,
+      "rows": 7,
+      "buttons": [
+        {
+          "label": "管理用例",
+          "hit": true,
+          "blocker": null
+        },
+        {
+          "label": "编辑",
+          "hit": true,
+          "blocker": null
+        },
+        {
+          "label": "立即执行",
+          "hit": true,
+          "blocker": null
+        },
+        {
+          "label": "删除",
+          "hit": true,
+          "blocker": null
+        }
+      ],
+      "allHit": true,
+      "drawer": false,
+      "ok": true,
+      "verdict": ""
+    },
+    {
+      "state": "成员详情 Dock",
+      "width": 1440,
+      "rows": 7,
+      "buttons": [
+        {
+          "label": "管理用例",
+          "hit": true,
+          "blocker": null
+        },
+        {
+          "label": "编辑",
+          "hit": true,
+          "blocker": null
+        },
+        {
+          "label": "立即执行",
+          "hit": true,
+          "blocker": null
+        },
+        {
+          "label": "删除",
+          "hit": true,
+          "blocker": null
+        }
+      ],
+      "allHit": true,
+      "drawer": false,
+      "ok": true,
+      "verdict": ""
+    },
+    {
+      "state": "成员详情 Dock",
+      "width": 1366,
+      "rows": 7,
+      "buttons": [
+        {
+          "label": "管理用例",
+          "hit": false,
+          "blocker": "SPAN.set-item-priority"
+        },
+        {
+          "label": "编辑",
+          "hit": false,
+          "blocker": "SPAN.script-tag"
+        },
+        {
+          "label": "立即执行",
+          "hit": false,
+          "blocker": "SPAN.set-item-script"
+        },
+        {
+          "label": "删除",
+          "hit": false,
+          "blocker": "SPAN.set-item-script"
+        }
+      ],
+      "allHit": false,
+      "drawer": true,
+      "ok": true,
+      "verdict": "（窄屏抽屉：列表被遮罩有意覆盖）"
+    },
+    {
+      "state": "成员详情 Dock",
+      "width": 1920,
+      "rows": 7,
+      "buttons": [
+        {
+          "label": "管理用例",
+          "hit": true,
+          "blocker": null
+        },
+        {
+          "label": "编辑",
+          "hit": true,
+          "blocker": null
+        },
+        {
+          "label": "立即执行",
+          "hit": true,
+          "blocker": null
+        },
+        {
+          "label": "删除",
+          "hit": true,
+          "blocker": null
+        }
+      ],
+      "allHit": true,
+      "drawer": false,
+      "ok": true,
+      "verdict": ""
+    },
+    {
+      "state": "窄屏抽屉",
+      "width": 1440,
+      "rows": 7,
+      "buttons": [
+        {
+          "label": "管理用例",
+          "hit": true,
+          "blocker": null
+        },
+        {
+          "label": "编辑",
+          "hit": true,
+          "blocker": null
+        },
+        {
+          "label": "立即执行",
+          "hit": true,
+          "blocker": null
+        },
+        {
+          "label": "删除",
+          "hit": true,
+          "blocker": null
+        }
+      ],
+      "allHit": true,
+      "drawer": false,
+      "ok": true,
+      "verdict": ""
+    },
+    {
+      "state": "窄屏抽屉",
+      "width": 1366,
+      "rows": 7,
+      "buttons": [
+        {
+          "label": "管理用例",
+          "hit": false,
+          "blocker": "SPAN.set-item-priority"
+        },
+        {
+          "label": "编辑",
+          "hit": false,
+          "blocker": "SPAN.script-tag"
+        },
+        {
+          "label": "立即执行",
+          "hit": false,
+          "blocker": "SPAN.set-item-script"
+        },
+        {
+          "label": "删除",
+          "hit": false,
+          "blocker": "SPAN.set-item-script"
+        }
+      ],
+      "allHit": false,
+      "drawer": true,
+      "ok": true,
+      "verdict": "（窄屏抽屉：列表被遮罩有意覆盖）"
+    },
+    {
+      "state": "窄屏抽屉",
+      "width": 1920,
+      "rows": 7,
+      "buttons": [
+        {
+          "label": "管理用例",
+          "hit": true,
+          "blocker": null
+        },
+        {
+          "label": "编辑",
+          "hit": true,
+          "blocker": null
+        },
+        {
+          "label": "立即执行",
+          "hit": true,
+          "blocker": null
+        },
+        {
+          "label": "删除",
+          "hit": true,
+          "blocker": null
+        }
+      ],
+      "allHit": true,
+      "drawer": false,
+      "ok": true,
+      "verdict": ""
+    }
+  ]
+}

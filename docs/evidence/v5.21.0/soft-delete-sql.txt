@@ -1,0 +1,11 @@
+id	project_id	case_code	deleted_at	deleted_by
+32570	29	QA-DEL-34960314	NULL	NULL
+32571	29	QA-DEL-34974486	NULL	NULL
+32572	29	QA-DEL-34981674	2026-11-16 21:16:22.287	15
+32573	29	QA-DEL-35032274	2026-11-16 21:17:12.424	15
+32574	29	QA-DEL-35060798	2026-11-16 21:17:41.001	15
+32575	88	QA-PLAT-35061243	2026-11-16 21:17:41.322	1
+ERROR 1064 (42000) at line 1: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'QA-DEL-35060798';
+DELETE FROM test_case WHERE case_code LIKE 'QA-PLAT-' at line 1
+id	project_id	case_code	deleted_at	deleted_by
+32574	29	QA-DEL-35060798	2026-11-16 21:17:41.001	15

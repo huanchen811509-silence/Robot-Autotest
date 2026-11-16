@@ -1953,6 +1953,10 @@ export default {
     title: 'Access denied',
     hint: 'Your account cannot access this page, or the project is not yours',
     back: 'Back to workspace',
+    role: 'Current role',
+    roleNone: 'No role assigned',
+    target: 'Blocked page',
+    apply: 'To request access: ask an admin (Users and permissions, Users) for platform pages, or the project owner (Project, Members) for project pages.',
   },
   palette: {
     open: 'Command palette',

@@ -284,19 +284,31 @@ public class ProjectRepositoryJdbc implements ProjectRepository {
 
     @Override
     public void addMember(long projectId, long userId, String roleCode, Long operatorId) {
+        String normalized = normalizeRoleCode(roleCode);
         jdbc.update("""
                 INSERT INTO project_member (project_id, user_id, member_role, joined_at,
                                             created_by, updated_by)
                 VALUES (?, ?, ?, CURRENT_TIMESTAMP(3), ?, ?)
-                """, projectId, userId, roleCode, operatorId, operatorId);
-        addRole(projectId, userId, roleCode, operatorId);
+                """, projectId, userId, normalized, operatorId, operatorId);
+        addRole(projectId, userId, normalized, operatorId);
+    }
+
+    /**
+     * 角色代码写入口统一小写（v5.21.0 / FR-v5.21-06）。
+     *
+     * <p>库内存量出现过 `viewer` 与 `ENGINEER` 并存：判权侧靠 {@code RoleCode.from()}
+     * 的大小写兼容兜住了，但按 role_code 分组统计会分裂成两行、对外导出像两个角色。
+     * 迁移 `V11_81` 负责洗存量，这里负责不再写脏。null 保持 null（无角色）。
+     */
+    private static String normalizeRoleCode(String roleCode) {
+        return roleCode == null ? null : roleCode.trim().toLowerCase(java.util.Locale.ROOT);
     }
 
     private void addRole(long projectId, long userId, String roleCode, Long operatorId) {
         jdbc.update("""
                 INSERT IGNORE INTO project_member_role (project_id, user_id, role_code, created_by)
                 VALUES (?, ?, ?, ?)
-                """, projectId, userId, roleCode, operatorId);
+                """, projectId, userId, normalizeRoleCode(roleCode), operatorId);
     }
 
     @Override
@@ -304,7 +316,7 @@ public class ProjectRepositoryJdbc implements ProjectRepository {
         jdbc.update("""
                 UPDATE project_member SET member_role = ?, updated_by = ?
                  WHERE project_id = ? AND user_id = ?
-                """, roleCode, operatorId, projectId, userId);
+                """, normalizeRoleCode(roleCode), operatorId, projectId, userId);
         jdbc.update("DELETE FROM project_member_role WHERE project_id = ? AND user_id = ?",
                 projectId, userId);
         addRole(projectId, userId, roleCode, operatorId);

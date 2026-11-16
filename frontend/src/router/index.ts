@@ -2,7 +2,8 @@ import type { Component } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useUiModeStore } from '@/stores/uiMode'
-import { capabilitiesForRole, capabilitySatisfied, roleFromCodes } from '@/config/navigation'
+import { useMenuCapabilitiesStore } from '@/stores/menuCapabilities'
+import { capabilitySatisfied } from '@/config/navigation'
 
 /* --------------------------------------------------------------------------
  * v4.9.2 / OPT-01（FR-49-10~12）：全局模式守卫的两条独立判据。
@@ -65,12 +66,14 @@ const router = createRouter({
     {
       path: '/workbench',
       name: 'workbench',
+      meta: { public: true },
       component: () => import('@/views/WorkbenchView.vue'),
     },
     {
       // 项目工作区（FR-v4.1-05）：导出 / 预检 / 导入 / 任务中心；写权限由后端校验。
       path: '/workspace',
       name: 'workspace',
+      meta: { capability: 'project:read' },
       component: () => import('@/views/WorkspaceView.vue'),
     },
     {
@@ -78,6 +81,7 @@ const router = createRouter({
       // 项目范围由顶部项目选择器决定，写权限由后端 403 兜底。
       path: '/sync',
       name: 'project-sync',
+      meta: { capability: 'settings:read' },
       component: () => import('@/views/ProjectSyncView.vue'),
     },
     {
@@ -92,16 +96,19 @@ const router = createRouter({
     {
       path: '/overview',
       name: 'overview',
+      meta: { capability: 'project:read' },
       component: () => import('@/views/OverviewView.vue'),
     },
     {
       path: '/assets',
       name: 'assets',
+      meta: { capability: 'asset:read' },
       component: () => import('@/views/AssetsView.vue'),
     },
     {
       path: '/cases',
       name: 'cases',
+      meta: { capability: 'case:read' },
       component: () => import('@/views/CasesView.vue'),
     },
     {
@@ -109,6 +116,7 @@ const router = createRouter({
       // 不新增一级菜单，入口在用例库工具栏与执行计划的用例集下拉旁。
       path: '/cases/sets',
       name: 'case-sets',
+      meta: { capability: 'case:read' },
       component: () => import('@/views/CaseSetsView.vue'),
     },
     {
@@ -123,6 +131,7 @@ const router = createRouter({
     {
       path: '/runs',
       name: 'runs',
+      meta: { capability: 'execution:read' },
       component: () => import('@/views/RunsView.vue'),
     },
     {
@@ -130,6 +139,7 @@ const router = createRouter({
       // 不新增一级菜单，从运行列表与左侧「执行」进入。
       path: '/plans',
       name: 'plans',
+      meta: { capability: 'execution:read' },
       component: () => import('@/views/PlansView.vue'),
     },
     {
@@ -137,6 +147,7 @@ const router = createRouter({
       // 独立页面而不是计划页里的弹层——组成员顺序是整页操作的场景，弹层放不下。
       path: '/plans/groups',
       name: 'plan-groups',
+      meta: { capability: 'execution:read' },
       component: () => import('@/views/PlanGroupsView.vue'),
     },
     {
@@ -144,6 +155,7 @@ const router = createRouter({
       // 拖出来的边会绕过保存时的环检测。
       path: '/plans/graph',
       name: 'plan-graph',
+      meta: { capability: 'execution:read' },
       component: () => import('@/views/PlanGraphPage.vue'),
     },
     {
@@ -151,11 +163,13 @@ const router = createRouter({
       // 用 query 里的 runId 预填，深链可分享——贴一条链接就能让同事看到同一批失败。
       path: '/runs/failure-clusters',
       name: 'failure-clusters',
+      meta: { capability: 'execution:read' },
       component: () => import('@/views/FailureClustersView.vue'),
     },
     {
       path: '/reports',
       name: 'reports',
+      meta: { capability: 'report:read' },
       component: () => import('@/views/ReportsView.vue'),
     },
     {
@@ -163,6 +177,7 @@ const router = createRouter({
       // 可选字段只来自后端白名单接口，页面不内联字段名单（见视图注释）。
       path: '/reports/templates',
       name: 'report-templates',
+      meta: { capability: 'report:read' },
       component: () => import('@/views/ReportTemplatesView.vue'),
     },
     {
@@ -177,11 +192,13 @@ const router = createRouter({
       // 报告详情（RPT-02 / RPT-03）：仍是「报告」一级菜单下的子路由
       path: '/reports/:runId',
       name: 'report-detail',
+      meta: { capability: 'report:read' },
       component: () => import('@/views/ReportDetailView.vue'),
     },
     {
       path: '/test-reports',
       name: 'test-reports',
+      meta: { capability: 'report:read' },
       component: () => import('@/views/TestReportsView.vue'),
     },
     {
@@ -189,11 +206,13 @@ const router = createRouter({
       // 精确路径 /test-reports 不会被 :id 抢走。
       path: '/test-reports/:id',
       name: 'test-report-detail',
+      meta: { capability: 'report:read' },
       component: () => import('@/views/TestReportDetailView.vue'),
     },
     {
       path: '/admin',
       name: 'admin',
+      meta: { capability: 'user:write' },
       component: () => import('@/views/AdminView.vue'),
     },
     {
@@ -201,6 +220,7 @@ const router = createRouter({
       // 入口仅对管理员显示，非管理员即便手输 URL 也会被后端 403 拦截。
       path: '/admin/audit',
       name: 'audit',
+      meta: { capability: 'audit:read' },
       component: () => import('@/views/AuditView.vue'),
     },
     {
@@ -221,12 +241,14 @@ const router = createRouter({
     {
       path: '/editor/:projectId',
       name: 'editor',
+      meta: { capability: 'case:read' },
       component: () => import('@/views/EditorView.vue'),
     },
     {
       // 只读查看器：独立路由（FR-v0.3-18），不依赖编辑权限即可分享给只读用户
       path: '/viewer/:projectId',
       name: 'viewer',
+      meta: { capability: 'case:read' },
       component: () => import('@/views/EditorView.vue'),
     },
     // v2.0 / W1 系统页：都挂在「管理」域下，不新增一级菜单
@@ -256,36 +278,42 @@ const router = createRouter({
       // 执行节点（NODX-01，v2.1）：平台级资源，入口在设置页工具栏。
       path: '/nodes',
       name: 'nodes',
+      meta: { capability: 'execution:read' },
       component: () => import('@/views/NodesView.vue'),
     },
     { path: '/about', name: 'about', component: () => import('@/views/AboutView.vue') },
     {
       path: '/changelog',
       name: 'changelog',
+      meta: { public: true },
       component: () => import('@/views/ChangelogView.vue'),
     },
     {
       // 无权限直达的落点（FR-v2.0-08）：不是 404，也不泄露目标页内容
       path: '/403',
       name: 'forbidden',
+      meta: { public: true },
       component: () => import('@/views/ForbiddenView.vue'),
     },
     {
       // v2.0 / W4 导入预检：不新增一级菜单，由命令面板与 CasesView 入口进入
       path: '/imports',
       name: 'imports',
+      meta: { capability: 'execution:read' },
       component: () => import('@/views/ImportPreflightView.vue'),
     },
     {
       // v2.0 / W5 组授权与一层场景编排
       path: '/groups',
       name: 'groups',
+      meta: { capability: 'execution:read' },
       component: () => import('@/views/GroupsView.vue'),
     },
     {
       // v2.0 / W3 双内核能力矩阵与选择来源
       path: '/kernels',
       name: 'kernels',
+      meta: { capability: 'execution:read' },
       component: () => import('@/views/KernelsView.vue'),
     },
     {
@@ -293,47 +321,56 @@ const router = createRouter({
       // 菜单入口在 5.2.0 随「工程视图」一起挂（W52-08），本期先由路由直达。
       path: '/pytest-workbench',
       name: 'pytest-workbench',
+      meta: { capability: 'execution:read' },
       component: () => import('@/views/PytestWorkbenchView.vue'),
     },
 
     // EHT-10~12：工程视图页内入口（不新增一级/二级菜单叶子，4 组 11 叶基线不变）。
     {
       path: '/eht/cases',
+      meta: { capability: 'case:read' },
       name: 'eht-case-library',
       component: () => import('@/views/eht/EhtCaseLibraryView.vue'),
     },
     {
       path: '/eht/quick-actions',
+      meta: { capability: 'case:read' },
       name: 'eht-quick-actions',
       component: () => import('@/views/eht/EhtQuickActionsView.vue'),
     },
     {
       path: '/eht/duration-baseline',
+      meta: { capability: 'case:read' },
       name: 'eht-duration-baseline',
       component: () => import('@/views/eht/EhtDurationBaselineView.vue'),
     },
     {
       path: '/eht/disposition',
+      meta: { capability: 'case:read' },
       name: 'eht-disposition',
       component: () => import('@/views/eht/EhtDispositionView.vue'),
     },
     {
       path: '/eht/environment-radar',
+      meta: { capability: 'env:read' },
       name: 'eht-environment-radar',
       component: () => import('@/views/eht/EhtEnvironmentRadarView.vue'),
     },
     {
       path: '/eht/kernel-unified',
+      meta: { capability: 'case:read' },
       name: 'eht-kernel-unified',
       component: () => import('@/views/eht/EhtKernelUnifiedView.vue'),
     },
     {
       path: '/eht/manual-execution',
+      meta: { capability: 'case:read' },
       name: 'eht-manual-execution',
       component: () => import('@/views/eht/EhtManualExecutionView.vue'),
     },
     {
       path: '/eht/result-split',
+      meta: { capability: 'case:read' },
       name: 'eht-result-split',
       component: () => import('@/views/eht/EhtResultSplitView.vue'),
     },
@@ -344,27 +381,32 @@ const router = createRouter({
     {
       path: '/environment/overview',
       name: 'environment-overview',
+      meta: { capability: 'env:read' },
       component: () => import('@/views/environment/EnvironmentOverviewView.vue'),
     },
     {
       path: '/environment/collect',
       name: 'environment-collect',
+      meta: { capability: 'env:read' },
       component: () => import('@/views/environment/EnvironmentCollectView.vue'),
     },
     {
       path: '/environment/topology',
       name: 'environment-topology',
+      meta: { capability: 'env:read' },
       component: () => import('@/views/environment/TopologySnapshotView.vue'),
     },
     {
       // v5.15.0 / W65-14：旧深链不删，收敛到 4 个主页面。
       path: '/environment/prepare',
       name: 'environment-prepare',
+      meta: { public: true }, // 纯重定向：不需要能力判定
       redirect: '/environment/overview',
     },
     {
       path: '/environment/analysis',
       name: 'environment-analysis',
+      meta: { public: true }, // 纯重定向：不需要能力判定
       redirect: '/environment/topology',
     },
     {
@@ -384,37 +426,44 @@ const router = createRouter({
     {
       path: '/ops/health',
       name: 'ops-health',
+      meta: { capability: 'settings:read' },
       component: () => import('@/views/ops/OpsHealthView.vue'),
     },
     {
       path: '/ops/backup',
       name: 'ops-backup',
+      meta: { capability: 'settings:read' },
       component: () => import('@/views/ops/OpsBackupView.vue'),
     },
     {
       path: '/ops/archive',
       name: 'ops-archive',
+      meta: { capability: 'settings:read' },
       component: () => import('@/views/ops/OpsArchiveView.vue'),
     },
     {
       path: '/ops/upgrade',
       name: 'ops-upgrade',
+      meta: { capability: 'settings:read' },
       component: () => import('@/views/ops/OpsUpgradeView.vue'),
     },
     {
       // MENU-05：性能基线 3 个只读页，独立路由（不新增一级菜单）。
       path: '/baselines/iperf',
       name: 'baseline-iperf',
+      meta: { capability: 'report:read' },
       component: () => import('@/views/baselines/IperfBaselineView.vue'),
     },
     {
       path: '/baselines/perftest',
       name: 'baseline-perftest',
+      meta: { capability: 'report:read' },
       component: () => import('@/views/baselines/PerftestBaselineView.vue'),
     },
     {
       path: '/baselines/ccl',
       name: 'baseline-ccl',
+      meta: { capability: 'report:read' },
       component: () => import('@/views/baselines/CclBaselineView.vue'),
     },
     // v4.5.0 全局模式（FR-v4.5-03）：独立命名空间，避免与项目内页面权限混淆。
@@ -422,7 +471,7 @@ const router = createRouter({
     {
       path: '/g/projects',
       name: 'global-projects',
-      meta: { global: true },
+      meta: { global: true, capability: 'project:read' },
       component: () => import('@/views/global/GlobalProjectsView.vue'),
     },
     {
@@ -436,7 +485,7 @@ const router = createRouter({
     {
       path: '/g/cases',
       name: 'global-cases',
-      meta: { global: true },
+      meta: { global: true, capability: 'case:read' },
       component: () => import('@/views/global/GlobalCasesView.vue'),
     },
     {
@@ -445,19 +494,19 @@ const router = createRouter({
       // 原 `/g/case-sets/:id` 孤儿路由（全仓无 push / RouterLink 指向）已删除。
       path: '/g/case-sets',
       name: 'global-case-sets',
-      meta: { global: true },
+      meta: { global: true, capability: 'case:read' },
       component: () => import('@/views/global/GlobalCaseSetsView.vue'),
     },
     {
       path: '/g/assets',
       name: 'global-assets',
-      meta: { global: true },
+      meta: { global: true, capability: 'asset:read' },
       component: () => import('@/views/global/GlobalAssetsView.vue'),
     },
     {
       path: '/g/templates',
       name: 'global-templates',
-      meta: { global: true },
+      meta: { global: true, capability: 'asset:read' },
       component: () => import('@/views/global/GlobalTemplatesView.vue'),
     },
     {
@@ -465,13 +514,13 @@ const router = createRouter({
       // （Vue Router 按静态段优先），但放在列表之后更贴近阅读顺序。
       path: '/g/templates/new',
       name: 'global-template-new',
-      meta: { global: true },
+      meta: { global: true, capability: 'asset:read' },
       component: () => import('@/views/global/TemplateWizardView.vue'),
     },
     {
       path: '/g/settings',
       name: 'global-settings',
-      meta: { global: true },
+      meta: { global: true, capability: 'settings:read' },
       // v4.12.0 / FR-v4.12-18~20：复用项目侧同一份设置视图，由 meta.global 切全局语义。
       // 原 GlobalSettingsView 只是把侧栏的 6 项再列一遍，属于「点进来还要再点一次」的中间页。
       component: () => import('@/views/SettingsView.vue'),
@@ -481,7 +530,7 @@ const router = createRouter({
     {
       path: '/g/settings/ai',
       name: 'global-settings-ai',
-      meta: { global: true },
+      meta: { global: true, capability: 'ai:config' },
       component: () => import('@/views/AiAssistantsView.vue'),
     },
     {
@@ -517,19 +566,20 @@ const router = createRouter({
     {
       path: '/g/admin/audit',
       name: 'global-admin-audit',
-      meta: { global: true },
+      meta: { global: true, capability: 'audit:read' },
       component: () => import('@/views/AuditView.vue'),
     },
     {
       path: '/g/about',
       name: 'global-about',
-      meta: { global: true },
+      // v5.21.0 / W71-06：公开页与全局模式标记合并成一个 meta（两个 meta 是语法错误）
+      meta: { global: true, public: true },
       component: () => import('@/views/AboutView.vue'),
     },
     {
       path: '/g/changelog',
       name: 'global-changelog',
-      meta: { global: true },
+      meta: { global: true, public: true },
       component: () => import('@/views/ChangelogView.vue'),
     },
     // 同批次其他 Agent 创建的视图：一律用 import.meta.glob 懒加载动态 import。
@@ -537,35 +587,38 @@ const router = createRouter({
     {
       path: '/g/assets/:id',                // @/views/global/GlobalAssetDetailView.vue
       name: 'global-asset-detail',
-      meta: { global: true },
+      meta: { global: true, capability: 'asset:read' },
       component: optionalView('../views/global/GlobalAssetDetailView.vue'),
     },
     {
       path: '/assets/:id',                  // @/views/AssetDetailView.vue
       name: 'asset-detail',
+      meta: { capability: 'asset:read' },
       component: optionalView('../views/AssetDetailView.vue'),
     },
     {
       path: '/g/templates/:id',             // @/views/global/TemplateWorkbenchView.vue
       name: 'global-template-workbench',
-      meta: { global: true },
+      meta: { global: true, capability: 'asset:read' },
       component: optionalView('../views/global/TemplateWorkbenchView.vue'),
     },
     {
       path: '/scenarios',                   // @/views/ScenariosView.vue
       name: 'scenarios',
+      meta: { capability: 'case:read' },
       component: optionalView('../views/ScenariosView.vue'),
     },
     {
       path: '/:pathMatch(.*)*',
       name: 'not-found',
+      meta: { public: true },
       component: () => import('@/views/NotFoundView.vue'),
     },
   ],
 })
 
 // 未登录跳 /login；已登录访问 /login 直接回落地页（token 只存 localStorage，服务端仍会校验）
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
   const auth = useAuthStore()
   if (to.meta.public) {
     if (auth.authenticated && to.path === '/login') return '/workbench'
@@ -575,15 +628,30 @@ router.beforeEach((to) => {
     return { path: '/login', query: { redirect: to.fullPath } }
   }
   // NAV-01 / FR-v2.0-08：能力守卫只管「给不给入口」，真正的资源级越权仍由后端 403 兜底。
-  // 未知角色按最小权限处理；未加载 user 时先放行，让后端判（避免刷新瞬间误踢到 403）。
   //
-  // v4.12.0 / FR-v4.12-21：判据换成 capabilitySatisfied，public 特判从此只有一处。
-  // 旧写法直接拿「角色能力数组」判成员，而那张表里没有 public 字面量 —— 于是 meta.capability
-  // 为 'public' 的页面（如 /settings/users）对任何角色都跳 /403，菜单里却看得见。
+  // v5.21.0 / FR-v5.21-02 / W71-06：判据换成**服务端能力集**（stores/menuCapabilities）。
+  // 旧实现用的是前端那张 `capabilitiesForRole(role)` 表——两套口径迟早分叉：
+  // 后端加了 `asset:read` 的白名单，前端表里没有就永远 403；反之前端多给一个码，
+  // 按钮看得见、接口全 403。现在两边同源：服务端下发什么，前端就按什么判。
+  // 刷新瞬间能力集未加载 → 先 await 一次（不是"没加载就先放行"）。
   const capability = to.meta.capability as string | undefined
-  if (capability && auth.user) {
-    const owned = new Set(capabilitiesForRole(roleFromCodes(auth.user.roles)))
-    if (!capabilitySatisfied(capability, (name) => owned.has(name))) return { path: '/403' }
+  if (capability) {
+    // 刷新 / 直接输 URL 时 `auth.user` 还没回来。旧写法 `if (capability && auth.user)`
+    // 等于"角色未知就放行"——viewer 手输 /execution-plans 能进去（v5.21 实测复现）。
+    // 这里先补一次 loadMe()，再判；401 由 http 层统一踢回登录页。
+    if (!auth.user) {
+      try {
+        await auth.loadMe()
+      } catch {
+        return { path: '/login', query: { redirect: to.fullPath } }
+      }
+    }
+    const caps = useMenuCapabilitiesStore()
+    await caps.ensureLoaded()
+    if (!capabilitySatisfied(capability, (name) => caps.has(name))) {
+      // v5.21.0：带上被拦路径，403 页能说出「你被拦在哪」
+      return { path: '/403', query: { from: to.fullPath } }
+    }
   }
   // v4.9.2 / OPT-01：模式保持与角色准入是两条独立判据（见文件头部纯函数）。
   const uiMode = useUiModeStore()
@@ -591,7 +659,7 @@ router.beforeEach((to) => {
     // 角色准入只判角色；未加载 user 时先放行，后端会 403（FR-v4.5-06）。
     if (auth.user) {
       const roles = auth.user.roles ?? []
-      if (!roles.some((role) => canEnterGlobalMode(role))) return { path: '/403' }
+      if (!roles.some((role) => canEnterGlobalMode(role))) return { path: '/403', query: { from: to.fullPath } }
     }
     if (uiMode.mode !== 'global') void uiMode.setMode('global')
     // 全局路由一律早返回：不调用 rememberProjectPath、不切回 project 模式。

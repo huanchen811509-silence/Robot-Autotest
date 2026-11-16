@@ -2,6 +2,7 @@ package com.qa.autotest.application.caseasset;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -58,17 +59,18 @@ class TestCaseDeleteGuardTest {
                 .hasMessageContaining("脚本绑定 2 条")
                 .extracting("errorCode").isEqualTo(ErrorCode.CONFLICT);
 
-        verify(cases, never()).delete(anyLong(), anyLong());
+        // v5.21.0 / FR-v5.21-03：delete 现在带操作人（软删要落 deleted_by）
+        verify(cases, never()).delete(anyLong(), anyLong(), any());
     }
 
     @Test
-    @DisplayName("无引用：正常删除")
+    @DisplayName("无引用：正常删除（软删，带操作人）")
     void deletesWhenNoReference() {
         when(cases.caseReferences(7L, 5L)).thenReturn(Map.of());
 
         service.delete(7L, 5L);
 
-        verify(cases).delete(7L, 5L);
+        verify(cases).delete(eq(7L), eq(5L), any());
     }
 
     @Test
@@ -78,7 +80,7 @@ class TestCaseDeleteGuardTest {
 
         service.delete(7L, 5L);
 
-        verify(cases).delete(7L, 5L);
+        verify(cases).delete(eq(7L), eq(5L), any());
         assertThat(true).isTrue();
     }
 }

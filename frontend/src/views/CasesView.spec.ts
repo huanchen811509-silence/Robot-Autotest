@@ -11,6 +11,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createApp, h, nextTick, type App, type Slots } from 'vue'
 import { createPinia, setActivePinia } from 'pinia'
+// v5.21.0 / W71-05：写按钮按服务端能力集显隐；单测挂载不走登录，需先种一份能力集
+import { seedMenuCapabilities } from '@/test/seedMenuCapabilities'
 import { i18n } from '@/locales'
 import { useAuthStore } from '@/stores/auth'
 import CasesView from '@/views/CasesView.vue'
@@ -127,6 +129,7 @@ function button(root: HTMLElement, label: string): HTMLButtonElement {
 beforeEach(() => {
   pinia = createPinia()
   setActivePinia(pinia)
+  seedMenuCapabilities()
   useAuthStore().projectId = 1
   pageItems.splice(
     0,

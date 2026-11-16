@@ -295,7 +295,12 @@ public class ProjectSyncService {
                 continue;
             }
             if ("NEW".equals(action) || "DUPLICATE".equals(str(item.get("resolution")))) {
+                // soft-delete-exempt: 撤销同步新增——删的是**本 job 自己刚插进来的行**，
+                // 不是用户删除。软删会让 uk_test_case_project_code 一直被占着，同一编号再同步
+                // 就撞唯一键；这里的语义是"撤回我刚才的写入"，物理删才对。
+                // 用户删除用例走 TestCaseRepositoryJdbc.delete（软删），与本路径无关。
                 jdbc.update("DELETE FROM test_case_step WHERE test_case_id = ?", localId);
+                // soft-delete-exempt: 撤销同步新增，删的是本 job 刚插入的行
                 jdbc.update("DELETE FROM test_case WHERE id = ? AND project_id = ?", localId, projectId);
                 removed++;
             } else if (before != null) {

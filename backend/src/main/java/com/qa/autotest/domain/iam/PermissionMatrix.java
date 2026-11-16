@@ -48,7 +48,18 @@ public final class PermissionMatrix {
      */
     public static final List<String> MENU_CAPABILITIES = List.of(
             "settings:read", "ai:config", "user:write", "audit:read", "about", "changelog",
-            "case:write", "execution:read", "project:create");
+            "case:write", "execution:read", "project:create",
+            // v5.21.0 / FR-v5.21-02 / W71-03：导航改**白名单制**（每个叶子必须声明
+            // capability 或 public），于是「只读」这一档必须有码可用。原先只读页复用的是
+            // `settings:read`——等于「能看设置就能看一切」，与「能力码要能解释自己」相悖。
+            // 这 5 个码的授予与 {@link #MATRIX} 的 READ 动作完全同源，不新增权限，只是把
+            // 已有的读权限**命名**出来。（注释里不要出现半角双引号，机检按字面量抓。）
+            "project:read", "case:read", "asset:read", "report:read", "env:read",
+            // v5.21.0 / FR-v5.21-03 / W71-05：写操作也要有码可判。
+            // `v-can` 指令按能力码决定「这个按钮要不要渲染」，而 `case:write` 之外
+            // 两类高频写操作原先没有码——发起执行（EXECUTION:CREATE）与成员管理（PROJECT:UPDATE）。
+            // 没有码就只能用 read 码冒充，等于「能看就能写」。这两个码与 {@link #MATRIX} 的动作同源。
+            "execution:write", "project:write");
 
     private PermissionMatrix() {
     }
@@ -105,6 +116,17 @@ public final class PermissionMatrix {
     }
 
     /**
+     * 无全局角色账号的**最小能力集**（v5.21.0 / FR-v5.21-02 / W71-03）。
+     *
+     * <p>两个反例都不能要：返回全量＝放大权限；返回空集＝前端当"未加载"，
+     * 侧栏空白且没有任何解释。最小集选「关于 / 版本迭代」——这两页是公开信息，
+     * 不碰任何业务数据，同时让用户至少能看到"我是谁、这个系统什么版本"。
+     */
+    public static List<String> minimalMenuCapabilities() {
+        return List.of("about", "changelog");
+    }
+
+    /**
      * 负向验证注入口（供单测）：移除某角色的某个能力，返回是否命中。
      * 生产不会调用；调用后 {@code menuCapabilities} 立即不再返回该能力。
      */
@@ -120,17 +142,37 @@ public final class PermissionMatrix {
 
     private static Map<RoleCode, Set<String>> buildMenuMatrix() {
         Map<RoleCode, Set<String>> matrix = new EnumMap<>(RoleCode.class);
-        matrix.put(RoleCode.ADMIN, new LinkedHashSet<>(List.of(
+        // v5.21.0 / W71-03：5 个只读码按 MATRIX 的 READ 动作授予——
+        // ADMIN/PM/ENGINEER/VIEWER 四角色都有（VIEWER 本来就是只读角色）。
+        // 注意 VIEWER **仍然没有** `execution:read`：执行态入口（发起/运行/计划/节点/内核）
+        // 属 v5.19 FR-02 的授予口径，本版不动。VIEWER 能看到「报告态」三页（report:read）。
+        java.util.List<String> readOnly = List.of(
+                "project:read", "case:read", "asset:read", "report:read", "env:read");
+        // v5.21.0 / W71-05：写能力的授予与 MATRIX 同源——EXECUTION:CREATE 三角色有（VIEWER 无），
+        // PROJECT:UPDATE 只有 ADMIN/PM（ENGINEER 是只读项目、不能改成员）。
+        java.util.List<String> execWrite = List.of("execution:write");
+        java.util.List<String> projWrite = List.of("project:write");
+        matrix.put(RoleCode.ADMIN, new LinkedHashSet<>(concat(concat(List.of(
                 "settings:read", "ai:config", "user:write", "audit:read", "about", "changelog",
-                "case:write", "execution:read", "project:create")));
-        matrix.put(RoleCode.PM, new LinkedHashSet<>(List.of(
+                "case:write", "execution:read", "project:create"), readOnly),
+                concat(execWrite, projWrite))));
+        matrix.put(RoleCode.PM, new LinkedHashSet<>(concat(concat(List.of(
                 "settings:read", "audit:read", "about", "changelog", "case:write",
-                "execution:read", "project:create")));
-        matrix.put(RoleCode.ENGINEER, new LinkedHashSet<>(List.of(
-                "settings:read", "about", "changelog", "case:write", "execution:read")));
-        matrix.put(RoleCode.VIEWER, new LinkedHashSet<>(List.of(
-                "settings:read", "about", "changelog")));
+                "execution:read", "project:create"), readOnly),
+                concat(execWrite, projWrite))));
+        matrix.put(RoleCode.ENGINEER, new LinkedHashSet<>(concat(concat(List.of(
+                "settings:read", "about", "changelog", "case:write", "execution:read"),
+                readOnly), execWrite)));
+        matrix.put(RoleCode.VIEWER, new LinkedHashSet<>(concat(List.of(
+                "settings:read", "about", "changelog"), readOnly)));
         return matrix;
+    }
+
+    private static List<String> concat(List<String> head, List<String> tail) {
+        List<String> all = new ArrayList<>(head.size() + tail.size());
+        all.addAll(head);
+        all.addAll(tail);
+        return all;
     }
 
     private static Set<PermissionAction> set(PermissionAction... actions) {

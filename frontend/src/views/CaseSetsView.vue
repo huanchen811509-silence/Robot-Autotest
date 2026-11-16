@@ -31,6 +31,7 @@ import { localizeError, type ErrorLine } from '@/utils/errors'
 import { EMPTY } from '@/utils/format'
 import { buildMemberCsv } from '@/utils/memberCsv'
 import { confirmAction } from '@/composables/useConfirm'
+import { useCan } from '@/composables/useCan'
 
 const { t } = useI18n()
 const auth = useAuthStore()
@@ -201,10 +202,12 @@ watch(setsFilters.revision, () => {
   void load()
 })
 
+/** 写操作判定（v5.21.0 / W71-05）：行内按钮走 h()，用不了 v-can，与模板共用同一 composable。 */
+const { can } = useCan()
+
 const columns = computed<DataTableColumns<TestSet>>(() => [
   {
-    title: t('w57.caseSets.colSelect'),
-    key: '__select',
+    title: t('w57.caseSets.colSelect'),    key: '__select',
     width: 64,
     render: (row) =>
       h(NCheckbox, {
@@ -228,28 +231,37 @@ const columns = computed<DataTableColumns<TestSet>>(() => [
     fixed: 'right',
     width: 300,
     render: (row) =>
-      h('div', { class: 'row-actions' }, [
-        h(
-          NButton,
-          { text: true, type: 'primary', size: 'small', onClick: () => void openItems(row) },
-          { default: () => t('caseSets.manage') },
-        ),
-        h(
-          NButton,
-          { text: true, size: 'small', onClick: () => openEdit(row) },
-          { default: () => t('caseSets.edit') },
-        ),
-        h(
-          NButton,
-          { text: true, size: 'small', onClick: () => void runNow(row) },
-          { default: () => t('caseSets.runNow') },
-        ),
-        h(
-          NButton,
-          { text: true, type: 'error', size: 'small', onClick: () => void removeSet(row) },
-          { default: () => t('common.delete') },
-        ),
-      ]),
+      // v5.21.0 / FR-v5.21-03 / W71-05：viewer 一个写按钮都不渲染。
+      // 四个按钮各自判码：管理/编辑/删除属 case:write，立即执行属 execution:write
+      // （后端分别是 CASE:UPDATE/DELETE 与 EXECUTION:CREATE，不共用一把钥匙）。
+      can('case:write') || can('execution:write')
+        ? h('div', { class: 'row-actions' }, [
+            can('case:write') &&
+              h(
+                NButton,
+                { text: true, type: 'primary', size: 'small', onClick: () => void openItems(row) },
+                { default: () => t('caseSets.manage') },
+              ),
+            can('case:write') &&
+              h(
+                NButton,
+                { text: true, size: 'small', onClick: () => openEdit(row) },
+                { default: () => t('caseSets.edit') },
+              ),
+            can('execution:write') &&
+              h(
+                NButton,
+                { text: true, size: 'small', onClick: () => void runNow(row) },
+                { default: () => t('caseSets.runNow') },
+              ),
+            can('case:write') &&
+              h(
+                NButton,
+                { text: true, type: 'error', size: 'small', onClick: () => void removeSet(row) },
+                { default: () => t('common.delete') },
+              ),
+          ])
+        : h('span', { class: 'row-actions row-actions--readonly' }, '—'),
   },
 ])
 
@@ -755,7 +767,7 @@ void load()
         :aria-label="t('common.searchPlaceholder')"
         @keyup.enter="onKeywordSearch"
       />
-      <NButton type="primary" @click="openCreate">{{ t('caseSets.create') }}</NButton>
+      <NButton v-can="'case:write'" type="primary" @click="openCreate">{{ t('caseSets.create') }}</NButton>
       <NButton quaternary :loading="loading" @click="load">{{ t('common.refresh') }}</NButton>
       <RouterLink v-slot="{ navigate }" to="/cases" custom>
         <NButton quaternary @click="navigate">{{ t('caseSets.backToCases') }}</NButton>

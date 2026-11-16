@@ -198,7 +198,21 @@ public class TestCaseService {
         access.require(PermissionResource.CASE, PermissionAction.CREATE);
         String code = requireCode(command.caseCode());
         if (cases.codeExists(projectId, code, null)) {
-            throw new BusinessException(ErrorCode.CONFLICT, "用例编号已存在：" + code);
+            // v5.21.0 / FR-v5.21-03：软删行仍占着 uk_test_case_project_code。
+            // 「删了再建同编号」不该报「已存在」——用户按编号查不到它，等于死锁在唯一键上。
+            // 这里把软删行**复活**并覆盖内容，语义是"重新登记这条用例"。
+            var deletedId = cases.findSoftDeletedId(projectId, code);
+            if (deletedId.isEmpty()) {
+                throw new BusinessException(ErrorCode.CONFLICT, "用例编号已存在：" + code);
+            }
+            long restoredId = deletedId.get();
+            cases.restore(projectId, restoredId, TenantContext.userId());
+            cases.update(toCase(restoredId, projectId, command, ReviewStatus.DRAFT,
+                    resolveSafetyLevel(command.safetyLevel(), null)), TenantContext.userId());
+            saveSteps(restoredId, command.steps());
+            audit.record("case.restore", "test_case", String.valueOf(restoredId), "code=" + code);
+            invalidateCapabilities(projectId);
+            return get(projectId, restoredId);
         }
         long id = cases.insert(toCase(null, projectId, command, ReviewStatus.DRAFT,
                 resolveSafetyLevel(command.safetyLevel(), null)), TenantContext.userId());
@@ -265,9 +279,12 @@ public class TestCaseService {
             throw new BusinessException(ErrorCode.CONFLICT,
                     "用例被以下数据引用，不能删除：" + who + "；请先解除引用");
         }
-        cases.delete(projectId, id);
+        cases.delete(projectId, id, TenantContext.userId());
+        // 审计口径不变：删除只记前值（`deleted=true`），不留 after。
+        // 软删这件事写进前值里，读审计的人能分清"这次没有物理删"。
         audit.recordChange("case:delete", "test_case", String.valueOf(id),
-                "code=" + existing.caseCode() + "; title=" + existing.title(), null);
+                "code=" + existing.caseCode() + "; title=" + existing.title() + "; mode=soft",
+                null);
         invalidateCapabilities(projectId);
     }
 
@@ -485,8 +502,9 @@ public class TestCaseService {
                     if (current == ReviewStatus.APPROVED) {
                         throw new BusinessException(ErrorCode.CONFLICT, "已通过用例不可批量删除，请先驳回");
                     }
-                    cases.delete(projectId, id);
-                    detail = "code=" + existing.caseCode() + "; title=" + existing.title();
+                    cases.delete(projectId, id, TenantContext.userId());
+                    detail = "code=" + existing.caseCode() + "; title=" + existing.title()
+                            + "; mode=soft";
                 }
                 default -> throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
                         "未知批量动作：" + action);

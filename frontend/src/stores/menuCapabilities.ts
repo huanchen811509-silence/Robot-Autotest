@@ -24,6 +24,17 @@ export const useMenuCapabilitiesStore = defineStore('menuCapabilities', {
         this.ready = true
       }
     },
+    /**
+     * 只加载一次（v5.21.0 / FR-v5.21-02 / W71-06）。
+     *
+     * 路由守卫在 `App.vue` 挂载之前就会跑：直接输 URL / 刷新时 `ready` 还是 false，
+     * 此时按能力判会"一个能力都没有"→ 把有权限的用户也踢到 403。
+     * 守卫改为 `await ensureLoaded()` 再判，语义是"以服务端能力集为准"，而不是"没加载就先放行"。
+     */
+    async ensureLoaded(): Promise<void> {
+      if (this.ready) return
+      await this.load()
+    },
     /** 单项能力判定；`public` 对所有角色可见。 */
     has(capability: string): boolean {
       if (capability === 'public') return true

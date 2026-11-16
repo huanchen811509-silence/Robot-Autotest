@@ -291,7 +291,17 @@ class PytestResultNormalizerTest {
         }
 
         @Override
-        public void delete(long projectId, long id) {
+        public void delete(long projectId, long id, Long operatorId) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Optional<Long> findSoftDeletedId(long projectId, String caseCode) {
+            return Optional.empty();
+        }
+
+        @Override
+        public void restore(long projectId, long id, Long operatorId) {
             throw new UnsupportedOperationException();
         }
 
