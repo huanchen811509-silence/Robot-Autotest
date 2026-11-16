@@ -111,6 +111,9 @@ check_structure() {
   # 57 为 v5.11.0 新增（DTO 与表结构一致性），同样只增不删。
   grep -qE '^run 57 dto_columns ' "$file" || { echo "STRUCT_FAIL 缺少步骤 57 dto_columns"; bad=1; }
   grep -qE '^run 59 temp_objects ' "$file" || { echo "STRUCT_FAIL 缺少步骤 59 temp_objects"; bad=1; }
+  # 60–61 为 v5.19.0 可用性门禁（只增不删）：少了就等于"页面能不能用"又没人守了。
+  grep -qE '^run 60 list_reachability ' "$file" || { echo "STRUCT_FAIL 缺少步骤 60 list_reachability"; bad=1; }
+  grep -qE '^run 61 frontend_contract ' "$file" || { echo "STRUCT_FAIL 缺少步骤 61 frontend_contract"; bad=1; }
   return "$bad"
 
 }
@@ -503,6 +506,17 @@ run 58 ops_guardrails "python3 tools/check_ops_guardrails.py && python3 tools/ch
 #    也不得重现已知历史临时账号；同时校验清场脚本的护栏（默认 dry-run / 二次确认 /
 #    显式清单 / 备份校验）还在。自证方式是真注入一条未打标临时项目判红、删除后判绿。
 run 59 temp_objects "python3 tools/check_temp_objects.py && python3 tools/check_temp_objects.py --self-test"
+
+# ---- v5.19.0 可用性门禁（60–61）------------------------------------------
+# 60 列表可达（v5.19.0 / W69-01/04/06）：三件事——表格有真实高度、首行可命中、
+#    行内操作可命中。判据必须用 elementFromPoint，整页截图看不出"被覆盖"。
+#    --self-test 注入全屏覆盖层，命中检测必须判红（否则说明探针是假的）。
+run 60 list_reachability "node scripts/ux-probes/row-hit.mjs --pages cases,runs,test-reports --viewports 1440x900 --targets row-actions && node scripts/ux-probes/row-hit.mjs --pages cases --viewports 1440x900 --self-test"
+
+# 61 前后端契约（v5.19.0 / W69-02）：前端 navigation.ts 用到的能力码必须在后端白名单里，
+#    另加全站字面量扫描（undefined / NaN / [object Object]）与导出物健康。
+#    三条都是"单测绿、门禁绿、用户用不了"那一类缺陷的唯一自动守门手段。
+run 61 frontend_contract "python3 tools/check_menu_capability_contract.py && python3 tools/check_menu_capability_contract.py --self-test && node scripts/ux-probes/text-scan.mjs --routes /reports,/runs,/cases,/cases/sets,/test-reports && python3 tools/check_export_floor.py"
 
 printf '\nGATES_RESULT FAILS=%s UNJUDGED=%s\n' "$FAILS" "${UNJUDGED:-0}"
 

@@ -3255,6 +3255,7 @@ export default {
       notApplicableWhy: 'Robot Framework cases do not expose a script path yet (no linking column)',
       verified: 'Verified',
       unverified: 'Bound, unverified',
+      unverifiedWhy: 'The platform only records the link; it is not verified at run time. Whether the kernel can resolve it depends on the [Tags] case=<case code> entry in the script (fallback: test name equals case code).',
       copied: 'Copied',
       copyFailed: 'Copy failed',
       more: '{count} more kernel bindings',

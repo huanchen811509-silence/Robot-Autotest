@@ -92,7 +92,7 @@ async function copyPath(): Promise<void> {
       <span
         class="script-state"
         :class="{ ok: verified }"
-        :title="verified ? t('w61.script.verified') : t('w61.script.unverified')"
+        :title="verified ? t('w61.script.verified') : t('w61.script.unverifiedWhy')"
         data-testid="case-script-state"
       >{{ verified ? t('w61.script.verified') : t('w61.script.unverified') }}</span>
       <span

@@ -3265,6 +3265,7 @@ export default {
       notApplicableWhy: 'RF 用例暂不展示脚本路径（无关联列）',
       verified: '已校验',
       unverified: '已绑定未校验',
+      unverifiedWhy: '平台只登记脚本关联，未做运行期校验；实际能否被内核识别以脚本 [Tags] case=<用例编号> 为准（无标签时按测试名与用例编号匹配）。',
       copied: '已复制',
       copyFailed: '复制失败',
       more: '另有 {count} 个内核的脚本',
