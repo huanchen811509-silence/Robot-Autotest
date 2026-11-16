@@ -32,7 +32,12 @@ const apiState = vi.hoisted(() => ({
   // 失败数也接出来：用来证明「结论与 failCount 解耦」
   passCount: 3,
   failCount: 1,
+  // v5.17.0 / W67-02：深链用例需要控制一级套件列表
+  suites: [] as Array<{ name: string; status: string; suites: unknown[]; cases: unknown[] }>,
 }))
+
+/** `?suite=` 深链用例要能改 query；其余用例保持空 query（历史行为不变）。 */
+const routeState = vi.hoisted(() => ({ query: {} as Record<string, unknown> }))
 
 vi.mock('@/api/reports', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/api/reports')>()
@@ -69,7 +74,7 @@ vi.mock('@/api/reports', async (importOriginal) => {
       tree: vi.fn(async () => ({
         name: 'Roce',
         status: 'FAIL',
-        suites: [],
+        suites: apiState.suites,
         cases: [
           {
             caseKey: 'TC-001',
@@ -178,7 +183,7 @@ vi.mock('@/api/reports', async (importOriginal) => {
 })
 
 vi.mock('vue-router', () => ({
-  useRoute: () => ({ params: { runId: 'RUN-AAA' } }),
+  useRoute: () => ({ params: { runId: 'RUN-AAA' }, query: routeState.query }),
   useRouter: () => ({ push: vi.fn() }),
 }))
 
@@ -196,8 +201,17 @@ vi.mock('@/components/ProjectPicker.vue', () => ({
 vi.mock('@/components/report/SuiteTree.vue', () => ({
   default: {
     name: 'SuiteTree',
-    props: { node: { type: Object, default: null }, depth: { type: Number, default: 0 } },
+    props: {
+      node: { type: Object, default: null },
+      depth: { type: Number, default: 0 },
+      highlight: { type: String, default: '' },
+    },
     template: `<div class="suite-tree">
+      <span v-for="s in ((node && node.suites) || [])" :key="s.name"
+            class="stub-suite"
+            :data-suite-name="s.name"
+            :data-suite-target="highlight === s.name || highlight === 'all' ? 'true' : undefined"
+      >{{ s.name }}</span>
       <span v-for="c in ((node && node.cases) || [])" :key="c.caseKey"
             class="stub-case"
             :data-case-key="c.caseKey"
@@ -258,6 +272,8 @@ beforeEach(() => {
   apiState.missing = 0
   apiState.passCount = 3
   apiState.failCount = 1
+  apiState.suites = []
+  routeState.query = {}
   vi.clearAllMocks()
   pinia = createPinia()
   setActivePinia(pinia)
@@ -461,5 +477,60 @@ describe('ReportDetailView 对比', () => {
     // 4 行 × (历史 + 本轮 + 变化) = 12 个徽标
     const cells = [...root.querySelectorAll<HTMLElement>('.verdict-cell .status-tag')]
     expect(cells.length).toBe(8)
+  })
+})
+
+/**
+ * `?suite=` 深链（v5.14.0 W64-04 实现，v5.17.0 / W67-02 首次补断言）。
+ *
+ * 这条链路此前**没有任何自动化覆盖**：功能在，但"粘贴一个深链能不能定位到那个套件"
+ * 只能靠人眼看。三条断言分别钉住：合法名 → 高亮下发 + 滚动到目标；`all` → 展开提示；
+ * 非法名 → 给人话提示且页面照常加载（不白屏、不抛错）。
+ */
+describe('深链 ?suite=', () => {
+  beforeEach(() => {
+    apiState.suites = [
+      { name: 'S1', status: 'PASS', suites: [], cases: [] },
+      { name: 'S2', status: 'FAIL', suites: [], cases: [] },
+    ]
+    // jsdom 没有 scrollIntoView，不 stub 会直接抛 TypeError
+    Object.defineProperty(Element.prototype, 'scrollIntoView', {
+      value: vi.fn(),
+      writable: true,
+      configurable: true,
+    })
+  })
+
+  it('合法一级套件名：目标节点被标记并滚动定位', async () => {
+    routeState.query = { suite: 'S2' }
+    const root = await mountView()
+    const marked = document.querySelectorAll('[data-suite-target="true"]')
+    expect(marked.length).toBeGreaterThan(0)
+    expect(marked[0].getAttribute('data-suite-name')).toBe('S2')
+    const notice = root.querySelector('[data-testid="suite-deeplink-notice"]')
+    expect(notice?.textContent).toContain('S2')
+  })
+
+  it('suite=all：提示已展开全部一级套件', async () => {
+    routeState.query = { suite: 'all' }
+    const root = await mountView()
+    const notice = root.querySelector('[data-testid="suite-deeplink-notice"]')
+    expect(notice?.textContent).toContain(String(apiState.suites.length))
+  })
+
+  it('非法套件名：给可读提示，页面照常渲染不白屏', async () => {
+    routeState.query = { suite: 'NOT-A-SUITE' }
+    const root = await mountView()
+    const notice = root.querySelector('[data-testid="suite-deeplink-notice"]')
+    expect(notice?.textContent).toContain('NOT-A-SUITE')
+    // 页面主体仍在（不是白屏）
+    expect(root.textContent).toContain('RUN-AAA')
+    expect(document.querySelectorAll('[data-suite-target="true"]').length).toBe(0)
+  })
+
+  it('不带 suite 参数：不出现提示（历史行为不变）', async () => {
+    routeState.query = {}
+    const root = await mountView()
+    expect(root.querySelector('[data-testid="suite-deeplink-notice"]')).toBeNull()
   })
 })

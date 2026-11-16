@@ -242,7 +242,45 @@ export interface TrustView {
   priority: string
 }
 
+/** 拓扑边的判定类别（v5.18.0 / FR-v5.18-03）：图上每条边恰好属于一类。 */
+export type TopologyEdgeKind = 'MEASURED' | 'MANUAL' | 'PLANNED'
+
+export interface TopologyEdge {
+  id: number
+  name: string
+  aDeviceId: number | null
+  aDeviceName: string | null
+  bDeviceId: number | null
+  bDeviceName: string | null
+  kind: TopologyEdgeKind
+  source: string | null
+}
+
+export interface PlannedNode {
+  id: number
+  name: string
+  nodeType: string
+  refDeviceId: number | null
+  parentId: number | null
+}
+
+export interface TopologyEdges {
+  edges: TopologyEdge[]
+  /** 三类边的计数，三者之和恒等于 total。 */
+  kindCounts: Record<string, number>
+  /** 图例四类：三类边 + CONFLICT（被实测覆盖的规划边）。 */
+  counts: Record<string, number>
+  total: number
+  /** 规划被实测覆盖的条数：不再单独成边，但必须让人看见。 */
+  overridden: number
+  plannedNodes: PlannedNode[]
+}
+
 export const topologyTrustApi = {
+  edges(projectId: number): Promise<TopologyEdges> {
+    return request<TopologyEdges>(`/projects/${projectId}/topology/edges`)
+  },
+
   trust(projectId: number): Promise<TrustView> {
     return request<TrustView>(`/projects/${projectId}/topology/trust`)
   },

@@ -1,0 +1,14 @@
+[purge-demo] 目标库：127.0.0.1:3306/robot_dev
+[purge-demo] is_demo=1 盘点
+  app_user         0
+  project          3
+[purge-demo] 演示项目下的从属数据（本脚本不删，需走项目删除接口）
+  test_set         0
+  test_case        0
+  run              0
+  test_result      0
+  test_report      0
+[purge-demo] 开始删除（仅 is_demo=1 的主行与成员关系）
+[purge-demo] 完成，复核：
+  app_user         0
+  project          0

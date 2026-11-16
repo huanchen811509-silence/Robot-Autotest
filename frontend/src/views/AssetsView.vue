@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, h, reactive, ref, watch } from 'vue'
+import { computed, h, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import {
@@ -17,35 +17,29 @@ import {
   credentialApi,
   deviceApi,
   linkApi,
-  shareApi,
   type Credential,
   type Device,
   type DevicePort,
   type Link,
-  type PlatformAssetType,
 } from '@/api/asset'
 import { executionApi, type LeaseView } from '@/api/execution'
 import { useAuthStore } from '@/stores/auth'
 import DataTable from '@/components/DataTable.vue'
 import { useListPageSize, type PageSize } from '@/composables/useListPageSize'
 import ErrorLineView from '@/components/ErrorLine.vue'
-import StatusTag from '@/components/StatusTag.vue'
 import { localizeError, type ErrorLine } from '@/utils/errors'
-import { EMPTY } from '@/utils/format'
 import AssetWorkspace from '@/components/AssetWorkspace.vue'
+import AssetTopologyBlock from '@/components/AssetTopologyBlock.vue'
 import { visibleTabs } from '@/config/assetWorkspaceMatrix'
 import { useCollectProfiles } from '@/composables/useCollectProfiles'
-import {
-  blockedReasonLabelKey,
-  credentialLabelKey,
-  stateLabelKey,
-} from '@/config/collectProfileColumns'
 import { batchApi, type BatchResource } from '@/api/batch'
 import SelectionBar from '@/components/SelectionBar.vue'
 import { useBatchAction } from '@/composables/useBatchAction'
 import { useSelection } from '@/composables/useSelection'
 import { confirmAction } from '@/composables/useConfirm'
 import type { StatusTone } from '@/utils/statusLabels'
+import { useAssetColumns } from '@/config/assetColumns'
+import { useAssetEditing } from '@/composables/useAssetEditing'
 
 type Tab = 'devices' | 'links' | 'credentials' | 'leases'
 /** W62-08：页签清单由差异矩阵唯一决定（project 4 个），页面不再另写一份。 */
@@ -106,193 +100,7 @@ function toggleTopology(): void {
   if (topologyMode.value) clearSelection()
 }
 
-function endpointName(link: Link, side: 'a' | 'b'): string {
-  const name = side === 'a' ? link.aDeviceName : link.bDeviceName
-  return name || t('assets.link.unconnected')
-}
 
-function endpointPort(link: Link, side: 'a' | 'b'): string {
-  return (side === 'a' ? link.aPortName : link.bPortName) || ''
-}
-
-/**
- * 多跳拓扑：把「一条链路一行」重排成「一条链一行」。
- *
- * 数据模型只有两端链路，但同一台设备会出现在多条链路里（DUT → SW → HOST）。
- * 按链路逐行画，看到的是三张互不相干的图，排障时还得自己在脑子里接起来；
- * 这里用链路两端的设备 id 建邻接表，从任意一条没走过的边出发向两端各走到底，
- * 串成节点与边交替的链。分叉与环都不特殊处理——走到不能再走就收尾，
- * 剩下的边由外层循环另起一条链，从而保证「每条链路恰好渲染一次」。
- */
-type TopoNode = { key: string; name: string; ports: string[] }
-type TopoChain = { key: string; label: string; nodes: TopoNode[]; edges: Link[] }
-
-function sideKey(link: Link, side: 'a' | 'b'): string {
-  const id = side === 'a' ? link.aDeviceId : link.bDeviceId
-  // 没登记设备时用「链路 + 侧」做键：否则两条孤儿链路的端点会被并成同一个「未连接」节点
-  return id ? `d:${id}` : `u:${link.id}:${side}`
-}
-
-function otherKey(link: Link, side: 'a' | 'b'): string {
-  return sideKey(link, side === 'a' ? 'b' : 'a')
-}
-
-const linkChains = computed<TopoChain[]>(() => {
-  const nodes = new Map<string, TopoNode>()
-  const adjacency = new Map<string, { link: Link; side: 'a' | 'b' }[]>()
-
-  const ensure = (key: string, name: string): TopoNode => {
-    const existing = nodes.get(key)
-    if (existing) return existing
-    const created: TopoNode = { key, name, ports: [] }
-    nodes.set(key, created)
-    return created
-  }
-
-  for (const link of links.value) {
-    for (const side of ['a', 'b'] as const) {
-      const key = sideKey(link, side)
-      const node = ensure(key, endpointName(link, side))
-      const port = endpointPort(link, side)
-      if (port && !node.ports.includes(port)) node.ports.push(port)
-      const list = adjacency.get(key) ?? []
-      list.push({ link, side })
-      adjacency.set(key, list)
-    }
-  }
-
-  const used = new Set<Link>()
-
-  /** 从 startKey 顺着「不是刚走过的那条、且还没用过」的边一直走到头。 */
-  const extend = (startKey: string, via: Link): { keys: string[]; edges: Link[] } => {
-    const keys: string[] = []
-    const edges: Link[] = []
-    let cursor = startKey
-    let previous: Link = via
-    for (;;) {
-      const next = (adjacency.get(cursor) ?? []).find(
-        (item) => item.link !== previous && !used.has(item.link),
-      )
-      if (!next) break
-      used.add(next.link)
-      cursor = otherKey(next.link, next.side)
-      previous = next.link
-      keys.push(cursor)
-      edges.push(next.link)
-    }
-    return { keys, edges }
-  }
-
-  const chains: TopoChain[] = []
-  for (const link of links.value) {
-    if (used.has(link)) continue
-    used.add(link)
-    const aKey = sideKey(link, 'a')
-    const bKey = sideKey(link, 'b')
-    // 先往 A 端外侧走，再往 B 端外侧走；左侧是倒序长出来的，拼回去时要翻一次
-    const left = extend(aKey, link)
-    const right = extend(bKey, link)
-    const keys = [...left.keys.slice().reverse(), aKey, bKey, ...right.keys]
-    const edges = [...left.edges.slice().reverse(), link, ...right.edges]
-    chains.push({
-      key: `chain:${link.id}`,
-      // 单跳链的标签就是链路名本身，多跳才用箭头连起来
-      label: edges.map((item) => item.name).join(' → '),
-      nodes: keys.map((key) => nodes.get(key) ?? { key, name: '', ports: [] }),
-      edges,
-    })
-  }
-  return chains
-})
-
-function edgeMeta(link: Link): string {
-  return (
-    [link.protocol, link.speedGbps ? `${link.speedGbps} Gbps` : '']
-      .filter(Boolean)
-      .join(' · ') || EMPTY
-  )
-}
-
-/** 链有多长栅格就多宽：节点拉伸，边固定 180px，否则长链会把节点压成一条缝。 */
-function chainColumns(chain: TopoChain): string {
-  return chain.nodes
-    .map((_, index) => (index < chain.edges.length ? 'minmax(0, 1fr) 180px' : 'minmax(0, 1fr)'))
-    .join(' ')
-}
-
-/**
- * 端口面板独立在表格下方（同 RunsView 的日志面板），不做行内展开。
- *
- * 行内展开要往 NDataTable 里塞一张子表和一张表单，单元格里既没有宽度也没有焦点管理余量；
- * 而「点一行 → 下方出详情」是本项目已统一的交互语言（执行页日志、报告页明细都这样），
- * 同一套心智比省一次滚动更值。
- */
-const portsDeviceId = ref<number | null>(null)
-const portsDevice = computed(() => devices.value.find((d) => d.id === portsDeviceId.value) ?? null)
-const ports = ref<DevicePort[]>([])
-const showForm = ref(false)
-/** W62-12 / W62-13：同一张行内表单承载「新增」与「编辑」，不另开弹窗。 */
-const editingDeviceId = ref<number | null>(null)
-const editingPortId = ref<number | null>(null)
-const portDeleteError = ref('')
-
-const deviceForm = reactive({
-  name: '',
-  deviceType: '',
-  model: '',
-  vendor: '',
-  serialNo: '',
-  managementIp: '',
-  location: '',
-  domainTag: '',
-})
-
-const portForm = reactive({
-  portName: '',
-  portType: '',
-  speedGbps: null as number | null,
-  // v4.3.0 / FR-v4.3-03：网卡归属可留空（空 = 「未归属」，归一到一个网卡分组里）。
-  nicName: '',
-  nicIndex: null as number | null,
-})
-
-const linkForm = reactive({
-  name: '',
-  linkType: 'ethernet',
-  protocol: '',
-  speedGbps: null as number | null,
-  aDeviceId: null as number | null,
-  aPortId: null as number | null,
-  bDeviceId: null as number | null,
-  bPortId: null as number | null,
-  description: '',
-  enabled: true,
-})
-const aPorts = ref<DevicePort[]>([])
-const bPorts = ref<DevicePort[]>([])
-
-const credentialForm = reactive({
-  name: '',
-  credType: 'ssh',
-  username: '',
-  secret: '',
-})
-
-/**
- * 平台资产引用（v4.3.0 / FR-v4.3-08，P1）。
- *
- * 资产页只能看到「本项目私有 + 已引用平台共享」，因此「引用」入口必须允许输入资产 ID；
- * 「解除引用」只在行上出现——判定依据是 `projectId !== 当前项目`（接口自带该字段），
- * 不给自己的私有资产摆一个点了必然 404/403 的按钮。
- */
-const showShareForm = ref(false)
-const shareForm = reactive({ assetId: null as number | null })
-
-const shareAssetType = computed<PlatformAssetType>(() => {
-  if (tab.value === 'devices') return 'DEVICE'
-  if (tab.value === 'links') return 'LINK'
-  return 'CREDENTIAL'
-})
 
 const projectId = computed(() => auth.projectId ?? 0)
 
@@ -314,6 +122,20 @@ const credentialRows = computed(() => {
     [item.name, item.credType, item.username].some((value) =>
       (value ?? '').toLowerCase().includes(kw)))
 })
+
+// v5.18.0 / FR-v5.18-02 / W68-04：编辑状态机抽成 `useAssetEditing`（表单 ref + 增删改）。
+// 这里只做装配与解构，模板里的名字一个没改——抽取不该顺手改动模板契约。
+const {
+  portsDeviceId, portsDevice, ports, showForm,
+  editingDeviceId, editingPortId, portDeleteError,
+  deviceForm, portForm, linkForm, credentialForm, aPorts, bPorts,
+  showShareForm, shareForm, releasingKey,
+  referencePlatformAsset, unreferenceAsset, openDeviceEdit, cancelDeviceEdit, createDevice,
+  removeDevice, togglePorts, openPortEdit, cancelPortEdit, deletePort, submitPort,
+  changeLinkDevice, createLink, removeLink, createCredential, removeCredential, forceRelease,
+} = useAssetEditing({ t, projectId, tab, devices, load, error, message })
+
+const isAdmin = computed(() => auth.isAdmin)
 
 // ---- UX-02b 通用批量：三个 tab 共用一套选择模型与执行器（复用而非各写一套）----
 const pageAssetIds = computed<number[]>(() => {
@@ -403,378 +225,27 @@ function selectionColumn<T extends { id: number }>(): DataTableColumns<T>[number
 /** W63-09：项目侧与全局侧共用同一份画像加载逻辑，三列值来自同一接口。 */
 const { byDevice: profilesByDevice, load: loadProfiles } = useCollectProfiles()
 
-const deviceColumns = computed<DataTableColumns<Device>>(() => [
-  selectionColumn<Device>(),
-  {
-    title: t('assets.device.name'),
-    key: 'name',
-    minWidth: 160,
-    ellipsis: { tooltip: true },
-  },
-  {
-    title: t('assets.device.type'),
-    key: 'deviceType',
-    width: 110,
-    render: (row) => row.deviceType || EMPTY,
-  },
-  {
-    title: t('assets.device.model'),
-    key: 'model',
-    width: 130,
-    ellipsis: { tooltip: true },
-    render: (row) => row.model || EMPTY,
-  },
-  {
-    title: t('assets.device.serialNo'),
-    key: 'serialNo',
-    width: 140,
-    ellipsis: { tooltip: true },
-    render: (row) => row.serialNo || EMPTY,
-  },
-  {
-    title: t('assets.device.managementIp'),
-    key: 'managementIp',
-    width: 150,
-    render: (row) => row.managementIp || EMPTY,
-  },
-  {
-    // W62-11：项目资产页必须能一眼分辨「自己私有」与「平台共享且已授权」。
-    // 列名与差异矩阵的 col.source 对齐，不允许页面自己再写一套 scope 判断。
-    title: t('w62.sourceColumn'),
-    key: 'source',
-    width: 160,
-    render: (row) => (isPlatformAsset(row) ? t('w62.sourcePlatform') : t('w62.sourceProject')),
-  },
-  // W63-09：三列与全局侧同一套画像字段，项目侧不另写一份判定
-  {
-    title: t('w63.colCredential'),
-    key: 'credential',
-    width: 160,
-    render: (row) => {
-      const profile = profilesByDevice.value.get(row.id)
-      const key = credentialLabelKey(profile)
-      return h('span', {
-        class: key === 'w63.unbound' ? 'muted' : '',
-        'data-testid': `profile-credential-${row.id}`,
-      }, key === 'w63.unbound' ? t(key)
-        : t(key, { name: profile?.boundCredentialMasked ?? '-' }))
-    },
-  },
-  {
-    title: t('w63.colCollect'),
-    key: 'collectProfile',
-    width: 150,
-    render: (row) => {
-      const profile = profilesByDevice.value.get(row.id)
-      return h('span', { 'data-testid': `profile-collect-${row.id}` },
-        profile?.collectCount
-          ? t('w63.collectCount', { count: profile.collectCount })
-          : t('w63.noCollect'))
-    },
-  },
-  {
-    title: t('w63.colState'),
-    key: 'profileState',
-    width: 170,
-    render: (row) => {
-      const profile = profilesByDevice.value.get(row.id)
-      const reason = profile?.blockedReason
-        ? blockedReasonLabelKey(profile.blockedReason) : ''
-      return h('span', { 'data-testid': `profile-state-${row.id}` },
-        t(stateLabelKey(profile)) + (reason ? ` (${t(reason)})` : ''))
-    },
-  },
-  {
-    title: t('assets.device.domain'),
-    key: 'domainTag',
-    width: 110,
-    render: (row) => row.domainTag || EMPTY,
-  },
-  {
-    title: t('common.actions'),
-    key: 'actions',
-    width: 190,
-    render: (row) => {
-      // v4.3.0 / FR-v4.3-08 R1：平台共享资产只给「解除引用」，不给「删除」——
-      // 删的是别人的资产本体，入口不该出现在本项目的行上。
-      const platform = isPlatformAsset(row)
-      return h('div', { class: 'row-actions' }, [
-        h(
-          NButton,
-          {
-            text: true,
-            type: 'primary',
-            size: 'small',
-            onClick: () => void togglePorts(row),
-          },
-          {
-            default: () =>
-              portsDeviceId.value === row.id
-                ? t('assets.device.hidePorts')
-                : t('assets.device.ports'),
-          },
-        ),
-        h(
-          NButton,
-          {
-            text: true,
-            size: 'small',
-            disabled: platform,
-            'data-testid': `device-edit-${row.id}`,
-            onClick: () => openDeviceEdit(row),
-          },
-          { default: () => t('w62.editDevice') },
-        ),
-        platform
-          ? h(
-              NButton,
-              {
-                text: true,
-                type: 'warning',
-                size: 'small',
-                onClick: () => void unreferenceAsset('DEVICE', row.id),
-              },
-              { default: () => t('assets.share.unreference') },
-            )
-          : h(
-              NButton,
-              {
-                text: true,
-                type: 'error',
-                size: 'small',
-                onClick: () => void removeDevice(row),
-              },
-              { default: () => t('common.delete') },
-            ),
-      ])
-    },
-  },
-])
-
-const linkColumns = computed<DataTableColumns<Link>>(() => [
-  selectionColumn<Link>(),
-  {
-    title: t('assets.link.name'),
-    key: 'name',
-    minWidth: 160,
-    ellipsis: { tooltip: true },
-  },
-  {
-    title: t('assets.link.endpointA'),
-    key: 'aEndpoint',
-    minWidth: 180,
-    ellipsis: { tooltip: true },
-    render: (row) => [row.aDeviceName, row.aPortName].filter(Boolean).join(' / ') || EMPTY,
-  },
-  {
-    title: t('assets.link.endpointB'),
-    key: 'bEndpoint',
-    minWidth: 180,
-    ellipsis: { tooltip: true },
-    render: (row) => [row.bDeviceName, row.bPortName].filter(Boolean).join(' / ') || EMPTY,
-  },
-  {
-    title: t('assets.link.protocol'),
-    key: 'protocol',
-    width: 110,
-    render: (row) => row.protocol || EMPTY,
-  },
-  {
-    title: t('assets.link.speed'),
-    key: 'speedGbps',
-    width: 120,
-    render: (row) => row.speedGbps ?? EMPTY,
-  },
-  {
-    title: t('common.actions'),
-    key: 'actions',
-    width: 130,
-    render: (row) =>
-      h(
-        NButton,
-        isPlatformAsset(row)
-          ? {
-              text: true,
-              type: 'warning',
-              size: 'small',
-              onClick: () => void unreferenceAsset('LINK', row.id),
-            }
-          : {
-              text: true,
-              type: 'error',
-              size: 'small',
-              onClick: () => void removeLink(row),
-            },
-        { default: () => (isPlatformAsset(row) ? t('assets.share.unreference') : t('common.delete')) },
-      ),
-  },
-])
-
-const credentialColumns = computed<DataTableColumns<Credential>>(() => [
-  selectionColumn<Credential>(),
-  {
-    title: t('assets.credential.name'),
-    key: 'name',
-    minWidth: 160,
-    ellipsis: { tooltip: true },
-  },
-  {
-    title: t('assets.credential.type'),
-    key: 'credType',
-    width: 110,
-    render: (row) => row.credType || EMPTY,
-  },
-  {
-    title: t('assets.credential.username'),
-    key: 'username',
-    width: 150,
-    render: (row) => row.username || EMPTY,
-  },
-  {
-    title: t('assets.credential.configured'),
-    key: 'configured',
-    width: 120,
-    render: (row) =>
-      h(StatusTag, {
-        label: row.configured ? t('common.yes') : t('common.no'),
-        tone: configuredTone(row.configured),
-      }),
-  },
-  {
-    title: t('common.actions'),
-    key: 'actions',
-    width: 130,
-    render: (row) =>
-      h(
-        NButton,
-        isPlatformAsset(row)
-          ? {
-              text: true,
-              type: 'warning',
-              size: 'small',
-              onClick: () => void unreferenceAsset('CREDENTIAL', row.id),
-            }
-          : {
-              text: true,
-              type: 'error',
-              size: 'small',
-              onClick: () => void removeCredential(row),
-            },
-        { default: () => (isPlatformAsset(row) ? t('assets.share.unreference') : t('common.delete')) },
-      ),
-  },
-])
-
-/**
- * 租约页是**只读**的：这里不提供申请/释放入口，唯一动作是管理员强制释放（FR-v0.4-10）。
- *
- * 剩余时间按 `m s` 展示而不是直接打秒数：一个 "3600" 的单元格没人能一眼换算成"还有一小时"。
- * 到点即 `0`，显示为「已到期」——留个 0 会让人以为是「立刻可用」，实际是租约该被回收了。
- */
-function remainingText(seconds: number): string {
-  if (seconds <= 0) return t('assets.lease.expired')
-  const minutes = Math.floor(seconds / 60)
-  const rest = seconds % 60
-  return minutes > 0 ? `${minutes}m ${rest}s` : `${rest}s`
-}
-
-const releasingKey = ref('')
-
-const leaseColumns = computed<DataTableColumns<LeaseView>>(() => [
-  {
-    title: t('assets.lease.resource'),
-    key: 'resourceKey',
-    minWidth: 200,
-    ellipsis: { tooltip: true },
-  },
-  {
-    title: t('assets.lease.run'),
-    key: 'runId',
-    minWidth: 180,
-    ellipsis: { tooltip: true },
-  },
-  {
-    title: t('assets.lease.remaining'),
-    key: 'remainingSeconds',
-    width: 120,
-    render: (row) => remainingText(row.remainingSeconds),
-  },
-  {
-    title: t('assets.lease.state'),
-    key: 'state',
-    width: 110,
-    render: (row) =>
-      h(StatusTag, {
-        label: row.state === 'held' ? t('assets.lease.held') : row.state,
-        tone: 'ok',
-      }),
-  },
-  {
-    title: t('common.actions'),
-    key: 'actions',
-    width: 120,
-    // 只读视图对普通用户连按钮都不渲染：摆一个点了报 403 的按钮比没有更糟
-    render: (row) =>
-      auth.isAdmin
-        ? h(
-            NButton,
-            {
-              text: true,
-              type: 'error',
-              size: 'small',
-              loading: releasingKey.value === row.resourceKey,
-              onClick: () => void forceRelease(row),
-            },
-            { default: () => t('assets.lease.forceRelease') },
-          )
-        : EMPTY,
-  },
-])
-
-const portColumns = computed<DataTableColumns<DevicePort>>(() => [
-  { title: t('assets.port.name'), key: 'portName', minWidth: 160 },
-  {
-    title: t('assets.port.type'),
-    key: 'portType',
-    width: 130,
-    render: (row) => row.portType || EMPTY,
-  },
-  {
-    title: t('assets.port.speed'),
-    key: 'speedGbps',
-    width: 130,
-    render: (row) => row.speedGbps ?? EMPTY,
-  },
-  {
-    title: t('common.actions'),
-    key: 'actions',
-    width: 160,
-    render: (row) =>
-      h('span', { class: 'row-actions' }, [
-        h(
-          NButton,
-          {
-            text: true,
-            size: 'small',
-            'data-testid': `port-edit-${row.id}`,
-            onClick: () => openPortEdit(row),
-          },
-          { default: () => t('w62.editPort') },
-        ),
-        h(
-          NButton,
-          {
-            text: true,
-            type: 'error',
-            size: 'small',
-            'data-testid': `port-delete-${row.id}`,
-            onClick: () => void deletePort(row),
-          },
-          { default: () => t('w62.deletePort') },
-        ),
-      ]),
-  },
-])
+// v5.18.0 / FR-v5.18-02 / W68-04：五组列定义抽成 `config/assetColumns.ts`。
+const { deviceColumns, linkColumns, credentialColumns, leaseColumns, portColumns } =
+  useAssetColumns({
+    t,
+    selectionColumn,
+    isPlatformAsset,
+    configuredTone,
+    profilesByDevice,
+    isAdmin,
+    portsDeviceId,
+    releasingKey,
+    openDeviceEdit,
+    removeDevice,
+    togglePorts,
+    openPortEdit,
+    deletePort,
+    removeLink,
+    removeCredential,
+    forceRelease,
+    unreferenceAsset,
+  })
 
 async function load(): Promise<void> {
   error.value = null
@@ -880,310 +351,7 @@ function turnPage(next: number): void {
   void load()
 }
 
-/**
- * 引用平台资产（P1）：成功后关表单并重载；失败（含 403）只把错误写进错误行，
- * **表单与已填 ID 一律保留**，用户不用重新输入就能换一个 ID 再试（PRD FR-v4.3-08 R2）。
- */
-async function referencePlatformAsset(): Promise<void> {
-  error.value = null
-  message.value = ''
-  if (!shareForm.assetId) {
-    error.value = { summary: t('assets.requiredAssetId'), detail: null }
-    return
-  }
-  try {
-    await shareApi.reference(projectId.value, shareAssetType.value, shareForm.assetId)
-    message.value = t('assets.share.referenceOk')
-    shareForm.assetId = null
-    showShareForm.value = false
-    await load()
-  } catch (e) {
-    error.value = localizeError(e)
-  }
-}
 
-/** 解除引用（P1）：只删关系不删资产，因此文案强调「本项目不再看到」。 */
-async function unreferenceAsset(type: PlatformAssetType, id: number): Promise<void> {
-  if (!(await confirmAction(t('assets.share.unreferenceConfirm'), { tone: 'danger' }))) return
-  error.value = null
-  message.value = ''
-  try {
-    await shareApi.unreference(projectId.value, type, id)
-    message.value = t('assets.share.unreferenceOk')
-    await load()
-  } catch (e) {
-    error.value = localizeError(e)
-  }
-}
-
-function openDeviceEdit(row: Device): void {
-  showForm.value = true
-  editingDeviceId.value = row.id
-  deviceForm.name = row.name ?? ''
-  deviceForm.deviceType = row.deviceType ?? ''
-  deviceForm.model = row.model ?? ''
-  deviceForm.vendor = row.vendor ?? ''
-  deviceForm.serialNo = row.serialNo ?? ''
-  deviceForm.managementIp = row.managementIp ?? ''
-  deviceForm.location = row.location ?? ''
-  deviceForm.domainTag = row.domainTag ?? ''
-}
-
-function cancelDeviceEdit(): void {
-  editingDeviceId.value = null
-  deviceForm.name = ''
-  deviceForm.deviceType = ''
-  deviceForm.model = ''
-  deviceForm.vendor = ''
-  deviceForm.serialNo = ''
-  deviceForm.managementIp = ''
-  deviceForm.location = ''
-  deviceForm.domainTag = ''
-}
-
-async function createDevice(): Promise<void> {
-  error.value = null
-  message.value = ''
-  if (!deviceForm.name.trim()) {
-    error.value = { summary: t('assets.requiredName'), detail: null }
-    return
-  }
-  try {
-    const command = { ...deviceForm, name: deviceForm.name.trim(), enabled: true }
-    if (editingDeviceId.value !== null) {
-      await deviceApi.update(projectId.value, editingDeviceId.value, command)
-    } else {
-      await deviceApi.create(projectId.value, command)
-    }
-    message.value = t('common.saved')
-    showForm.value = false
-    cancelDeviceEdit()
-    await load()
-  } catch (e) {
-    error.value = localizeError(e)
-  }
-}
-
-async function removeDevice(device: Device): Promise<void> {
-  if (!(await confirmAction(t('common.confirmDelete'), { tone: 'danger' }))) return
-  try {
-    await deviceApi.remove(projectId.value, device.id)
-    // 删的正是当前展开的那台设备时，端口面板留着会指向已不存在的对象
-    if (portsDeviceId.value === device.id) {
-      portsDeviceId.value = null
-      ports.value = []
-    }
-    await load()
-  } catch (e) {
-    error.value = localizeError(e)
-  }
-}
-
-async function togglePorts(device: Device): Promise<void> {
-  error.value = null
-  if (portsDeviceId.value === device.id) {
-    portsDeviceId.value = null
-    ports.value = []
-    return
-  }
-  portsDeviceId.value = device.id
-  ports.value = []
-  try {
-    ports.value = await deviceApi.ports(projectId.value, device.id)
-  } catch (e) {
-    error.value = localizeError(e)
-  }
-}
-
-function openPortEdit(row: DevicePort): void {
-  editingPortId.value = row.id
-  portForm.portName = row.portName ?? ''
-  portForm.portType = row.portType ?? ''
-  portForm.speedGbps = row.speedGbps ?? null
-  portForm.nicName = row.nicName ?? ''
-  portForm.nicIndex = row.nicIndex ?? null
-  portDeleteError.value = ''
-}
-
-function cancelPortEdit(): void {
-  editingPortId.value = null
-  portForm.portName = ''
-  portForm.portType = ''
-  portForm.speedGbps = null
-  portForm.nicName = ''
-  portForm.nicIndex = null
-}
-
-async function deletePort(row: DevicePort): Promise<void> {
-  if (!(await confirmAction(t('w62.deletePortConfirm', { name: row.portName }), {
-      tone: 'danger',
-    })))
-    return
-  portDeleteError.value = ''
-  try {
-    await deviceApi.deletePort(projectId.value, row.id)
-    if (editingPortId.value === row.id) cancelPortEdit()
-    ports.value = await deviceApi.ports(projectId.value, portsDeviceId.value!)
-  } catch (e) {
-    // 409 文案由后端点名引用链路；前端只负责把它显示出来，不改成模糊的「删除失败」
-    portDeleteError.value = localizeError(e).summary
-  }
-}
-
-async function submitPort(): Promise<void> {
-  const deviceId = portsDeviceId.value
-  if (!deviceId) return
-  error.value = null
-  if (!portForm.portName.trim()) {
-    error.value = { summary: t('assets.requiredPortName'), detail: null }
-    return
-  }
-  try {
-    const command = {
-      portName: portForm.portName.trim(),
-      portType: portForm.portType,
-      speedGbps: portForm.speedGbps,
-      nicName: portForm.nicName.trim() || null,
-      nicIndex: portForm.nicIndex,
-    }
-    if (editingPortId.value !== null) {
-      await deviceApi.updatePort(projectId.value, editingPortId.value, command)
-    } else {
-      await deviceApi.addPort(projectId.value, deviceId, command)
-    }
-    cancelPortEdit()
-    portDeleteError.value = ''
-    ports.value = await deviceApi.ports(projectId.value, deviceId)
-  } catch (e) {
-    error.value = localizeError(e)
-  }
-}
-
-/**
- * 换设备时必须把已选端口清掉。
- *
- * 旧实现在这里只重载端口列表、不动 `aPortId`：从设备 A 换成设备 B 后，`aPortId` 仍指向
- * A 的端口，提交出去就是一条「A 端设备是 B、A 端端口是 A 的端口」的错链，而界面上
- * 下拉框还显示着上一次的端口名，看不出已经错位。
- */
-async function changeLinkDevice(side: 'a' | 'b', deviceId: number | null): Promise<void> {
-  if (side === 'a') {
-    linkForm.aDeviceId = deviceId
-    linkForm.aPortId = null
-  } else {
-    linkForm.bDeviceId = deviceId
-    linkForm.bPortId = null
-  }
-  if (!deviceId) {
-    if (side === 'a') aPorts.value = []
-    else bPorts.value = []
-    return
-  }
-  try {
-    const list = await deviceApi.ports(projectId.value, deviceId)
-    if (side === 'a') aPorts.value = list
-    else bPorts.value = list
-  } catch (e) {
-    error.value = localizeError(e)
-  }
-}
-
-async function createLink(): Promise<void> {
-  error.value = null
-  message.value = ''
-  if (!linkForm.name.trim()) {
-    error.value = { summary: t('assets.requiredName'), detail: null }
-    return
-  }
-  try {
-    await linkApi.create(projectId.value, { ...linkForm, name: linkForm.name.trim() })
-    message.value = t('common.saved')
-    linkForm.name = ''
-    showForm.value = false
-    await load()
-  } catch (e) {
-    error.value = localizeError(e)
-  }
-}
-
-async function removeLink(link: Link): Promise<void> {
-  if (!(await confirmAction(t('common.confirmDelete'), { tone: 'danger' }))) return
-  try {
-    await linkApi.remove(projectId.value, link.id)
-    await load()
-  } catch (e) {
-    error.value = localizeError(e)
-  }
-}
-
-async function createCredential(): Promise<void> {
-  error.value = null
-  message.value = ''
-  if (!credentialForm.name.trim() || !credentialForm.secret) {
-    error.value = { summary: t('assets.requiredCredential'), detail: null }
-    return
-  }
-  try {
-    await credentialApi.create(projectId.value, {
-      name: credentialForm.name.trim(),
-      credType: credentialForm.credType,
-      username: credentialForm.username,
-      secret: credentialForm.secret,
-    })
-    message.value = t('common.saved')
-    credentialForm.name = ''
-    credentialForm.username = ''
-    credentialForm.secret = ''
-    showForm.value = false
-    await load()
-  } catch (e) {
-    error.value = localizeError(e)
-  }
-}
-
-async function removeCredential(credential: Credential): Promise<void> {
-  if (!(await confirmAction(t('common.confirmDelete'), { tone: 'danger' }))) return
-  try {
-    await credentialApi.remove(projectId.value, credential.id)
-    await load()
-  } catch (e) {
-    error.value = localizeError(e)
-  }
-}
-
-/**
- * 强制释放（FR-v0.4-10）。
- *
- * 确认文案里把「占用者 runId」和「资源」都念出来：只说"确定释放吗"的操作者，
- * 十有八九是在资产页顺手点的，并不知道这一下会把谁的运行打成失败。
- * confirm 参数取该租约的 runId —— 与后端二次确认口径一致，前端不另造一套。
- */
-async function forceRelease(lease: LeaseView): Promise<void> {
-  const ok = await confirmAction(
-    t('assets.lease.forceReleaseConfirm', { run: lease.runId, key: lease.resourceKey }),
-    { tone: 'danger' },
-  )
-  if (!ok) return
-  error.value = null
-  message.value = ''
-  releasingKey.value = lease.resourceKey
-  try {
-    const result = await executionApi.forceReleaseLease(
-      projectId.value,
-      lease.resourceKey,
-      lease.runId,
-    )
-    message.value = t('assets.lease.forceReleased', {
-      run: result.runId,
-      state: result.runState,
-    })
-    await load()
-  } catch (e) {
-    error.value = localizeError(e)
-  } finally {
-    releasingKey.value = ''
-  }
-}
 </script>
 
 <template>
@@ -1462,30 +630,7 @@ async function forceRelease(lease: LeaseView): Promise<void> {
       />
     </div>
 
-    <div v-if="tab === 'links' && topologyMode" class="topology">
-      <p v-if="links.length === 0" class="muted">{{ t('assets.link.topologyEmpty') }}</p>
-      <!-- 一条链渲染成一行：节点与边交替，链断了自然折到下一行，多跳才看得出「谁串到谁」 -->
-      <div
-        v-for="chain in linkChains"
-        :key="chain.key"
-        class="topo-link"
-        :data-link="chain.label"
-        :style="{ gridTemplateColumns: chainColumns(chain) }"
-      >
-        <template v-for="(node, index) in chain.nodes" :key="`${chain.key}:${index}`">
-          <div class="topo-node">
-            <span class="topo-node-name">{{ node.name }}</span>
-            <span v-if="node.ports.length" class="topo-node-port">
-              {{ node.ports.join(' / ') }}
-            </span>
-          </div>
-          <div v-if="chain.edges[index]" class="topo-edge">
-            <span class="topo-edge-name">{{ chain.edges[index].name }}</span>
-            <span class="muted small">{{ edgeMeta(chain.edges[index]) }}</span>
-          </div>
-        </template>
-      </div>
-    </div>
+        <AssetTopologyBlock v-if="tab === 'links' && topologyMode" :links="links" />
 
     <AssetWorkspace
       v-if="tab === 'credentials'"
@@ -1536,102 +681,4 @@ async function forceRelease(lease: LeaseView): Promise<void> {
   </div>
 </template>
 
-<style scoped>
-.asset-tabs {
-  margin-bottom: 12px;
-}
-
-.port-card {
-  margin-top: 16px;
-}
-
-.port-head {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-}
-
-.port-head .card-title {
-  margin: 0;
-}
-
-.port-empty {
-  margin: 0;
-  padding: var(--space-4) 0;
-}
-
-.port-form {
-  margin-top: 12px;
-}
-
-/* 操作列多个 text 按钮并排：h() 渲染的节点拿不到 scoped 类，用 :deep 兜 */
-:deep(.row-actions) {
-  display: flex;
-  gap: var(--space-2);
-}
-
-/* 拓扑视图：一行一条链 = 节点 / 边 / 节点（边数不定，栅格列由 chainColumns 内联给出） */
-.topology {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  /* 多跳链比容器宽时横向滚动，不要把节点压成一条缝 */
-  overflow-x: auto;
-}
-
-.topo-link {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 180px minmax(0, 1fr);
-  align-items: center;
-  gap: var(--space-3);
-}
-
-.topo-node {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  padding: var(--space-3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--panel);
-}
-
-.topo-node-name {
-  font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.topo-node-port {
-  font-family: var(--font-mono);
-  font-size: var(--font-size-sm);
-  color: var(--text-muted);
-}
-
-.topo-edge {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-1);
-}
-
-.topo-edge::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 0;
-  right: 0;
-  border-top: 1px dashed var(--border-strong);
-  z-index: 0;
-}
-
-.topo-edge-name {
-  position: relative;
-  z-index: 1;
-  padding: 0 var(--space-2);
-  background: var(--bg);
-  font-size: var(--font-size-sm);
-}
-</style>
+<style scoped src="../styles/assets-view.css"></style>

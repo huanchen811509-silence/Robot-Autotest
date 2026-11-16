@@ -28,10 +28,17 @@ public class ProbePackController {
         return ApiResponse.ok(packs.codes());
     }
 
+    /**
+     * 按设备类型取探针包（v5.18.0 / FR-v5.18-05）。
+     *
+     * <p>v5.18.0 去掉了 `defaultValue = "HOST_LINUX"`：默认值会让「漏传类型」悄悄按 Linux
+     * 采一整套，全项失败却看不出是调用方的问题。现在留空由服务层判 400 并点名支持的类型，
+     * 判据 2「空 → 要求指定」才有落点。
+     */
     @GetMapping("/commands")
     public ApiResponse<ProbePackService.PackView> commands(
             @RequestParam long projectId,
-            @RequestParam(defaultValue = "HOST_LINUX") String deviceType) {
+            @RequestParam(required = false) String deviceType) {
         access.requireProjectAccess(projectId);
         return ApiResponse.ok(packs.commandsFor(deviceType));
     }

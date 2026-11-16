@@ -1,0 +1,23 @@
+LOGIN=OK
+[0] flyway_latest=11.79
+    probe_packs='HOST_LINUX_DEFAULT\tHOST_LINUX\nNETWORK_SWITCH_DEFAULT\tNETWORK_SWITCH\nBMC_DEFAULT\tBMC'
+[1] status=200 total=2 overridden=0
+    kindCounts={'MEASURED': 0, 'MANUAL': 0, 'PLANNED': 2} counts={'MEASURED': 0, 'MANUAL': 0, 'PLANNED': 2, 'CONFLICT': 0}
+    edges=2 plannedNodes=0
+    KIND_SUM_EQ_TOTAL=PASS（2 vs 2）
+    LEGEND_SUM_EQ_TOTAL_PLUS_OVERRIDDEN=PASS（2 vs 2）
+[2] measured_edges=0 kindCounts.MEASURED=0
+    MEASURED_CONSISTENT=PASS
+[3] topology_node rows in project 9 = 2
+[3] status=200 plannedNodes=2 withRefDevice=1 plannedEdges=1
+    PLANNED_NODES_OUT=PASS
+    NODE_EDGE_OUT=PASS
+[4] cleanup_left=0
+[5] HOST_LINUX status=200 code=HOST_LINUX_DEFAULT commands=10 required=6
+[5] NETWORK_SWITCH status=200 code=NETWORK_SWITCH_DEFAULT commands=4 required=2
+[5] BMC status=200 code=BMC_DEFAULT commands=4 required=1
+[6] blank deviceType status=400 msg=请指定 deviceType（支持：HOST_LINUX / NETWORK_SWITCH / BMC）
+    BLANK_400=PASS
+[7] unknown deviceType status=400 msg=不支持的 deviceType=SWITCH_X（支持：HOST_LINUX / NETWORK_SWITCH / BMC）
+    UNKNOWN_400=PASS
+EVIDENCE_DIR=/home/evergreen/robot-autotest/docs/evidence/v5.18.0/topology

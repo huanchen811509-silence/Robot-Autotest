@@ -8,7 +8,7 @@
  * 每次更新都做去重；提交时若某些用例集已被并发删除，由父级把冲突名单传进
  * `conflicts` 并在此**指名**显示、提供移除入口。
  */
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { platformCaseSetApi } from '@/api/platformCaseSets'
 import { globalAssetApi } from '@/api/globalAssets'
 import CaseCategoryTree from './CaseCategoryTree.vue'
@@ -27,6 +27,12 @@ interface ContentSelection {
   sets: ContentSetRef[]
   caseIds: number[]
   assetIds: number[]
+  /**
+   * v5.17.0 / W67-06：场景**不走 caseSetIds**。
+   * 场景在 test_scenario 表，用例集在 test_set 表，两张表 id 空间独立——
+   * 混在一起提交会撞号并静默错关联，所以这里单列一维。
+   */
+  scenarioIds: number[]
 }
 
 const props = defineProps<{
@@ -39,15 +45,18 @@ const props = defineProps<{
   /** 注入选项后不再自行请求（单测 / 已有数据的父级用）。 */
   setOptions?: ContentSetRef[]
   assetOptions?: ContentSetRef[]
+  /** 场景候选：来自所选模板的 SCENARIO 明细（场景按项目隔离，没有全局列表可拉）。 */
+  scenarioOptions?: ContentSetRef[]
 }>()
 
 const emit = defineEmits<{ 'update:modelValue': [value: ContentSelection] }>()
 
-type SectionKey = 'template' | 'set' | 'case' | 'asset'
-const sectionKeys: SectionKey[] = ['template', 'set', 'case', 'asset']
+type SectionKey = 'template' | 'set' | 'scenario' | 'case' | 'asset'
+const sectionKeys: SectionKey[] = ['template', 'set', 'scenario', 'case', 'asset']
 const sectionLabels: Record<SectionKey, string> = {
   template: t('w57.wizardContent.sectionTemplate'),
   set: t('w57.wizardContent.sectionSet'),
+  scenario: t('w57.wizardContent.sectionScenario'),
   case: t('w57.wizardContent.sectionCase'),
   asset: t('w57.wizardContent.sectionAsset'),
 }
@@ -56,6 +65,7 @@ const openSections = ref<Set<SectionKey>>(new Set<SectionKey>(['case']))
 
 const sets = ref<ContentSetRef[]>(props.setOptions ?? [])
 const assets = ref<ContentSetRef[]>(props.assetOptions ?? [])
+const scenarios = computed<ContentSetRef[]>(() => props.scenarioOptions ?? [])
 const loadError = ref('')
 
 onMounted(async () => {
@@ -88,6 +98,7 @@ function emitChange(next: ContentSelection): void {
     sets: next.sets.filter((item, index, all) => all.findIndex((x) => x.id === item.id) === index),
     caseIds: [...new Set(next.caseIds)],
     assetIds: [...new Set(next.assetIds)],
+    scenarioIds: [...new Set(next.scenarioIds ?? [])],
   })
 }
 
@@ -99,6 +110,14 @@ function toggleSet(option: ContentSetRef): void {
     setIds: active ? current.setIds.filter((id) => id !== option.id) : [...current.setIds, option.id],
     sets: active ? current.sets.filter((item) => item.id !== option.id) : [...current.sets, option],
   })
+}
+
+function toggleScenario(option: ContentSetRef): void {
+  const picked = props.modelValue.scenarioIds ?? []
+  const next = picked.includes(option.id)
+    ? picked.filter((id) => id !== option.id)
+    : [...picked, option.id]
+  emitChange({ ...props.modelValue, scenarioIds: next })
 }
 
 function toggleAsset(option: ContentSetRef): void {
@@ -132,7 +151,8 @@ function dedupe(): void {
     <!-- 已选摘要：常显，不随分区折叠消失 -->
     <div class="summary" data-testid="selection-summary">
       <span>{{ t('w57.wizardContent.selectedTemplate', { count: modelValue.templateKeys.length }) }}</span>
-      <span>{{ t('w57.wizardContent.selectedSet', { count: modelValue.setIds.length }) }}</span>
+      <span data-testid="summary-set">{{ t('w57.wizardContent.selectedSet', { count: modelValue.setIds.length }) }}</span>
+      <span data-testid="summary-scenario">{{ t('w57.wizardContent.selectedScenario', { count: (modelValue.scenarioIds ?? []).length }) }}</span>
       <span>{{ t('w57.wizardContent.selectedCase', { count: modelValue.caseIds.length }) }}</span>
       <span>{{ t('w57.wizardContent.selectedAsset', { count: modelValue.assetIds.length }) }}</span>
       <button type="button" class="link-btn" data-testid="dedupe" @click="dedupe">{{ t('w57.wizardContent.dedupe') }}</button>
@@ -186,6 +206,21 @@ function dedupe(): void {
             <span class="picker-name">{{ item.name }}</span>
           </label>
           <p v-if="sets.length === 0" class="picker-empty">{{ t('w57.wizardContent.noSet') }}</p>
+        </template>
+
+        <template v-else-if="key === 'scenario'">
+          <label v-for="item in scenarios" :key="item.id" class="picker-item">
+            <input
+              type="checkbox"
+              :checked="(modelValue.scenarioIds ?? []).includes(item.id)"
+              :data-testid="`scenario-${item.id}`"
+              @change="toggleScenario(item)"
+            />
+            <span class="picker-name">{{ item.name }}</span>
+          </label>
+          <p v-if="scenarios.length === 0" class="picker-empty" data-testid="no-scenario">
+            {{ t('w57.wizardContent.noScenario') }}
+          </p>
         </template>
 
         <template v-else-if="key === 'case'">

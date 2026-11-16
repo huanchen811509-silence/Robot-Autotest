@@ -1,0 +1,15 @@
+ops_task 列: active_lock,created_at,created_by,finished_at,id,lease_until,log_text,operator_id,params_json,phase,progress,project_id,result_json,started_at,status,task_type,updated_at,updated_by
+LOGIN=OK
+
+=== TC-35 非 _it 库必须 400 ===
+  targetDb=robot_dev status=400 msg=恢复演练只允许以 _it 结尾的演练库：targetDb=robot_dev 被拒
+  NON_IT_400=PASS
+
+=== TC-35b 合法 _it 库放行（dry-run，不真恢复）===
+  targetDb=robot_it status=200 dryRun=True
+  IT_ALLOWED=PASS
+
+=== TC-34 落 ops_task ===
+  before=6 after=7
+  OPS_TASK_WRITTEN=PASS
+  最近一条: RESTORE_DRILL	{"targetDb":"robot_it"}

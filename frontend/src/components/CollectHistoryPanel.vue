@@ -30,7 +30,14 @@ const credentialText = computed(() => props.boundCredentialName
 
 const columns = computed<DataTableColumns<CollectHistoryRow>>(() => [
   { title: t('w63.historyTime'), key: 'collectedAt', render: (row) => row.collectedAt ?? '-' },
-  { title: t('w63.historyCredential'), key: 'credential', render: () => credentialText.value },
+  {
+    // v5.17.0 / W67-08：凭证列改为**按行**，取本次采集时刻之前最近一次验证的凭证（掩码名）。
+    // 改之前这一列渲染的是设备当前绑定凭证，整列一个值——历史等于没有。
+    title: t('w63.historyCredential'),
+    key: 'credential',
+    render: (row) => row.credentialMaskedName
+      || t('w63.credentialNotRecorded'),
+  },
   { title: t('w63.historyResult'), key: 'status', render: (row) => row.status ?? '-' },
   {
     title: t('w63.historyItems'),
@@ -43,6 +50,8 @@ const columns = computed<DataTableColumns<CollectHistoryRow>>(() => [
 <template>
   <div class="collect-history" data-testid="collect-history">
     <h3>{{ t('w63.historyTitle') }}</h3>
+    <!-- 当前绑定凭证：与逐行的「本次采集所用凭证」区分开，两者不是一回事 -->
+    <p class="muted" data-testid="bound-credential">{{ credentialText }}</p>
     <div v-if="!rows.length" class="muted" data-testid="collect-history-empty">
       {{ t('w63.historyEmpty') }}
     </div>

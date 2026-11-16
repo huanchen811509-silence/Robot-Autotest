@@ -1,0 +1,13 @@
+{
+  "db": "127.0.0.1:3306/robot_dev",
+  "totals": {"app_user": 0, "project": 3, "test_set": 2, "test_case": 10, "run": 1, "test_result": 0, "test_report": 1},
+  "objects": {
+    "app_user": [],
+    "project": [{"id": 125, "code": "TEST-V59-OWNER", "name": "v5.9 负责人可见性"}, {"id": 126, "code": "TEST-V59-GROUP", "name": "v5.9 组授权可见性"}, {"id": 128, "code": "DEMO-W67-01", "name": "W67-01 演示项目（purge 取证）"}],
+    "test_set": [{"id": 94, "kind": "case_set", "name": "演示用例集一", "setCode": "DEMO-W67-S1"}, {"id": 95, "kind": "case_set", "name": "演示用例集二", "setCode": "DEMO-W67-S2"}],
+    "test_case": [{"id": 32555, "title": "演示用例 01", "caseCode": "DEMO-W67-C01"}, {"id": 32556, "title": "演示用例 02", "caseCode": "DEMO-W67-C02"}, {"id": 32557, "title": "演示用例 03", "caseCode": "DEMO-W67-C03"}, {"id": 32558, "title": "演示用例 04", "caseCode": "DEMO-W67-C04"}, {"id": 32559, "title": "演示用例 05", "caseCode": "DEMO-W67-C05"}, {"id": 32560, "title": "演示用例 06", "caseCode": "DEMO-W67-C06"}, {"id": 32561, "title": "演示用例 07", "caseCode": "DEMO-W67-C07"}, {"id": 32562, "title": "演示用例 08", "caseCode": "DEMO-W67-C08"}, {"id": 32563, "title": "演示用例 09", "caseCode": "DEMO-W67-C09"}, {"id": 32564, "title": "演示用例 10", "caseCode": "DEMO-W67-C10"}],
+    "run": [{"runId": "RUN-W67-01-DEMO", "status": "finished"}],
+    "test_result": [],
+    "test_report": [{"id": 30, "runId": "RUN-W67-01-DEMO", "state": "DRAFT", "title": "W67-01 演示报告"}]
+  }
+}

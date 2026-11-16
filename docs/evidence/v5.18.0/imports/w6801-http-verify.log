@@ -1,0 +1,20 @@
+LOGIN=OK
+COUNTS_BEFORE={"device": 21, "device_port": 66, "credential": 8, "test_case": 12491, "test_set": 47}
+[1] status=200 devices=3 toCreate=1 toUpdate=1 conflicts=1
+    headers=['设备名称', '设备类型']
+    sampleRows=[['gpu01', 'server'], ['W68-DEV-NEW-01', 'server'], ['W68-DEV-NEW-01', 'server']]
+    COUNTS_AS_EXPECTED=PASS
+    ECHO_PRESENT=PASS
+[2] status=200 devices=0 ports=0
+    MAPPING_EFFECTIVE=PASS（devices 3 -> 0）
+[3] status=400 msg=字段映射不是合法的 JSON 对象（形如 {"源列名": "目标字段"}）：Unexpected character ('n' (code 
+    BAD_JSON_400=PASS
+[4] status=200 total=956 new=226 toCreate=226 conflicts=0
+    headers_head=['测试编号', '一级分类', '二级分类', '测试用例', '测试类型', '预置条件', '测试步骤（按序执行）', 'A端命令（设备见各用例预置条件）', 'B端命令（设
+    ALIAS_CONSISTENT=PASS
+    ECHO_PRESENT=PASS
+[5] status=200 total=730 errors=1
+    MAPPING_EFFECTIVE=PASS
+COUNTS_AFTER={"device": 21, "device_port": 66, "credential": 8, "test_case": 12491, "test_set": 47}
+ZERO_WRITE=PASS
+EVIDENCE_DIR=/home/evergreen/robot-autotest/docs/evidence/v5.18.0/imports

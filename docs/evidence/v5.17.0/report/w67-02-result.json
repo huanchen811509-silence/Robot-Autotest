@@ -1,0 +1,25 @@
+{
+  "projectId": "129",
+  "nodeId": 33,
+  "rows": [
+    [
+      "RUN-W67-R1",
+      1,
+      1,
+      true
+    ],
+    [
+      "RUN-W67-R2",
+      3,
+      3,
+      true
+    ],
+    [
+      "RUN-W67-R3",
+      null,
+      0,
+      true
+    ]
+  ],
+  "match": true
+}

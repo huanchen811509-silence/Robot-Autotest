@@ -35,6 +35,13 @@ export interface AssetPreview {
   warnings: string[]
   sheetsScanned: number
   replayed: boolean
+  /** v5.18.0 / FR-v5.18-01：五步向导的「冲突预览」三数（与提交结果同口径）。 */
+  toCreate?: number
+  toUpdate?: number
+  conflicts?: number
+  /** 表头原始文本（映射页左侧）与前 3 行样例（映射页右侧）。 */
+  headers?: string[]
+  sampleRows?: string[][]
 }
 
 export interface AssetImportResult {
@@ -177,10 +184,23 @@ export const globalAssetApi = {
   references(type: string, id: number) {
     return request<Record<string, number>>(`/global/assets/${type}/${id}/references`)
   },
-  preview(file: File) {
+  /**
+   * 预检。
+   *
+   * @param mapping v5.18.0 / FR-v5.18-01：字段映射（{源列名: 目标字段}）；不传即老行为，
+   *   后端按表头自动识别。传了非法 JSON 时后端 400，不静默退回。
+   */
+  preview(file: File, mapping?: Record<string, string>) {
     const form = new FormData()
     form.append('file', file)
-    return requestMultipart<AssetPreview>('/global/assets/import/preview', form, 120_000)
+    const query = mapping && Object.keys(mapping).length > 0
+      ? toQuery({ mapping: JSON.stringify(mapping) })
+      : ''
+    return requestMultipart<AssetPreview>(
+      `/global/assets/import/preview${query}`,
+      form,
+      120_000,
+    )
   },
   commit(file: File) {
     const form = new FormData()

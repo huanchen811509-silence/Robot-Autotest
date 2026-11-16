@@ -1,5 +1,6 @@
 package com.qa.autotest.application.asset;
 
+import com.qa.autotest.application.imports.ColumnMapping;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -49,9 +50,24 @@ public final class AssetImportService {
                                 String sourceSheet) {
     }
 
+    /**
+     * 解析结果。
+     *
+     * <p>v5.18.0 / FR-v5.18-01 增加 {@code headers} 与 {@code sampleRows}：映射页要显示
+     * 「原始列名 + 前 3 行样例」，否则用户改列时看不到改的是哪一列、值长什么样。
+     * 这两项只是回显，不参与入库。
+     */
     public record ParsedAssets(List<DeviceRow> devices, List<PortRow> ports,
                                List<CredentialRow> credentials, List<String> warnings,
-                               int sheetsScanned) {
+                               int sheetsScanned, List<String> headers,
+                               List<List<String>> sampleRows) {
+
+        /** 兼容旧调用：没有回显信息时语义与 5.17 一致。 */
+        public ParsedAssets(List<DeviceRow> devices, List<PortRow> ports,
+                            List<CredentialRow> credentials, List<String> warnings,
+                            int sheetsScanned) {
+            this(devices, ports, credentials, warnings, sheetsScanned, List.of(), List.of());
+        }
     }
 
     private AssetImportService() {
@@ -102,10 +118,22 @@ public final class AssetImportService {
             List.of("rdma", "端点绑定", "环境事实", "环境限制", "bond");
 
     public static ParsedAssets parse(InputStream input) {
+        return parse(input, java.util.Map.of());
+    }
+
+    /**
+     * 带字段映射的解析（v5.18.0 / FR-v5.18-01）。
+     *
+     * @param mapping {@code {原始列名: 内部字段名}}；空映射 = 沿用表头自动识别
+     */
+    public static ParsedAssets parse(InputStream input, java.util.Map<String, String> mapping) {
         List<DeviceRow> devices = new ArrayList<>();
         List<PortRow> ports = new ArrayList<>();
         List<CredentialRow> credentials = new ArrayList<>();
         List<String> warnings = new ArrayList<>();
+        // 映射页回显用：第一条被识别为表头的行 + 其后前 3 条数据行（原始文本，不做语义加工）
+        List<String> headers = new ArrayList<>();
+        List<List<String>> sampleRows = new ArrayList<>();
         int sheetsScanned = 0;
         try (Workbook workbook = WorkbookFactory.create(input)) {
             DataFormatter formatter = new DataFormatter();
@@ -133,14 +161,20 @@ public final class AssetImportService {
                     if (skipSection) {
                         continue;
                     }
-                    Map<String, Integer> detected = detectHeader(cells);
+                    Map<String, Integer> detected = detectHeader(cells, mapping);
                     if (detected.size() >= 2) {
                         columns = detected;
                         kind = classify(detected);
+                        if (headers.isEmpty()) {
+                            headers.addAll(trimmed(cells));
+                        }
                         continue;
                     }
                     if (columns == null || kind == null) {
                         continue;
+                    }
+                    if (sampleRows.size() < 3) {
+                        sampleRows.add(trimmed(cells));
                     }
                     int rowNum = row.getRowNum() + 1;
                     switch (kind) {
@@ -175,7 +209,8 @@ public final class AssetImportService {
         if (credentials.isEmpty()) {
             warnings.add("未识别到凭据分节；账户列只作设备属性，不生成凭据记录");
         }
-        return new ParsedAssets(devices, ports, credentials, warnings, sheetsScanned);
+        return new ParsedAssets(devices, ports, credentials, warnings, sheetsScanned,
+                List.copyOf(headers), List.copyOf(sampleRows));
     }
 
     private static DeviceRow deviceRow(List<String> cells, Map<String, Integer> columns,
@@ -333,10 +368,30 @@ public final class AssetImportService {
 
     /** 一列同时登记多个字段（如「主机名」既是设备名也是名称），读哪一列由行类型决定。 */
     private static Map<String, Integer> detectHeader(List<String> cells) {
+        return detectHeader(cells, java.util.Map.of());
+    }
+
+    /**
+     * 表头识别 + 用户显式映射。
+     *
+     * <p>mapping 优先：用户在映射页把某列指给某个字段时，按「原始列名（归一化）」命中后
+     * 强制绑定该列；未命中任何字段的列若被映射到合法字段，也一并收进来——
+     * 这正是「表头写错/写偏」时唯一能救回来的路径。
+     */
+    private static Map<String, Integer> detectHeader(List<String> cells,
+                                                     java.util.Map<String, String> mapping) {
         Map<String, Integer> found = new LinkedHashMap<>();
         for (int i = 0; i < cells.size(); i++) {
-            String cell = normalize(cells.get(i));
+            String raw = cells.get(i);
+            String cell = normalize(raw);
             if (cell.isEmpty()) {
+                continue;
+            }
+            String forced = ColumnMapping.lookup(mapping, raw);
+            if (forced != null && !forced.isBlank()) {
+                // 显式映射**独占**这一列：用户把它指给 model，就不该再当设备名用。
+                // 否则一列同时喂两个字段，改列等于没改（实测过：toCreate/toUpdate 一点不变）。
+                found.putIfAbsent(forced, i);
                 continue;
             }
             for (String field : ALIASES.getOrDefault(cell, List.of())) {
@@ -372,6 +427,17 @@ public final class AssetImportService {
         }
         String value = cells.get(index);
         return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    /** 去掉首尾空白并截断到 12 列：样例只做回显，避免把超宽表整行塞进响应。 */
+    private static List<String> trimmed(List<String> cells) {
+        List<String> out = new ArrayList<>();
+        int limit = Math.min(cells.size(), 12);
+        for (int i = 0; i < limit; i++) {
+            String value = cells.get(i);
+            out.add(value == null ? "" : value.trim());
+        }
+        return out;
     }
 
     private static Integer parseInt(String value) {

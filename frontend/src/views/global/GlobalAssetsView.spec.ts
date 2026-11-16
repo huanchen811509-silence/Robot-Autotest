@@ -218,9 +218,12 @@ describe('GlobalAssetsView 权限', () => {
   it('admin 有导出 / 录入 / 导入三个入口与行内操作', async () => {
     const root = await mountView()
 
-    // v4.12.0：设备页签多一个「录入设备」，三个按钮的顺序是 导出 → 录入设备 → 导入
+    // v4.12.0：设备页签多一个「录入设备」，顺序是 导出 → 录入设备
+    // v5.18.0：导入入口搬进 `AssetImportBlock`（五步向导 + 批次记录），权限语义不变，
+    // 因此这里改为「页头 2 个按钮 + 导入块里的导入入口存在」——断言强度不降反升。
     const actions = Array.from(root.querySelectorAll<HTMLButtonElement>('.page-actions button'))
-    expect(actions).toHaveLength(3)
+    expect(actions).toHaveLength(2)
+    expect(root.querySelector('[data-testid="asset-import-open"]')).toBeTruthy()
     expect(actions[1].textContent).toContain('录入设备')
     expect(root.textContent).toContain(deviceRow.name)
   })

@@ -11,29 +11,20 @@ import { confirmAction } from '@/composables/useConfirm'
  * 三条通道（ssh / network / bmc）由后端按凭据类型分派，页面只根据后端给的 `channel` 显示文案，
  * **不在这里重复一份类型映射** —— 两处映射迟早分叉，分了叉用户看到的就是「有按钮但采不到」。
  */
-import { computed, h, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import AssetWorkspace from '@/components/AssetWorkspace.vue'
+import AssetImportBlock from '@/components/AssetImportBlock.vue'
 import { isVisible, visibleTabs } from '@/config/assetWorkspaceMatrix'
-import { collectProfileApi, type CollectHistoryRow } from '@/api/collectProfiles'
 import { useCollectProfiles } from '@/composables/useCollectProfiles'
-import {
-  blockedReasonLabelKey,
-  canCollect as profileCanCollect,
-  collectBlockLabelKey,
-  collectBlockReason,
-  credentialLabelKey,
-  stateLabelKey,
-} from '@/config/collectProfileColumns'
+import { useGlobalAssetColumns } from '@/config/globalAssetColumns'
+import { useAssetCollection } from '@/composables/useAssetCollection'
 import CollectHistoryPanel from '@/components/CollectHistoryPanel.vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { NButton, type DataTableColumns } from 'naive-ui'
+
 import { useAuthStore } from '@/stores/auth'
 import {
   globalAssetApi,
-  type AssetImportResult,
-  type AssetPreview,
-  type BatchCollectResult,
   type CreateCredentialPayload,
   type CreateDevicePayload,
   type CredentialDevice,
@@ -173,372 +164,47 @@ async function batchDeleteAssets(): Promise<void> {
   }
 }
 
-const columns = computed<DataTableColumns<GlobalAssetRow>>(() => {
-  const cols: DataTableColumns<GlobalAssetRow> = [
-    { title: t('global.assetName'), key: 'name', minWidth: 180 },
-    { title: t('global.assetDetail'), key: 'detail', minWidth: 200 },
-    { title: t('global.assetIp'), key: 'managementIp', width: 160 },
-    {
-      title: t('global.colStatus'),
-      key: 'status',
-      width: 120,
-      render: (row) =>
-        h(
-          'span',
-          { class: ['badge', row.status] },
-          row.status === 'active'
-            ? t('global.assetStatusActive')
-            : t('global.assetStatusDeprecated'),
-        ),
-    },
-  ]
-  if (type.value === 'DEVICE') {
-    cols.push({ title: t('global.assetPorts'), key: 'portCount', width: 100 })
-    cols.push({
-      title: t('global.assetCollectStatus'),
-      key: 'collectStatus',
-      width: 200,
-      render: (row) => collectLabel(row),
-    })
-    // W63-09：三列都是共享列（不在差异矩阵里），两 scope 都保留
-    cols.push({
-      title: t('w63.colCredential'), key: 'credential', width: 160,
-      render: (row) => {
-        const profile = profilesByDevice.value.get(row.id)
-        const key = credentialLabelKey(profile)
-        return h('span', {
-          class: key === 'w63.unbound' ? 'muted' : '',
-          'data-testid': `profile-credential-${row.id}`,
-        }, key === 'w63.unbound' ? t(key)
-          : t(key, { name: profile?.boundCredentialMasked ?? '-' }))
-      },
-    })
-    cols.push({
-      title: t('w63.colCollect'), key: 'collectProfile', width: 150,
-      render: (row) => {
-        const profile = profilesByDevice.value.get(row.id)
-        return h('span', { 'data-testid': `profile-collect-${row.id}` },
-          profile?.collectCount
-            ? t('w63.collectCount', { count: profile.collectCount })
-            : t('w63.noCollect'))
-      },
-    })
-    cols.push({
-      title: t('w63.colState'), key: 'profileState', width: 170,
-      render: (row) => {
-        const profile = profilesByDevice.value.get(row.id)
-        const reason = profile?.blockedReason
-          ? blockedReasonLabelKey(profile.blockedReason) : ''
-        return h('span', { 'data-testid': `profile-state-${row.id}` },
-          t(stateLabelKey(profile)) + (reason ? ` (${t(reason)})` : ''))
-      },
-    })
-  }
-  cols.push({ title: t('global.assetRefs'), key: 'referenceCount', width: 100 })
-  if (canWrite.value && BATCH_DELETE_ENABLED) {
-    cols.push({
-      title: '',
-      key: 'selection',
-      width: 46,
-      render: (row) =>
-        h('input', {
-          type: 'checkbox',
-          checked: selectedAssetIds.value.includes(row.id),
-          'data-testid': `asset-check-${row.id}`,
-          onChange: (event: Event) =>
-            toggleAssetSelection(row.id, (event.target as HTMLInputElement).checked),
-        }),
-    })
-  }
-  if (canWrite.value) {
-    cols.push({
-      title: t('global.colActions'),
-      key: 'actions',
-      width: 220,
-      render: (row) =>
-        h('span', { class: 'row-actions' }, [
-          type.value === 'DEVICE'
-            ? h('span', { class: 'row-actions' }, [
-                h(NButton, {
-                  text: true,
-                  type: 'primary',
-                  disabled: !canCollect(row),
-                  title: collectDisabledReason(row),
-                  'data-testid': `direct-collect-${row.id}`,
-                  onClick: () => void directCollect(row),
-                }, () => t('w63.directCollect')),
-                h(NButton, {
-                  text: true,
-                  'data-testid': `specify-collect-${row.id}`,
-                  onClick: () => void openCollect(row),
-                }, () => t('w63.specifyCollect')),
-              ])
-            : h(
-                NButton,
-                {
-                  text: true,
-                  type: 'primary',
-                  onClick: () => void openDevices(row),
-                },
-                () => t('global.assetCredentialDevices'),
-              ),
-          h(
-            NButton,
-            {
-              text: true,
-              type: 'primary',
-              'data-testid': `rename-${row.id}`,
-              onClick: () => openRename(row),
-            },
-            () => t('global.assetRenameAction'),
-          ),
-          h(
-            NButton,
-            { text: true, type: 'error', onClick: () => void removeAsset(row) },
-            () => t('global.assetDelete'),
-          ),
-        ]),
-    })
-  }
-  return cols
+
+
+// v5.18.0 / FR-v5.18-02 / W68-05：采集与「凭据→设备」面板抽成 `useAssetCollection`。
+const {
+  collectOpen, collectTarget, credentialOptions, collectCredentialId, collectUsername,
+  collectBusy, collectError, collectDone, setAsDefault, historyRows,
+  canCollect, collectDisabledReason, openCollect, directCollect, runCollect,
+  bindOpen, bindTarget, bindDevices, bindLoading, bindBusy, bindError, batchResult,
+  openDevices, collectAll,
+} = useAssetCollection({ t, profilesByDevice, load, loadProfiles })
+
+// v5.18.0 / FR-v5.18-02 / W68-05：两组列定义抽到 `config/globalAssetColumns.ts`。
+const { columns, bindColumns } = useGlobalAssetColumns({
+  t,
+  type,
+  canWrite,
+  batchDeleteEnabled: BATCH_DELETE_ENABLED,
+  selectedAssetIds,
+  profilesByDevice,
+  toggleAssetSelection,
+  collectLabel,
+  canCollect,
+  collectDisabledReason,
+  planeLabel,
+  channelLabel,
+  openCollect,
+  directCollect,
+  openDevices,
+  openRename,
+  removeAsset,
 })
 
-/**
- * 凭据 → 关联设备面板的列（FR-v4.12-15）。
- *
- * 这张表原来手写原生 `<table>`，被 `tools/check_tables.py` 拦下 —— 它和多行设备列表
- * 是同一类东西（数据网格），不是「定义表」那种 th/td 两列的展示块。手写的代价是
- * 空态、横滚、暗色下表头各有一套，与主表走两套规范；改成壳之后列只剩「有几列、渲染什么」。
- */
-const bindColumns = computed<DataTableColumns<CredentialDevice>>(() => [
-  { title: t('global.assetName'), key: 'name', minWidth: 160 },
-  {
-    title: t('global.assetPlane'),
-    key: 'plane',
-    width: 100,
-    render: (row) => planeLabel(row.plane),
-  },
-  {
-    title: t('global.assetPlaneAddress'),
-    key: 'address',
-    width: 170,
-    render: (row) => h('span', { class: 'mono' }, row.address || '-'),
-  },
-  {
-    title: t('global.assetChannel'),
-    key: 'channel',
-    width: 140,
-    render: (row) => channelLabel(row.channel),
-  },
-  {
-    title: t('global.assetCollectStatus'),
-    key: 'lastStatus',
-    minWidth: 200,
-    // 没采过的面显示「未采集」而不是空白：空白会被读成「加载失败」
-    render: (row) =>
-      h('span', {}, [
-        row.lastStatus || t('global.assetCollectNever'),
-        ...(row.lastCollectedAt ? [h('span', { class: 'muted' }, ` · ${row.lastCollectedAt}`)] : []),
-      ]),
-  },
-])
-
-/**
- * 能不能点「采集」（W63-14）：判定与服务端 collect() 的 400 条件一一对应，
- * 即「有管理 IP 且有凭证」。只绑 BMC、没管理 IP 的设备必须禁用并点名原因。
- */
-function collectRowOf(row: GlobalAssetRow) {
-  const profile = profilesByDevice.value.get(row.id)
-  return {
-    managementIp: profile?.managementIp ?? row.managementIp,
-    managementCredentialId: profile?.managementCredentialId ?? row.managementCredentialId,
-    bmcCredentialId: profile?.bmcCredentialId ?? row.bmcCredentialId,
-  }
-}
-
-function canCollect(row: GlobalAssetRow): boolean {
-  return profileCanCollect(collectRowOf(row))
-}
-
-function collectDisabledReason(row: GlobalAssetRow): string {
-  const reason = collectBlockReason(collectRowOf(row))
-  return reason === 'ok' ? t('w63.autoBindHint') : t(collectBlockLabelKey(reason))
-}
-
 // ---------------------------------------------------------------- 导入
+//
+// v5.18.0 / FR-v5.18-01：导入从「两步弹窗」升级为五步向导，整块搬到
+// `AssetImportBlock`（含批次记录入口）。页面这边只剩一个开关——
+// 向导自己管预检/提交，页面不再持有 file / preview / result 三份临时状态。
 
 const importOpen = ref(false)
-const preview = ref<AssetPreview | null>(null)
-const result = ref<AssetImportResult | null>(null)
-const importing = ref(false)
-const importError = ref('')
-let pickedFile: File | null = null
-
-function openImport() {
-  importOpen.value = true
-  preview.value = null
-  result.value = null
-  importError.value = ''
-  pickedFile = null
-}
-
-async function onFilePicked(event: Event) {
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
-  if (!file) return
-  pickedFile = file
-  importing.value = true
-  importError.value = ''
-  result.value = null
-  try {
-    preview.value = await globalAssetApi.preview(file)
-  } catch (error) {
-    importError.value = error instanceof Error ? error.message : t('global.loadFailed')
-  } finally {
-    importing.value = false
-  }
-}
-
-async function commitImport() {
-  if (!pickedFile) return
-  importing.value = true
-  try {
-    result.value = await globalAssetApi.commit(pickedFile)
-    await load()
-  } catch (error) {
-    importError.value = error instanceof Error ? error.message : t('global.loadFailed')
-  } finally {
-    importing.value = false
-  }
-}
-
-// ---------------------------------------------------------------- 采集
-
-const collectOpen = ref(false)
-const collectTarget = ref<GlobalAssetRow | null>(null)
-const credentialOptions = ref<GlobalAssetRow[]>([])
-const collectCredentialId = ref<number | null>(null)
-const collectUsername = ref('')
-const collectBusy = ref(false)
-const collectError = ref('')
-const collectDone = ref('')
-const setAsDefault = ref(false)
-const historyRows = ref<CollectHistoryRow[]>([])
-
-async function loadHistory(deviceId: number): Promise<void> {
-  try {
-    historyRows.value = await collectProfileApi.history(deviceId)
-  } catch {
-    historyRows.value = []
-  }
-}
-
-async function openCollect(row: GlobalAssetRow) {
-  collectTarget.value = row
-  collectOpen.value = true
-  collectError.value = ''
-  collectDone.value = ''
-  collectCredentialId.value = null
-  collectUsername.value = ''
-  setAsDefault.value = false
-  void loadHistory(row.id)
-  try {
-    credentialOptions.value = await globalAssetApi.list({ type: 'CREDENTIAL' })
-  } catch {
-    credentialOptions.value = []
-  }
-}
-
-/** 主入口：不传 credentialId，由后端回退链读绑定；成功后再刷画像（自动填空会改状态）。 */
-async function directCollect(row: GlobalAssetRow): Promise<void> {
-  if (!canCollect(row)) return
-  collectBusy.value = true
-  collectError.value = ''
-  try {
-    const collected = await globalAssetApi.collect(row.id, { confirm: true })
-    collectDone.value = t('global.assetCollectDone', {
-      status: collected.status, nics: collected.nicCount, roce: collected.rocePorts,
-    })
-    await load()
-    await loadProfiles()
-  } catch (error) {
-    collectError.value = error instanceof Error ? error.message : t('global.loadFailed')
-  } finally {
-    collectBusy.value = false
-  }
-}
-
-async function runCollect() {
-  if (!collectTarget.value) return
-  collectBusy.value = true
-  collectError.value = ''
-  try {
-    const collected = await globalAssetApi.collect(collectTarget.value.id, {
-      credentialId: collectCredentialId.value ?? undefined,
-      username: collectUsername.value || undefined,
-      confirm: true,
-    })
-    collectDone.value = t('global.assetCollectDone', {
-      status: collected.status,
-      nics: collected.nicCount,
-      roce: collected.rocePorts,
-    })
-    if (setAsDefault.value && collectCredentialId.value && collectTarget.value) {
-      await collectProfileApi.bindGlobal(collectTarget.value.id, {
-        managementCredentialId: collectCredentialId.value,
-      })
-      await loadProfiles()
-    }
-    await load()
-  } catch (error) {
-    collectError.value = error instanceof Error ? error.message : t('global.loadFailed')
-  } finally {
-    collectBusy.value = false
-  }
-}
-
-// ------------------------------------ 凭据 → 设备面板（FR-v4.12-11/12/15）
-
-const bindOpen = ref(false)
-const bindTarget = ref<GlobalAssetRow | null>(null)
-const bindDevices = ref<CredentialDevice[]>([])
-const bindLoading = ref(false)
-const bindBusy = ref(false)
-const bindError = ref('')
-const batchResult = ref<BatchCollectResult | null>(null)
-
-async function openDevices(row: GlobalAssetRow) {
-  bindTarget.value = row
-  bindOpen.value = true
-  bindDevices.value = []
-  batchResult.value = null
-  bindError.value = ''
-  bindLoading.value = true
-  try {
-    bindDevices.value = await globalAssetApi.credentialDevices(row.id)
-  } catch (error) {
-    bindError.value = error instanceof Error ? error.message : t('global.loadFailed')
-  } finally {
-    bindLoading.value = false
-  }
-}
-
-async function collectAll() {
-  if (!bindTarget.value) return
-  bindBusy.value = true
-  bindError.value = ''
-  batchResult.value = null
-  try {
-    batchResult.value = await globalAssetApi.collectByCredential(bindTarget.value.id, true)
-    // 采完立刻刷两处：设备列表的「采集状态」列，和面板里的最近状态。只刷一处就会自相矛盾。
-    await load()
-    bindDevices.value = await globalAssetApi.credentialDevices(bindTarget.value.id)
-  } catch (error) {
-    bindError.value = error instanceof Error ? error.message : t('global.loadFailed')
-  } finally {
-    bindBusy.value = false
-  }
-}
+/** `?view=imports` → 直接展开批次面板（判据 7：结果页能跳过去查批次）。 */
+const isImportView = computed(() => route.query.view === 'imports')
 
 /** 三层文案表放在组件里而不是 i18n 嵌套里：拼错的通道名会显示原文而不是「undefined」。 */
 const CHANNEL_LABEL_KEY: Record<string, string> = {
@@ -772,9 +438,6 @@ function collectLabel(row: GlobalAssetRow): string {
   return row.lastCollectedAt ? `${status} · ${row.lastCollectedAt}` : status
 }
 
-function shortSha(sha: string): string {
-  return sha.length > 16 ? `${sha.slice(0, 12)}…${sha.slice(-4)}` : sha
-}
 
 onMounted(() => {
   // 进入即规范化：裸 `/g/assets` 与 `?tab=links` 都改写成 `?tab=devices`，
@@ -801,10 +464,13 @@ onMounted(() => {
         <button v-if="canWrite && type === 'CREDENTIAL'" class="btn" @click="openCredentialForm">
           {{ t('global.assetCredentialCreate') }}
         </button>
-        <button v-if="canWrite" class="btn btn-primary" @click="openImport">
-          {{ t('global.import') }}
-        </button>
       </div>
+      <AssetImportBlock
+        v-model:open="importOpen"
+        :can-write="canWrite"
+        :open-batches="isImportView"
+        @committed="load"
+      />
     </header>
 
     <div class="tabs">
@@ -864,55 +530,6 @@ onMounted(() => {
       :max-height="560"
     />
 
-    <div v-if="importOpen" class="modal-mask" @click.self="importOpen = false">
-      <div class="modal">
-        <header class="modal-head">
-          <h2>{{ t('global.importAssets') }}</h2>
-          <button class="link" @click="importOpen = false">{{ t('global.close') }}</button>
-        </header>
-        <p class="muted">{{ t('global.assetImportHint') }}</p>
-        <input type="file" accept=".xlsx,.xls" @change="onFilePicked" />
-        <p v-if="importing" class="muted">{{ t('global.loading') }}</p>
-        <p v-if="importError" class="error">{{ importError }}</p>
-
-        <template v-if="preview">
-          <p class="muted mono">
-            {{ t('global.assetChecksum') }}：{{ shortSha(preview.sha256) }} ·
-            {{ t('global.assetBatch') }} #{{ preview.batchId }}
-          </p>
-          <p v-if="preview.replayed" class="warning">{{ t('global.assetReplayed') }}</p>
-          <div class="diff-cards">
-            <span class="diff-card new">{{ t('global.assetDevice') }} {{ preview.devices }}</span>
-            <span class="diff-card update">{{ t('global.assetPorts') }} {{ preview.ports }}</span>
-            <span class="diff-card unchanged">
-              {{ t('global.assetCredential') }} {{ preview.credentials }}
-            </span>
-          </div>
-          <ul v-if="preview.samples.length" class="samples">
-            <li v-for="(sample, index) in preview.samples" :key="index">{{ sample }}</li>
-          </ul>
-          <p v-for="warning in preview.warnings" :key="warning" class="warning">{{ warning }}</p>
-
-          <p v-if="result" class="success">
-            {{
-              t('global.assetImportDone', {
-                devices: result.devices,
-                ports: result.ports,
-                credentials: result.credentials,
-                deprecations: result.deprecations,
-                supplemented: result.statusSupplemented,
-              })
-            }}
-          </p>
-          <div class="modal-actions">
-            <button class="btn" @click="importOpen = false">{{ t('global.close') }}</button>
-            <button class="btn btn-primary" :disabled="importing" @click="commitImport">
-              {{ t('global.importCommit') }}
-            </button>
-          </div>
-        </template>
-      </div>
-    </div>
 
     <div v-if="collectOpen" class="modal-mask" @click.self="collectOpen = false">
       <div class="modal narrow">
@@ -1169,210 +786,4 @@ onMounted(() => {
   </section>
 </template>
 
-<style scoped>
-.page-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-3);
-}
-
-.page-actions {
-  display: flex;
-  gap: var(--space-2);
-}
-
-.tabs {
-  display: flex;
-  gap: var(--space-2);
-  margin: var(--space-3) 0;
-  border-bottom: 1px solid var(--border);
-}
-
-.tab {
-  border: 0;
-  background: transparent;
-  color: var(--text-muted);
-  padding: 6px 10px;
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-}
-
-.tab.active {
-  color: var(--text);
-  border-bottom-color: var(--accent);
-}
-
-/* DataTable 的 render 返回值：两个文字按钮并排，间距与旧版 .link 一致。 */
-:deep(.row-actions) {
-  display: inline-flex;
-  gap: 10px;
-  align-items: center;
-}
-
-.filters {
-  display: flex;
-  gap: var(--space-2);
-  margin-bottom: var(--space-3);
-}
-
-/* 未绑定凭据时的占位：不是按钮，但要让「为什么点不了」看得见（FR-v4.12-10）。 */
-:deep(.action-hint) {
-  font-size: 12px;
-}
-
-/* 关联设备面板的表格容器：表头/行/空态全交给 DataTable 壳，这里只管与弹窗文案的间距。 */
-.bind-table {
-  margin: var(--space-3) 0;
-}
-
-/* 录入表单：两列铺满，字段多但没有层级关系，用 grid 比逐行堆更快扫。 */
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0 var(--space-3);
-}
-
-.form-grid .input,
-.form-grid .select {
-  min-width: 0;
-}
-
-.input,
-.select {
-  min-width: 180px;
-  padding: 6px 8px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--panel);
-  color: var(--text);
-}
-
-/* 表头下第二个文字按钮（采集 / 删除）由 render() 产生，不带 scope id，必须 :deep 锚定。 */
-.mono {
-  font-family: var(--font-mono, monospace);
-}
-
-:deep(.badge) {
-  display: inline-block;
-  padding: 1px 6px;
-  border-radius: 999px;
-  font-size: 11px;
-  border: 1px solid var(--border);
-}
-
-:deep(.badge.active) {
-  color: var(--ok);
-}
-
-:deep(.badge.deprecated) {
-  color: var(--fail);
-}
-
-.modal-mask {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 50;
-}
-
-.modal {
-  width: min(760px, 92vw);
-  max-height: 86vh;
-  overflow: auto;
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: var(--space-4);
-}
-
-.modal.narrow {
-  width: min(480px, 92vw);
-}
-
-.modal-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--space-2);
-  margin-top: var(--space-3);
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin: var(--space-2) 0;
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-.diff-cards {
-  display: flex;
-  gap: var(--space-2);
-  margin: var(--space-3) 0;
-}
-
-.diff-card {
-  padding: 2px 8px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  font-size: 12px;
-}
-
-.samples {
-  max-height: 180px;
-  overflow: auto;
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-.error {
-  color: var(--fail);
-}
-
-.warning {
-  color: var(--warn);
-  font-size: 12px;
-}
-
-.success {
-  color: var(--ok);
-}
-
-.link {
-  border: 0;
-  background: transparent;
-  color: var(--accent);
-  cursor: pointer;
-  padding: 0;
-  margin-right: var(--space-2);
-}
-
-.link.danger {
-  color: var(--fail);
-}
-
-.btn {
-  padding: 6px 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--panel);
-  color: var(--text);
-  cursor: pointer;
-}
-
-.btn-primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--accent-contrast);
-}
-</style>
+<style scoped src="../../styles/global-assets-view.css"></style>

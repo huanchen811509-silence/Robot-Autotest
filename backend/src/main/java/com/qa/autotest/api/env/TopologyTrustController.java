@@ -33,6 +33,13 @@ public class TopologyTrustController {
         return ApiResponse.ok(topology.trust(projectId));
     }
 
+    /** 拓扑边全量（v5.18.0 / FR-v5.18-03~04）：图例与「仅实测」都基于这一份。 */
+    @GetMapping("/edges")
+    public ApiResponse<TopologyTrustService.EdgeView> edges(@PathVariable long projectId) {
+        access.requireProjectAccess(projectId);
+        return ApiResponse.ok(topology.edges(projectId));
+    }
+
     @PostMapping("/lldp-import")
     public ApiResponse<TopologyTrustService.ImportResult> importLldp(
             @PathVariable long projectId, @RequestBody ImportRequest request) {

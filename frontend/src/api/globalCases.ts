@@ -74,6 +74,13 @@ export interface GlobalImportPreview {
   rows: ImportPreviewRow[]
   errors: ImportRowError[]
   skippedSheets: string[]
+  /** v5.18.0 / FR-v5.18-01：与 newCount / updateCount / errorCount 同义，供五步向导展示。 */
+  toCreate?: number
+  toUpdate?: number
+  conflicts?: number
+  /** 表头原始文本（映射页左侧）与前 3 行样例（映射页右侧）。 */
+  headers?: string[]
+  sampleRows?: string[][]
 }
 
 export interface GlobalImportCommit {
@@ -136,11 +143,16 @@ export const globalCaseApi = {
    * @param force v4.11.0 / FR-v4.11-18：同一份文件第二次预览默认走「回放」（`replayed=true`，
    *   幂等语义不变）；`force=true` 时才按当前库重算增量 diff，且**不落库、不改批次状态**。
    */
-  previewImport(file: File, force = false) {
+  previewImport(file: File, force = false, mapping?: Record<string, string>) {
     const form = new FormData()
     form.append('file', file)
+    const query = toQuery({
+      force: force ? 1 : undefined,
+      // v5.18.0 / FR-v5.18-01：字段映射；不传即老行为（后端按表头自动识别）
+      mapping: mapping && Object.keys(mapping).length > 0 ? JSON.stringify(mapping) : undefined,
+    })
     return requestMultipart<GlobalImportPreview>(
-      `/global/cases/import/preview${toQuery({ force: force ? 1 : undefined })}`,
+      `/global/cases/import/preview${query}`,
       form,
       120_000,
     )

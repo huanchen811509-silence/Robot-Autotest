@@ -1,6 +1,7 @@
 package com.qa.autotest.api.caseasset;
 
 import com.qa.autotest.application.caseasset.GlobalCaseService;
+import com.qa.autotest.application.imports.ColumnMapping;
 import com.qa.autotest.common.ApiResponse;
 import com.qa.autotest.common.BusinessException;
 import com.qa.autotest.common.ErrorCode;
@@ -89,14 +90,17 @@ public class GlobalCaseController {
     public ApiResponse<GlobalCaseService.PreviewResult> preview(
             @RequestPart("file") MultipartFile file,
             // v4.11.0 / FR-v4.11-18：显式要求按当前库重算（不带则保持幂等回放语义）
-            @RequestParam(value = "force", defaultValue = "false") boolean force) throws IOException {
+            @RequestParam(value = "force", defaultValue = "false") boolean force,
+            // v5.18.0 / FR-v5.18-01：字段映射（JSON，{"源列名":"目标字段"}）；不传 = 老行为
+            @RequestParam(value = "mapping", required = false) String mapping) throws IOException {
         if (file == null || file.isEmpty()) {
             throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "请先选择要导入的工作簿");
         }
         if (file.getSize() > 20L * 1024 * 1024) {
             throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "文件超过 20MB 上限，请拆分后再导入");
         }
-        return ApiResponse.ok(service.preview(file.getInputStream(), file.getOriginalFilename(), force));
+        return ApiResponse.ok(service.preview(file.getInputStream(), file.getOriginalFilename(), force,
+                ColumnMapping.parse(mapping)));
     }
 
     @PostMapping("/import/{batchId}/commit")

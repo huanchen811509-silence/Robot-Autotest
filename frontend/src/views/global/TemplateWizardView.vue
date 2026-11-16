@@ -57,7 +57,8 @@ const contentSelection = ref<{
   sets: { id: number; name: string }[]
   caseIds: number[]
   assetIds: number[]
-}>({ templateKeys: [], setIds: [], sets: [], caseIds: [], assetIds: [] })
+  scenarioIds: number[]
+}>({ templateKeys: [], setIds: [], sets: [], caseIds: [], assetIds: [], scenarioIds: [] })
 
 const assets = ref<{ id: number; name: string }[]>([])
 const pickedAssetIds = ref<number[]>([])

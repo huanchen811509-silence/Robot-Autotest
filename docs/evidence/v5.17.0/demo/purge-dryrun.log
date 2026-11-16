@@ -1,0 +1,12 @@
+[purge-demo] 目标库：127.0.0.1:3306/robot_dev
+[purge-demo] is_demo=1 盘点
+  app_user         0
+  project          3
+[purge-demo] 演示项目下的从属数据（本脚本不删，需走项目删除接口）
+  test_set         2
+  test_case        10
+  run              1
+  test_result      0
+  test_report      1
+[purge-demo] dry-run：未删除任何行。
+[purge-demo] 确认无误后执行：PURGE_DEMO_CONFIRM=YES scripts/ops/purge-demo.sh --apply

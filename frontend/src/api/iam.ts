@@ -191,6 +191,8 @@ export const projectApi = {
     }[]
     caseIds?: number[]
     caseSetIds?: number[]
+    /** v5.17.0 / W67-06：场景 id（test_scenario），与 caseSetIds 不是同一张表。 */
+    scenarioIds?: number[]
     setName?: string
   }) {
     return request<{

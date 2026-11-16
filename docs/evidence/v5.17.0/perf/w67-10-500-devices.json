@@ -1,0 +1,27 @@
+{
+  "samples": [
+    78.8,
+    79.2,
+    62.2,
+    57.4,
+    55.8,
+    64.9,
+    65.0,
+    58.9,
+    54.2,
+    54.8
+  ],
+  "p95": 79.2,
+  "rows": 500,
+  "before": {
+    "projects_non_perf": 13,
+    "cases_non_perf": 2491,
+    "devices_total": 21
+  },
+  "after": {
+    "projects_non_perf": 13,
+    "cases_non_perf": 2491,
+    "devices_total": 521
+  },
+  "nonPerfUnchanged": true
+}

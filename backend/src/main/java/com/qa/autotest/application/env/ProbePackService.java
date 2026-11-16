@@ -46,14 +46,37 @@ public class ProbePackService {
                 (rs, n) -> rs.getString("code"));
     }
 
-    /** 按 device_type 选包，运行时与唯一命令真源合并；包不存在直接报，不静默回落到另一套命令。 */
+    /**
+     * 按 device_type 选包，运行时与命令目录合并。
+     *
+     * <p>v5.18.0 / FR-v5.18-05 收紧了两个口子：
+     * <ul>
+     *   <li><b>类型为空不再默认 Linux</b>——「没说清是什么设备」时按 Linux 采一整套，
+     *       结果全项失败，看起来像设备坏了，实际是调用方漏传；</li>
+     *   <li><b>未知类型回 400 而不是 404</b>——404 会被前端当成「资源不存在」而沉默，
+     *       400 才能把「你传了 SWITCH_X，只支持这三个」讲到人脸上。</li>
+     * </ul>
+     * 两种情况都不回落到 Linux 包：拿 Linux 命令去打交换机，是「无样本」伪装成「已支持」。
+     */
     public PackView commandsFor(String deviceType) {
-        String type = deviceType == null || deviceType.isBlank() ? "HOST_LINUX" : deviceType.trim();
+        if (deviceType == null || deviceType.isBlank()) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                    "请指定 deviceType（支持：" + String.join(" / ",
+                            ProbeCommandCatalog.supportedTypes()) + "）");
+        }
+        String type = deviceType.trim().toUpperCase(java.util.Locale.ROOT);
+        java.util.Map<String, String> catalog = ProbeCommandCatalog.forDeviceType(type);
+        if (catalog == null) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                    "不支持的 deviceType=" + type + "（支持：" + String.join(" / ",
+                            ProbeCommandCatalog.supportedTypes()) + "）");
+        }
         List<Map<String, Object>> packs = jdbc.queryForList(
                 "SELECT id, code FROM probe_pack WHERE project_id = 0 AND device_type = ? "
                         + "AND enabled = 1 ORDER BY id LIMIT 1", type);
         if (packs.isEmpty()) {
-            throw new BusinessException(ErrorCode.NOT_FOUND, "未找到 device_type=" + type + " 的探针包");
+            throw new BusinessException(ErrorCode.NOT_FOUND,
+                    "未找到 device_type=" + type + " 的探针包（白名单已支持，但库里没有启用中的包）");
         }
         long packId = ((Number) packs.get(0).get("id")).longValue();
         String code = String.valueOf(packs.get(0).get("code"));
@@ -62,7 +85,7 @@ public class ProbePackService {
                 "SELECT command_key, required FROM probe_pack_command "
                         + "WHERE project_id = 0 AND pack_id = ? ORDER BY sort_order", packId)) {
             String key = String.valueOf(row.get("command_key"));
-            String command = HostInventoryCollector.COMMANDS.get(key);
+            String command = catalog.get(key);
             if (command == null) {
                 // 包里登记了源码没有的类：宁可跳过也不编一条命令出来。
                 continue;
@@ -85,7 +108,7 @@ public class ProbePackService {
                 present.add(item.itemKey());
             }
         }
-        PackView pack = commandsFor("HOST_LINUX");
+        PackView pack = commandsFor(ProbeCommandCatalog.HOST_LINUX);
         List<String> required = new ArrayList<>();
         List<String> missing = new ArrayList<>();
         for (CommandView command : pack.commands()) {

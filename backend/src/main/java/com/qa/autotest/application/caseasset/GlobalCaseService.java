@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.qa.autotest.application.iam.AccessControlService;
 import com.qa.autotest.application.iam.AuditService;
 import com.qa.autotest.application.iam.PlatformProjectService;
+import com.qa.autotest.application.imports.ColumnMapping;
 import com.qa.autotest.common.BusinessException;
 import com.qa.autotest.common.ErrorCode;
 import com.qa.autotest.common.tenant.TenantContext;
@@ -80,10 +81,29 @@ public class GlobalCaseService {
                              String contentSha, String sheet, int sourceRow) {
     }
 
+    /**
+     * 导入预检结果。
+     *
+     * <p>v5.18.0 / FR-v5.18-01 增加 {@code toCreate / toUpdate / conflicts} 与回显
+     * {@code headers / sampleRows}。三数是 {@code newCount / updateCount / errorCount} 的
+     * **同义别名**——五步向导用「新增 / 更新 / 冲突」这套词，而报告与既有断言仍读旧字段；
+     * 两套词指同一批数，绝不能各算一遍，否则预览与结果会对不上。
+     */
     public record PreviewResult(long batchId, String sha256, int total, int newCount, int updateCount,
                                 int unchangedCount, int deprecateCount, int errorCount, boolean replayed,
                                 List<PreviewRow> rows, List<CaseImportService.RowError> errors,
-                                List<String> skippedSheets) {
+                                List<String> skippedSheets, int toCreate, int toUpdate, int conflicts,
+                                List<String> headers, List<List<String>> sampleRows) {
+
+        /** 兼容旧调用：三数从既有读数推导，语义一致；回显为空表示「不提供映射页样例」。 */
+        public PreviewResult(long batchId, String sha256, int total, int newCount, int updateCount,
+                             int unchangedCount, int deprecateCount, int errorCount, boolean replayed,
+                             List<PreviewRow> rows, List<CaseImportService.RowError> errors,
+                             List<String> skippedSheets) {
+            this(batchId, sha256, total, newCount, updateCount, unchangedCount, deprecateCount,
+                    errorCount, replayed, rows, errors, skippedSheets,
+                    newCount, updateCount, errorCount, List.of(), List.of());
+        }
     }
 
     public record CommitResult(long batchId, int inserted, int updated, int unchanged, int deprecated,
@@ -554,9 +574,19 @@ public class GlobalCaseService {
      *              且<b>不写 import_item、不改批次状态</b>——历史记录必须保持原样。
      */
     public PreviewResult preview(InputStream input, String sourceName, boolean force) {
+        return preview(input, sourceName, force, Map.of());
+    }
+
+    /**
+     * 预检（v5.18.0 / FR-v5.18-01）。
+     *
+     * @param mapping {@code {原始列名: 内部字段名}}；空映射 = 沿用表头自动识别（老行为）
+     */
+    public PreviewResult preview(InputStream input, String sourceName, boolean force,
+                                 Map<String, String> mapping) {
         requireGlobalWrite();
         long projectId = platform.id();
-        CaseImportService.ParsedWorkbook workbook = CaseImportService.parse(input);
+        CaseImportService.ParsedWorkbook workbook = CaseImportService.parse(input, mapping);
         String sourceFile = notBlank(sourceName) ? sourceName : "upload.xlsx";
         List<CaseImportService.RowError> errors = new ArrayList<>();
         List<PlannedRow> planned = new ArrayList<>();
@@ -669,7 +699,9 @@ public class GlobalCaseService {
                     "sha=" + fileSha + " new=" + newCount + " update=" + updateCount
                             + " unchanged=" + unchanged + " deprecate=" + deprecate);
             return new PreviewResult(batchId, fileSha, planned.size(), newCount, updateCount,
-                    unchanged, deprecate, errors.size(), false, previewRows, errors, skippedSheets);
+                    unchanged, deprecate, errors.size(), false, previewRows, errors, skippedSheets,
+                    newCount, updateCount, errors.size(),
+                    workbook.headers(), workbook.sampleRows());
         }
         if (existingBatch.isPresent()) {
             batchId = ((Number) existingBatch.get().get("id")).longValue();
@@ -721,7 +753,9 @@ public class GlobalCaseService {
                 "sha=" + fileSha + " new=" + newCount + " update=" + updateCount
                         + " unchanged=" + unchanged + " deprecate=" + deprecate);
         return new PreviewResult(batchId, fileSha, planned.size(), newCount, updateCount, unchanged,
-                deprecate, errors.size(), replayed, previewRows, errors, skippedSheets);
+                deprecate, errors.size(), replayed, previewRows, errors, skippedSheets,
+                newCount, updateCount, errors.size(),
+                workbook.headers(), workbook.sampleRows());
     }
 
     private PreviewResult replayPreview(long batchId, String fileSha, List<String> skippedSheets) {

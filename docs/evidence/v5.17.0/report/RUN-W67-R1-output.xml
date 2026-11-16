@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<robot generator="Robot 7.0">
+<metadata>
+<item name="CASE_ID" value="W67-02"/>
+<item name="QA_PROJECT" value="autotest"/>
+<item name="DUT" value="lab-node-01"/>
+<item name="LINK" value="http://127.0.0.1/issue/w67-02"/>
+<item name="SW_BUILD" value="5.17.0-w67"/>
+<item name="OPERATOR" value="w67-02-probe"/>
+<item name="STARTED_AT" value="2026-11-16T08:30:00+08:00"/>
+<item name="CASE_KIND" value="suite-count"/>
+<item name="RUN_ID" value="RUN-W67-R1"/>
+</metadata>
+<suite id="s1" name="run-RUN-W67-R1">
+<suite id="s1-s1" name="SuiteA">
+<test id="s1-s1-t1" name="case1"><status status="PASS"/></test>
+<test id="s1-s1-t2" name="case2"><status status="PASS"/></test>
+</suite>
+</suite>
+</robot>

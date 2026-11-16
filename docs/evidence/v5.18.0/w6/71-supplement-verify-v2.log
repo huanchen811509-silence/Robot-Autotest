@@ -1,0 +1,30 @@
+=== A. ops_task 完整列 ===
+id project_id task_type operator_id params_json phase progress status log_text result_json lease_until started_at finished_at created_at created_by updated_at updated_by active_lock
+
+=== B. 孤儿行（严格口径：project_id 非空但项目不存在）===
+strict_orphans=PAGER set to stdout
+PAGER set to stdout
+PAGER set to stdout
+PAGER set to stdout
+PAGER set to stdout
+PAGER set to stdout
+PAGER set to stdout
+PAGER set to stdout
+PAGER set to stdout
+0
+platform_case_sets(project_id IS NULL)=32（合法：平台级用例集）
+
+=== C. ops_task dry-run 标记 ===
+no dry_run column; params_json sample:
+{"sourceDb":"robot_dev","targetDb":"robot_it"}
+{"targetDb":"robot_it"}
+
+=== D. /restore-drill 非 _it 库 → 400 ===
+Traceback (most recent call last):
+  File "/mnt/e/workspace/自动化测试/tmp_w6b.py", line 88, in <module>
+    token = login()
+            ^^^^^^^
+  File "/mnt/e/workspace/自动化测试/tmp_w6b.py", line 31, in login
+    req = urllib.request.Request(API + "/api/auth/login", data=body,
+          ^^^^^^
+UnboundLocalError: cannot access local variable 'urllib' where it is not associated with a value

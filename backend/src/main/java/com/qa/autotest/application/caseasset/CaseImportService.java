@@ -5,6 +5,7 @@ import com.qa.autotest.application.iam.AuditService;
 import com.qa.autotest.application.evidence.EvidenceBundleService;
 import com.qa.autotest.common.security.PasswordHasher;
 import com.qa.autotest.application.repository.TestCaseRepository;
+import com.qa.autotest.application.imports.ColumnMapping;
 import com.qa.autotest.common.BusinessException;
 import com.qa.autotest.common.ErrorCode;
 import com.qa.autotest.common.tenant.TenantContext;
@@ -136,7 +137,16 @@ public class CaseImportService {
     /** DB-free 单 sheet 解析结果（供预检报告与纯解析单测使用）。 */
     public record ParsedSheet(String sheetName, int headerRowIndex, int headerRowNum,
                               Map<String, Integer> columnMap, List<String> unmappedHeaders,
-                              List<ImportRow> rows) {
+                              List<ImportRow> rows, List<String> headers,
+                              List<List<String>> sampleRows) {
+
+        /** 兼容旧调用。 */
+        public ParsedSheet(String sheetName, int headerRowIndex, int headerRowNum,
+                           Map<String, Integer> columnMap, List<String> unmappedHeaders,
+                           List<ImportRow> rows) {
+            this(sheetName, headerRowIndex, headerRowNum, columnMap, unmappedHeaders, rows,
+                    List.of(), List.of());
+        }
 
         /** 命中字段数（撞字段只记先出现的那一列）。 */
         public int mappedColumnCount() {
@@ -150,7 +160,20 @@ public class CaseImportService {
     }
 
     /** DB-free 整本工作簿解析结果；sha256 为原文件只读快照指纹（EDIM-04）。 */
-    public record ParsedWorkbook(String sha256, List<ParsedSheet> sheets) {
+    /**
+     * 整本工作簿的解析结果。
+     *
+     * <p>v5.18.0 / FR-v5.18-01 增加 {@code headers / sampleRows}：映射页要用它们显示
+     * 「列名 + 前 3 行样例」。多 sheet 时取**第一张识别到表头的工作表**——
+     * 映射页一次只改一张表的列，取第一张是对的；跨表不同表头属于下一版的事。
+     */
+    public record ParsedWorkbook(String sha256, List<ParsedSheet> sheets,
+                                 List<String> headers, List<List<String>> sampleRows) {
+
+        /** 兼容旧调用。 */
+        public ParsedWorkbook(String sha256, List<ParsedSheet> sheets) {
+            this(sha256, sheets, List.of(), List.of());
+        }
     }
 
     /** 表头别名（中英文都收，避免各版本 Excel 反复改字段名）。 */
@@ -287,15 +310,33 @@ public class CaseImportService {
 
     /** DB-free 解析：读全字节算 SHA（只读冻结）、遍历全部 sheet、逐 sheet 独立 findHeaderRow()。 */
     public static ParsedWorkbook parse(InputStream input) {
+        return parse(input, Map.of());
+    }
+
+    /**
+     * 带字段映射的解析（v5.18.0 / FR-v5.18-01）。
+     *
+     * @param mapping {@code {原始列名: 内部字段名}}；空映射 = 沿用表头自动识别
+     */
+    public static ParsedWorkbook parse(InputStream input, Map<String, String> mapping) {
         try {
             byte[] bytes = input.readAllBytes();
             String sha256 = sha256Hex(bytes);
             try (Workbook workbook = WorkbookFactory.create(new ByteArrayInputStream(bytes))) {
                 List<ParsedSheet> sheets = new ArrayList<>();
                 for (int s = 0; s < workbook.getNumberOfSheets(); s++) {
-                    sheets.add(parseSheet(workbook.getSheetAt(s)));
+                    sheets.add(parseSheet(workbook.getSheetAt(s), mapping));
                 }
-                return new ParsedWorkbook(sha256, List.copyOf(sheets));
+                List<String> headers = List.of();
+                List<List<String>> samples = List.of();
+                for (ParsedSheet sheet : sheets) {
+                    if (!sheet.headers().isEmpty()) {
+                        headers = sheet.headers();
+                        samples = sheet.sampleRows();
+                        break;
+                    }
+                }
+                return new ParsedWorkbook(sha256, List.copyOf(sheets), headers, samples);
             }
         } catch (BusinessException ex) {
             throw ex;
@@ -383,10 +424,17 @@ public class CaseImportService {
                 List.copyOf(notEvaluatedCodes));
     }
 
-    private static ParsedSheet parseSheet(Sheet sheet) {
+    private static ParsedSheet parseSheet(Sheet sheet, Map<String, String> mapping) {
         int headerIndex = findHeaderRow(sheet);
         Row header = sheet.getRow(headerIndex);
-        Map<String, Integer> columns = readHeader(header);
+        Map<String, Integer> columns = readHeader(header, mapping);
+        List<String> headerTexts = new ArrayList<>();
+        DataFormatter headerFormatter = new DataFormatter();
+        int headerCols = Math.min(header.getLastCellNum(), 12);
+        for (int c = 0; c < headerCols; c++) {
+            headerTexts.add(headerFormatter.formatCellValue(header.getCell(c)).trim());
+        }
+        List<List<String>> samples = new ArrayList<>();
         List<String> unmapped = unmappedHeaders(header, columns);
         DataFormatter formatter = new DataFormatter();
         List<ImportRow> rows = new ArrayList<>();
@@ -394,6 +442,14 @@ public class CaseImportService {
             Row row = sheet.getRow(i);
             if (row == null) {
                 continue;
+            }
+            if (samples.size() < 3) {
+                List<String> raw = new ArrayList<>();
+                int cols = Math.min(row.getLastCellNum(), 12);
+                for (int c = 0; c < cols; c++) {
+                    raw.add(formatter.formatCellValue(row.getCell(c)).trim());
+                }
+                samples.add(raw);
             }
             String code = cell(formatter, row, columns.get("caseCode"));
             String title = cell(formatter, row, columns.get("title"));
@@ -434,7 +490,8 @@ public class CaseImportService {
         }
         return new ParsedSheet(sheet.getSheetName(), headerIndex, headerIndex + 1,
                 Collections.unmodifiableMap(new LinkedHashMap<>(columns)),
-                List.copyOf(unmapped), List.copyOf(rows));
+                List.copyOf(unmapped), List.copyOf(rows),
+                List.copyOf(headerTexts), List.copyOf(samples));
     }
 
     /** 解析 + 校验，不写库。多 sheet 遍历；逐 sheet 独立表头，编号去重按整本文件计。 */
@@ -652,11 +709,25 @@ public class CaseImportService {
     }
 
     private static Map<String, Integer> readHeader(Row header) {
+        return readHeader(header, Map.of());
+    }
+
+    /**
+     * 表头读取 + 用户显式映射。
+     *
+     * <p>mapping 优先于别名：用户在映射页把「CX7测试结果记录」指给 {@code testResult} 时，
+     * 即使别名表里没有这一列，也要认；反之把「设备」改指给 {@code title} 时，
+     * 别名原有的绑定必须让位——否则一列会同时喂两个字段，导入结果莫名其妙。
+     */
+    private static Map<String, Integer> readHeader(Row header, Map<String, String> mapping) {
         Map<String, Integer> columns = new LinkedHashMap<>();
         DataFormatter formatter = new DataFormatter();
         for (int c = 0; c < header.getLastCellNum(); c++) {
             String raw = formatter.formatCellValue(header.getCell(c)).trim();
-            String field = HEADER_ALIASES.get(raw.toLowerCase(Locale.ROOT));
+            String forced = ColumnMapping.lookup(mapping, raw);
+            String field = forced != null && !forced.isBlank()
+                    ? forced
+                    : HEADER_ALIASES.get(raw.toLowerCase(Locale.ROOT));
             if (field != null && !columns.containsKey(field)) {
                 columns.put(field, c);
             }

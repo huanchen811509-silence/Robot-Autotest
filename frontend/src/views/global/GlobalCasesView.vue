@@ -21,11 +21,11 @@ import {
   globalCaseApi,
   type CaseCategoryRow,
   type GlobalCaseRow,
-  type GlobalImportPreview,
   type ImportBatchRow,
 } from '@/api/globalCases'
 import type { PageResult } from '@/api/iam'
 import DataTable from '@/components/DataTable.vue'
+import ImportWizard from '@/components/ImportWizard.vue'
 import CaseCategoryNav, { type CategorySelection } from '@/components/CaseCategoryNav.vue'
 import CaseDetailPanel from '@/components/CaseDetailPanel.vue'
 import CaseScriptLink from '@/components/CaseScriptLink.vue'
@@ -283,87 +283,52 @@ const batchColumns = computed<DataTableColumns<ImportBatchRow>>(() => [
     render: (batch) =>
       `+${batch.new_count} ~${batch.updated_count} =${batch.unchanged_count} -${batch.deprecated_count}`,
   },
+  {
+    // v5.18.0：错误报告下载从弹窗搬到这里——弹窗没了，但「哪批错了、错在哪」仍然要能查
+    title: t('global.downloadReport'),
+    key: 'errors',
+    width: 140,
+    render: (batch) =>
+      h(
+        NButton,
+        {
+          size: 'small',
+          quaternary: true,
+          onClick: () => void downloadErrorReport(batch.id),
+        },
+        () => t('global.downloadReport'),
+      ),
+  },
 ])
 
-const previewColumns = computed<DataTableColumns<GlobalImportPreview['rows'][number]>>(() => [
-  { title: '#', key: 'rowNo', width: 70 },
-  { title: t('global.colCode'), key: 'caseCode', width: 170 },
-  { title: t('global.colTitle'), key: 'title', minWidth: 200 },
-  {
-    title: t('global.importAction'),
-    key: 'action',
-    width: 120,
-    render: (row) => h('span', { class: ['badge', row.action.toLowerCase()] }, row.action),
-  },
-  { title: t('global.importMessage'), key: 'message', minWidth: 180 },
-])
 
 /* ---------------------------------------------------------------- 导入 */
+//
+// v5.18.0 / FR-v5.18-01：导入从两步弹窗升级为五步向导（共用 `ImportWizard`）。
+// 页面这边只留三样东西：开关、`force` 复选（回放 / 重算语义）、提交后的数据刷新。
+// 预检与提交都在向导内完成，页面不再持有 preview / commitResult 两份临时状态。
 
 const importOpen = ref(false)
-const preview = ref<GlobalImportPreview | null>(null)
-const importing = ref(false)
-const importMessage = ref('')
-const commitResult = ref('')
-const fileInput = ref<HTMLInputElement | null>(null)
 
-function openImport() {
+function openImport(): void {
   importOpen.value = true
-  preview.value = null
-  importMessage.value = ''
-  commitResult.value = ''
 }
 
-/**
- * 预览导入。
- *
- * `force` 透传给后端（v4.11.0 / FR-v4.11-18）：同一份文件第二次预览默认走「回放」，
- * 想看「相对当前库到底变了什么」必须显式要求重算。默认不勾，保持幂等语义不变。
- */
-const forceRecalc = ref(false)
-
-async function onFilePicked(event: Event) {
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
-  if (!file) return
-  importing.value = true
-  importMessage.value = ''
-  commitResult.value = ''
-  try {
-    preview.value = await globalCaseApi.previewImport(file, forceRecalc.value)
-    await loadBatches()
-  } catch (error) {
-    importMessage.value = error instanceof Error ? error.message : t('global.loadFailed')
-  } finally {
-    importing.value = false
-  }
+/** 提交完成：列表、分类树、批次表都要跟着变（新增用例会改分类计数）。 */
+async function afterCommit(): Promise<void> {
+  await load()
+  await loadCategories()
+  await loadBatches()
 }
 
-async function commitImport() {
-  if (!preview.value) return
-  importing.value = true
-  try {
-    const result = await globalCaseApi.commitImport(preview.value.batchId)
-    commitResult.value = t('global.importDone', {
-      inserted: result.inserted,
-      updated: result.updated,
-      unchanged: result.unchanged,
-      deprecated: result.deprecated,
-    })
-    await load()
-    await loadCategories()
-    await loadBatches()
-  } catch (error) {
-    importMessage.value = error instanceof Error ? error.message : t('global.loadFailed')
-  } finally {
-    importing.value = false
-  }
+/** 结果页「查看导入记录」：切到 `?view=imports` 分支。 */
+function goImports(): void {
+  void router.replace({ query: { ...route.query, view: 'imports' } })
 }
 
-async function downloadErrorReport() {
-  if (!preview.value) return
-  const blob = await globalCaseApi.errorReport(preview.value.batchId)
-  triggerDownload(blob, `import-${preview.value.batchId}-report.csv`)
+async function downloadErrorReport(batchId: number): Promise<void> {
+  const blob = await globalCaseApi.errorReport(batchId)
+  triggerDownload(blob, `import-${batchId}-report.csv`)
 }
 
 async function exportCases() {
@@ -530,72 +495,13 @@ onMounted(async () => {
       />
     </div>
 
-    <div v-if="importOpen" class="modal-mask" @click.self="importOpen = false">
-      <div class="modal">
-        <header class="modal-head">
-          <h2>{{ t('global.importTitle') }}</h2>
-          <button class="link" @click="importOpen = false">{{ t('global.close') }}</button>
-        </header>
-
-        <div class="modal-body">
-          <p class="muted">{{ t('global.importHint') }}</p>
-          <label class="force-line">
-            <input v-model="forceRecalc" type="checkbox" data-testid="force-recalc" />
-            <span>{{ t('global.importForceRecalc') }}</span>
-          </label>
-          <input ref="fileInput" type="file" accept=".xlsx,.xls" @change="onFilePicked" />
-          <p v-if="importing" class="muted">{{ t('global.loading') }}</p>
-          <p v-if="importMessage" class="error">{{ importMessage }}</p>
-
-          <template v-if="preview">
-            <div class="diff-cards">
-              <span class="diff-card new">+{{ preview.newCount }} {{ t('global.importNew') }}</span>
-              <span class="diff-card update">
-                ~{{ preview.updateCount }} {{ t('global.importUpdate') }}
-              </span>
-              <span class="diff-card unchanged">
-                ={{ preview.unchangedCount }} {{ t('global.importUnchanged') }}
-              </span>
-              <span class="diff-card deprecate">
-                -{{ preview.deprecateCount }} {{ t('global.importDeprecate') }}
-              </span>
-              <span v-if="preview.errorCount" class="diff-card error">
-                !{{ preview.errorCount }} {{ t('global.importErrors') }}
-              </span>
-            </div>
-            <p v-if="preview.replayed" class="muted">{{ t('global.importReplayed') }}</p>
-            <p class="muted mono">
-              {{ t('global.assetChecksum') }}：{{ preview.sha256.slice(0, 16) }} ·
-              {{ t('global.assetBatch') }} #{{ preview.batchId }}
-            </p>
-            <p v-if="preview.skippedSheets?.length" class="muted">
-              {{ t('global.importSkippedSheets', { sheets: preview.skippedSheets.join('、') }) }}
-            </p>
-            <p v-if="preview.errorCount" class="error">
-              {{ t('global.importErrorHint', { count: preview.errorCount }) }}
-              <button class="link" @click="downloadErrorReport">
-                {{ t('global.downloadReport') }}
-              </button>
-            </p>
-
-            <DataTable
-              :columns="previewColumns"
-              :data="preview.rows"
-              :row-key="(row: GlobalImportPreview['rows'][number]) => row.rowNo"
-              :max-height="320"
-            />
-
-            <p v-if="commitResult" class="success">{{ commitResult }}</p>
-            <div class="modal-actions">
-              <button class="btn" @click="importOpen = false">{{ t('global.close') }}</button>
-              <button class="btn btn-primary" :disabled="importing" @click="commitImport">
-                {{ t('global.importCommit') }}
-              </button>
-            </div>
-          </template>
-        </div>
-      </div>
-    </div>
+    <ImportWizard
+      v-if="importOpen"
+      kind="case"
+      @close="importOpen = false"
+      @open-batches="goImports"
+      @committed="afterCommit"
+    />
   </section>
 </template>
 

@@ -1,0 +1,205 @@
+.page-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.page-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.tabs {
+  display: flex;
+  gap: var(--space-2);
+  margin: var(--space-3) 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.tab {
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  padding: 6px 10px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+
+.tab.active {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+}
+
+/* DataTable 的 render 返回值：两个文字按钮并排，间距与旧版 .link 一致。 */
+:deep(.row-actions) {
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.filters {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+/* 未绑定凭据时的占位：不是按钮，但要让「为什么点不了」看得见（FR-v4.12-10）。 */
+:deep(.action-hint) {
+  font-size: 12px;
+}
+
+/* 关联设备面板的表格容器：表头/行/空态全交给 DataTable 壳，这里只管与弹窗文案的间距。 */
+.bind-table {
+  margin: var(--space-3) 0;
+}
+
+/* 录入表单：两列铺满，字段多但没有层级关系，用 grid 比逐行堆更快扫。 */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 var(--space-3);
+}
+
+.form-grid .input,
+.form-grid .select {
+  min-width: 0;
+}
+
+.input,
+.select {
+  min-width: 180px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+  color: var(--text);
+}
+
+/* 表头下第二个文字按钮（采集 / 删除）由 render() 产生，不带 scope id，必须 :deep 锚定。 */
+.mono {
+  font-family: var(--font-mono, monospace);
+}
+
+:deep(.badge) {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 11px;
+  border: 1px solid var(--border);
+}
+
+:deep(.badge.active) {
+  color: var(--ok);
+}
+
+:deep(.badge.deprecated) {
+  color: var(--fail);
+}
+
+.modal-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.modal {
+  width: min(760px, 92vw);
+  max-height: 86vh;
+  overflow: auto;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+}
+
+.modal.narrow {
+  width: min(480px, 92vw);
+}
+
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: var(--space-2) 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.diff-cards {
+  display: flex;
+  gap: var(--space-2);
+  margin: var(--space-3) 0;
+}
+
+.diff-card {
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  font-size: 12px;
+}
+
+.samples {
+  max-height: 180px;
+  overflow: auto;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.error {
+  color: var(--fail);
+}
+
+.warning {
+  color: var(--warn);
+  font-size: 12px;
+}
+
+.success {
+  color: var(--ok);
+}
+
+.link {
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  padding: 0;
+  margin-right: var(--space-2);
+}
+
+.link.danger {
+  color: var(--fail);
+}
+
+.btn {
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-contrast);
+}

@@ -6042,6 +6042,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "mapping",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
           }
         ]
       }
@@ -7333,6 +7341,14 @@
             "schema": {
               "type": "boolean",
               "default": "false"
+            }
+          },
+          {
+            "name": "mapping",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
             }
           }
         ]
@@ -12397,8 +12413,7 @@
             "in": "query",
             "required": false,
             "schema": {
-              "type": "string",
-              "default": "HOST_LINUX"
+              "type": "string"
             }
           },
           {
@@ -21612,6 +21627,52 @@
         "operationId": "ProjectSyncController.preview",
         "tags": [
           "caseasset"
+        ],
+        "responses": {
+          "200": {
+            "description": "统一信封；业务错误码见 ErrorCode",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        },
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ]
+      }
+    },
+    "/api/projects/{projectId}/topology/edges": {
+      "get": {
+        "operationId": "TopologyTrustController.edges",
+        "tags": [
+          "env"
         ],
         "responses": {
           "200": {

@@ -14,8 +14,28 @@ function source(rel: string): string {
   throw new Error(`source not found: ${rel}`)
 }
 
-const globalView = () => source('frontend/src/views/global/GlobalAssetsView.vue')
-const projectView = () => source('frontend/src/views/AssetsView.vue')
+/**
+ * v5.18.0 / FR-v5.18-02：两页各自把列定义、采集状态机抽成了独立模块
+ * （`config/*Columns.ts`、`composables/useAsset*.ts`）。接线断言的对象因此从
+ * 「一个 .vue 文件」变成「这一页的装配整体」——判红能力不变：任何一处接线被删，
+ * 拼起来的源码里就找不到那句话。
+ */
+function concat(...paths: string[]): string {
+  return paths.map(source).join('\n')
+}
+
+const globalView = () =>
+  concat(
+    'frontend/src/views/global/GlobalAssetsView.vue',
+    'frontend/src/config/globalAssetColumns.ts',
+    'frontend/src/composables/useAssetCollection.ts',
+  )
+const projectView = () =>
+  concat(
+    'frontend/src/views/AssetsView.vue',
+    'frontend/src/config/assetColumns.ts',
+    'frontend/src/composables/useAssetEditing.ts',
+  )
 
 describe('采集画像三列两 scope 同源（W63-09）', () => {
   it.each([

@@ -1,0 +1,23 @@
+[purge-temp] 目标库：127.0.0.1:3306/robot_dev
+[purge-temp] 候选：3 个账号 / 8 个项目
+[purge-temp] 基线：
+  app_user=9 project=14 test_case=12491 test_set=47 run=546 device=21 credential=8
+
+[purge-temp] 待清理对象：
+  project PRJ-RF-202611-001 (id=92)  cases=20 sets=1 devices=0
+  project PRJ-RF-202611-002 (id=93)  cases=20 sets=1 devices=0
+  project UIAUTO-141455 (id=118)  cases=35 sets=1 devices=0
+  project UIAUTO-489082 (id=119)  cases=35 sets=1 devices=0
+  project UIAUTO-558458 (id=120)  cases=35 sets=1 devices=0
+  project UIAUTO-730437 (id=121)  cases=36 sets=1 devices=0
+  project UIAUTO-936762 (id=122)  cases=43 sets=2 devices=0
+  project PERF-LONGLIST (id=124)  cases=10000 sets=0 devices=0
+  user qa-ui (id=2)  owned_projects=0
+  user prj01-demo (id=3)  owned_projects=0
+  user ast05 (id=4)  owned_projects=0
+
+[purge-temp] 备份校验通过：robot_dev-20261116-093856.sql.gz
+
+[purge-temp] dry-run：未删除任何行。
+[purge-temp] 已校验：候选 8 项目 / 3 账号；备份 hash 通过。
+[purge-temp] 确认无误后执行：PURGE_TEMP_CONFIRM=YES bash scripts/ops/purge-temp.sh --apply

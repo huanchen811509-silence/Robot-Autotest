@@ -50,6 +50,10 @@ export interface CollectHistoryRow {
   nicCount: number
   rocePorts: number
   roceMaxGbps: number | null
+  /** v5.17.0 / W67-08：本次采集时刻之前最近一次验证所用凭证（可能为 null = 未记录）。 */
+  credentialId?: number | null
+  /** 凭证名的掩码形态（如 `gpu-***-01`）；后端只回掩码，不回全名。 */
+  credentialMaskedName?: string | null
 }
 
 export const collectProfileApi = {

@@ -1,6 +1,7 @@
 package com.qa.autotest.api.asset;
 
 import com.qa.autotest.application.asset.GlobalAssetService;
+import com.qa.autotest.application.imports.ColumnMapping;
 import com.qa.autotest.common.ApiResponse;
 import com.qa.autotest.common.BusinessException;
 import com.qa.autotest.common.ErrorCode;
@@ -69,8 +70,11 @@ public class GlobalAssetController {
 
     @PostMapping("/import/preview")
     public ApiResponse<GlobalAssetService.AssetPreview> preview(
-            @RequestPart("file") MultipartFile file) throws IOException {
-        return ApiResponse.ok(service.preview(bytes(file), file.getOriginalFilename()));
+            @RequestPart("file") MultipartFile file,
+            // v5.18.0 / FR-v5.18-01：字段映射（JSON，{"源列名":"目标字段"}）；不传 = 老行为
+            @RequestParam(value = "mapping", required = false) String mapping) throws IOException {
+        return ApiResponse.ok(service.preview(bytes(file), file.getOriginalFilename(),
+                ColumnMapping.parse(mapping)));
     }
 
     @PostMapping("/import/commit")

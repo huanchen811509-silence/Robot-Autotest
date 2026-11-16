@@ -37,3 +37,11 @@ docs/design/pilot/dist/
 
 # 契约脚本的默认工作区根（含 .signing-key 与 e2e 夹具）：运行时生成，严禁入库
 /backend/workspace/
+
+# 备份/升级演练的 dump 文件：18M 级体积，可由 scripts/ops/backup-drill.sh 重建；
+# 只保留同目录的 .log / .json 摘要作为证据（2026-11-16 大师拍板）
+docs/evidence/**/raw/backup-drill-*.sql
+
+# 版本流程的草稿暂存区：PRD/DEV-PLAN/TEST-PLAN 三份一版在此开工，
+# 进测试执行后移入 docs/release/vX.Y.0/ 补六份才算交付物；草稿属过程产物不入库
+docs/release/_draft/

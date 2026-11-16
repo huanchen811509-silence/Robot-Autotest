@@ -105,6 +105,8 @@ interface ContentSelection {
   sets: { id: number; name: string }[]
   caseIds: number[]
   assetIds: number[]
+  /** v5.17.0 / W67-06：场景单列一维（test_scenario 与 test_set 是两张表，id 空间独立）。 */
+  scenarioIds: number[]
 }
 const contentSelection = ref<ContentSelection>({
   templateKeys: [],
@@ -112,7 +114,11 @@ const contentSelection = ref<ContentSelection>({
   sets: [],
   caseIds: [],
   assetIds: [],
+  scenarioIds: [],
 })
+/** 场景候选：跟着所选模板的 SCENARIO 明细走（场景按项目隔离，没有全局列表可拉）。 */
+const scenarioOptions = ref<{ id: number; name: string }[]>([])
+const selectedScenarioIds = computed(() => contentSelection.value.scenarioIds ?? [])
 /** 兼容既有引用：review / 存为模板 / 创建提交都读这几份派生视图。 */
 const selectedCaseIds = computed(() => contentSelection.value.caseIds)
 const selectedAssetIds = computed(() => contentSelection.value.assetIds)
@@ -147,13 +153,13 @@ async function regenerateCode(): Promise<void> {
   const tpl = selected.value
   if (!tpl) return
   try {
-    const result = await projectApi.nextCode(tpl.codePrefix, form.testKernel || tpl.testKernel)
+    const result = await projectApi.nextCode(tpl.codePrefix, form.testKernel || tpl.kernel)
     form.code = result.code
   } catch {
     // 服务端不可用时退化为本地推算；重复仍由创建接口 409 拒绝
     form.code = nextProjectCode(
       tpl.codePrefix,
-      form.testKernel || tpl.testKernel,
+      form.testKernel || tpl.kernel,
       projectCodes.value,
       form.code,
     )
@@ -165,7 +171,7 @@ async function regenerateCode(): Promise<void> {
 const codeSample = computed(() => {
   const tpl = selected.value
   if (!tpl) return ''
-  return `${tpl.codePrefix}-${engineCode(form.testKernel || tpl.testKernel)}-${yearMonth()}-001`
+  return `${tpl.codePrefix}-${engineCode(form.testKernel || tpl.kernel)}-${yearMonth()}-001`
 })
 
 const capabilities = computed(() => capabilitiesForRole(roleFromCodes(auth.user?.roles)))
@@ -176,7 +182,103 @@ const steps = computed<StepKey[]>(() =>
     : ALL_STEPS.filter((key) => key !== 'members' && key !== 'groups'),
 )
 const current = computed<StepKey>(() => steps.value[Math.min(step.value, steps.value.length - 1)])
-const selected = computed(() => PROJECT_TEMPLATES.find((tpl) => tpl.key === selectedKey.value))
+/**
+ * v5.17.0 / W67-04：第 1 步的卡片来源从「前端静态 PROJECT_TEMPLATES」改为**真模板列表**。
+ *
+ * 静态那套只保留一个用途：后端不可用时回退，并且必须显式标「离线模板」——
+ * 让人一眼看出这是兜底展示，不是真库里真有这四个模板。
+ */
+interface TemplateCounts {
+  case: number
+  caseSet: number
+  scenario: number
+  asset: number
+  total: number
+}
+
+interface WizardTemplateCard {
+  key: string
+  /** null = 静态兜底卡（离线），非 null = 库里真模板 */
+  id: number | null
+  name: string
+  code: string
+  desc: string
+  kernel: string
+  visibility: string
+  codePrefix: string
+  itemCount: number
+  offline: boolean
+}
+
+const templates = ref<WizardTemplateCard[]>([])
+const templatesLoading = ref(false)
+const templatesOffline = ref(false)
+const templateCounts = ref<Record<string, TemplateCounts>>({})
+
+/** 模板编号不一定能当前缀用（后端要求 `^[A-Z][A-Z0-9]{1,7}$`），不合规就退回默认前缀。 */
+function pickCodePrefix(code: string): string {
+  const raw = (code || '').toUpperCase()
+  if (/^[A-Z][A-Z0-9]{1,7}$/.test(raw)) return raw
+  const head = raw.split(/[-_]/)[0]
+  return /^[A-Z][A-Z0-9]{1,7}$/.test(head) ? head : 'PRJ'
+}
+
+function staticCards(): WizardTemplateCard[] {
+  return PROJECT_TEMPLATES.map((tpl) => ({
+    key: tpl.key,
+    id: null,
+    name: t(tpl.nameKey),
+    code: tpl.code,
+    desc: t(tpl.descKey),
+    kernel: tpl.testKernel,
+    visibility: tpl.visibility,
+    codePrefix: tpl.codePrefix,
+    itemCount: 0,
+    offline: true,
+  }))
+}
+
+/** 详情四类计数：判据「卡片计数 = 详情四类之和」就靠这一份。 */
+function countByType(items: { itemType: string }[]): TemplateCounts {
+  const counts: TemplateCounts = { case: 0, caseSet: 0, scenario: 0, asset: 0, total: items.length }
+  for (const item of items) {
+    if (item.itemType === 'CASE') counts.case += 1
+    else if (item.itemType === 'CASE_SET') counts.caseSet += 1
+    else if (item.itemType === 'SCENARIO') counts.scenario += 1
+    else counts.asset += 1
+  }
+  return counts
+}
+
+async function loadTemplates(): Promise<void> {
+  templatesLoading.value = true
+  try {
+    const rows = await templateApi.list({})
+    templates.value = rows
+      .filter((row) => row.status !== 'ARCHIVED')
+      .map((row) => ({
+        key: `tpl-${row.id}`,
+        id: row.id,
+        name: row.name,
+        code: row.code,
+        desc: row.description || '',
+        kernel: row.kernel,
+        visibility: row.visibility,
+        codePrefix: pickCodePrefix(row.code),
+        itemCount: row.itemCount ?? 0,
+        offline: false,
+      }))
+    templatesOffline.value = false
+  } catch {
+    // 后端不可用：回退静态卡，但必须带「离线模板」标识（判据 5）
+    templates.value = staticCards()
+    templatesOffline.value = true
+  } finally {
+    templatesLoading.value = false
+  }
+}
+
+const selected = computed(() => templates.value.find((tpl) => tpl.key === selectedKey.value))
 
 const codePattern = /^[A-Za-z0-9._-]{2,40}$/
 
@@ -192,12 +294,34 @@ const availableUsers = computed(() =>
   users.value.filter((user) => !picked.value.some((member) => member.userId === user.id)),
 )
 
-function selectTemplate(key: string): void {
+/**
+ * v5.17.0 / W67-05：选中后拉**详情**带出内核与四类计数。
+ *
+ * 为什么不能只信列表：列表的 `itemCount` 是缓存值，`kernel` 也可能在别处被改过；
+ * 详情才是权威。详情拉失败时不阻断流程（计数退回列表值），但绝不静默改写内核。
+ */
+async function selectTemplate(key: string): Promise<void> {
   selectedKey.value = key
-  const tpl = PROJECT_TEMPLATES.find((item) => item.key === key)
+  const tpl = templates.value.find((item) => item.key === key)
   if (!tpl) return
-  form.testKernel = tpl.testKernel
+  form.testKernel = tpl.kernel
   form.visibility = tpl.visibility
+  if (tpl.id == null) return
+  try {
+    const detail = await templateApi.get(tpl.id)
+    const counts = countByType(detail.items ?? [])
+    templateCounts.value = { ...templateCounts.value, [key]: counts }
+    // 模板里的 SCENARIO 明细就是内容步的场景候选：refId 是 test_scenario.id
+    scenarioOptions.value = (detail.items ?? [])
+      .filter((item) => item.itemType === 'SCENARIO' && item.refId != null)
+      .map((item) => ({ id: item.refId as number, name: item.name }))
+    if (detail.template?.kernel) {
+      form.testKernel = detail.template.kernel
+      form.visibility = detail.template.visibility || form.visibility
+    }
+  } catch {
+    // 详情不可用：卡片显示列表 itemCount，内核沿用列表值——不猜、不回退到静态
+  }
 }
 
 function stepProblem(): string | null {
@@ -267,6 +391,8 @@ watch(
 
 onMounted(() => {
   void loadUsers()
+  // W67-04：第 1 步的卡片来自真模板列表，不再读前端静态配置
+  void loadTemplates()
   // 负责人默认当前用户（FR-v5.10-04）：用户不必为了建项目先去下拉里找自己一次。
   form.ownerId = auth.user?.id ?? null
 })
@@ -392,6 +518,7 @@ async function createProject(): Promise<void> {
       }),
       caseIds: [...new Set(selectedCaseIds.value)],
       caseSetIds: [...new Set(selectedSetIds.value)],
+      scenarioIds: [...new Set(selectedScenarioIds.value)],
       setName: t('projectWizard.contentSetName'),
     })
     warnings.value = result.warnings
@@ -518,25 +645,60 @@ async function confirmSaveTemplate(): Promise<void> {
       <section v-if="current === 'template'" class="card wizard-card">
         <h2 class="card-title">{{ t('projectWizard.templateTitle') }}</h2>
         <p class="wizard-hint">{{ t('projectWizard.templateHint') }}</p>
-        <div class="template-grid">
+
+        <!-- 判据 5：后端不可用时回退静态卡，但必须标出来 -->
+        <p v-if="templatesOffline" class="wizard-hint" data-testid="templates-offline">
+          {{ t('projectWizard.templatesOffline') }}
+        </p>
+        <p v-if="templatesLoading" class="wizard-hint" data-testid="templates-loading">
+          {{ t('projectWizard.templatesLoading') }}
+        </p>
+
+        <!-- 判据 4：列表为空给空态与新建入口，流程不崩 -->
+        <div v-if="!templatesLoading && templates.length === 0" class="wizard-empty" data-testid="templates-empty">
+          <p>{{ t('projectWizard.templatesEmpty') }}</p>
+          <RouterLink class="link-btn" to="/g/templates/new" data-testid="templates-empty-create">
+            {{ t('projectWizard.goCreateTemplate') }}
+          </RouterLink>
+        </div>
+
+        <div v-else class="template-grid">
           <button
-            v-for="tpl in PROJECT_TEMPLATES"
+            v-for="tpl in templates"
             :key="tpl.key"
             type="button"
             class="template-card"
             :class="{ selected: selectedKey === tpl.key }"
             :aria-pressed="selectedKey === tpl.key"
+            :data-testid="`template-card-${tpl.key}`"
+            :data-offline="tpl.offline ? 'true' : undefined"
             @click="selectTemplate(tpl.key)"
           >
-            <span class="template-card__name">{{ t(tpl.nameKey) }}</span>
+            <span class="template-card__name">{{ tpl.name }}</span>
             <span class="template-card__code">{{ tpl.code }}</span>
-            <span class="template-card__desc">{{ t(tpl.descKey) }}</span>
+            <span class="template-card__desc">{{ tpl.desc }}</span>
             <span class="template-card__meta">
-              {{ t(`projectWizard.kernels.${tpl.testKernel}`) }} ·
+              {{ t(`projectWizard.kernels.${tpl.kernel}`) }} ·
               {{ t(`projectWizard.visibilities.${tpl.visibility}`) }}
+              <template v-if="!tpl.offline"> · {{ t('projectWizard.itemCount', { count: tpl.itemCount }) }}</template>
+              <template v-if="tpl.offline"> · {{ t('projectWizard.offlineBadge') }}</template>
             </span>
           </button>
         </div>
+
+        <!-- 选中后：详情四类计数（判据 3 的可见面） -->
+        <p
+          v-if="selectedKey && templateCounts[selectedKey]"
+          class="wizard-hint"
+          data-testid="template-counts"
+        >
+          {{ t('projectWizard.countsSummary', {
+            caseSet: templateCounts[selectedKey].caseSet,
+            cases: templateCounts[selectedKey].case,
+            scenario: templateCounts[selectedKey].scenario,
+            asset: templateCounts[selectedKey].asset,
+          }) }}
+        </p>
       </section>
 
       <section v-else-if="current === 'basics'" class="card wizard-card">
@@ -709,7 +871,11 @@ async function confirmSaveTemplate(): Promise<void> {
         <h2 class="card-title">{{ t('projectWizard.contentTitle') }}</h2>
         <p class="wizard-hint">{{ t('projectWizard.contentHint') }}</p>
         <!-- W57-12/13：四类来源由选择器自管理，选择状态经 v-model 持久在向导顶层 -->
-        <WizardContentPicker v-model="contentSelection" :conflicts="contentConflicts" />
+        <WizardContentPicker
+          v-model="contentSelection"
+          :conflicts="contentConflicts"
+          :scenario-options="scenarioOptions"
+        />
         <!-- v5.10.0 / FR-v5.10-03：每台选中设备两个地址面各一个凭证下拉，可留空。
              候选来自资产页同一端点（本设备成功 > 同型号成功 > 已配置 > 其它），不另造匹配。 -->
         <div v-if="selectedAssetIds.length" class="wizard-credentials">
@@ -763,6 +929,19 @@ async function confirmSaveTemplate(): Promise<void> {
           <div>
             <dt>{{ t('projectWizard.demo') }}</dt>
             <dd>{{ form.demo ? t('common.yes') : t('common.no') }}</dd>
+          </div>
+          <div>
+            <dt>{{ t('projectWizard.contentSummaryTitle') }}</dt>
+            <dd data-testid="review-content-total">
+              {{ t('projectWizard.contentTotal', {
+                sets: selectedSetIds.length,
+                cases: selectedCaseIds.length,
+                scenarios: selectedScenarioIds.length,
+                assets: selectedAssetIds.length,
+                total: selectedSetIds.length + selectedCaseIds.length
+                  + selectedScenarioIds.length + selectedAssetIds.length,
+              }) }}
+            </dd>
           </div>
           <div>
             <dt>{{ t('projectWizard.membersTitle') }}</dt>

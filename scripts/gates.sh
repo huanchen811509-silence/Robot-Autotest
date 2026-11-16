@@ -110,6 +110,7 @@ check_structure() {
   grep -qE '^run 52 eht_pages_live ' "$file" || { echo "STRUCT_FAIL 缺少步骤 52 eht_pages_live"; bad=1; }
   # 57 为 v5.11.0 新增（DTO 与表结构一致性），同样只增不删。
   grep -qE '^run 57 dto_columns ' "$file" || { echo "STRUCT_FAIL 缺少步骤 57 dto_columns"; bad=1; }
+  grep -qE '^run 59 temp_objects ' "$file" || { echo "STRUCT_FAIL 缺少步骤 59 temp_objects"; bad=1; }
   return "$bad"
 
 }
@@ -496,6 +497,12 @@ run 57 dto_columns "python3 tools/check_dto_columns.py && python3 tools/check_dt
 #    判据是源码 / 迁移的静态事实，不跑真实备份或恢复；负向自证由两个脚本各自的
 #    --self-check / --self-test 提供，证据见 docs/evidence/v5.16.0/w7-*.txt。
 run 58 ops_guardrails "python3 tools/check_ops_guardrails.py && python3 tools/check_ops_audit.py"
+
+# ---- v5.18.0 临时对象防复发（59）------------------------------------------
+# 59 开发期临时对象（v5.18.0 / FR-v5.18-07）：库里不得留有「登记前缀但未打标」的项目，
+#    也不得重现已知历史临时账号；同时校验清场脚本的护栏（默认 dry-run / 二次确认 /
+#    显式清单 / 备份校验）还在。自证方式是真注入一条未打标临时项目判红、删除后判绿。
+run 59 temp_objects "python3 tools/check_temp_objects.py && python3 tools/check_temp_objects.py --self-test"
 
 printf '\nGATES_RESULT FAILS=%s UNJUDGED=%s\n' "$FAILS" "${UNJUDGED:-0}"
 

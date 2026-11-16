@@ -50,7 +50,17 @@ public class ProjectCompositeService {
                                    String testKernel, String kind, Long ownerId, Boolean demo,
                                    List<MemberSpec> members, List<GroupSpec> groups,
                                    List<AssetSpec> assets, List<Long> caseIds,
-                                   List<Long> caseSetIds, String setName) {
+                                   List<Long> caseSetIds, String setName,
+                                   List<Long> scenarioIds) {
+        /** 兼容旧调用：没有场景入参时语义与 5.16 完全一致。 */
+        public CompositeRequest(String code, String name, String description, String visibility,
+                                String testKernel, String kind, Long ownerId, Boolean demo,
+                                List<MemberSpec> members, List<GroupSpec> groups,
+                                List<AssetSpec> assets, List<Long> caseIds,
+                                List<Long> caseSetIds, String setName) {
+            this(code, name, description, visibility, testKernel, kind, ownerId, demo,
+                    members, groups, assets, caseIds, caseSetIds, setName, null);
+        }
     }
 
     /** 提交结果：项目 id 与逐类实际落地条数，供前端复核步对照。 */
@@ -131,7 +141,8 @@ public class ProjectCompositeService {
         boolean hasCases = (request.caseIds() != null && !request.caseIds().isEmpty())
                 || (request.caseSetIds() != null && !request.caseSetIds().isEmpty());
         boolean hasAssets = request.assets() != null && !request.assets().isEmpty();
-        if (hasCases || hasAssets) {
+        boolean hasScenarios = request.scenarioIds() != null && !request.scenarioIds().isEmpty();
+        if (hasCases || hasAssets || hasScenarios) {
             List<ProjectTemplateService.AssetRef> refs = new ArrayList<>();
             if (hasAssets) {
                 for (AssetSpec spec : request.assets()) {
@@ -145,7 +156,7 @@ public class ProjectCompositeService {
             }
             ProjectTemplateService.ContentResult content = templates.applyContent(projectId,
                     new ProjectTemplateService.ContentRequest(request.caseIds(), refs,
-                            request.setName(), request.caseSetIds()));
+                            request.setName(), request.caseSetIds(), request.scenarioIds()));
             caseCount = content.cases();
             assetCount = content.assets();
         }

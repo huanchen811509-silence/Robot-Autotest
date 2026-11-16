@@ -1,0 +1,10 @@
+LOGIN=OK
+seeded rows: 4
+pairs_found=2
+  [3, 6] id=11 kind=MEASURED source=LLDP
+  [7, 8] id=13 kind=MEASURED source=LLDP
+ONE_EDGE_PER_PAIR=PASS
+KIND_IS_MEASURED=PASS
+overridden=2（两条规划被实测覆盖）
+OVERRIDDEN_COUNTED=PASS
+cleanup_left= 0

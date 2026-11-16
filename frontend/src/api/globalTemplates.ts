@@ -106,6 +106,8 @@ export const templateApi = {
       setName?: string
       /** 与后端 `ContentRequest.caseSetIds` 同名：集合成员由服务端展开后并入 caseIds。 */
       caseSetIds?: number[]
+      /** 场景 id（test_scenario）。服务端按表校验，不存在即 400。 */
+      scenarioIds?: number[]
     },
   ) {
     return request<ContentResult>(`/projects/${projectId}/content`, {

@@ -1,0 +1,21 @@
+DRILL_START 2026-11-16 09:38:07 source=robot_dev target=robot_it
+DRILL_BACKUP ok size=18793848B file=docs/evidence/v3.0/raw/backup-drill-20261116_093807.sql
+DRILL_PRE ok size=204647B file=docs/evidence/v3.0/raw/drill-pre-target-20261116_093807.sql
+DRILL_RESTORE ok tables=115
+DRILL_COUNT table                source      restored    verdict
+  run                         546        546    OK
+  test_result                 725        725    OK
+  test_report                   3          3    OK
+  execution_shard               0          0    OK
+  execution_node                9          9    OK
+  audit_log                  8877       8877    OK
+  robot_file                   20         20    OK
+  execution_plan               56         56    OK
+  project                      14         14    OK
+  app_user                      9          9    OK
+DRILL_SCHEMA execution_shard 字段:
+  id run_id project_id node_id shard_index suite_paths state lease_owner lease_until fencing_token attempt test_count fail_count started_at finished_at created_at created_by updated_at updated_by 
+DRILL_QUERY ok execution_shard 聚合可执行
+DRILL_RESULT PASS
+DRILL_STATUS wrote=docs/evidence/ops/backup-drill-latest.json verdict=PASS rto=18s
+DRILL_ROLLBACK ok robot_it 已还原为演练前状态

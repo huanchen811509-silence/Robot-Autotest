@@ -95,7 +95,7 @@ let app: App | null = null
 let host: HTMLElement | null = null
 let logs: string[] = []
 
-async function mountTree(): Promise<HTMLElement> {
+async function mountTree(options: { highlight?: string } = {}): Promise<HTMLElement> {
   const root = document.createElement('div')
   document.body.appendChild(root)
   host = root
@@ -107,6 +107,7 @@ async function mountTree(): Promise<HTMLElement> {
         h(SuiteTree, {
           node: TREE,
           depth: 0,
+          highlight: options.highlight,
           onOpenLogs: (caseKey: string) => logs.push(caseKey),
         })
     },
@@ -372,5 +373,36 @@ describe('SuiteTree 下发命令（FR-v3.9-03）', () => {
     await new Promise((resolve) => setTimeout(resolve, 0))
     await nextTick()
     expect(root.textContent).toContain(i18n.global.t('reports.command.copyFailed'))
+  })
+})
+
+/**
+ * 深链高亮（v5.17.0 / W67-02）。
+ *
+ * 详情页 `?suite=<一级套件名>` 靠 `[data-suite-target="true"]` 找目标再 `scrollIntoView`，
+ * 这个标记只有本组件渲染。没有这组断言，「深链能定位」就只能靠人眼看截图——
+ * 而截图里"像是对了"和"真的标对了节点"是两件事。
+ */
+describe('SuiteTree 深链高亮', () => {
+  it('highlight 命中套件名时给该节点打标记', async () => {
+    const root = await mountTree({ highlight: 'Smoke' })
+    const marked = [...root.querySelectorAll('[data-suite-target="true"]')]
+    expect(marked.length).toBe(1)
+    // data-suite-target 在 .suite-head 上，套件名在它的按钮上
+    expect(marked[0].querySelector('[data-suite-name]')?.getAttribute('data-suite-name'))
+      .toBe('Smoke')
+  })
+
+  it('highlight=all 只标一级套件（depth=1），根节点与更深层都不标', async () => {
+    const root = await mountTree({ highlight: 'all' })
+    const marked = [...root.querySelectorAll('[data-suite-target="true"]')]
+    expect(marked.length).toBe(1)
+    expect(marked[0].querySelector('[data-suite-name]')?.getAttribute('data-suite-name'))
+      .toBe('Smoke')
+  })
+
+  it('不给 highlight 时一条标记都没有（历史行为不变）', async () => {
+    const root = await mountTree()
+    expect(root.querySelectorAll('[data-suite-target="true"]').length).toBe(0)
   })
 })

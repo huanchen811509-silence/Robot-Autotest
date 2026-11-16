@@ -1,0 +1,97 @@
+.asset-tabs {
+  margin-bottom: 12px;
+}
+
+.port-card {
+  margin-top: 16px;
+}
+
+.port-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.port-head .card-title {
+  margin: 0;
+}
+
+.port-empty {
+  margin: 0;
+  padding: var(--space-4) 0;
+}
+
+.port-form {
+  margin-top: 12px;
+}
+
+/* 操作列多个 text 按钮并排：h() 渲染的节点拿不到 scoped 类，用 :deep 兜 */
+:deep(.row-actions) {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* 拓扑视图：一行一条链 = 节点 / 边 / 节点（边数不定，栅格列由 chainColumns 内联给出） */
+.topology {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  /* 多跳链比容器宽时横向滚动，不要把节点压成一条缝 */
+  overflow-x: auto;
+}
+
+.topo-link {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 180px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.topo-node {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+}
+
+.topo-node-name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.topo-node-port {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+.topo-edge {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.topo-edge::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  border-top: 1px dashed var(--border-strong);
+  z-index: 0;
+}
+
+.topo-edge-name {
+  position: relative;
+  z-index: 1;
+  padding: 0 var(--space-2);
+  background: var(--bg);
+  font-size: var(--font-size-sm);
+}

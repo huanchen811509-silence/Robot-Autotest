@@ -45,7 +45,13 @@ vi.mock('@/api/projectCards', () => ({
 }))
 
 vi.mock('@/api/globalTemplates', () => ({
-  templateApi: { applyContent: vi.fn(), saveAsTemplate: vi.fn(), list: vi.fn() },
+  templateApi: {
+    applyContent: vi.fn(),
+    saveAsTemplate: vi.fn(),
+    list: vi.fn(),
+    // v5.17.0 / W67-05：选中后要拉详情带出内核与四类计数
+    get: vi.fn(),
+  },
 }))
 
 vi.mock('@/api/groups', () => ({
@@ -74,6 +80,7 @@ const picker = vi.hoisted(() => ({
     sets: [] as { id: number; name: string }[],
     caseIds: [] as number[],
     assetIds: [] as number[],
+    scenarioIds: [] as number[],
   },
 }))
 vi.mock('@/components/WizardContentPicker.vue', async () => {
@@ -89,6 +96,7 @@ vi.mock('@/components/WizardContentPicker.vue', async () => {
     sets: { id: number; name: string }[]
     caseIds: number[]
     assetIds: number[]
+    scenarioIds?: number[]
   }
   return {
     default: defineComponent({
@@ -130,7 +138,7 @@ vi.mock('@/components/WizardContentPicker.vue', async () => {
 })
 
 function emptyPayload(): typeof picker.payload {
-  return { templateKeys: [], setIds: [], sets: [], caseIds: [], assetIds: [] }
+  return { templateKeys: [], setIds: [], sets: [], caseIds: [], assetIds: [], scenarioIds: [] }
 }
 
 let app: App | null = null
@@ -150,6 +158,9 @@ async function mountView(): Promise<HTMLElement> {
   app = createApp(ProjectWizardView)
   app.use(pinia!)
   app.use(i18n)
+  // 这里没有装真 router（vue-router 被 mock 掉了），但模板里用到 RouterLink：
+  // 补一个最小桩，避免 Vue warn 把「组件未解析」混进测试输出。
+  app.component('RouterLink', { props: ['to'], template: '<a><slot /></a>' })
   app.mount(root)
   await tick()
   return root
@@ -236,7 +247,29 @@ beforeEach(() => {
   vi.mocked(projectCardsApi.list).mockResolvedValue([] as never)
   vi.mocked(templateApi.applyContent).mockResolvedValue({} as never)
   vi.mocked(templateApi.saveAsTemplate).mockResolvedValue({ name: '冒烟模板' } as never)
-  vi.mocked(templateApi.list).mockResolvedValue([] as never)
+  // W67-04：第 1 步改读真模板列表，给一条可选的模板（否则页面落在空态，后续用例无卡可点）
+  vi.mocked(templateApi.list).mockResolvedValue([
+    {
+      id: 501, name: '接口回归模板', code: 'API-REG', kernel: 'robot', visibility: 'private',
+      builtin: false, status: 'ACTIVE', ownerId: 1, description: '接口回归默认值',
+      itemCount: 5, createdAt: '2026-11-01T00:00:00+08:00',
+    },
+  ] as never)
+  // W67-05：详情四类计数（2 集 + 1 例 + 1 场景 + 1 资产 = 5 项）
+  vi.mocked(templateApi.get).mockResolvedValue({
+    template: {
+      id: 501, name: '接口回归模板', code: 'API-REG', kernel: 'robot', visibility: 'private',
+      builtin: false, status: 'ACTIVE', ownerId: 1, description: '接口回归默认值',
+      itemCount: 5, createdAt: '2026-11-01T00:00:00+08:00',
+    },
+    items: [
+      { itemType: 'CASE_SET', refId: 11, mode: 'REF', name: 'S1' },
+      { itemType: 'CASE_SET', refId: 12, mode: 'REF', name: 'S2' },
+      { itemType: 'CASE', refId: 21, mode: 'REF', name: 'C1' },
+      { itemType: 'SCENARIO', refId: 31, mode: 'REF', name: 'SC1' },
+      { itemType: 'DEVICE', refId: 41, mode: 'REF', name: 'D1' },
+    ],
+  } as never)
   vi.mocked(groupsApi.groups).mockResolvedValue([
     { id: 5, name: '网络组', memberCount: 3 },
     { id: 6, name: '存储组', memberCount: 2 },
@@ -616,5 +649,121 @@ describe('W57-13 并发冲突指名 / 返回不丢选择 / 存为模板', () => 
     await tick()
 
     expect(templateApi.saveAsTemplate).toHaveBeenCalledWith(42, '冒烟模板')
+  })
+})
+
+/**
+ * 第 1 步接真模板（v5.17.0 / W67-04 判据 1·4·5、W67-05 判据 2·3）。
+ *
+ * 这一组钉的是「数据从哪来」：改版前卡片读的是前端静态 `PROJECT_TEMPLATES`，
+ * 库里新建的模板永远不出现在向导里；改版后必须来自 `GET /api/global/templates`，
+ * 且后端不可用时回退静态卡要**显式标离线**，不能假装是真模板。
+ */
+describe('第 1 步接真模板', () => {
+  it('卡片来自 GET /api/global/templates，不再渲染前端静态模板', async () => {
+    const root = await mountView()
+    expect(vi.mocked(templateApi.list)).toHaveBeenCalled()
+    expect(root.textContent).toContain('接口回归模板')
+    // 静态配置里的「空白项目」不应再出现
+    expect(root.textContent).not.toContain('空白项目')
+  })
+
+  it('pytest 模板 → 第 3 步默认内核为 pytest', async () => {
+    vi.mocked(templateApi.list).mockResolvedValue([
+      {
+        id: 502, name: 'pytest 服务模板', code: 'PY-SVC', kernel: 'pytest', visibility: 'private',
+        builtin: false, status: 'ACTIVE', ownerId: 1, description: '', itemCount: 0,
+        createdAt: '2026-11-01T00:00:00+08:00',
+      },
+    ] as never)
+    vi.mocked(templateApi.get).mockResolvedValue({
+      template: {
+        id: 502, name: 'pytest 服务模板', code: 'PY-SVC', kernel: 'pytest', visibility: 'private',
+        builtin: false, status: 'ACTIVE', ownerId: 1, description: '', itemCount: 0,
+        createdAt: '2026-11-01T00:00:00+08:00',
+      },
+      items: [],
+    } as never)
+    const root = await mountView()
+    root.querySelector<HTMLElement>('[data-testid="template-card-tpl-502"]')?.click()
+    await tick()
+    clickNext(root)
+    await tick()
+    fill(root, '[data-testid="wizard-code"]', 'PY-2026-001')
+    fill(root, '[data-testid="wizard-name"]', 'pytest 项目')
+    await tick()
+    clickNext(root)
+    await tick()
+    const radio = root.querySelector<HTMLInputElement>('input[type="radio"][value="pytest"]')
+    expect(radio).toBeTruthy()
+    expect(radio?.checked).toBe(true)
+  })
+
+  it('卡片计数与详情四类之和一致，且摘要逐类可读', async () => {
+    const root = await mountView()
+    root.querySelector<HTMLElement>('[data-testid="template-card-tpl-501"]')?.click()
+    await tick()
+    // 卡片 meta 里的「内容 N 项」来自列表 itemCount
+    const card = root.querySelector('[data-testid="template-card-tpl-501"]')
+    expect(card?.textContent).toContain('内容 5 项')
+    // 详情摘要：2 集 + 1 例 + 1 场景 + 1 资产 = 5
+    const counts = root.querySelector('[data-testid="template-counts"]')?.textContent ?? ''
+    expect(counts).toContain('用例集 2')
+    expect(counts).toContain('用例 1')
+    expect(counts).toContain('场景 1')
+    expect(counts).toContain('资产 1')
+  })
+
+  it('模板列表为空：给空态与「去新建模板」入口，流程不崩', async () => {
+    vi.mocked(templateApi.list).mockResolvedValue([] as never)
+    const root = await mountView()
+    expect(root.querySelector('[data-testid="templates-empty"]')).toBeTruthy()
+    expect(root.querySelector('[data-testid="templates-empty-create"]')).toBeTruthy()
+    expect(root.querySelector('.template-card')).toBeNull()
+  })
+
+  it('后端不可用：回退静态卡并标「离线模板」', async () => {
+    vi.mocked(templateApi.list).mockRejectedValue(new Error('backend down') as never)
+    const root = await mountView()
+    expect(root.querySelector('[data-testid="templates-offline"]')).toBeTruthy()
+    const cards = root.querySelectorAll('.template-card')
+    expect(cards.length).toBeGreaterThan(0)
+    expect(cards[0].getAttribute('data-offline')).toBe('true')
+    expect(root.textContent).toContain('离线模板')
+  })
+})
+
+/**
+ * 复核步内容合计（v5.17.0 / W67-06 判据 2）。
+ *
+ * 场景是第五个维度：`2 集 + 5 例 + 2 场景` 必须显示「合计 9 项」。
+ * 这条断言的价值在于**计数不能靠"看起来差不多"**——之前复核步根本没有内容合计，
+ * 用户点完三步不知道自己到底带进来多少东西。
+ */
+describe('复核步内容合计', () => {
+  it('2 集 + 5 例 + 2 场景 → 合计 9 项', async () => {
+    const root = await mountView()
+    await advanceToContent(root)
+    picker.payload = {
+      templateKeys: [],
+      setIds: [11, 12],
+      sets: [
+        { id: 11, name: '用例集 A' },
+        { id: 12, name: '用例集 B' },
+      ],
+      caseIds: [1, 2, 3, 4, 5],
+      assetIds: [],
+      scenarioIds: [31, 32],
+    }
+    root.querySelector<HTMLButtonElement>('[data-testid="picker-emit"]')?.click()
+    await tick()
+    for (let i = 0; i < 8 && !root.querySelector('[data-testid="wizard-create"]'); i += 1) {
+      clickNext(root)
+      await tick()
+    }
+    const total = root.querySelector('[data-testid="review-content-total"]')?.textContent ?? ''
+    expect(total).toContain('9')
+    expect(total).toContain('用例集 2')
+    expect(total).toContain('场景 2')
   })
 })

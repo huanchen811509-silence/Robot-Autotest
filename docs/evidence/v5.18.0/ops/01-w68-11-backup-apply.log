@@ -1,0 +1,11 @@
+[ops] 目标库     robot_dev @ 127.0.0.1:3306
+[ops] 输出       /home/evergreen/robot-autotest/backups/robot_dev-20261116-093804.sql.gz
+[ops] 工作区     无（不存在 /home/evergreen/robot-autotest/workspace）
+[ops] 键名清单   /home/evergreen/robot-autotest/backups/robot_dev-20261116-093804.env-keys.txt（只记键名，不记值）
+[ops] 备份完成 2473141 字节 sha256=cb796c78cf06bb23d3746fa9a829c8cd3e4d8741b89236602d8122df61e2e70b
+BACKUP PASS file=/home/evergreen/robot-autotest/backups/robot_dev-20261116-093804.sql.gz
+[ops] 工作区目录不存在，跳过归档：/home/evergreen/robot-autotest/workspace
+MANIFEST PASS file=/home/evergreen/robot-autotest/backups/backup-manifest.json items=2
+--- 校验 ---
+BACKUP_HASH=PASS file=robot_dev-20261116-093804.sql.gz sha=cb796c78cf06bb23…
+清单条数=no-manifest

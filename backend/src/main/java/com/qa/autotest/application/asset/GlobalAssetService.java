@@ -84,9 +84,27 @@ public class GlobalAssetService {
                            String collectChannel) {
     }
 
+    /**
+     * 导入预检结果。
+     *
+     * <p>v5.18.0 / FR-v5.18-01 增加三段：{@code toCreate / toUpdate / conflicts} 供五步向导的
+     * 「冲突预览」步展示，{@code headers / sampleRows} 供「字段映射」步展示与改列。
+     * 旧的 {@code devices / ports / credentials} 原样保留——它们是资产口径的既有读数，
+     * 换成新名字会打断报告与既有断言。
+     */
     public record AssetPreview(long batchId, String sha256, int devices, int ports, int credentials,
                                int total, List<String> samples, List<String> warnings,
-                               int sheetsScanned, boolean replayed) {
+                               int sheetsScanned, boolean replayed,
+                               int toCreate, int toUpdate, int conflicts,
+                               List<String> headers, List<List<String>> sampleRows) {
+
+        /** 兼容旧调用（replay 等只关心计数的场景）。 */
+        public AssetPreview(long batchId, String sha256, int devices, int ports, int credentials,
+                            int total, List<String> samples, List<String> warnings,
+                            int sheetsScanned, boolean replayed) {
+            this(batchId, sha256, devices, ports, credentials, total, samples, warnings,
+                    sheetsScanned, replayed, 0, 0, 0, List.of(), List.of());
+        }
     }
 
     public record AssetImportResult(long batchId, String sha256, int devices, int ports,
@@ -273,9 +291,20 @@ public class GlobalAssetService {
     // ---------------------------------------------------------------- 导入
 
     public AssetPreview preview(byte[] content, String sourceName) {
+        return preview(content, sourceName, java.util.Map.of());
+    }
+
+    /**
+     * 预检（v5.18.0 / FR-v5.18-01）。
+     *
+     * @param mapping {@code {原始列名: 内部字段名}}；空映射 = 沿用表头自动识别（老行为）
+     */
+    public AssetPreview preview(byte[] content, String sourceName,
+                                java.util.Map<String, String> mapping) {
         requireWrite();
         String sha = sha256Hex(content);
-        AssetImportService.ParsedAssets parsed = AssetImportService.parse(new ByteArrayInputStream(content));
+        AssetImportService.ParsedAssets parsed =
+                AssetImportService.parse(new ByteArrayInputStream(content), mapping);
         List<String> samples = AssetImportService.summarize(parsed).stream().limit(20).toList();
         int total = parsed.devices().size() + parsed.ports().size() + parsed.credentials().size();
         Optional<Map<String, Object>> batch = findBatch(sha);
@@ -283,9 +312,34 @@ public class GlobalAssetService {
                 .orElseGet(() -> saveBatch(sha, sourceName(parsed, sourceName), total, 0, 0, 0,
                         "PREFLIGHT"));
         boolean replayed = batch.map(item -> "COMMITTED".equals(item.get("status"))).orElse(false);
+        // 与 importAssets 同口径：以 PLATFORM 范围的设备名为键判断「新建还是更新」。
+        // 口径若与提交不一致，预览就会与结果对不上（判据 3），所以这里必须照抄提交侧的取法。
+        Set<String> existing = new HashSet<>();
+        for (Map<String, Object> row : jdbc.queryForList(
+                "SELECT name FROM device WHERE owner_scope = 'PLATFORM'")) {
+            existing.add(key(String.valueOf(row.get("name"))));
+        }
+        int toCreate = 0;
+        int toUpdate = 0;
+        int conflicts = 0;
+        Set<String> seenDevices = new HashSet<>();
+        for (AssetImportService.DeviceRow device : parsed.devices()) {
+            String deviceKey = key(device.name());
+            if (!seenDevices.add(deviceKey)) {
+                // 同一设备在文件里出现多次 = 冲突行：提交时会被合并成一条，这里先让人看见
+                conflicts++;
+                continue;
+            }
+            if (existing.contains(deviceKey)) {
+                toUpdate++;
+            } else {
+                toCreate++;
+            }
+        }
         return new AssetPreview(batchId, sha, parsed.devices().size(), parsed.ports().size(),
                 parsed.credentials().size(), total, samples, parsed.warnings(),
-                parsed.sheetsScanned(), replayed);
+                parsed.sheetsScanned(), replayed, toCreate, toUpdate, conflicts,
+                parsed.headers(), parsed.sampleRows());
     }
 
     @Transactional

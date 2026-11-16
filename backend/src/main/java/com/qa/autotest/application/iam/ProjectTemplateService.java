@@ -594,16 +594,24 @@ public class ProjectTemplateService {
      */
     @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = false)
     public record ContentRequest(List<Long> caseIds, List<AssetRef> assets, String setName,
-                                 List<Long> caseSetIds) {
+                                 List<Long> caseSetIds, List<Long> scenarioIds) {
         public ContentRequest(List<Long> caseIds, List<AssetRef> assets, String setName) {
-            this(caseIds, assets, setName, null);
+            this(caseIds, assets, setName, null, null);
+        }
+
+        public ContentRequest(List<Long> caseIds, List<AssetRef> assets, String setName,
+                              List<Long> caseSetIds) {
+            this(caseIds, assets, setName, caseSetIds, null);
         }
     }
 
     public record AssetRef(String assetType, long assetId) {
     }
 
-    public record ContentResult(long testSetId, int cases, int assets) {
+    public record ContentResult(long testSetId, int cases, int assets, int scenarios) {
+        public ContentResult(long testSetId, int cases, int assets) {
+            this(testSetId, cases, assets, 0);
+        }
     }
 
     /** 向导「内容」步：把选中的公共用例复制进项目用例集，资产按引用登记。 */
@@ -655,9 +663,50 @@ public class ProjectTemplateService {
                 assets++;
             }
         }
+        // v5.17.0 / W67-06：场景与用例集不是同一张表（test_scenario vs test_set），
+        // id 空间独立。场景必须用独立入参按表校验，不能混进 caseSetIds 里靠猜。
+        int scenarios = importScenarios(projectId, request.scenarioIds(), setId);
         audit.record("project.content.apply", "project", String.valueOf(projectId),
-                "cases=" + copied + " assets=" + assets);
-        return new ContentResult(setId, copied, assets);
+                "cases=" + copied + " assets=" + assets + " scenarios=" + scenarios);
+        return new ContentResult(setId, copied, assets, scenarios);
+    }
+
+    /**
+     * 把选中的场景复制进目标项目（v5.17.0 / W67-06）。
+     *
+     * <p>三条口径：
+     * <ul>
+     *   <li>只按 test_scenario 查，不按 test_set 猜——两张表 id 空间独立，
+     *       拿用例集 id 传进来可能撞到无关场景，静默错关联比报错更糟；</li>
+     *   <li>场景名沿用源场景；case_set_ids 指向本轮新建的用例集，否则新项目里的场景
+     *       点开永远是空的（与模板 SCENARIO 展开同一口径）；</li>
+     *   <li>本轮没有新建用例集时 case_set_ids 留空串，不伪造引用。</li>
+     * </ul>
+     */
+    private int importScenarios(long projectId, List<Long> scenarioIds, long createdSetId) {
+        if (scenarioIds == null || scenarioIds.isEmpty()) {
+            return 0;
+        }
+        int count = 0;
+        for (Long scenarioId : scenarioIds) {
+            if (scenarioId == null) {
+                continue;
+            }
+            List<String> names = jdbc.queryForList(
+                    "SELECT name FROM test_scenario WHERE id = ?", String.class, scenarioId);
+            if (names.isEmpty()) {
+                throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                        "场景不存在：" + scenarioId
+                                + "（scenarioIds 只接受 test_scenario 的 id，不能传用例集 id）");
+            }
+            jdbc.update("INSERT INTO test_scenario "
+                            + "(project_id, name, case_set_ids, parent_scenario_id) "
+                            + "VALUES (?, ?, ?, NULL)",
+                    projectId, names.get(0),
+                    createdSetId > 0 ? String.valueOf(createdSetId) : "");
+            count++;
+        }
+        return count;
     }
 
     /**

@@ -214,7 +214,8 @@ describe('GlobalCasesView 分支切换', () => {
 
 describe('GlobalCasesView 导入预览的 force 语义', () => {
   async function pickFile(root: HTMLElement): Promise<void> {
-    const input = root.querySelector<HTMLInputElement>('input[type="file"]')!
+    // v5.18.0：文件输入在五步向导内（`ImportWizard`），不再是页面自己的弹窗
+    const input = root.querySelector<HTMLInputElement>('[data-testid="iw-file"]')!
     const file = new File(['x'], 'ledger.xlsx', {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     })
@@ -234,20 +235,30 @@ describe('GlobalCasesView 导入预览的 force 语义', () => {
     expect(previewImport.mock.calls[0][1]).toBe(false)
   })
 
-  it('勾选「强制重算」后第二参 force = true', async () => {
+  it('勾选「强制重算」后按新口径重算，第二参 force = true', async () => {
     const root = await mountView()
     root.querySelectorAll<HTMLButtonElement>('.page-actions button')[1].click()
     await nextTick()
 
-    const checkbox = root.querySelector<HTMLInputElement>('[data-testid="force-recalc"]')!
+    // 选文件 → 走到「冲突预览」步，口径开关在这一步
+    await pickFile(root)
+    await nextTick()
+    root.querySelector<HTMLElement>('[data-testid="iw-next"]')?.click()
+    await nextTick()
+    root.querySelector<HTMLElement>('[data-testid="iw-next"]')?.click()
+    await nextTick()
+    await nextTick()
+
+    const checkbox = root.querySelector<HTMLInputElement>('[data-testid="iw-force"]')!
+    expect(checkbox).toBeTruthy()
     checkbox.checked = true
     checkbox.dispatchEvent(new Event('change'))
     await nextTick()
+    await nextTick()
 
-    await pickFile(root)
-
-    expect(previewImport).toHaveBeenCalledTimes(1)
-    expect(previewImport.mock.calls[0][1]).toBe(true)
+    // 切换口径必须重算一次：第二次调用带 force=true
+    expect(previewImport.mock.calls.length).toBeGreaterThanOrEqual(2)
+    expect(previewImport.mock.calls[previewImport.mock.calls.length - 1][1]).toBe(true)
   })
 })
 
