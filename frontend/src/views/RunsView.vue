@@ -480,8 +480,21 @@ const columns = computed<DataTableColumns<ExecutionRun>>(() => [
   {
     title: t('execution.tests'),
     key: 'passedTests',
-    width: 110,
-    render: (row) => `${row.passedTests} / ${row.totalTests}`,
+    width: 150,
+    // W69-09：原先是 `passedTests / totalTests`，pytest 内核的 run 没有 RF 汇总
+    // → 恒显示「0 / 70」，而同一 run 的报告写的是「通过 5 / 失败 4 / 跳过 61」。
+    // 这里改成三段式，缺值一律 `—`（0 是「确认没有」，null 是「没采集」，不能混）。
+    render: (row: ExecutionRun) => {
+      const cell = (v: number | null | undefined, cls: string) =>
+        h('span', { class: cls }, v === null || v === undefined ? '—' : String(v))
+      return h('span', { class: 'mono' }, [
+        cell(row.passedTests, 'text-ok'),
+        ' / ',
+        cell(row.failedTests, 'text-fail'),
+        ' / ',
+        cell(row.skippedTests, 'muted'),
+      ])
+    },
   },
   {
     // EXEC-11 残余：设备范围原来只在日志面板里看得到，列表页筛不出「哪次占了哪几台」。

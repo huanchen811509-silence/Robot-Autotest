@@ -230,7 +230,8 @@ public class TestReportService {
         // 根因是 snapshotJson 为空串时 snapshotOf 只判 null 就放行，渲染器拿到空快照
         // 仍会吐出一个只有表头/水印的壳。空白也拒，并给出可操作的下一步。
         String raw = report.snapshotJson();
-        if (raw == null || raw.isBlank()) {
+        if (raw == null || raw.isBlank() || raw.trim().length() <= 2) {
+            // `<= 2` 覆盖 `{}`：既不是 null 也不是空串，但同样没有任何字段可导出。
             throw new BusinessException(ErrorCode.CONFLICT,
                     "报告尚未物化快照（无法导出）。请先在报告详情点「冻结」再导出");
         }

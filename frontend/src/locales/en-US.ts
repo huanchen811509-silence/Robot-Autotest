@@ -1093,7 +1093,7 @@ export default {
     clustersEntry: 'Failure clusters',
     runId: 'Run ID',
     state: 'State',
-    tests: 'Passed / Total',
+    tests: 'Passed / Failed / Skipped',
     failureReason: 'Failure reason',
     startedAt: 'Started at',
     finishedAt: 'Finished at',

@@ -1101,7 +1101,7 @@ export default {
     clustersEntry: '失败聚类',
     runId: '运行号',
     state: '状态',
-    tests: '通过/总数',
+    tests: '通过/失败/跳过',
     failureReason: '失败原因',
     startedAt: '开始时间',
     finishedAt: '结束时间',
