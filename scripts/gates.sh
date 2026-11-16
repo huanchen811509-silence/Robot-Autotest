@@ -508,10 +508,15 @@ run 58 ops_guardrails "python3 tools/check_ops_guardrails.py && python3 tools/ch
 run 59 temp_objects "python3 tools/check_temp_objects.py && python3 tools/check_temp_objects.py --self-test"
 
 # ---- v5.19.0 可用性门禁（60–61）------------------------------------------
-# 60 列表可达（v5.19.0 / W69-01/04/06）：三件事——表格有真实高度、首行可命中、
-#    行内操作可命中。判据必须用 elementFromPoint，整页截图看不出"被覆盖"。
-#    --self-test 注入全屏覆盖层，命中检测必须判红（否则说明探针是假的）。
-run 60 list_reachability "node scripts/ux-probes/row-hit.mjs --pages cases,runs,test-reports --viewports 1440x900 --targets row-actions && node scripts/ux-probes/row-hit.mjs --pages cases --viewports 1440x900 --self-test"
+# 60 列表可达（v5.19.0 / W69-01/04/05/06）：
+#    a) 表格有真实高度、首行可命中、行内操作可命中 —— 必须用 elementFromPoint，
+#       整页截图看不出"被覆盖"；
+#    b) 用例集窄屏（1366）右栏是抽屉、且能收起（W69-05）。这一档绑 ED202
+#       （QA_SET_PROJECT，默认 77）——该工程有常驻用例集，EHT(95) 不保证有；
+#       工程被清空会判红（"没有用例集"= 形态未被验证），不静默跳过；
+#    c) --self-test 注入全屏覆盖层，命中检测必须判红（否则说明探针是假的）。
+QA_SET_PROJECT="${QA_SET_PROJECT:-77}"
+run 60 list_reachability "node scripts/ux-probes/row-hit.mjs --pages cases,runs,test-reports --viewports 1440x900 --targets row-actions && node scripts/ux-probes/row-hit.mjs --pages cases --viewports 1440x900 --self-test && node scripts/ux-probes/row-hit.mjs --pages sets --project '$QA_SET_PROJECT' --viewports 1366x768,1440x900 --probe drawer && node scripts/ux-probes/row-hit.mjs --pages sets --project '$QA_SET_PROJECT' --viewports 1366x768 --probe drawer --self-test"
 
 # 61 前后端契约（v5.19.0 / W69-02）：前端 navigation.ts 用到的能力码必须在后端白名单里，
 #    另加全站字面量扫描（undefined / NaN / [object Object]）与导出物健康。

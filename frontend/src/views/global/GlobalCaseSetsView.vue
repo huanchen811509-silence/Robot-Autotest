@@ -327,7 +327,8 @@ onMounted(() => void load())
       </div>
     </form>
 
-    <CaseSetWorkspace :active="activeSet !== null">
+    <!-- W69-05：窄屏下右栏是抽屉，收起抽屉等价于收起当前集合（单一关闭语义）。 -->
+    <CaseSetWorkspace :active="activeSet !== null" @close="closeItems">
       <template #nav>
     <div v-if="loading" class="muted" data-testid="loading">{{ t('w57.globalCaseSets.loading') }}</div>
 
@@ -416,6 +417,11 @@ onMounted(() => void load())
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
+}
+
+/* 全局 .card 默认 max-width:520px，成员表放不下会一列一变行；成员面板吃满右栏。 */
+.member-panel {
+  max-width: none;
 }
 
 .page-head {

@@ -798,7 +798,8 @@ void load()
     </form>
 
     <!-- v5.12 / W62-02：中栏集合列表 + 右工作区成员；壳只管形态，不碰数据。 -->
-    <CaseSetWorkspace :active="activeSet !== null">
+    <!-- W69-05：窄屏下右栏是抽屉，收起抽屉等价于收起当前集合（单一关闭语义）。 -->
+    <CaseSetWorkspace :active="activeSet !== null" @close="closeItems">
       <template #nav>
     <!-- W57-16：全选用筛选条件表达；>10000 命中先二次确认，不静默选中上万条。 -->
     <div class="batch-bar" data-testid="case-sets-batch">
@@ -1160,6 +1161,9 @@ void load()
 
 .items-card {
   margin-top: var(--space-5);
+  /* 全局 .card 默认 max-width:520px，成员表 7 列挤不下就会一列一变行；
+     成员面板必须吃满右栏（宽屏三栏 / 窄屏抽屉都要）。 */
+  max-width: none;
 }
 
 .items-head {
@@ -1177,9 +1181,12 @@ void load()
   gap: var(--space-1);
 }
 
+/* 成员行 8 列：勾选 / 序号 / 编号 / 标题 / 分类 / 优先级 / 脚本 / 操作。
+   原先只声明 4 列，后加的 4 个字段全部掉到第二行（第一列被挤成"UEC测 试"两行），
+   v5.19 W69-05 一并修正。 */
 .set-item {
   display: grid;
-  grid-template-columns: 3rem 10rem minmax(0, 1fr) auto;
+  grid-template-columns: 1.25rem 2.25rem 8.5rem minmax(0, 1fr) 6rem 3.5rem 8rem auto;
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-2) var(--space-3);
@@ -1187,6 +1194,11 @@ void load()
   border-radius: var(--radius-sm);
   background: var(--panel);
   transition: background-color 0.15s ease;
+}
+
+/* 平台用例集只读行只有 4 个字段，单独声明，避免被上面 8 列撑错位 */
+.set-item-readonly {
+  grid-template-columns: 2.25rem 8.5rem minmax(0, 1fr) 3.5rem;
 }
 
 /* 表格单元格里的按钮是 h() 渲染的，拿不到 scoped 属性，用 :deep 兜布局 */
