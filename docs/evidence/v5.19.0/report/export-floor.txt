@@ -1,0 +1,15 @@
+[22/html] 200 1531B metadata=无
+[22/docx] 200 2683B metadata=无
+[22/xlsx] 200 4104B metadata=无
+[22/pdf] 200 1521B metadata=无
+[21/html] 200 1531B metadata=无
+[21/docx] 200 2683B metadata=无
+[21/xlsx] 200 4103B metadata=无
+[21/pdf] 200 1521B metadata=无
+[20/html] 200 1495B metadata=无
+[20/docx] 200 2658B metadata=无
+[20/xlsx] 200 4068B metadata=无
+[20/pdf] 200 1501B metadata=无
+[WARN] 全部导出件都不含 metadata 字段（CASE_ID/RUN_ID/DUT/LINK/SW_BUILD）——见 L-19-05
+[PASS] 12 次导出均产出了合法产物（4xx 拒导视为正确）
+

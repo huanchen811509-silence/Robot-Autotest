@@ -71,26 +71,27 @@ class MenuCapabilityControllerTest {
     }
 
     @Test
-    @DisplayName("ADMIN：7 个能力全下发（含 ai:config/user:write/audit:read/case:write）")
+    @DisplayName("ADMIN：9 个能力全下发（含 execution:read/project:create）")
     void adminCapabilities() throws Exception {
         asRole(1L, "admin");
         assertThat(capabilities()).containsExactly("settings:read", "ai:config", "user:write",
-                "audit:read", "about", "changelog", "case:write");
+                "audit:read", "about", "changelog", "case:write", "execution:read", "project:create");
     }
 
     @Test
-    @DisplayName("PM：audit:read 与 case:write 有，ai:config/user:write 无")
+    @DisplayName("PM：audit:read/case:write/execution:read/project:create 有，ai:config/user:write 无")
     void pmCapabilities() throws Exception {
         asRole(2L, "pm");
         assertThat(capabilities()).containsExactly("settings:read", "audit:read", "about",
-                "changelog", "case:write");
+                "changelog", "case:write", "execution:read", "project:create");
     }
 
     @Test
-    @DisplayName("ENGINEER：settings:read/about/changelog + case:write")
+    @DisplayName("ENGINEER：settings:read/about/changelog/case:write/execution:read，无 project:create")
     void engineerCapabilities() throws Exception {
         asRole(3L, "engineer");
-        assertThat(capabilities()).containsExactly("settings:read", "about", "changelog", "case:write");
+        assertThat(capabilities()).containsExactly("settings:read", "about", "changelog", "case:write",
+                "execution:read");
     }
 
     @Test

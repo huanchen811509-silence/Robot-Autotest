@@ -527,7 +527,7 @@ const columns = computed<DataTableColumns<ExecutionRun>>(() => [
   {
     title: t('common.actions'),
     key: 'actions',
-    // W69-04：运行记录表宽 1530px，操作列原本整列落在视口外（24/24 不可命中）
+    // W69-04：运行记录表宽 1530，操作列原本整列落在视口外（24/24 不可命中）
     fixed: 'right',
     width: 300,
     render: (row) =>

@@ -206,13 +206,20 @@ class PermissionMatrixTest {
         Map<RoleCode, Set<String>> matrix = new EnumMap<>(RoleCode.class);
         // v5.7.0 复核 P1-1：新增 case:write（⇄ CASE:UPDATE）。ADMIN / PM / ENGINEER 有写权限，
         // VIEWER 只读——基线按真实权限同步，不是放宽。
+        //
+        // v5.19.0 / FR-v5.19-02：补 execution:read 与 project:create。这两个码前端 navigation.ts
+        // 早就在用（5 个执行态叶子 + 新建项目入口），后端白名单却从未定义 → 所有角色恒不可见，
+        // 含 ADMIN。此处的期望值按 PRD 口径同步：execution:read 授予 ADMIN/PM/ENGINEER
+        // （⇄ EXECUTION:READ，VIEWER 也有读权限但执行态菜单按"能发起"收口，故不授）；
+        // project:create 只授 ADMIN/PM（⇄ PROJECT:CREATE）。
         matrix.put(RoleCode.ADMIN, Set.of(
                 "settings:read", "ai:config", "user:write", "audit:read", "about", "changelog",
-                "case:write"));
+                "case:write", "execution:read", "project:create"));
         matrix.put(RoleCode.PM, Set.of(
-                "settings:read", "audit:read", "about", "changelog", "case:write"));
+                "settings:read", "audit:read", "about", "changelog", "case:write",
+                "execution:read", "project:create"));
         matrix.put(RoleCode.ENGINEER, Set.of(
-                "settings:read", "about", "changelog", "case:write"));
+                "settings:read", "about", "changelog", "case:write", "execution:read"));
         matrix.put(RoleCode.VIEWER, Set.of(
                 "settings:read", "about", "changelog"));
         return matrix;
@@ -229,16 +236,16 @@ class PermissionMatrixTest {
     }
 
     @Test
-    @DisplayName("MENU 矩阵维度：4 角色 × 7 能力 = 28 格")
+    @DisplayName("MENU 矩阵维度：4 角色 × 9 能力 = 36 格")
     void menu矩阵维度() {
         assertThat(MENU_EXPECTED.keySet()).hasSize(4);
-        assertThat(PermissionMatrix.MENU_CAPABILITIES).hasSize(7);
-        assertThat(menuCells().count()).isEqualTo(28);
+        assertThat(PermissionMatrix.MENU_CAPABILITIES).hasSize(9);
+        assertThat(menuCells().count()).isEqualTo(36);
     }
 
     @ParameterizedTest(name = "{0} / {1} -> {2}")
     @MethodSource("menuCells")
-    @DisplayName("28 格逐格断言：menuAllows 与 menuCapabilities 口径一致")
+    @DisplayName("36 格逐格断言：menuAllows 与 menuCapabilities 口径一致")
     void menu逐格断言(RoleCode role, String capability, boolean expected) {
         assertThat(PermissionMatrix.menuAllows(role, capability))
                 .as("menuAllows %s / %s", role, capability).isEqualTo(expected);

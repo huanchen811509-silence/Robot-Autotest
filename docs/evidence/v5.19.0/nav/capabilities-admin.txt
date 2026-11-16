@@ -1,0 +1,3 @@
+status=200
+count=9
+items=settings:read, ai:config, user:write, audit:read, about, changelog, case:write, execution:read, project:create

@@ -1,0 +1,113 @@
+{
+  "viewports": [
+    "1366x768",
+    "1440x900",
+    "1920x1080"
+  ],
+  "pages": [
+    "sets"
+  ],
+  "probe": "drawer",
+  "results": [
+    {
+      "page": "sets",
+      "viewport": "1366x768",
+      "vw": 1366,
+      "expectNarrow": true,
+      "steps": {
+        "base": {
+          "narrow": "true",
+          "drawer": "closed",
+          "rows": 7,
+          "mainPos": "static"
+        },
+        "manageBtn": {
+          "x": 1064,
+          "y": 363.09375,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        "opened": {
+          "drawer": "open",
+          "mask": true,
+          "mainPos": "fixed",
+          "mainW": 1080,
+          "mainRight": 0,
+          "memberVisible": true
+        },
+        "closeBtn": {
+          "x": 1325.9921875,
+          "y": 24.796875,
+          "hit": true
+        },
+        "closed": {
+          "drawer": "closed",
+          "mask": false,
+          "listWidth": 1100
+        }
+      },
+      "fails": []
+    },
+    {
+      "page": "sets",
+      "viewport": "1440x900",
+      "vw": 1440,
+      "expectNarrow": false,
+      "steps": {
+        "base": {
+          "narrow": "false",
+          "drawer": "closed",
+          "rows": 7,
+          "mainPos": "static"
+        },
+        "manageBtn": {
+          "x": 280,
+          "y": 363.984375,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        "opened": {
+          "drawer": "closed",
+          "mask": false,
+          "mainPos": "static",
+          "mainW": 838,
+          "mainRight": 38,
+          "memberVisible": true
+        }
+      },
+      "fails": []
+    },
+    {
+      "page": "sets",
+      "viewport": "1920x1080",
+      "vw": 1920,
+      "expectNarrow": false,
+      "steps": {
+        "base": {
+          "narrow": "false",
+          "drawer": "closed",
+          "rows": 7,
+          "mainPos": "static"
+        },
+        "manageBtn": {
+          "x": 415,
+          "y": 363.984375,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        "opened": {
+          "drawer": "closed",
+          "mask": false,
+          "mainPos": "static",
+          "mainW": 1048,
+          "mainRight": 173,
+          "memberVisible": true
+        }
+      },
+      "fails": []
+    }
+  ],
+  "fails": []
+}
+
+[PASS] 抽屉形态 3 组全部通过

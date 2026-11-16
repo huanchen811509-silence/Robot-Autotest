@@ -1,0 +1,1223 @@
+{
+  "viewports": [
+    "1440x900",
+    "1366x768",
+    "1920x1080"
+  ],
+  "pages": [
+    "cases",
+    "runs",
+    "test-reports"
+  ],
+  "results": [
+    {
+      "page": "cases",
+      "path": "/cases",
+      "rows": 20,
+      "tableH": 524,
+      "tbodyH": 880,
+      "docScrollTop": 0,
+      "docScrollH": 900,
+      "clientH": 900,
+      "emptyText": "",
+      "firstRowHit": true,
+      "firstRowRect": {
+        "x": 228,
+        "y": 356,
+        "w": 1386,
+        "h": 44
+      },
+      "blockingAt": "SPAN.",
+      "actions": [
+        {
+          "t": "编辑",
+          "x": 1170,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "提交评审",
+          "x": 1204,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "删除",
+          "x": 1266,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "编辑",
+          "x": 1170,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "提交评审",
+          "x": 1204,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "删除",
+          "x": 1266,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "编辑",
+          "x": 1170,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "提交评审",
+          "x": 1204,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "删除",
+          "x": 1266,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "编辑",
+          "x": 1170,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "提交评审",
+          "x": 1204,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "删除",
+          "x": 1266,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "编辑",
+          "x": 1170,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "提交评审",
+          "x": 1204,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "删除",
+          "x": 1266,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "编辑",
+          "x": 1170,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "提交评审",
+          "x": 1204,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "删除",
+          "x": 1266,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "编辑",
+          "x": 1170,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "提交评审",
+          "x": 1204,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "删除",
+          "x": 1266,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "编辑",
+          "x": 1170,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "提交评审",
+          "x": 1204,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "删除",
+          "x": 1266,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        }
+      ],
+      "viewport": "1440x900"
+    },
+    {
+      "page": "runs",
+      "path": "/runs",
+      "rows": 20,
+      "tableH": 622,
+      "tbodyH": 880,
+      "docScrollTop": 0,
+      "docScrollH": 900,
+      "clientH": 900,
+      "emptyText": "",
+      "firstRowHit": true,
+      "firstRowRect": {
+        "x": 228,
+        "y": 258,
+        "w": 1570,
+        "h": 44
+      },
+      "blockingAt": "SPAN.",
+      "actions": [
+        {
+          "t": "查看日志",
+          "x": 1110,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "编辑备注",
+          "x": 1172,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "软删",
+          "x": 1234,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "查看日志",
+          "x": 1110,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "编辑备注",
+          "x": 1172,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "软删",
+          "x": 1234,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "查看日志",
+          "x": 1110,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "编辑备注",
+          "x": 1172,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "软删",
+          "x": 1234,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "查看日志",
+          "x": 1110,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "编辑备注",
+          "x": 1172,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "软删",
+          "x": 1234,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "查看日志",
+          "x": 1110,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "编辑备注",
+          "x": 1172,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "软删",
+          "x": 1234,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "查看日志",
+          "x": 1110,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "编辑备注",
+          "x": 1172,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "软删",
+          "x": 1234,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "查看日志",
+          "x": 1110,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "编辑备注",
+          "x": 1172,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "软删",
+          "x": 1234,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "查看日志",
+          "x": 1110,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "编辑备注",
+          "x": 1172,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "软删",
+          "x": 1234,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        }
+      ],
+      "viewport": "1440x900"
+    },
+    {
+      "page": "test-reports",
+      "path": "/test-reports",
+      "rows": 3,
+      "tableH": 269,
+      "tbodyH": 225,
+      "docScrollTop": 0,
+      "docScrollH": 900,
+      "clientH": 900,
+      "emptyText": "",
+      "firstRowHit": true,
+      "firstRowRect": {
+        "x": 228,
+        "y": 464,
+        "w": 1180,
+        "h": 87
+      },
+      "blockingAt": "TD.n-data-table-td",
+      "actions": [
+        {
+          "t": "撤销后改名",
+          "x": 326,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "导出",
+          "x": 1277,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "撤销后改名",
+          "x": 326,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "导出",
+          "x": 1277,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "W57 smoke",
+          "x": 326,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "编辑",
+          "x": 1090,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "软删",
+          "x": 1124,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "导出",
+          "x": 1236,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        }
+      ],
+      "viewport": "1440x900"
+    },
+    {
+      "page": "cases",
+      "path": "/cases",
+      "rows": 10,
+      "tableH": 392,
+      "tbodyH": 440,
+      "docScrollTop": 0,
+      "docScrollH": 768,
+      "clientH": 768,
+      "emptyText": "",
+      "firstRowHit": true,
+      "firstRowRect": {
+        "x": 228,
+        "y": 356,
+        "w": 1386,
+        "h": 44
+      },
+      "blockingAt": "SPAN.",
+      "actions": [
+        {
+          "t": "编辑",
+          "x": 1096,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "提交评审",
+          "x": 1130,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "删除",
+          "x": 1192,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "编辑",
+          "x": 1096,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "提交评审",
+          "x": 1130,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "删除",
+          "x": 1192,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "编辑",
+          "x": 1096,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "提交评审",
+          "x": 1130,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "删除",
+          "x": 1192,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "编辑",
+          "x": 1096,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "提交评审",
+          "x": 1130,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "删除",
+          "x": 1192,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "编辑",
+          "x": 1096,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "提交评审",
+          "x": 1130,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "删除",
+          "x": 1192,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "编辑",
+          "x": 1096,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "提交评审",
+          "x": 1130,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "删除",
+          "x": 1192,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "编辑",
+          "x": 1096,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "提交评审",
+          "x": 1130,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "删除",
+          "x": 1192,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "编辑",
+          "x": 1096,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "提交评审",
+          "x": 1130,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "删除",
+          "x": 1192,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        }
+      ],
+      "viewport": "1366x768"
+    },
+    {
+      "page": "runs",
+      "path": "/runs",
+      "rows": 10,
+      "tableH": 490,
+      "tbodyH": 440,
+      "docScrollTop": 0,
+      "docScrollH": 768,
+      "clientH": 768,
+      "emptyText": "",
+      "firstRowHit": true,
+      "firstRowRect": {
+        "x": 228,
+        "y": 258,
+        "w": 1570,
+        "h": 44
+      },
+      "blockingAt": "SPAN.",
+      "actions": [
+        {
+          "t": "查看日志",
+          "x": 1036,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "编辑备注",
+          "x": 1098,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "软删",
+          "x": 1160,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "查看日志",
+          "x": 1036,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "编辑备注",
+          "x": 1098,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "软删",
+          "x": 1160,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "查看日志",
+          "x": 1036,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "编辑备注",
+          "x": 1098,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "软删",
+          "x": 1160,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "查看日志",
+          "x": 1036,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "编辑备注",
+          "x": 1098,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "软删",
+          "x": 1160,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "查看日志",
+          "x": 1036,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "编辑备注",
+          "x": 1098,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "软删",
+          "x": 1160,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "查看日志",
+          "x": 1036,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "编辑备注",
+          "x": 1098,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "软删",
+          "x": 1160,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "查看日志",
+          "x": 1036,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "编辑备注",
+          "x": 1098,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "软删",
+          "x": 1160,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "查看日志",
+          "x": 1036,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "编辑备注",
+          "x": 1098,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "软删",
+          "x": 1160,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        }
+      ],
+      "viewport": "1366x768"
+    },
+    {
+      "page": "test-reports",
+      "path": "/test-reports",
+      "rows": 3,
+      "tableH": 269,
+      "tbodyH": 225,
+      "docScrollTop": 0,
+      "docScrollH": 768,
+      "clientH": 768,
+      "emptyText": "",
+      "firstRowHit": true,
+      "firstRowRect": {
+        "x": 228,
+        "y": 464,
+        "w": 1180,
+        "h": 87
+      },
+      "blockingAt": "TD.n-data-table-td",
+      "actions": [
+        {
+          "t": "撤销后改名",
+          "x": 326,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "导出",
+          "x": 1203,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "撤销后改名",
+          "x": 326,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "导出",
+          "x": 1203,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "W57 smoke",
+          "x": 326,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "编辑",
+          "x": 1016,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "软删",
+          "x": 1050,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "导出",
+          "x": 1162,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        }
+      ],
+      "viewport": "1366x768"
+    },
+    {
+      "page": "cases",
+      "path": "/cases",
+      "rows": 20,
+      "tableH": 746,
+      "tbodyH": 880,
+      "docScrollTop": 0,
+      "docScrollH": 1080,
+      "clientH": 1080,
+      "emptyText": "",
+      "firstRowHit": true,
+      "firstRowRect": {
+        "x": 363,
+        "y": 314,
+        "w": 1386,
+        "h": 44
+      },
+      "blockingAt": "SPAN.",
+      "actions": [
+        {
+          "t": "编辑",
+          "x": 1515,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "提交评审",
+          "x": 1549,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "删除",
+          "x": 1611,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "编辑",
+          "x": 1515,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "提交评审",
+          "x": 1549,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "删除",
+          "x": 1611,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "编辑",
+          "x": 1515,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "提交评审",
+          "x": 1549,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "删除",
+          "x": 1611,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "编辑",
+          "x": 1515,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "提交评审",
+          "x": 1549,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "删除",
+          "x": 1611,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "编辑",
+          "x": 1515,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "提交评审",
+          "x": 1549,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "删除",
+          "x": 1611,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "编辑",
+          "x": 1515,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "提交评审",
+          "x": 1549,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "删除",
+          "x": 1611,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "编辑",
+          "x": 1515,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "提交评审",
+          "x": 1549,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "删除",
+          "x": 1611,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "编辑",
+          "x": 1515,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "提交评审",
+          "x": 1549,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "删除",
+          "x": 1611,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        }
+      ],
+      "viewport": "1920x1080"
+    },
+    {
+      "page": "runs",
+      "path": "/runs",
+      "rows": 20,
+      "tableH": 802,
+      "tbodyH": 880,
+      "docScrollTop": 0,
+      "docScrollH": 1080,
+      "clientH": 1080,
+      "emptyText": "",
+      "firstRowHit": true,
+      "firstRowRect": {
+        "x": 363,
+        "y": 258,
+        "w": 1570,
+        "h": 44
+      },
+      "blockingAt": "SPAN.",
+      "actions": [
+        {
+          "t": "查看日志",
+          "x": 1455,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "编辑备注",
+          "x": 1517,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "软删",
+          "x": 1579,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "查看日志",
+          "x": 1455,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "编辑备注",
+          "x": 1517,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "软删",
+          "x": 1579,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "查看日志",
+          "x": 1455,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "编辑备注",
+          "x": 1517,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "软删",
+          "x": 1579,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "查看日志",
+          "x": 1455,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "编辑备注",
+          "x": 1517,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "软删",
+          "x": 1579,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "查看日志",
+          "x": 1455,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "编辑备注",
+          "x": 1517,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "软删",
+          "x": 1579,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "查看日志",
+          "x": 1455,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "编辑备注",
+          "x": 1517,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "软删",
+          "x": 1579,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "查看日志",
+          "x": 1455,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "编辑备注",
+          "x": 1517,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "软删",
+          "x": 1579,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "查看日志",
+          "x": 1455,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "编辑备注",
+          "x": 1517,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "软删",
+          "x": 1579,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        }
+      ],
+      "viewport": "1920x1080"
+    },
+    {
+      "page": "test-reports",
+      "path": "/test-reports",
+      "rows": 3,
+      "tableH": 269,
+      "tbodyH": 225,
+      "docScrollTop": 0,
+      "docScrollH": 1080,
+      "clientH": 1080,
+      "emptyText": "",
+      "firstRowHit": true,
+      "firstRowRect": {
+        "x": 363,
+        "y": 464,
+        "w": 1384,
+        "h": 87
+      },
+      "blockingAt": "TD.n-data-table-td",
+      "actions": [
+        {
+          "t": "撤销后改名",
+          "x": 461,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "导出",
+          "x": 1622,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "撤销后改名",
+          "x": 461,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "导出",
+          "x": 1622,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "W57 smoke",
+          "x": 461,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "编辑",
+          "x": 1435,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "软删",
+          "x": 1469,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        },
+        {
+          "t": "导出",
+          "x": 1581,
+          "hit": true,
+          "topCls": "SPAN.n-button__content"
+        }
+      ],
+      "viewport": "1920x1080"
+    }
+  ],
+  "fails": []
+}
+
+[PASS] 9 组全部通过

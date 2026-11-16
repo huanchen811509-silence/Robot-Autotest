@@ -15,6 +15,16 @@ export interface ExecutionRun {
   totalTests: number
   passedTests: number
   failedTests: number
+  /**
+   * 跳过数（v5.19.0 / FR-v5.19-07）。
+   *
+   * `null`（或字段缺失）= 后端没采集（pytest 路径当前就是这样，协调器只回填
+   * passed/failed），`0` = 确认没有跳过。两者在界面上必须区分：没采集显示 `—`，
+   * 不能显示成 `0`，否则「没采集」会被读成「一条都没跳过」。
+   *
+   * 声明为可选：部分轻量端点与历史夹具不带该字段。
+   */
+  skippedTests?: number | null
   failureClass: string | null
   failureReason: string | null
   failureMessage: string | null

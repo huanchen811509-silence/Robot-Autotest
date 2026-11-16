@@ -666,7 +666,7 @@ const columns = computed<DataTableColumns<TestCase>>(() => [
   {
     title: t('common.actions'),
     key: 'actions',
-    // W69-04：操作列固定在右缘。表宽 1386px > 容器 1174px 时，操作列会落到视口外，
+    // W69-04：操作列固定在右缘。表宽 1386 大于容器 1174 时，操作列会落到视口外，
     // 行内按钮"存在但点不到"（实测 24 个按钮只有 8 个可命中）。
     fixed: 'right',
     width: 240,
