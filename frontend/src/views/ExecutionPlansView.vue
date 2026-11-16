@@ -364,7 +364,22 @@ onMounted(async () => {
       <div class="params">
         <label class="field">
           <span>{{ t('executionPlans.env') }}</span>
-          <input v-model.number="environmentId" class="input" type="number" min="1" />
+          <!--
+            v5.20.0 / FR-v5.20-02：环境这一处**没有**换成下拉，原因是系统里还没有
+            「环境实体」——`environmentId` 在后端只是透传落到 run 记录，没有对应的表/接口；
+            环境快照按名称查询（`/snapshots?name=` 必填），profile 列表里没有 id。
+            造一个假候选（例如拿设备 ID 冒充）比让用户手填更糟：会选错并留下错误记录。
+            这里只做「说清楚 ID 从哪来」，真正改下拉要等产品定环境实体，见 L-20-01。
+          -->
+          <input
+            v-model.number="environmentId"
+            class="input"
+            type="number"
+            min="1"
+            data-testid="env-id"
+            :title="t('executionPlans.envHint')"
+            :placeholder="t('executionPlans.envHint')"
+          />
         </label>
         <label class="field">
           <span>{{ t('executionPlans.concurrency') }}</span>

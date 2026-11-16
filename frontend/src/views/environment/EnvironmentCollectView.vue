@@ -12,7 +12,9 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { NButton, NInput, type DataTableColumns } from 'naive-ui'
 import DataTable from '@/components/DataTable.vue'
+import EntityPicker from '@/components/EntityPicker.vue'
 import { useAuthStore } from '@/stores/auth'
+import { credentialApi } from '@/api/asset'
 import {
   hostInventoryApi, parseSpec,
   type HostInventoryItem, type HostInventoryRecord, type HostInventorySpec,
@@ -35,7 +37,16 @@ const selectedId = ref<number | null>(null)
 const spec = ref<HostInventorySpec | null>(null)
 const hostInput = ref('localhost')
 const usernameInput = ref('')
-const credentialIdInput = ref('')
+/**
+ * 凭据 ID（v5.20.0 / FR-v5.20-02）。
+ *
+ * 原来是一个 `NInput`，让用户去别的页面把凭据 ID 背下来再回来填——这不是"高级功能"，
+ * 是让人猜。现在改成可搜索下拉（候选来自 `GET /projects/{id}/credentials`），
+ * 同时保留「高级：手输 ID」兜底（脚本/工单里只有数字的场景）。
+ */
+const credentialIdInput = ref<number | null>(null)
+const credentialOptions = ref<{ value: number; label: string; hint?: string }[]>([])
+const credentialLoading = ref(false)
 const confirming = ref(false)
 const collecting = ref(false)
 const loading = ref(false)
@@ -77,6 +88,30 @@ async function load() {
   } finally {
     loading.value = false
   }
+  await loadCredentials()
+}
+
+/**
+ * 凭据候选（v5.20.0 / FR-v5.20-02）。
+ *
+ * 失败不阻断页面：拿不到候选时下拉是空的，但「高级：手输 ID」仍然可用——
+ * 采集这个动作不该因为候选列表挂了就做不了。
+ */
+async function loadCredentials() {
+  if (!projectId.value) { credentialOptions.value = []; return }
+  credentialLoading.value = true
+  try {
+    const rows = await credentialApi.list(projectId.value)
+    credentialOptions.value = rows.map((c) => ({
+      value: c.id,
+      label: c.name,
+      hint: [c.credType, c.username].filter(Boolean).join(' / ') || undefined,
+    }))
+  } catch {
+    credentialOptions.value = []
+  } finally {
+    credentialLoading.value = false
+  }
 }
 
 async function select(id: number) {
@@ -96,8 +131,7 @@ async function collectNow() {
   collecting.value = true
   notice.value = ''
   try {
-    const credentialId = credentialIdInput.value.trim()
-      ? Number(credentialIdInput.value.trim()) : undefined
+    const credentialId = credentialIdInput.value ?? undefined
     const username = usernameInput.value.trim() || undefined
     const record = await hostInventoryApi.collect(projectId.value, {
       host: hostInput.value.trim() || 'localhost',
@@ -151,8 +185,16 @@ watch(projectId, () => { selectedId.value = null; spec.value = null; load() })
           data-testid="collect-host" style="max-width: 220px" />
         <NInput v-model:value="usernameInput" :placeholder="t('env.collect.usernamePlaceholder')"
           data-testid="collect-username" style="max-width: 180px" />
-        <NInput v-model:value="credentialIdInput" :placeholder="t('env.collect.credentialPlaceholder')"
-          data-testid="collect-credential" style="max-width: 180px" />
+        <!-- v5.20.0 / FR-v5.20-02：凭据从"手填 ID"改成可搜索下拉 + 手输兜底 -->
+        <div class="credential-field" data-testid="collect-credential">
+          <EntityPicker
+            v-model="credentialIdInput"
+            :options="credentialOptions"
+            :loading="credentialLoading"
+            :placeholder="t('common.credentialPicker')"
+            :manual-placeholder="t('common.credentialManual')"
+          />
+        </div>
         <NButton type="primary" :disabled="collecting" data-testid="collect-confirm" @click="collectNow">
           {{ confirming ? t('env.collect.confirmAgain') : t('env.collect.trigger') }}
         </NButton>
@@ -203,6 +245,7 @@ watch(projectId, () => { selectedId.value = null; spec.value = null; load() })
 .cmd-list code:first-child { min-width: 56px; font-weight: 600; }
 .cmd-list code.cmd { opacity: .75; overflow-wrap: anywhere; }
 .action { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.credential-field { min-width: 300px; max-width: 380px; }
 .warn-text { font-size: 12px; color: color-mix(in srgb, var(--warn) 75%, currentColor); }
 .history { display: flex; gap: 8px; flex-wrap: wrap; }
 </style>

@@ -529,7 +529,7 @@ run 61 frontend_contract "python3 tools/check_menu_capability_contract.py && pyt
 #    失败态 + 重试；禁用按钮必须带 title 说明原因（纯分页导航按钮豁免）。
 #    另加复用度机检：≥5 个页面用同一个列表壳，且至少 3 个接了空态出口动作。
 #    两段都有 self-test（注入覆盖层 / 抬阈值），必须能判红。
-run 62 list_state "node scripts/ux-probes/list-state.mjs --routes /cases,/runs,/test-reports,/execution-plans && node scripts/ux-probes/list-state.mjs --routes /cases --self-test && python3 tools/check_list_state_usage.py && python3 tools/check_list_state_usage.py --self-test"
+run 62 list_state "node scripts/ux-probes/list-state.mjs --routes /cases,/runs,/test-reports,/execution-plans && node scripts/ux-probes/list-state.mjs --routes /cases --self-test && node scripts/ux-probes/entity-picker.mjs && python3 tools/check_list_state_usage.py && python3 tools/check_list_state_usage.py --self-test"
 
 printf '\nGATES_RESULT FAILS=%s UNJUDGED=%s\n' "$FAILS" "${UNJUDGED:-0}"
 
