@@ -2,12 +2,13 @@
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { NButton, NCheckbox, NInput } from 'naive-ui'
+import { NButton, NCheckbox, NInput, NModal } from 'naive-ui'
 import { useAuthStore } from '@/stores/auth'
 import { LOGOUT_INTENT_KEY } from '@/composables/useLogout'
 import AppLogo from '@/components/AppLogo.vue'
 import ErrorLineView from '@/components/ErrorLine.vue'
 import FormField from '@/components/FormField.vue'
+import { healthPing } from '@/api/http'
 import { localizeError, type ErrorLine } from '@/utils/errors'
 
 const { t } = useI18n()
@@ -86,6 +87,13 @@ function setPassword(value: string): void {
 
 const submitting = ref(false)
 const error = ref<ErrorLine | null>(null)
+/**
+ * v5.20.0 / FR-v5.20-07：登录页页脚显示版本号（取自 `/_ping`，与「关于」同源）。
+ *
+ * 取不到就不显示——登录页不该因为探活失败而多出一条错误提示，用户此刻只关心能不能登进去。
+ */
+const version = ref('')
+const helpOpen = ref(false)
 
 async function submit(): Promise<void> {
   error.value = null
@@ -111,7 +119,18 @@ async function submit(): Promise<void> {
   }
 }
 
+/** 版本号取自 `/_ping`，与「关于」对话框同源；失败静默（登录页不该多一条错误条）。 */
+async function loadVersion(): Promise<void> {
+  try {
+    const ping = await healthPing()
+    version.value = (ping?.version ?? '').trim()
+  } catch {
+    version.value = ''
+  }
+}
+
 onMounted(() => {
+  void loadVersion()
   const savedUser = localStorage.getItem(REMEMBER_USER_KEY)
   if (savedUser) {
     username.value = savedUser
@@ -193,10 +212,69 @@ onMounted(() => {
       </NButton>
       <p class="muted">{{ t('login.hint') }}</p>
     </form>
+
+    <!--
+      v5.20.0 / FR-v5.20-07：登录页是唯一没有账户菜单的整屏页面，
+      用户卡在登录这一步时最需要一个「找谁/怎么弄」的入口。
+      版本号与「关于」同源（/_ping），不在这里另抄一份。
+    -->
+    <footer class="login-footer">
+      <span v-if="version" class="muted" data-testid="login-version">v{{ version }}</span>
+      <button type="button" class="login-help" data-testid="login-help" @click="helpOpen = true">
+        {{ t('login.help') }}
+      </button>
+    </footer>
+
+    <NModal v-model:show="helpOpen">
+      <div class="login-help-card" role="dialog" aria-modal="true" :aria-label="t('login.helpTitle')">
+        <h2 class="login-help-title">{{ t('login.helpTitle') }}</h2>
+        <ul class="login-help-list">
+          <li>{{ t('login.helpAccount') }}</li>
+          <li>{{ t('login.helpPermission') }}</li>
+          <li>{{ t('login.helpShortcut') }}</li>
+        </ul>
+        <NButton size="small" @click="helpOpen = false">{{ t('common.close') }}</NButton>
+      </div>
+    </NModal>
   </div>
 </template>
 
 <style scoped>
+.login-footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+  font-size: var(--font-size-sm);
+}
+.login-help {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+}
+.login-help-card {
+  box-sizing: border-box;
+  width: min(520px, 92vw);
+  padding: var(--space-5);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--panel);
+}
+.login-help-title {
+  margin: 0 0 var(--space-3);
+  font-size: var(--font-size-md);
+  color: var(--text);
+}
+.login-help-list {
+  margin: 0 0 var(--space-4);
+  padding-left: 1.1em;
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+  line-height: 1.7;
+}
 .login-brand {
   display: flex;
   flex-direction: column;

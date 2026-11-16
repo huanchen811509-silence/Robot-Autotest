@@ -8,7 +8,7 @@
  * 不在这里做任何二次加工（加工过就会出现「页面一套、报告一套」）。
  * 空态显示「0 条」：沿用 env.common.empty 文案键，不硬编码中文，也不补造示例行。
  */
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, h, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { NButton, NInput, type DataTableColumns } from 'naive-ui'
 import DataTable from '@/components/DataTable.vue'
@@ -21,10 +21,13 @@ import {
 } from '@/api/environment'
 import { formatDateTime } from '@/utils/format'
 import { collectStatusLabel } from '@/utils/statusLabels'
+import { collectRawText, collectValueText, hasRawValue } from '@/utils/collectFormat'
 
 interface ItemRow extends HostInventoryItem {
   id: string
   display: string
+  /** 原始值（JSON 美化）；字符串类别为空串，不给折叠。 */
+  raw: string
   collectedAtText: string
 }
 
@@ -56,7 +59,22 @@ const notice = ref('')
 
 const columns = computed<DataTableColumns<ItemRow>>(() => [
   { title: t('env.collect.panel'), key: 'label' },
-  { title: t('env.collect.colValue'), key: 'display' },
+  {
+    title: t('env.collect.colValue'),
+    key: 'display',
+    // v5.20.0 / FR-v5.20-05：值是给人读的一句话；要看字段原文就展开「原始值」。
+    // 折叠用原生 <details>，不引组件——它天生支持键盘与无障碍，且不增加 JS。
+    render: (row) =>
+      row.raw
+        ? h('div', { class: 'value-cell' }, [
+            h('span', { class: 'value-text' }, row.display),
+            h('details', { class: 'value-raw' }, [
+              h('summary', t('env.collect.rawValue')),
+              h('pre', { class: 'value-raw-body' }, row.raw),
+            ]),
+          ])
+        : h('span', row.display),
+  },
   { title: t('env.collect.colSource'), key: 'command' },
   { title: t('env.collect.colCollectedAt'), key: 'collectedAtText' },
 ])
@@ -64,9 +82,10 @@ const columns = computed<DataTableColumns<ItemRow>>(() => [
 const itemRows = computed<ItemRow[]>(() => (spec.value?.items ?? []).map((item) => ({
   ...item,
   id: item.category,
-  display: item.value === null || item.value === undefined
-    ? `${t('env.common.notCollected')} · ${item.reason ?? ''}`
-    : (typeof item.value === 'string' ? item.value : JSON.stringify(item.value)),
+  // v5.20.0 / FR-v5.20-05：按类别说人话（CPU 拆核数/型号、内存拆总量/已用/可用…），
+  // 不再把接口 JSON 直接贴到表格里；缺值分清「没采到」与「确实没有」。
+  display: collectValueText(item, t),
+  raw: hasRawValue(item) ? collectRawText(item.value) : '',
   collectedAtText: formatDateTime(item.collectedAt),
 })))
 
@@ -168,17 +187,8 @@ watch(projectId, () => { selectedId.value = null; spec.value = null; load() })
       </NButton>
     </div>
 
-    <section class="panel">
-      <h2>{{ t('env.collect.commandsTitle') }}</h2>
-      <p class="muted">{{ t('env.collect.commandsHint') }}</p>
-      <ul v-if="commands.length" class="cmd-list" data-testid="collect-commands">
-        <li v-for="[category, command] in commands" :key="category">
-          <code>{{ category }}</code><code class="cmd">{{ command }}</code>
-        </li>
-      </ul>
-      <p v-else class="empty" data-testid="collect-commands-empty">{{ t('env.common.empty') }}</p>
-    </section>
-
+    <!-- v5.20.0 / FR-v5.20-05：动作前置——打开页面第一眼就该看到「立即采集」，
+         命令白名单是"它到底跑了什么"的说明，排在动作之后。 -->
     <section class="panel">
       <h2>{{ t('env.collect.actionTitle') }}</h2>
       <div class="action">
@@ -204,6 +214,17 @@ watch(projectId, () => { selectedId.value = null; spec.value = null; load() })
         </span>
       </div>
       <p v-if="notice" class="muted" data-testid="collect-notice">{{ notice }}</p>
+    </section>
+
+    <section class="panel">
+      <h2>{{ t('env.collect.commandsTitle') }}</h2>
+      <p class="muted">{{ t('env.collect.commandsHint') }}</p>
+      <ul v-if="commands.length" class="cmd-list" data-testid="collect-commands">
+        <li v-for="[category, command] in commands" :key="category">
+          <code>{{ category }}</code><code class="cmd">{{ command }}</code>
+        </li>
+      </ul>
+      <p v-else class="empty" data-testid="collect-commands-empty">{{ t('env.common.empty') }}</p>
     </section>
 
     <section class="panel">
@@ -249,6 +270,25 @@ watch(projectId, () => { selectedId.value = null; spec.value = null; load() })
 .cmd-list code.cmd { opacity: .75; overflow-wrap: anywhere; }
 .action { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .credential-field { min-width: 300px; max-width: 380px; }
+/* v5.20.0 / FR-v5.20-05：值列一句话 + 可展开的原始值 */
+.value-cell { display: flex; flex-direction: column; gap: 2px; }
+.value-text { line-height: 1.5; }
+.value-raw { margin-top: 2px; }
+.value-raw summary { cursor: pointer; color: var(--text-muted); font-size: var(--font-size-sm); }
+.value-raw summary:hover { color: var(--accent); }
+.value-raw-body {
+  margin: 4px 0 0;
+  padding: 8px;
+  max-height: 200px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
 .warn-text { font-size: 12px; color: color-mix(in srgb, var(--warn) 75%, currentColor); }
 .history { display: flex; gap: 8px; flex-wrap: wrap; }
 </style>
