@@ -305,7 +305,9 @@ function openCreate(): void {
  * 用户不知道下一步该点哪里。三个动作对应三条真实入口：
  * 新建（本页弹窗）/ 导入（预检页）/ 查看样例（平台级公共样例集，按一级分类组织）。
  *
- * <p>「新建」按 `case:write` 显隐（viewer 看不到），另两个只要是能进本页的角色都给。
+ * <p>「新建」与「导入」都按 `case:write` 显隐：两者最终都会写用例集，viewer 进到
+ * 导入页也提交不了（门禁 64 role-buttons 判据是"viewer 在用例集页写按钮数为 0"，
+ * 曾因这里漏守卫被扫出「导入用例」一颗而判红）。「查看样例」是只读导航，给所有角色。
  */
 function goImport(): void {
   void router.push({ name: 'imports' })
@@ -902,7 +904,12 @@ void load()
           >
             {{ t('caseSets.create') }}
           </NButton>
-          <NButton size="small" data-testid="case-sets-empty-import" @click="goImport">
+          <NButton
+            v-if="can('case:write')"
+            size="small"
+            data-testid="case-sets-empty-import"
+            @click="goImport"
+          >
             {{ t('caseSets.emptyActionImport') }}
           </NButton>
           <NButton quaternary size="small" data-testid="case-sets-empty-sample" @click="goSamples">

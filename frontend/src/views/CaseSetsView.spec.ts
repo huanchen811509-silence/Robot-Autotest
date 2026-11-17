@@ -192,15 +192,19 @@ describe('CaseSetsView 空态三动作（FR-v5.22-06 判据 06-2）', () => {
     expect(routerState.push).toHaveBeenCalledWith({ name: 'global-case-sets' })
   })
 
-  it('viewer（无 case:write）只看到「导入」与「查看样例」两个动作', async () => {
-    // 只读口径：能力集里没有 case:write
+  it('viewer（无 case:write）只看到「查看样例」一个动作，写动作一律不出现', async () => {
+    // 只读口径：能力集里没有 case:write。这条与门禁 64 role-buttons 同口径——
+    // viewer 在用例集页的写按钮数必须为 0；「导入」最终也写用例集，不能算只读动作。
+    // （首版漏了它的守卫，被 role-buttons 扫出「导入用例」一颗而判红，已补）
     seedMenuCapabilities(['case:read'])
     vi.mocked(caseSetApi.page).mockResolvedValueOnce(emptyPage)
     const root = await mountView()
 
     const box = root.querySelector<HTMLElement>('[data-testid="case-sets-empty-actions"]')
-    expect(box!.querySelectorAll('button')).toHaveLength(2)
+    expect(box!.querySelectorAll('button')).toHaveLength(1)
     expect(box!.querySelector('[data-testid="case-sets-empty-create"]')).toBeNull()
+    expect(box!.querySelector('[data-testid="case-sets-empty-import"]')).toBeNull()
+    expect(box!.querySelector('[data-testid="case-sets-empty-sample"]')).not.toBeNull()
   })
 })
 
