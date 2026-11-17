@@ -153,7 +153,7 @@ public class TestReportService {
         }
         return renderer.external(snapshot, report.id(), report.title(),
                 report.frozenAt() == null ? "" : report.frozenAt().toString(),
-                ReportExportService.WATERMARK);
+                ReportExportService.EXTERNAL_WATERMARK, false);
     }
 
     /**
@@ -257,9 +257,11 @@ public class TestReportService {
         }
         ReportSnapshot snapshot = snapshotOf(report);
         boolean internal = isInternal(mode);
+        String effectiveWatermark = internal
+                ? ReportExportService.WATERMARK : ReportExportService.EXTERNAL_WATERMARK;
         Map<String, Object> view = renderer.external(snapshot, report.id(), report.title(),
                 report.frozenAt() == null ? "" : report.frozenAt().toString(),
-                ReportExportService.WATERMARK);
+                effectiveWatermark, internal);
         List<ReportExportService.CaseDetailRow> details = caseDetails(snapshot, internal);
         byte[] bytes;
         if (isPdf(format)) {
@@ -274,7 +276,7 @@ public class TestReportService {
         }
         String ext = ReportExportService.extension(format);
         repository.insertExport(id, ext, "report-" + id + "." + ext, bytes.length,
-                ReportExportService.WATERMARK);
+                effectiveWatermark);
         return bytes;
     }
 

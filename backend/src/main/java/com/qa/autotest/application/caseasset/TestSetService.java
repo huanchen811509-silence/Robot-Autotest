@@ -108,7 +108,14 @@ public class TestSetService {
         access.bindProject(projectId);
         access.require(PermissionResource.CASE, PermissionAction.CREATE);
         if (setCode == null || setCode.isBlank()) {
-            throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "用例集编号不能为空");
+            // v5.24.0 / W74-05：留空自动生成 SET-NNN（找第一个未占用的序号）。
+            // 用 codeExists 判重而非新增仓储方法；并发极端情况由 DB 唯一索引兜底。
+            int seq = 1;
+            String generated;
+            do {
+                generated = String.format("SET-%03d", seq++);
+            } while (sets.codeExists(projectId, generated, null) && seq < 10000);
+            setCode = generated;
         }
         if (sets.codeExists(projectId, setCode, null)) {
             throw new BusinessException(ErrorCode.CONFLICT, "用例集编号已存在：" + setCode);
@@ -140,6 +147,32 @@ public class TestSetService {
     }
 
     @Transactional
+    /**
+     * v5.24.0 / W74-01：项目级批量加入。复用 {@link #addItem} 的逐条校验
+     * （项目绑定、权限、用例存在），重复成员跳过而非报错，返回 added/skipped。
+     */
+    public com.qa.autotest.application.caseasset.TestSetService.AddItemsResult addItems(
+            long projectId, long setId, java.util.List<Long> caseIds) {
+        int added = 0;
+        int skipped = 0;
+        java.util.Set<Long> existing = new java.util.HashSet<>(
+                sets.items(projectId, setId).stream().map(r -> r.id()).toList());
+        if (caseIds != null) {
+            for (Long caseId : caseIds) {
+                if (caseId == null || existing.contains(caseId)) { skipped++; continue; }
+                try {
+                    addItem(projectId, setId, caseId);
+                    existing.add(caseId);
+                    added++;
+                } catch (com.qa.autotest.common.BusinessException ex) {
+                    // 非法 caseId 不整体回滚（与 category-filter 口径一致）：能加的加，加不了的报 skipped
+                    skipped++;
+                }
+            }
+        }
+        return new AddItemsResult(added, skipped);
+    }
+
     public void addItem(long projectId, long setId, long caseId) {
         access.bindProject(projectId);
         access.require(PermissionResource.CASE, PermissionAction.UPDATE);

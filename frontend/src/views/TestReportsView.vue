@@ -394,7 +394,11 @@ onMounted(load)
   <div class="page">
     <header class="page-head">
       <h1>{{ t('testReports.title') }}</h1>
-      <p class="muted">{{ t('testReports.subtitle') }}</p>
+      <p class="muted" data-testid="test-reports-positioning">{{ t('testReports.subtitle') }}</p>
+      <button class="btn btn-ghost" type="button" data-testid="open-execution-reports"
+              @click="router.push('/reports')">
+        {{ t('testReports.openExecution') }}
+      </button>
     </header>
 
     <form class="bar create-bar" @submit.prevent="create">

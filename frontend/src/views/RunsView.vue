@@ -296,10 +296,17 @@ function confirmPrecheck(): void {
  * **不接全选**（useServerSelection 属于可写批量页）。筛选作用于当前页的显示层，
  * 与既有 state 服务端筛选、page/size 分页共存；URL 前缀 runs_ 与其它页面隔离。
  */
-const runFilters = useTableFilters({ prefix: 'runs_', columns: ['runId', 'failureReason'] })
+const runFilters = useTableFilters({
+  prefix: 'runs_',
+  columns: ['runId', 'failureReason', 'state'],
+  // W73-13：只允许六态大写值，非法 URL 值丢弃（防止 ?f_runs_state=foo 把页面带进死筛选）
+  allowedFacets: { state: RUN_STATUSES.map((x) => x.toUpperCase()) },
+})
 const runFilterColumns: TableFilterColumn[] = [
   { key: 'runId', title: t('w57.runs.colRunId'), mode: 'text' },
   { key: 'failureReason', title: t('w57.runs.colFailureReason'), mode: 'text' },
+  { key: 'state', title: t('execution.state'), mode: 'multi',
+    options: RUN_STATUSES.map((x) => ({ label: runStatusLabel(x), value: x.toUpperCase() })) },
 ]
 const runFilterValues = computed<Record<string, string[]>>(() => {
   const out: Record<string, string[]> = {}
@@ -315,10 +322,12 @@ function onRunFilterChange(next: Record<string, string[]>): void {
 const visibleRuns = computed<ExecutionRun[]>(() => {
   const byId = (runFilters.texts.value.runId ?? '').toLowerCase()
   const byReason = (runFilters.texts.value.failureReason ?? '').toLowerCase()
+  const states = runFilters.facets.value.state ?? []
   const q = runFilters.q.value.trim().toLowerCase()
   return runs.value.filter((run) => {
     if (byId && !run.runId.toLowerCase().includes(byId)) return false
     if (byReason && !(run.failureReason ?? '').toLowerCase().includes(byReason)) return false
+    if (states.length && !states.includes(String(run.state ?? '').toUpperCase())) return false
     if (q && !`${run.runId} ${run.failureReason ?? ''} ${run.deviceScope ?? ''}`.toLowerCase().includes(q))
       return false
     return true
@@ -333,6 +342,9 @@ const runNoResultHint = computed<string>(() => {
   if (runFilters.texts.value.runId) parts.push(`${t('w57.runs.colRunId')}=${runFilters.texts.value.runId}`)
   if (runFilters.texts.value.failureReason) {
     parts.push(`${t('w57.runs.colFailureReason')}=${runFilters.texts.value.failureReason}`)
+  }
+  if (runFilters.facets.value.state?.length) {
+    parts.push(`${t('execution.state')}=${runFilters.facets.value.state.join(',')}`)
   }
   return parts.join(' · ')
 })

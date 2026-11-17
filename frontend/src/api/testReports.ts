@@ -140,8 +140,8 @@ export const testReportsApi = {
     request<EhtSections>(`/test-reports/${id}/sections`),
   render: (id: number, external = true) =>
     request<Record<string, unknown>>(`/test-reports/${id}?external=${external}`),
-  exportBlob: (id: number, format: string) =>
-    requestBlob(`/test-reports/${id}/export?format=${format}`),
+  exportBlob: (id: number, format: string, mode: 'external' | 'internal' = 'external') =>
+    requestBlob(`/test-reports/${id}/export?format=${format}&mode=${mode}`),
   exports: (id: number) =>
     request<TestReportExportItem[]>(`/test-reports/${id}/exports`),
 }

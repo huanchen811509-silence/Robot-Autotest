@@ -13,15 +13,19 @@
  *    用户切走页面却还在消耗后端。
  */
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { NInput } from 'naive-ui'
 import EmptyState from '@/components/EmptyState.vue'
 import { pytestProjectApi, type CaseScriptBinding } from '@/api/pytestProject'
 import { pytestRunApi, type PrecheckResult, type RunProgress } from '@/api/pytestRuns'
 import { useAuthStore } from '@/stores/auth'
+import { confirmAction } from '@/composables/useConfirm'
 
 const { t } = useI18n()
 const auth = useAuthStore()
+const route = useRoute()
+const router = useRouter()
 const projectId = computed(() => auth.projectId ?? 0)
 
 const precheck = ref<PrecheckResult | null>(null)
@@ -35,6 +39,10 @@ const retry = ref(0)
 const onlySelected = ref(false)
 const selected = ref<string[]>([])
 const runIdInput = ref('')
+// W73-02：本次执行携带的报告元数据（7 项手填；RUN_ID/STARTED_AT/CASE_KIND 由执行上下文自动补）
+const META_FIELDS = ['CASE_ID', 'QA_PROJECT', 'DUT', 'LINK', 'SW_BUILD', 'BASELINE', 'OPERATOR'] as const
+const meta = ref<Record<string, string>>(Object.fromEntries(META_FIELDS.map((k) => [k, ''])))
+const metaOpen = ref(false)
 const submitting = ref(false)
 const errorText = ref('')
 // 不用 naive-ui 的 useMessage：它要求外层有 NMessageProvider，工作台没有，
@@ -56,6 +64,11 @@ const targetNodes = computed(() => (onlySelected.value ? selected.value : []))
 const blockingChecks = computed(() =>
   (precheck.value?.checks ?? []).filter((one) => one.required && !one.ok),
 )
+
+const willSkipHint = computed(() => {
+  const n = precheck.value?.willSkip ?? 0
+  return n > 0 ? t('pytestLaunch.willSkipHint', { count: n }) : ''
+})
 
 const canSubmit = computed(() => {
   if (submitting.value || polling.value) return false
@@ -124,6 +137,16 @@ async function poll(): Promise<void> {
 }
 
 async function submit(): Promise<void> {
+  // v5.24.0 / W74-04：确认面板——未确认不调创建接口（评审 P0：61 条曾被无确认直接发起）
+  const metaCount = Object.values(meta.value).filter((v) => v.trim()).length
+  const confirmText = t('pytestLaunch.runConfirm', {
+    mode: mode.value,
+    cases: targetNodes.value.length || boundNodes.value.length,
+    willSkip: precheck.value?.willSkip ?? 0,
+    eta: precheck.value?.etaSeconds != null ? Math.round(precheck.value.etaSeconds) + 's' : t('pytestLaunch.etaUnknown'),
+    meta: metaCount,
+  })
+  if (!(await confirmAction(confirmText))) return
   submitting.value = true
   errorText.value = ''
   progress.value = null
@@ -134,8 +157,13 @@ async function submit(): Promise<void> {
       nodeIds: targetNodes.value,
       confirmReal: mode.value === 'real' ? confirmReal.value : false,
       retry: retry.value,
+      metadata: Object.fromEntries(
+        Object.entries(meta.value).filter(([, v]) => String(v).trim().length > 0),
+      ),
     })
     runId.value = accepted.runId
+    // W73-12：runId 落 URL，刷新/分享可恢复
+    void router.replace({ query: { ...route.query, run: accepted.runId } })
     progress.value = {
       runId: accepted.runId,
       stage: 'PREPARING',
@@ -179,6 +207,20 @@ function toggleNode(nodeId: string | null, checked: boolean): void {
 
 onMounted(async () => {
   await Promise.all([loadPrecheck(), loadBindings()])
+  // W73-12：刷新后从 ?run= 恢复，重新接上进度轮询（此前执行完就失联）。
+  // 深链直接打开时 router 可能尚未完成首次导航，先等 isReady 再读 query。
+  await router.isReady()
+  const restored = String(route.query.run ?? '').trim()
+  if (restored) {
+    runId.value = restored
+    runIdInput.value = restored
+    progress.value = {
+      runId: restored, stage: '', total: 0, finished: 0, passed: 0, failed: 0,
+      elapsedMs: 0, cancelRequested: false, terminal: false, source: 'live',
+    }
+    polling.value = true
+    timer = window.setTimeout(poll, 300)
+  }
 })
 
 onBeforeUnmount(stopPolling)
@@ -249,6 +291,22 @@ onBeforeUnmount(stopPolling)
       </label>
     </div>
 
+    <!-- W73-02：本次元数据（不阻断执行；缺项由报告门禁提示，执行后可在报告页补录） -->
+    <div class="meta-panel" data-test="meta-panel">
+      <button class="ghost" type="button" data-test="meta-toggle" @click="metaOpen = !metaOpen">
+        {{ metaOpen ? t('pytestLaunch.metaCollapse') : t('pytestLaunch.metaExpand') }}
+        <span class="muted small" data-test="meta-filled">
+          {{ t('pytestLaunch.metaFilled', { count: Object.values(meta).filter((v) => v.trim()).length }) }}
+        </span>
+      </button>
+      <div v-if="metaOpen" class="meta-grid">
+        <label v-for="key in META_FIELDS" :key="key" class="field">
+          <span>{{ key }}</span>
+          <NInput v-model:value="meta[key]" :placeholder="key" :data-test="`meta-${key}`" />
+        </label>
+      </div>
+    </div>
+
     <label class="check-line">
       <input v-model="onlySelected" type="checkbox" data-test="only-selected" />
       <span>{{ t('pytestLaunch.onlySelected', { count: boundNodes.length }) }}</span>
@@ -271,6 +329,9 @@ onBeforeUnmount(stopPolling)
       <span>{{ t('pytestLaunch.confirmReal') }}</span>
     </label>
 
+    <p v-if="willSkipHint" class="notice notice-warn" data-test="will-skip-hint">
+      {{ willSkipHint }}
+    </p>
     <p v-if="errorText" class="notice notice-fail" data-test="launch-error">{{ errorText }}</p>
     <p v-if="notice" class="notice notice-ok" data-test="launch-notice">{{ notice }}</p>
 
@@ -304,14 +365,34 @@ onBeforeUnmount(stopPolling)
       <div class="bar" role="progressbar" :aria-valuenow="percent" aria-valuemin="0" aria-valuemax="100">
         <div class="bar-fill" :style="{ width: percent + '%' }" />
       </div>
-      <p v-if="progress.terminal" class="muted small" data-test="progress-terminal">
-        <RouterLink to="/reports">{{ t('pytestLaunch.viewReport') }}</RouterLink>
+      <p class="progress-links muted small" data-test="progress-links">
+        <RouterLink :to="'/reports/' + progress.runId" data-test="link-run-report">
+          {{ t('pytestLaunch.linkRunReport') }}
+        </RouterLink>
+        <RouterLink to="/runs" data-test="link-runs">{{ t('pytestLaunch.linkRuns') }}</RouterLink>
+        <RouterLink to="/test-reports" data-test="link-test-reports">
+          {{ t('pytestLaunch.linkTestReport') }}
+        </RouterLink>
       </p>
     </div>
   </section>
 </template>
 
 <style scoped>
+.meta-panel {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2);
+}
+.meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+.meta-grid .field { display: flex; flex-direction: column; gap: 4px; }
+.meta-grid .field > span { font-size: var(--font-size-xs); color: var(--text-muted); }
+
 .launch {
   display: flex;
   flex-direction: column;

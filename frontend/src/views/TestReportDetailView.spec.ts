@@ -19,6 +19,7 @@ vi.mock('@/api/testReports', () => ({
     freeze: vi.fn(async () => ({})),
     template: vi.fn(),
     sections: vi.fn(),
+    render: vi.fn(),
   },
 }))
 
@@ -89,7 +90,10 @@ describe('TestReportDetailView 快照预览（v5.14.0 / W64-05）', () => {
     expect(frame!.getAttribute('srcdoc')).toContain('id="appendix"')
     expect(frame!.getAttribute('srcdoc')).toContain('href="#conclusion"')
     // 证据层：真实相对路径经 CaseScriptLink 展示，四态计数可见。
-    expect(root.querySelector('[data-testid="evidence-row"]')).not.toBeNull()
+    const evidenceRow = root.querySelector('[data-testid="evidence-row"]')
+    expect(evidenceRow).not.toBeNull()
+    // W73-16：nodeRef 只出现一次（此前外层 code + CaseScriptLink 各渲染一遍导致粘连）
+    expect(evidenceRow!.textContent?.match(/test_10g/g)?.length).toBe(1)
     expect(root.textContent).toContain('artifacts/RUN-7/cases/test_bw/raw/1.stdout.txt')
     expect(root.querySelector('[data-testid="evidence-counts"]')!.textContent).toContain('10')
     expect(testReportsApi.sections).toHaveBeenCalledWith(7)
@@ -143,5 +147,52 @@ describe('TestReportDetailView 快照预览（v5.14.0 / W64-05）', () => {
     await nextTick()
     expect(emptyRoot.querySelector('[data-testid="snapshot-missing"]')).not.toBeNull()
     expect(emptyRoot.querySelector('[data-testid="snapshot-frame"]')).toBeNull()
+  })
+})
+
+
+describe('W73-18 客户视图预览（脱敏 + 只读）', () => {
+  it('点预览调 render(external=true)，显示条幅与脱敏字段，且无导出栏', async () => {
+    vi.mocked(testReportsApi.snapshot).mockResolvedValue(frozen as never)
+    vi.mocked(testReportsApi.template).mockResolvedValue(null as never)
+    vi.mocked(testReportsApi.sections).mockResolvedValue(null as never)
+    vi.mocked(testReportsApi.render).mockResolvedValue({
+      title: '客户报告', passCount: 5, disclaimer: 'INTERNAL USE ONLY - NOT FOR EXTERNAL DISTRIBUTION',
+    } as never)
+    const root = mountView()
+    await new Promise((r) => setTimeout(r, 300))
+    await nextTick()
+    const previewBtn = root.querySelector('[data-testid="preview-customer"]') as HTMLButtonElement
+    expect(previewBtn).toBeTruthy()
+    previewBtn.click()
+    await new Promise((r) => setTimeout(r, 300))
+    await nextTick()
+    expect(testReportsApi.render).toHaveBeenCalledWith(7, true)
+    const panel = root.querySelector('[data-testid="customer-preview"]')
+    expect(panel).toBeTruthy()
+    expect(root.querySelector('[data-testid="customer-banner"]')?.textContent).toContain('客户')
+    // 客户视图内不渲染导出栏（避免从这里导出未确认内容）
+    expect(panel!.querySelector('[data-testid="report-export-bar"]')).toBeNull()
+  })
+})
+
+
+describe('W73-03 缺元数据补录引导', () => {
+  it('DRAFT 且缺项时显示补录提示与到执行报告的深链', async () => {
+    vi.mocked(testReportsApi.snapshot).mockResolvedValue({ ...frozen, state: 'DRAFT', frozen: false } as never)
+    vi.mocked(testReportsApi.template).mockResolvedValue(null as never)
+    vi.mocked(testReportsApi.sections).mockResolvedValue(null as never)
+    vi.mocked(testReportsApi.render).mockResolvedValue({
+      runId: 'RUN-42', exportable: false, metadataMissing: ['STARTED_AT'],
+    } as never)
+    const root = mountView()
+    await new Promise((r) => setTimeout(r, 400))
+    const hint = root.querySelector('[data-testid="meta-fix-hint"]')
+    expect(hint).toBeTruthy()
+    expect(hint!.textContent).toContain('STARTED_AT')
+    const link = root.querySelector('[data-testid="meta-fix-link"]')
+    expect(link).toBeTruthy()
+    // RouterLink 在纯挂载测试下不生成 href；深链正确性由 UI 实测覆盖，这里只断言入口存在
+    expect(link!.textContent).toContain('元数据')
   })
 })

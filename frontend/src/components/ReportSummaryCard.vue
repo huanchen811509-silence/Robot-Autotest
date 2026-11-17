@@ -104,10 +104,14 @@ const metrics = computed(() => {
   const summary = props.summary
   if (!summary) return []
   return [
-    { key: 'passRate', label: t('reportSummary.passRate'), value: formatPassRate(summary.passRate) },
-    { key: 'total', label: t('reportSummary.total'), value: String(summary.total) },
-    { key: 'failed', label: t('reportSummary.failed'), value: String(summary.failed), tone: 'fail' },
-    { key: 'skipped', label: t('reportSummary.skipped'), value: String(summary.skipped) },
+    { key: 'passRate', label: t('reportSummary.passRate'), value: formatPassRate(summary.passRate),
+      scope: 'passRate', hintKey: 'reportSummary.scopePassRate' },
+    { key: 'total', label: t('reportSummary.total'), value: String(summary.total),
+      scope: 'total', hintKey: 'reportSummary.scopeTotal' },
+    { key: 'failed', label: t('reportSummary.failed'), value: String(summary.failed), tone: 'fail',
+      scope: 'failed', hintKey: 'reportSummary.scopeFailed' },
+    { key: 'skipped', label: t('reportSummary.skipped'), value: String(summary.skipped),
+      scope: 'skipped', hintKey: 'reportSummary.scopeSkipped' },
   ] as const
 })
 
@@ -146,6 +150,8 @@ function formatPassRate(rate: number): string {
           :key="item.key"
           class="report-summary__metric"
           :class="{ 'report-summary__metric--fail': item.key === 'failed' && summary.failed > 0 }"
+          :data-metric-scope="item.scope"
+          :title="t(item.hintKey)"
         >
           <dt>{{ item.label }}</dt>
           <dd>{{ item.value }}</dd>

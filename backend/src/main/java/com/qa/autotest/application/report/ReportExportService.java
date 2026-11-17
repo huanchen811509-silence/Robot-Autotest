@@ -42,6 +42,15 @@ import org.springframework.stereotype.Service;
 public class ReportExportService {
 
     public static final String WATERMARK = "INTERNAL USE ONLY";
+    /** v5.23.0 / W73-17：对外版是正式交付件，页眉不再出现「仅供内部」。 */
+    public static final String EXTERNAL_WATERMARK = "OFFICIAL TEST REPORT";
+    public static final String EXTERNAL_DISCLAIMER = "正式交付件 · 供授权接收方使用";
+
+    /** 从渲染视图取水印；缺省回落内部水印，保证旧调用不吃空值。 */
+    public static String watermarkOf(Map<String, Object> view) {
+        Object v = view.get("watermark");
+        return v == null ? WATERMARK : String.valueOf(v);
+    }
 
     /** XLSX 首行的三列表头：key / 标题 / 值。 */
     static final String[] SHEET_HEADER = {"FIELD_KEY", "TITLE", "VALUE"};
@@ -205,7 +214,7 @@ public class ReportExportService {
                 + "<title>Test Report</title></head><body>");
         b.append("<h1>").append(ReportViewRenderer.escape(String.valueOf(view.get("title"))))
                 .append("</h1><p class=\"wm\">")
-                .append(ReportViewRenderer.escape(WATERMARK)).append("</p><table>");
+                .append(ReportViewRenderer.escape(watermarkOf(view))).append("</p><table>");
         for (Map.Entry<String, Object> e : view.entrySet()) {
             b.append("<tr><th title=\"")
                     .append(ReportViewRenderer.escape(header(e.getKey(), titles)))

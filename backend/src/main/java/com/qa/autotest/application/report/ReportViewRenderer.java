@@ -90,8 +90,17 @@ public class ReportViewRenderer {
     /** 对外测试报告：只放白名单字段，**按快照内模板的顺序与取舍**，且逐值脱敏。 */
     public Map<String, Object> external(ReportSnapshot snapshot, long reportId, String title,
                                         String frozenAt, String watermark) {
+        return external(snapshot, reportId, title, frozenAt, watermark, false);
+    }
+
+    /**
+     * v5.23.0 / W73-17：按 mode 决定免责声明。对外版是正式交付件，不再印「仅供内部」。
+     * 水印值由调用方按 mode 传入（{@code internal ? WATERMARK : EXTERNAL_WATERMARK}）。
+     */
+    public Map<String, Object> external(ReportSnapshot snapshot, long reportId, String title,
+                                        String frozenAt, String watermark, boolean internal) {
         Map<String, Object> all = read(snapshot.json());
-        Map<String, Object> view = buildView(snapshot, all, reportId, title, frozenAt, watermark);
+        Map<String, Object> view = buildView(snapshot, all, reportId, title, frozenAt, watermark, internal);
         // 白名单自检：视图里出现非白名单键，说明有人加了字段却没登记白名单，直接炸出来
         for (String key : view.keySet()) {
             if (!ReportFieldWhitelist.EXTERNAL_FIELDS.contains(key)) {
@@ -186,7 +195,7 @@ public class ReportViewRenderer {
 
     private Map<String, Object> buildView(ReportSnapshot snapshot, Map<String, Object> all,
                                           long reportId, String title, String frozenAt,
-                                          String watermark) {
+                                          String watermark, boolean internal) {
         Map<String, Object> view = new LinkedHashMap<>();
         view.put("reportId", reportId);
         view.put("title", scrub(title));
@@ -203,7 +212,9 @@ public class ReportViewRenderer {
         // 它们没有任何数据源（分别是「恒等 caseTotal」「恒 100.0」「恒等 failCount」「恒空数组」），
         // 留在对外文件里就是失实陈述。C5 文档 v1.2 已同步删除。
         putMetadata(view, all);
-        view.put("disclaimer", "INTERNAL USE ONLY - NOT FOR EXTERNAL DISTRIBUTION");
+        view.put("disclaimer", internal
+                ? "INTERNAL USE ONLY - NOT FOR EXTERNAL DISTRIBUTION"
+                : ReportExportService.EXTERNAL_DISCLAIMER);
         view.put("watermark", watermark);
         return view;
     }

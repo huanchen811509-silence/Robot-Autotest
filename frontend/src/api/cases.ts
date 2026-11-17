@@ -298,6 +298,14 @@ export const caseSetApi = {
       body: JSON.stringify({ caseId }),
     })
   },
+  /** v5.24.0 / W74-01：批量加入，重复与非法项计入 skipped。 */
+  batchAddItems(projectId: number, id: number, caseIds: number[]) {
+    return request<{ added: number; skipped: number }>(
+      `${base(projectId)}/case-sets/${id}/items/batch`, {
+        method: 'POST',
+        body: JSON.stringify({ caseIds }),
+      })
+  },
   removeItem(projectId: number, id: number, caseId: number) {
     return request<void>(`${base(projectId)}/case-sets/${id}/items/${caseId}`, {
       method: 'DELETE',

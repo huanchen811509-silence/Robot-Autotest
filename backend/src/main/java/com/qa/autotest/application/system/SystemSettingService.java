@@ -45,6 +45,18 @@ public class SystemSettingService {
      */
     public static final String P_REPORT_AUTO_GENERATE = "report.auto_generate";
 
+    /* v5.23.0 / FR-v5.23-01：报告元数据默认值（六项）。
+     *
+     * <p>复用项目设置白名单通道而不是新建表：这里本来就有项目维度、审计与权限校验，
+     * 再建一张 report_metadata_default 只会产生第二套「同一项目两份设置」的真源。
+     * 值仍受 MAX_VALUE_LENGTH 约束，且不放任何凭据。 */
+    public static final String P_REPORT_META_QA_PROJECT = "report_meta.qaProject";
+    public static final String P_REPORT_META_DUT = "report_meta.dut";
+    public static final String P_REPORT_META_LINK = "report_meta.link";
+    public static final String P_REPORT_META_SW_BUILD = "report_meta.swBuild";
+    public static final String P_REPORT_META_BASELINE = "report_meta.baseline";
+    public static final String P_REPORT_META_OPERATOR = "report_meta.operator";
+
     private static final Map<String, String> PLATFORM_DEFAULTS = Map.of(
             K_MAX_PARALLEL, "4",
             K_DEFAULT_TIMEOUT, "1800",
@@ -56,7 +68,13 @@ public class SystemSettingService {
             P_TIMEOUT, "1800",
             P_TAG_SET, "",
             // 默认关闭：升级后不能悄悄改变既有项目的执行产物数量。
-            P_REPORT_AUTO_GENERATE, "false");
+            P_REPORT_AUTO_GENERATE, "false",
+            P_REPORT_META_QA_PROJECT, "",
+            P_REPORT_META_DUT, "",
+            P_REPORT_META_LINK, "",
+            P_REPORT_META_SW_BUILD, "",
+            P_REPORT_META_BASELINE, "",
+            P_REPORT_META_OPERATOR, "");
 
     private static final Set<String> PLATFORM_KEYS = PLATFORM_DEFAULTS.keySet();
     private static final Set<String> PROJECT_KEYS = PROJECT_DEFAULTS.keySet();
@@ -178,6 +196,14 @@ public class SystemSettingService {
                 if (!"true".equals(value) && !"false".equals(value)) {
                     throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
                             "report.auto_generate 只能是 true / false");
+                }
+            }
+            case P_REPORT_META_QA_PROJECT, P_REPORT_META_DUT, P_REPORT_META_LINK,
+                 P_REPORT_META_SW_BUILD, P_REPORT_META_BASELINE, P_REPORT_META_OPERATOR -> {
+                // 文本值：requireText 已做 null / 长度校验，这里只要求显式分支存在。
+                if (value != null && value.contains("\n")) {
+                    throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                            "报告元数据不能包含换行：" + key);
                 }
             }
             default -> throw new BusinessException(ErrorCode.INVALID_ARGUMENT,

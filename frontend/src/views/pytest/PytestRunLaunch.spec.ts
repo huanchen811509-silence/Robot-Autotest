@@ -25,6 +25,11 @@ vi.mock('@/stores/auth', () => ({
   useAuthStore: () => ({ projectId: 95 }),
 }))
 
+// W74-04：确认面板默认同意，否则所有提交类用例会被 Modal 阻塞
+vi.mock('@/composables/useConfirm', () => ({
+  confirmAction: vi.fn(async () => true),
+}))
+
 vi.mock('@/api/pytestProject', () => ({
   pytestProjectApi: {
     bindings: async () => ({ items: state.bindings }),
@@ -102,16 +107,19 @@ async function flush(times = 6): Promise<void> {
   }
 }
 
-async function mountView(): Promise<HTMLElement> {
+async function mountView(initialUrl = '/'): Promise<HTMLElement> {
   const root = document.createElement('div')
   document.body.appendChild(root)
   host = root
   app = createApp(PytestRunLaunch)
   app.use(i18n)
-  app.use(createRouter({
+  const testRouter = createRouter({
     history: createMemoryHistory(),
     routes: [{ path: '/:pathMatch(.*)*', component: { template: '<div />' } }],
-  }))
+  })
+  // createMemoryHistory(location) 不解析 query；必须先 push 再挂载，组件 onMounted 才读得到 ?run=
+  await testRouter.push(initialUrl)
+  app.use(testRouter)
   app.mount(root)
   await flush()
   return root
@@ -216,9 +224,68 @@ describe('PytestRunLaunch 进度', () => {
 
     const stage = root.querySelector('[data-test="progress-stage"]')
     expect(stage?.textContent).toContain('已完成')
-    const terminal = root.querySelector('[data-test="progress-terminal"]')
-    expect(terminal).toBeTruthy()
+    // W73-12：终态入口由单个「去报告页」改为三个直达入口（本次执行报告/运行记录/测试报告）
+    const links = root.querySelector('[data-test="progress-links"]')
+    expect(links).toBeTruthy()
+    expect(root.querySelector('[data-test="link-run-report"]')).toBeTruthy()
+    expect(root.querySelector('[data-test="link-runs"]')).toBeTruthy()
+    expect(root.querySelector('[data-test="link-test-reports"]')).toBeTruthy()
     // 终态后不再有取消按钮
     expect(root.querySelector('[data-test="cancel"]')).toBeNull()
+  })
+
+  it('W73-12：带 ?run= 刷新后恢复进度卡并续轮询（执行完不失联）', async () => {
+    state.precheck = precheck(true)
+    state.bindings = []
+    state.progress = [{
+      runId: 'RESTORE-1', stage: 'FINISHED', total: 5, finished: 5,
+      passed: 4, failed: 1, elapsedMs: 1200, terminal: true,
+    }]
+    const root = await mountView('/?run=RESTORE-1')
+    await new Promise((resolve) => setTimeout(resolve, 600))
+    await flush(5)
+    const prog = root.querySelector('[data-test="progress"]')
+    expect(prog).toBeTruthy()
+    expect(root.querySelector('[data-test="progress-run"]')?.textContent).toContain('RESTORE-1')
+    expect(root.querySelector('[data-test="link-run-report"]')).toBeTruthy()
+  })
+})
+
+
+describe('W73-02 执行携带元数据', () => {
+  it('展开面板填写后，提交体 metadata 带非空键、不带空键', async () => {
+    state.precheck = precheck(true)
+    state.bindings = []
+    state.accepted = { runId: 'META-1', mode: 'fake', total: 2, accepted: true, progressUrl: '' }
+    state.progress = [{ runId: 'META-1', stage: 'FINISHED', total: 2, finished: 2,
+      passed: 2, failed: 0, elapsedMs: 500, terminal: true }]
+    const root = await mountView()
+    ;(root.querySelector('[data-test="meta-toggle"]') as HTMLButtonElement).click()
+    await flush(2)
+    const caseInput = root.querySelector('[data-test="meta-CASE_ID"] input') as HTMLInputElement
+    caseInput.value = 'IM-CER-008'
+    caseInput.dispatchEvent(new Event('input'))
+    await flush(2)
+    ;(root.querySelector('[data-test="submit"]') as HTMLButtonElement).click()
+    await flush(2)
+    expect(state.submitted).toHaveLength(1)
+    const md = state.submitted[0].metadata as Record<string, string>
+    expect(md.CASE_ID).toBe('IM-CER-008')
+    expect(Object.keys(md)).toEqual(['CASE_ID'])  // 空键不带
+  })
+})
+
+
+describe('W74-04 执行确认面板', () => {
+  it('取消确认时不调 startAsync，不产生 run', async () => {
+    const { confirmAction } = await import('@/composables/useConfirm')
+    vi.mocked(confirmAction).mockResolvedValueOnce(false)
+    state.precheck = precheck(true)
+    state.bindings = []
+    state.progress = []
+    const root = await mountView()
+    submitButton(root).click()
+    await flush(6)
+    expect(state.submitted).toHaveLength(0)
   })
 })

@@ -56,6 +56,11 @@ const collecting = ref(false)
 const loading = ref(false)
 const failed = ref(false)
 const notice = ref('')
+// v5.29 / FR-01：采集完成后定位到结果区
+const resultSection = ref<HTMLElement | null>(null)
+function scrollToResult(): void {
+  resultSection.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
 
 const columns = computed<DataTableColumns<ItemRow>>(() => [
   { title: t('env.collect.panel'), key: 'label' },
@@ -162,6 +167,8 @@ async function collectNow() {
     notice.value = t('env.collect.collected', { id: record.id })
     await load()
     await select(record.id)
+    // v5.29 / FR-01：采集完自动滚到结果区（用户不用自己找）
+    window.setTimeout(scrollToResult, 120)
   } catch {
     notice.value = t('env.common.loadFailed')
   } finally {
@@ -213,7 +220,12 @@ watch(projectId, () => { selectedId.value = null; spec.value = null; load() })
           {{ t('env.collect.confirmHint') }}
         </span>
       </div>
-      <p v-if="notice" class="muted" data-testid="collect-notice">{{ notice }}</p>
+      <p v-if="notice" class="muted" data-testid="collect-notice">
+        {{ notice }}
+        <NButton v-if="spec" text size="tiny" data-testid="collect-view-result" @click="scrollToResult">
+          {{ t('env.collect.viewResult') }}
+        </NButton>
+      </p>
     </section>
 
     <section class="panel">
@@ -244,7 +256,7 @@ watch(projectId, () => { selectedId.value = null; spec.value = null; load() })
       </p>
     </section>
 
-    <section class="panel">
+    <section class="panel" ref="resultSection" data-testid="collect-result-section">
       <h2>{{ t('env.collect.panel') }}<span v-if="spec" class="muted"> · {{ spec.host }} · {{ collectStatusLabel(spec.status) }}</span></h2>
       <DataTable :columns="columns" :data="itemRows" :row-key="(row: ItemRow) => row.id">
         <template #empty>

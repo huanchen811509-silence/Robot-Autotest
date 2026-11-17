@@ -470,18 +470,30 @@ export const NAVIGATION: NavNode[] = [
         capability: 'execution:read',
         section: 'run',
       },
+    ],
+  },
+  {
+    // v5.23.0 / FR-v5.23-18：从「执行与报告」拆出的独立一级组。
+    // 两个主项（执行报告=排障 / 测试报告=对客户交付）+ 模板作为配置附属项。
+    // leaf key 保留旧值，避免几十处 spec/E2E 断言断裂。
+    key: 'reports',
+    labelKey: 'menu.reportsGroup',
+    icon: 'reports',
+    children: [
       {
-        // `exclude` 是必须的：`/reports` 按前缀会命中 `/reports/templates`，
-        // 不排除就会出现「点模板，报告列表也亮」。
         key: 'execution-reports',
         labelKey: 'menu.reports',
         icon: 'reports',
         path: '/reports',
         exclude: ['/reports/templates'],
-        // v5.21.0 / W71-04：报告态三页用 report:read（四角色都有）。
-        // 它们此前"无能力 = 所有人可见"，白名单制下必须显式声明，否则 viewer 会静默丢失报告入口。
         capability: 'report:read',
-        section: 'report',
+      },
+      {
+        key: 'execution-external-reports',
+        labelKey: 'menu.externalReports',
+        icon: 'external',
+        path: '/test-reports',
+        capability: 'report:read',
       },
       {
         key: 'execution-report-templates',
@@ -489,17 +501,6 @@ export const NAVIGATION: NavNode[] = [
         icon: 'copy',
         path: '/reports/templates',
         capability: 'report:read',
-        section: 'report',
-      },
-      {
-        // FR-UI-28：`/test-reports` 此前路由与视图都在，但导航树里没有任何一项指向它，
-        // 用户只能手输 URL。这里补上唯一入口。
-        key: 'execution-external-reports',
-        labelKey: 'menu.externalReports',
-        icon: 'external',
-        path: '/test-reports',
-        capability: 'report:read',
-        section: 'report',
       },
     ],
   },

@@ -97,6 +97,14 @@ async function changeProject(event: Event): Promise<void> {
         </button>
       </div>
 
+      <!-- v5.30 / FR-04：切换器旁常显当前上下文，一眼知道「现在在哪个模式、哪个项目」 -->
+      <span class="app-mode-current" data-testid="mode-current" :title="t('mode.currentHint')">
+        {{ t('mode.current', {
+          mode: uiMode.mode === 'global' ? t('mode.global') : t('mode.project'),
+          project: currentProject?.name || '—',
+        }) }}
+      </span>
+
       <!-- 段 1 上下文：当前项目。原生 select 保留（键盘与移动端都熟），但造型独立。 -->
       <div class="app-seg" data-seg="context">
         <label

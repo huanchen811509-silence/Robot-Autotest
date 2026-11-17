@@ -164,3 +164,18 @@ describe('报告速览 · 计数口径（调用方未提供判据时的兼容路
     expect(root.textContent).not.toContain('全部通过')
   })
 })
+
+
+describe('W73-10 指标口径标注', () => {
+  it('四个指标都带 data-metric-scope 与口径 title，且口径文案讲清分母', async () => {
+    const root = await mount(base({ total: 10, passed: 8, failed: 0, skipped: 2, passRate: 80 }))
+    const metrics = root.querySelectorAll('[data-metric-scope]')
+    expect(metrics.length).toBe(4)
+    const scopes = Array.from(metrics).map((m) => m.getAttribute('data-metric-scope'))
+    expect(scopes).toEqual(['passRate', 'total', 'failed', 'skipped'])
+    for (const m of Array.from(metrics)) {
+      expect(m.getAttribute('title')).toBeTruthy()
+    }
+    expect(Array.from(metrics)[0].getAttribute('title')).toContain('分母')
+  })
+})

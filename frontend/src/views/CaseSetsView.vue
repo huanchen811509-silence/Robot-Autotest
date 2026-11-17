@@ -70,6 +70,9 @@ const selectedCaseId = ref<number | null>(null)
 /** W62-05：成员级批量选择（与集合级 selection 完全隔离）。 */
 const selectedItemIds = ref<number[]>([])
 const caseOptions = ref<{ label: string; value: number }[]>([])
+// v5.24.0 / W74-03：候选多选 + 命中总数（修评审"只能单选、无计数、底部裁切"）
+const selectedCaseIds = ref<number[]>([])
+const caseTotal = ref(0)
 const caseLoading = ref(false)
 let searchTimer: ReturnType<typeof setTimeout> | undefined
 
@@ -430,7 +433,8 @@ function closeItems(): void {
   activeSet.value = null
   items.value = []
   caseOptions.value = []
-  selectedCaseId.value = null
+  selectedCaseIds.value = []
+  caseTotal.value = 0
   itemsError.value = null
   assetView.value = null
   assetDiff.value = null
@@ -498,6 +502,7 @@ async function runCaseSearch(query: string): Promise<void> {
       size: 50,
     })
     const existing = new Set(items.value.map((item) => item.id))
+    caseTotal.value = page.total
     caseOptions.value = page.items
       .filter((item) => !existing.has(item.id))
       .map((item) => ({ label: `${item.caseCode} ${item.title}`, value: item.id }))
@@ -509,14 +514,17 @@ async function runCaseSearch(query: string): Promise<void> {
 }
 
 async function addCase(): Promise<void> {
-  if (!activeSet.value || selectedCaseId.value === null) return
-  const picked = caseOptions.value.find((option) => option.value === selectedCaseId.value)
+  if (!activeSet.value || selectedCaseIds.value.length === 0) return
   itemsError.value = null
   message.value = ''
   try {
-    await caseSetApi.addItem(projectId.value, activeSet.value.id, selectedCaseId.value)
-    selectedCaseId.value = null
-    message.value = t('caseSets.itemAdded', { code: picked?.label.split(' ')[0] ?? '' })
+    // v5.24.0 / W74-01+03：一次 API 批量加入，不再 N 次串行 addItem
+    const result = await caseSetApi.batchAddItems(
+      projectId.value, activeSet.value.id, [...selectedCaseIds.value])
+    selectedCaseIds.value = []
+    message.value = t('caseSets.itemsBatchAdded', {
+      added: result.added, skipped: result.skipped,
+    })
     await Promise.all([loadItems(), runCaseSearch('')])
   } catch (e) {
     itemsError.value = localizeError(e)
@@ -986,7 +994,8 @@ void load()
 
       <div class="toolbar">
         <NSelect
-          v-model:value="selectedCaseId"
+          v-model:value="selectedCaseIds"
+          multiple
           filterable
           remote
           clearable
@@ -997,7 +1006,10 @@ void load()
           :aria-label="t('caseSets.addPlaceholder')"
           @search="searchCases"
         />
-        <NButton :disabled="selectedCaseId === null" @click="addCase">
+        <span class="muted small" data-testid="case-picker-count">
+          {{ t('caseSets.pickerCount', { total: caseTotal, selected: selectedCaseIds.length }) }}
+        </span>
+        <NButton :disabled="selectedCaseIds.length === 0" @click="addCase">
           {{ t('caseSets.addCase') }}
         </NButton>
         <NButton quaternary @click="closeItems">{{ t('caseSets.closeItems') }}</NButton>

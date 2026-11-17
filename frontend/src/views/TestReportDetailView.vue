@@ -32,6 +32,8 @@ const id = computed(() => Number(route.params.id ?? 0))
 const snapshot = ref<TestReportSnapshot | null>(null)
 const templateRef = ref<TestReportTemplateRef | null>(null)
 const sections = ref<EhtSections | null>(null)
+// W73-03：报告元数据状态（来自 render internal 视图，含 runId / metadataMissing）
+const reportMeta = ref<{ runId: string; exportable: boolean; missing: string[] } | null>(null)
 const genericTemplate = computed(
   () => !!templateRef.value
     && ['PLATFORM_ANY', 'PLATFORM_FALLBACK'].includes(templateRef.value.templateSource ?? ''),
@@ -39,6 +41,36 @@ const genericTemplate = computed(
 const loading = ref(false)
 const error = ref<ErrorLine | null>(null)
 const freezing = ref(false)
+// W73-18：客户视图预览（external 脱敏字段表，只读、无导出按钮）
+const customerView = ref<Record<string, unknown> | null>(null)
+const customerLoading = ref(false)
+const customerError = ref<ErrorLine | null>(null)
+
+async function previewCustomer(): Promise<void> {
+  customerLoading.value = true
+  customerError.value = null
+  customerView.value = null
+  try {
+    // external=true → 后端 ReportViewRenderer.external 白名单 + 逐值脱敏
+    customerView.value = await testReportsApi.render(id.value, true)
+  } catch (e) {
+    customerError.value = localizeError(e)
+  } finally {
+    customerLoading.value = false
+  }
+}
+
+function closeCustomer(): void {
+  customerView.value = null
+  customerError.value = null
+}
+
+/** 客户视图只展示字符串/数字，对象值降级为 JSON 文本，避免 [object Object]。 */
+function cellText(v: unknown): string {
+  if (v === null || v === undefined) return '—'
+  if (typeof v === 'object') return JSON.stringify(v)
+  return String(v)
+}
 
 async function load(): Promise<void> {
   error.value = null
@@ -64,6 +96,18 @@ async function load(): Promise<void> {
     sections.value = await testReportsApi.sections(id.value)
   } catch {
     sections.value = null
+  }
+  // W73-03：拿内部视图的 runId / 缺项，给 DRAFT 报告一个明确的补录出口。
+  // 失败不影响主预览（元信息补充，与主链路解耦）。
+  try {
+    const internal = await testReportsApi.render(id.value, false)
+    reportMeta.value = {
+      runId: String(internal.runId ?? ''),
+      exportable: Boolean(internal.exportable),
+      missing: Array.isArray(internal.metadataMissing) ? internal.metadataMissing.map(String) : [],
+    }
+  } catch {
+    reportMeta.value = null
   }
 }
 
@@ -99,11 +143,38 @@ watch(id, () => void load(), { immediate: true })
       <NButton quaternary data-testid="back-to-list" @click="back">
         {{ t('testReports.backToList') }}
       </NButton>
+      <NButton
+        quaternary
+        data-testid="preview-customer"
+        :loading="customerLoading"
+        @click="previewCustomer"
+      >
+        {{ t('testReports.previewCustomer') }}
+      </NButton>
       <ReportExportBar :report-id="id" />
     </div>
 
     <ErrorLineView v-if="error" :error="error" />
     <p v-if="loading" class="muted">{{ t('common.loading') }}</p>
+
+    <section v-if="customerView" class="card customer-preview" data-testid="customer-preview">
+      <div class="customer-banner" role="status" data-testid="customer-banner">
+        {{ t('testReports.customerBanner') }}
+      </div>
+      <p class="muted small">{{ t('testReports.customerHint') }}</p>
+      <ErrorLineView v-if="customerError" :error="customerError" />
+      <table class="customer-table" data-testid="customer-table">
+        <tbody>
+          <tr v-for="(value, key) in customerView" :key="String(key)">
+            <th>{{ String(key) }}</th>
+            <td data-testid="customer-cell">{{ cellText(value) }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <NButton quaternary data-testid="close-customer" @click="closeCustomer">
+        {{ t('testReports.closeCustomer') }}
+      </NButton>
+    </section>
 
     <div v-else-if="snapshot" class="report-detail-layout">
       <aside class="report-nav card">
@@ -141,6 +212,21 @@ watch(id, () => void load(), { immediate: true })
           >
             {{ t('testReports.freezeAction') }}
           </NButton>
+          <!-- W73-03：DRAFT 缺项时，给出补录路径（执行报告页已支持就地补录，W69-08） -->
+          <div
+            v-if="snapshot.state === 'DRAFT' && reportMeta && reportMeta.missing.length > 0"
+            class="meta-fix-hint"
+            data-testid="meta-fix-hint"
+          >
+            <p>{{ t('testReports.metaFixHint', { keys: reportMeta.missing.join('、') }) }}</p>
+            <RouterLink
+              v-if="reportMeta.runId"
+              :to="'/reports/' + reportMeta.runId"
+              data-testid="meta-fix-link"
+            >
+              {{ t('testReports.metaFixLink') }}
+            </RouterLink>
+          </div>
         </section>
 
         <section v-if="sections" id="evidence-card" class="card" data-testid="evidence-card">
@@ -164,10 +250,9 @@ watch(id, () => void load(), { immediate: true })
               class="evidence-row"
               data-testid="evidence-row"
             >
-              <code class="mono">{{ row.nodeRef }}</code>
+              <code class="mono" data-testid="evidence-node-ref">{{ row.nodeRef }}</code>
               <CaseScriptLink
                 :script-path="row.evidencePath"
-                :script-name="row.nodeRef"
                 :binding-state="row.evidencePath ? 'BOUND_VERIFIED' : 'NOT_APPLICABLE'"
                 :full="true"
               />
@@ -200,6 +285,44 @@ watch(id, () => void load(), { immediate: true })
 </template>
 
 <style scoped>
+.meta-fix-hint {
+  margin-top: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-left: 3px solid var(--warn, #e8b339);
+  background: var(--panel);
+  font-size: var(--font-size-sm);
+}
+.meta-fix-hint a { color: var(--accent); text-decoration: underline; }
+
+.customer-preview {
+  margin-bottom: var(--space-4);
+}
+.customer-banner {
+  padding: var(--space-2) var(--space-3);
+  border: 2px solid var(--warn, #e8b339);
+  border-radius: var(--radius-sm);
+  color: var(--warn, #e8b339);
+  font-weight: 600;
+  margin-bottom: var(--space-3);
+}
+.customer-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+}
+.customer-table th,
+.customer-table td {
+  border-bottom: 1px solid var(--border);
+  padding: var(--space-2);
+  text-align: left;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+.customer-table th {
+  width: 14rem;
+  color: var(--text-muted);
+}
+
 .report-detail-layout {
   display: grid;
   grid-template-columns: 180px 1fr;

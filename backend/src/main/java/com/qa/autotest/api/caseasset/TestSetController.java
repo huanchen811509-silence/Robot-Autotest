@@ -142,6 +142,16 @@ public class TestSetController {
         return ApiResponse.ok(null);
     }
 
+    /** v5.24.0 / W74-01：批量加入（一次 API 加多条，重复与非法项计入 skipped）。 */
+    @PostMapping("/{id}/items/batch")
+    public ApiResponse<TestSetService.AddItemsResult> addItems(
+            @PathVariable long projectId, @PathVariable long id,
+            @RequestBody BatchAddRequest request) {
+        return ApiResponse.ok(sets.addItems(projectId, id, request.caseIds()));
+    }
+
+    public record BatchAddRequest(java.util.List<Long> caseIds) {}
+
     @DeleteMapping("/{id}/items/{caseId}")
     public ApiResponse<Void> removeItem(@PathVariable long projectId, @PathVariable long id,
                                         @PathVariable long caseId) {

@@ -272,6 +272,13 @@ public class ReportSummaryService {
         if (total == 0) {
             risks.add("没有可统计的用例结果");
         }
+        // v5.23.0 / W73-06+07（降级交付）：跳过用例在当前数据模型里没有逐条原因载体
+        // （test_result 的 SKIP 行 failure_msg/criteria_json 为空、pytest_case_step 无对应记录）。
+        // 如实告知数据边界，不编造五类原因与样例（那样会误导排障）。
+        if (report.skipCount() > 0) {
+            risks.add("跳过 " + report.skipCount()
+                    + " 条：本次未采集逐条跳过原因，无法归因；如需按原因分类，需在执行采集阶段补充字段");
+        }
         return risks;
     }
 }

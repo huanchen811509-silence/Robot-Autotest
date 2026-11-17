@@ -504,9 +504,15 @@ onMounted(load)
           <div>
             <dt>{{ t('pytestWorkbench.ledgerActive') }}</dt>
             <dd>
-              {{ t('pytestWorkbench.ledgerActiveValue', {
-                running: ledger.running, queued: ledger.queued,
-              }) }}
+              <RouterLink
+                :to="{ path: '/runs', query: { f_runs_state: 'RUNNING' } }"
+                data-test="running-runs-link"
+                :title="t('pytestWorkbench.ledgerActiveHint')"
+              >
+                {{ t('pytestWorkbench.ledgerActiveValue', {
+                  running: ledger.running, queued: ledger.queued,
+                }) }}
+              </RouterLink>
             </dd>
           </div>
         </dl>

@@ -115,10 +115,10 @@ describe('权限过滤', () => {
 })
 
 describe('v2.0 六域 IA 与能力驱动过滤（NAV-01 / FR-v2.0-07、08）', () => {
-  it('v2.3 / FR-UI-01：一级恰好 7 组，顺序按「日常闭环 → 支撑域」，层级不超过 2', () => {
-    expect(NAVIGATION).toHaveLength(7)
+  it('v5.23 / FR-v5.23-18：一级 8 组（报告独立），顺序按「日常闭环 → 支撑域」，层级不超过 2', () => {
+    expect(NAVIGATION).toHaveLength(8)
     expect(NAVIGATION.map((node) => node.key)).toEqual([
-      'workbench', 'execution', 'cases', 'assets', 'environment', 'ops', 'settings',
+      'workbench', 'execution', 'reports', 'cases', 'assets', 'environment', 'ops', 'settings',
     ])
     for (const node of NAVIGATION) {
       if (isGroup(node)) {
@@ -191,9 +191,8 @@ describe('选中判定', () => {
     expect(assets.children.some((child) => isLeafActive(child, route))).toBe(false)
   })
 
-  const execution = groups().find((group) => group.key === 'execution') as NavGroup
   const leafOf = (key: string): NavLeaf =>
-    execution.children.find((child) => child.key === key) as NavLeaf
+    leaves().find((leaf) => leaf.key === key) as NavLeaf
 
   it('报告详情仍点亮「报告列表」（列表 / 详情 / 打印三处同属一个入口）', () => {
     expect(isLeafActive(leafOf('execution-reports'), { path: '/reports/RUN-001/print' })).toBe(true)
@@ -290,15 +289,16 @@ describe('v2.3 菜单 IA 与执行/报告合并', () => {
     expect(workbench.labelKey).not.toBe(board.labelKey)
   })
 
-  it('执行与报告合并：组内 8 项顺序固定，且一级不再有 reports', () => {
+  it('v5.23 报告拆组：执行组 5 项 + 报告组 3 项，顺序固定', () => {
     const execution = byKey('execution') as NavGroup
-    // v4.11.0 / FR-v4.11-12：首位插入「执行计划」（即时发起台），cron 计划顺延到第 3。
-    // v5.2.0 / W52-08：`/kernels` 补入口，落在「执行节点」之后、报告之前（运行态末尾）。
     expect(execution.children.map((child) => child.path)).toEqual([
       '/execution-plans', '/runs', '/plans', '/nodes', '/kernels',
-      '/reports', '/reports/templates', '/test-reports',
     ])
-    expect(NAVIGATION.some((node) => node.key === 'reports')).toBe(false)
+    const reports = byKey('reports') as NavGroup
+    expect(reports.children.map((child) => child.path)).toEqual([
+      '/reports', '/test-reports', '/reports/templates',
+    ])
+    expect(NAVIGATION.some((node) => node.key === 'reports')).toBe(true)
   })
 
   it('合并组不带组级 capability，能力只设在 5 个运行态子项上（否则 viewer 会丢报告入口）', () => {
@@ -343,15 +343,15 @@ describe('v2.3 菜单 IA 与执行/报告合并', () => {
     expect(hits).toHaveLength(1)
   })
 
-  it('7 个一级项图标两两不同', () => {
+  it('8 个一级项图标两两不同（v5.23 拆出报告组）', () => {
     const icons = NAVIGATION.map((node) => node.icon)
     expect(new Set(icons).size).toBe(icons.length)
-    expect(icons).toHaveLength(7)
+    expect(icons).toHaveLength(8)
   })
 
   it('section 只影响渲染分组，不影响选中判定（同一 leaf 带/不带 section 结果相同）', () => {
-    const execution = byKey('execution') as NavGroup
-    const withSection = execution.children.find((c) => c.key === 'execution-reports') as NavLeaf
+    const reports = byKey('reports') as NavGroup
+    const withSection = reports.children.find((c) => c.key === 'execution-reports') as NavLeaf
     const without: NavLeaf = { ...withSection }
     delete without.section
     for (const path of ['/reports', '/reports/RUN-1', '/reports/templates', '/x']) {
@@ -359,17 +359,18 @@ describe('v2.3 菜单 IA 与执行/报告合并', () => {
     }
   })
 
-  it('合并组内恰好 1 条分区线：前五项 run、后三项 report（FR-UI-29）', () => {
+  it('v5.23 拆组后：执行组五项全 run，报告组靠独立分组而非 section 线', () => {
     const execution = byKey('execution') as NavGroup
     expect(execution.children.map((child) => child.section)).toEqual([
-      'run', 'run', 'run', 'run', 'run', 'report', 'report', 'report',
+      'run', 'run', 'run', 'run', 'run',
     ])
     const breaks = execution.children
       .map((_, index) => isSectionBreak(execution.children, index))
       .filter(Boolean)
-    expect(breaks).toHaveLength(1)
-    expect(isSectionBreak(execution.children, 5)).toBe(true)
+    expect(breaks).toHaveLength(0)
     expect(isSectionBreak(execution.children, 0)).toBe(false)
+    const reports = byKey('reports') as NavGroup
+    expect(reports.children.every((child) => child.section === undefined)).toBe(true)
   })
 
   it('四处改名落地：用户管理 / 维护原则 / 环境概览 / 独立测试计划词条', () => {
@@ -399,11 +400,11 @@ describe('v2.3 菜单 IA 与执行/报告合并', () => {
  * -------------------------------------------------------------------------- */
 describe('v2.2 / MENU-01 八组菜单与业务域隔离', () => {
   it('一级分组数 = 7', () => {
-    expect(NAVIGATION).toHaveLength(7)
+    expect(NAVIGATION).toHaveLength(8)
   })
 
-  it('7 个一级项全部是分组，且各至少 2 个二级入口（不再有叶子冒充分组）', () => {
-    expect(NAVIGATION).toHaveLength(7)
+  it('8 个一级项全部是分组，且各至少 2 个二级入口（不再有叶子冒充分组）', () => {
+    expect(NAVIGATION).toHaveLength(8)
     for (const node of NAVIGATION) {
       expect(isGroup(node), `一级项 ${node.key} 不是分组`).toBe(true)
       expect(secondLevelEntries(node).length, `一级项 ${node.key} 子项过少`)

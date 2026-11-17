@@ -89,6 +89,34 @@ async function savePlatform(): Promise<void> {
   }
 }
 
+/** v5.23.0 / FR-v5.23-01：报告元数据默认值，复用项目设置 KV 通道（带审计）。 */
+const reportMetaFields = [
+  { key: 'report_meta.qaProject', label: 'settings.metaQaProject' },
+  { key: 'report_meta.dut', label: 'settings.metaDut' },
+  { key: 'report_meta.link', label: 'settings.metaLink' },
+  { key: 'report_meta.swBuild', label: 'settings.metaSwBuild' },
+  { key: 'report_meta.baseline', label: 'settings.metaBaseline' },
+  { key: 'report_meta.operator', label: 'settings.metaOperator' },
+] as const
+
+async function saveReportMeta(): Promise<void> {
+  message.value = ''
+  error.value = ''
+  if (!projectId.value) {
+    error.value = t('settings.noProject')
+    return
+  }
+  const payload: Record<string, string> = {}
+  for (const field of reportMetaFields) payload[field.key] = project.value[field.key] ?? ''
+  try {
+    project.value = await settingsApi.putProject(projectId.value, payload)
+    message.value = t('settings.saved')
+  } catch (e) {
+    error.value = describe(e)
+    await load()
+  }
+}
+
 async function saveProject(): Promise<void> {
   message.value = ''
   error.value = ''
@@ -196,6 +224,30 @@ watch(projectId, load)
       <div class="panel-foot">
         <button class="btn" type="button" :disabled="!projectId || loading" @click="saveProject">
           {{ t('settings.save') }}
+        </button>
+      </div>
+    </section>
+
+    <section v-if="!isGlobal" class="panel" data-testid="report-meta-panel">
+      <div class="panel-head">
+        <h2>{{ t('settings.reportMetaTitle') }}</h2>
+        <span class="tag">FR-v5.23-01</span>
+      </div>
+      <p class="muted">{{ t('settings.reportMetaHint') }}</p>
+      <div class="grid">
+        <label v-for="field in reportMetaFields" :key="field.key" class="field">
+          <span>{{ t(field.label) }}</span>
+          <input
+            v-model="project[field.key]"
+            type="text"
+            :disabled="!projectId"
+            :data-testid="`report-meta-${field.key}`"
+          />
+        </label>
+      </div>
+      <div class="panel-foot">
+        <button class="btn" type="button" :disabled="!projectId || loading" @click="saveReportMeta">
+          {{ t('settings.saveReportMeta') }}
         </button>
       </div>
     </section>

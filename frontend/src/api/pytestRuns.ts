@@ -16,6 +16,10 @@ export interface PrecheckResult {
   ready: boolean
   checks: PrecheckItem[]
   blocking: number
+  /** W73-08：预计跳过的用例数（未映射脚本的节点），预测值非结论 */
+  willSkip?: number
+  /** W74-04：预计执行时长（秒），后端未提供时前端显示「未知」 */
+  etaSeconds?: number
 }
 
 /** 进度快照。字段与后端一一对应；`terminal` 为真表示不用再轮询。 */

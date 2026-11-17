@@ -149,6 +149,7 @@ const logError = ref<ErrorLine | null>(null)
 
 // 导出（RPT-05）：外部版受 exportable 门禁；内部版允许缺项但需二次确认。
 const exportBusy = ref('')
+const shaExpanded = ref(false)
 const exportError = ref<ErrorLine | null>(null)
 const exportResult = ref<ReportExportResult | null>(null)
 const exportHistory = ref<ReportExportHistoryItem[]>([])
@@ -926,12 +927,19 @@ watch(granularity, () => {
           t('reports.exportSection.done', {
             format: exportResult.format.toUpperCase(),
             size: formatBytes(exportResult.bytes),
-            sha256: exportResult.sha256,
           })
         }}
         <NButton text type="primary" @click="saveExport()">
           {{ t('reports.exportSection.download') }}
         </NButton>
+      </p>
+      <p v-if="exportResult?.sha256" class="muted small export-sha" data-test="export-sha">
+        <span>{{ t('reports.exportSection.sha256Label') }}</span>
+        <code :title="exportResult.sha256" data-test="export-sha-short">{{ exportResult.sha256.slice(0, 8) }}…</code>
+        <NButton text size="tiny" data-test="export-sha-toggle" @click="shaExpanded = !shaExpanded">
+          {{ shaExpanded ? t('reports.exportSection.shaCollapse') : t('reports.exportSection.shaExpand') }}
+        </NButton>
+        <code v-if="shaExpanded" class="export-sha-full" data-test="export-sha-full">{{ exportResult.sha256 }}</code>
       </p>
       <p
         v-if="exportResult?.qualityGate && !exportResult.qualityGate.passed"

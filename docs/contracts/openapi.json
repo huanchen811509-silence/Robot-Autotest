@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Robot-Autotest API（构建期静态快照）",
-    "version": "5.21.0",
+    "version": "5.23.0",
     "description": "由 tools/gen_api_contract.py 从控制器源码生成；字段级契约由契约测试保证。"
   },
   "servers": [
@@ -14074,6 +14074,72 @@
               "schema": {
                 "type": "object",
                 "title": "AddItemRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{projectId}/case-sets/{id}/items/batch": {
+      "post": {
+        "operationId": "TestSetController.addItems",
+        "tags": [
+          "caseasset"
+        ],
+        "responses": {
+          "200": {
+            "description": "统一信封；业务错误码见 ErrorCode",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "title": "BatchAddRequest"
               }
             }
           }

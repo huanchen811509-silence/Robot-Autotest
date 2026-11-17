@@ -1,0 +1,18 @@
+W73-17 对外/内部导出模板差异 — 验证记录（2026-11-17 16:45）
+
+方法：同一报告 id=37 分别导出 mode=external / internal 的 PDF，用 pypdf 提取首页文本对比。
+
+结果：
+- 对外版 PDF（01-external-official.pdf, 113714 bytes, 1 页）：
+    INTERNAL USE ONLY = 0 次；OFFICIAL TEST REPORT = 1 次；正式交付件 = 1 次
+- 内部版 PDF：INTERNAL USE ONLY = 2 次；OFFICIAL = 0；正式交付件 = 0
+
+结论：对外版不再印「仅供内部使用」矛盾声明；内部版保留内部标识。PASS。
+
+改动：
+- ReportExportService：新增 EXTERNAL_WATERMARK/EXTERNAL_DISCLAIMER 常量 + watermarkOf(view) helper；
+  html() 从 view 读水印而非硬编码常量（docx/xlsx 的 view 已含正确水印值）。
+- ReportViewRenderer：external() 加 boolean internal 重载（旧签名保留转发兼容），
+  buildView 按 internal 选 disclaimer。
+- TestReportService：render(external=true) 与 export() 按 mode 传水印/internal。
+- 保持 run 级执行报告（ExportService）不变——它定位「测试人员内部排障」。

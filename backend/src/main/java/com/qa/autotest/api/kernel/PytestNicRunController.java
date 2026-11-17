@@ -436,6 +436,9 @@ public class PytestNicRunController {
         out.put("mode", effective);
         out.put("ready", ready);
         out.put("checks", checks);
+        // v5.23.0 / W73-08：预计跳过的用例数（未映射脚本的节点最可能因"未下发命令"被跳过）。
+        // 这是**预测**不是结论，前端据此提示但不拦截执行。
+        out.put("willSkip", unmapped.size());
         out.put("blocking", requiredMissing);
         return ApiResponse.ok(out);
     }
