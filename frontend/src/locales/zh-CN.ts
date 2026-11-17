@@ -607,7 +607,9 @@ export default {
     runs7d: '近 7 天运行',
     // v5.22.0 / FR-v5.22-06 判据 06-3：0 次运行显示 —，并用 title 说清「0」是怎么来的。
     runsZeroHint: '近 7 天没有运行记录',
-    firstRun: '发起第一次运行',
+    // 短文案：卡片动作区一行 5 个按钮，7 字会把按钮挤到换行（实测宽 91px）。「第一次」由 neverRun 条件与 title 表达。
+    firstRun: '发起运行',
+    firstRunHint: '这个项目还没有运行记录，点此发起第一次运行',
     passRate: '近 7 天通过率',
     lastRun: '最近运行',
     devices: '设备',
@@ -1659,8 +1661,7 @@ export default {
     switch: '界面模式',
     project: '项目',
     global: '全局',
-    current: '当前：{mode} · {project}',
-    currentHint: '当前所在的视图模式与项目上下文',
+    // 「当前：{mode} · {project}」已按大师 2026-11-17 反馈移除：右侧项目下拉框已显示当前项目，重复冗余。
   },
   sync: {
     title: '存量同步',

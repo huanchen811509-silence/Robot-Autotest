@@ -600,7 +600,9 @@ export default {
     runs7d: 'Runs (7d)',
     // v5.22.0 / FR-v5.22-06 judgement 06-3: zero runs renders as an em dash, the hint explains why.
     runsZeroHint: 'No runs in the last 7 days',
-    firstRun: 'Start first run',
+    // Short label: five buttons share one action row; the full meaning is kept in the title tooltip.
+    firstRun: 'Start run',
+    firstRunHint: 'This project has no runs yet — start its first run',
     passRate: 'Pass rate (7d)',
     lastRun: 'Last run',
     devices: 'Devices',
@@ -1644,8 +1646,8 @@ export default {
     switch: 'Interface mode',
     project: 'Project',
     global: 'Global',
-    current: 'Current: {mode} · {project}',
-    currentHint: 'Active view mode and project context',
+    // "Current: {mode} · {project}" removed per master's 2026-11-17 feedback:
+    // the project dropdown already shows the active project, so it was redundant.
   },
   sync: {
     title: 'Sync from shared library',

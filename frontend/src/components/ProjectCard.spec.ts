@@ -8,6 +8,7 @@
  * ③ 当前项目卡要能被辅助技术识别（`aria-current`），并把「设为当前」置灰。
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { readFileSync } from 'node:fs'
 import { createApp, nextTick, type App } from 'vue'
 import { createPinia, setActivePinia, type Pinia } from 'pinia'
 import { i18n } from '@/locales'
@@ -138,8 +139,22 @@ describe('ProjectCard 零运行（FR-v5.22-06 判据 06-3）', () => {
     const cta = pick(root, 'card-first-run') as HTMLButtonElement
     expect(cta).toBeTruthy()
     expect(cta.textContent?.trim()).toBe(i18n.global.t('workbench.firstRun'))
+    // 短文案后完整语义靠 title 保留（v5.22 缺陷修复）
+    expect(cta.getAttribute('title')).toBe(i18n.global.t('workbench.firstRunHint'))
     // 用例数为 0 时仍显示 0：只有「运行数」这一个指标有「从没跑过」的语义
     expect(pick(root, 'card-devices').textContent).toBe('0')
+  })
+
+  it('「发起运行」是描边按钮：透明底 + 主色字 + 主色边，防止字色=底色的撞色回归', () => {
+    // jsdom 不解析 scoped CSS 的 computed style，改为读 SFC 源断言样式三要素。
+    // 回归背景：全局 .btn 是实心 --accent，原实现只改 color/border 没改 background，
+    // 实测 color=background=rgb(251,146,60)，字完全看不见。
+    // vitest 的 import.meta.url 是 http scheme，不能 fileURLToPath；用 cwd 相对路径读源码。
+    const src = readFileSync('src/components/ProjectCard.vue', 'utf-8')
+    const block = src.match(/\.project-card__actions \.btn-first-run \{([\s\S]*?)\}/)?.[1] ?? ''
+    expect(block).toMatch(/background:\s*transparent/)
+    expect(block).toMatch(/color:\s*var\(--accent\)/)
+    expect(block).toMatch(/border:\s*1px solid var\(--accent\)/)
   })
 
   it('点「发起第一次运行」先切到该卡片项目，再进发起页', async () => {

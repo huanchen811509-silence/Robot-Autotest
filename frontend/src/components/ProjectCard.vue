@@ -199,6 +199,7 @@ function setCurrent(): void {
         type="button"
         class="btn btn-first-run"
         data-testid="card-first-run"
+        :title="t('workbench.firstRunHint')"
         @click="startFirstRun"
       >
         {{ t('workbench.firstRun') }}
@@ -379,19 +380,25 @@ function setCurrent(): void {
 
 .project-card__actions {
   display: flex;
+  flex-wrap: wrap; /* 窄卡片放不下时整按钮换行，不让单个按钮的文字折行 */
   gap: var(--space-3);
   margin-top: auto;
 }
 
 .project-card__actions .btn {
   margin-top: 0;
+  white-space: nowrap; /* 按钮文字保持一行（如「发起运行」不再折成「发起运/行」） */
 }
 
 /* v5.22.0 / FR-v5.22-06 判据 06-3：从没跑过的项目，这条是唯一该点的动作，给主色描边。
-   不用 `.btn-primary`：那是各组件自己的 scoped 类，全局只有 `.btn` / `.btn-ghost` / `.danger`。 */
+   不用 `.btn-primary`：那是各组件自己的 scoped 类，全局只有 `.btn` / `.btn-ghost` / `.danger`。
+   缺陷修复：全局 `.btn` 是**实心主色**（background: var(--accent)）。原先这里只改了 color/border，
+   忘了改背景 → 字色与底色同为 --accent，完全看不见（UI 实测 color=background=rgb(251,146,60)）。
+   描边按钮三要素必须齐全：透明底 + 主色字 + 主色边；hover 用 accent-soft。 */
 .project-card__actions .btn-first-run {
+  background: transparent;
   color: var(--accent);
-  border-color: var(--accent);
+  border: 1px solid var(--accent);
   font-weight: 600;
 }
 
