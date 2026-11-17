@@ -49,13 +49,14 @@ const FIELD_LABELS: Record<string, string> = {
   skipCount: 'reportTemplates.field.skipCount',
   passRate: 'reportTemplates.field.passRate',
   caseTotal: 'reportTemplates.field.caseTotal',
-  caseCovered: 'reportTemplates.field.caseCovered',
-  coverageRate: 'reportTemplates.field.coverageRate',
-  failureDistribution: 'reportTemplates.field.failureDistribution',
-  trend: 'reportTemplates.field.trend',
   projectName: 'reportTemplates.field.projectName',
   swBuild: 'reportTemplates.field.swBuild',
   caseKind: 'reportTemplates.field.caseKind',
+  qaProject: 'reportTemplates.field.qaProject',
+  dut: 'reportTemplates.field.dut',
+  link: 'reportTemplates.field.link',
+  caseId: 'reportTemplates.field.caseId',
+  runId: 'reportTemplates.field.runId',
   startedAt: 'reportTemplates.field.startedAt',
   finishedAt: 'reportTemplates.field.finishedAt',
   disclaimer: 'reportTemplates.field.disclaimer',
@@ -63,7 +64,7 @@ const FIELD_LABELS: Record<string, string> = {
 }
 
 /**
- * 四个分类（顺序即卡片顺序）。分类是**展示归属**，不参与白名单判定：
+ * 五个分类（顺序即卡片顺序）。分类是**展示归属**，不参与白名单判定：
  * 某个 key 既不在分类里也不在 /fields 里，就永远不会被渲染。
  * 反过来，/fields 里出现分类未覆盖的新字段时会落到「其他」卡片——
  * 宁可多一张卡片，也不要新字段在界面上凭空消失。
@@ -88,23 +89,17 @@ const CATEGORIES: ReportFieldCategory[] = [
   {
     key: 'stats',
     labelKey: 'reportTemplates.category.stats',
-    keys: [
-      'conclusion',
-      'passCount',
-      'failCount',
-      'skipCount',
-      'passRate',
-      'caseTotal',
-      'caseCovered',
-      'coverageRate',
-      'failureDistribution',
-      'trend',
-    ],
+    keys: ['conclusion', 'passCount', 'failCount', 'skipCount', 'passRate', 'caseTotal'],
   },
   {
     key: 'env',
     labelKey: 'reportTemplates.category.env',
     keys: ['projectName', 'swBuild', 'caseKind', 'startedAt', 'finishedAt'],
+  },
+  {
+    key: 'trace',
+    labelKey: 'reportTemplates.category.trace',
+    keys: ['qaProject', 'dut', 'link', 'caseId', 'runId'],
   },
   {
     key: 'compliance',
@@ -164,13 +159,14 @@ const PRESETS = [
       'skipCount',
       'passRate',
       'caseTotal',
-      'caseCovered',
-      'coverageRate',
-      'failureDistribution',
-      'trend',
       'projectName',
       'swBuild',
       'caseKind',
+      'qaProject',
+      'dut',
+      'link',
+      'caseId',
+      'runId',
       'startedAt',
       'finishedAt',
       'disclaimer',

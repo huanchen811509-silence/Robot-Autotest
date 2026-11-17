@@ -29,13 +29,18 @@ public final class ReportFieldWhitelist {
     /**
      * 顺序 = 默认渲染顺序，也等于接口返回给前端的展示顺序。
      * 改顺序等于改导出文件的字段顺序，必须同步改文档 §2 并留修订记录。
+     *
+     * <p><b>v5.22.0 / W72-01 进 5 出 4（21 → 22）</b>：删掉四个没有数据源的字段
+     * （{@code caseCovered} / {@code coverageRate} / {@code failureDistribution} /
+     * {@code trend} —— 前两个恒等于总数、第三个恒等 failCount、第四个恒空），
+     * 补上「哪台设备、哪条链路、哪条用例」的五个追溯键。文档先改，代码后改。
      */
     public static final List<String> EXTERNAL_ORDER = List.of(
             "reportId", "title", "version", "frozenAt", "conclusion",
             "passCount", "failCount", "skipCount", "passRate", "caseTotal",
-            "caseCovered", "coverageRate", "failureDistribution", "trend",
-            "projectName", "swBuild", "caseKind", "startedAt", "finishedAt",
-            "disclaimer", "watermark");
+            "projectName", "swBuild", "caseKind",
+            "qaProject", "dut", "link", "caseId", "runId",
+            "startedAt", "finishedAt", "disclaimer", "watermark");
 
     /**
      * v5.14.0 / W64-12：pytest 专属字段。
@@ -47,12 +52,12 @@ public final class ReportFieldWhitelist {
     public static final List<String> PYTEST_ORDER = List.of(
             "criteriaConclusion", "nodeId", "paramId", "junitMessage", "artifactPath");
 
-    /** 允许出对外视图的全部字段 = 通用 21 项 + pytest 专属 5 项，仍是唯一真源。 */
+    /** 允许出对外视图的全部字段 = 通用 22 项 + pytest 专属 5 项，仍是唯一真源。 */
     public static final Set<String> EXTERNAL_FIELDS = Set.copyOf(
             Stream.concat(EXTERNAL_ORDER.stream(), PYTEST_ORDER.stream()).toList());
 
     /**
-     * 界面可选字段按内核分组：robot / any 给通用 21 项，pytest 额外给 5 项专属字段。
+     * 界面可选字段按内核分组：robot / any 给通用 22 项，pytest 额外给 5 项专属字段。
      * 未知内核不给任何扩展（默认拒绝），避免「随便传个 kernel 就放开字段」。
      */
     public static List<String> selectable(String kernel) {
@@ -72,9 +77,14 @@ public final class ReportFieldWhitelist {
     public static final Set<String> REQUIRED_FIELDS = Set.of(
             "reportId", "title", "version", "frozenAt", "disclaimer", "watermark");
 
-    /** metadata 只允许这五键进入对外视图（与 {@code MetadataGate} 的十项不是一回事）。 */
+    /**
+     * metadata 只允许这七键进入对外视图（与 {@code MetadataGate} 的十项不是一回事）。
+     *
+     * <p>v5.22.0 追加 {@code CASE_ID} / {@code RUN_ID}：对外报告要能回答「这是哪条用例、
+     * 哪一次运行」，否则同一台设备同一版本的两份报告无法区分（大师决策 D-22-01）。
+     */
     public static final List<String> METADATA_ORDER = List.of(
-            "SW_BUILD", "CASE_KIND", "QA_PROJECT", "DUT", "LINK");
+            "SW_BUILD", "CASE_KIND", "QA_PROJECT", "DUT", "LINK", "CASE_ID", "RUN_ID");
 
     public static final Set<String> METADATA_FIELDS = Set.copyOf(METADATA_ORDER);
 

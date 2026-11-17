@@ -105,7 +105,7 @@ class ReportTemplateServiceTest {
         ReportTemplateView created = service.create(command("t1", fullKeys()));
         ReportTemplate stored = templates.rows.get(created.id());
         assertTrue(stored != null, "模板未落库");
-        assertEquals(21, stored.fields().size(), "字段没跟着写进去");
+        assertEquals(22, stored.fields().size(), "字段没跟着写进去");
         assertEquals(1, templates.fieldWrites.getOrDefault(created.id(), 0), "replaceFields 未被调用");
     }
 
@@ -179,11 +179,11 @@ class ReportTemplateServiceTest {
     }
 
     @Test
-    @DisplayName("可选字段清单来自白名单，顺序稳定且含 21 项")
+    @DisplayName("可选字段清单来自白名单，顺序稳定且含 22 项")
     void 可选字段清单() {
         List<String> fields = service.selectableFields();
         assertEquals(ReportFieldWhitelist.EXTERNAL_ORDER, fields);
-        assertEquals(21, fields.size());
+        assertEquals(22, fields.size());
         assertTrue(fields.containsAll(ReportFieldWhitelist.REQUIRED_FIELDS));
     }
 

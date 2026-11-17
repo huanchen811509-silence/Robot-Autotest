@@ -33,7 +33,7 @@ let pinia: Pinia
 
 const REQUIRED = ['reportId', 'title', 'version', 'frozenAt', 'disclaimer', 'watermark']
 
-/** 平台级模板：21 个字段全选，只读。 */
+/** 平台级模板：夹具给 8 个字段，只读。 */
 const platformTemplate: ReportTemplate = {
   id: 1,
   projectId: 0,
@@ -120,7 +120,7 @@ describe('ReportTemplatesView', () => {
     expect(boxes.map((box) => box.dataset.field)).not.toContain('swBuild')
   })
 
-  it('21 个字段归入分类卡片，一张卡片内不跨类（FR-v3.9-05）', async () => {
+  it('可用字段归入分类卡片，一张卡片内不跨类（FR-v3.9-05）', async () => {
     const root = await mountView()
 
     const cards = [...root.querySelectorAll<HTMLElement>('[data-testid="available-fields"] [data-category]')]

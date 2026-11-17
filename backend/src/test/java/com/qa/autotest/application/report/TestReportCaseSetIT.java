@@ -40,7 +40,7 @@ class TestReportCaseSetIT {
 
     private final ObjectMapper mapper = new ObjectMapper();
     private final ReportSnapshotService snapshots = new ReportSnapshotService(mapper);
-    private final ReportViewRenderer renderer = new ReportViewRenderer(mapper);
+    private final ReportViewRenderer renderer = new ReportViewRenderer(mapper, StubProjects.empty());
 
     @Test
     @DisplayName("用例集来源：最近一次执行按 coalesce 时间取、指定 run 必须属于该集、来源两列落库、冻结快照自包含")

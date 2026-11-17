@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
  *
  * <p>为什么需要这个测试而不是只看断言：把常量从 `ReportViewRenderer` 搬到
  * `ReportFieldWhitelist` 属于「只搬家」的改动，风险恰恰是**搬漏一项或搬错一个键名**——
- * 断言只能验「在白名单里」，验不出「21 个字段的顺序、取值、脱敏结果都没变」。
+ * 断言只能验「在白名单里」，验不出「全部字段的顺序、取值、脱敏结果都没变」。
  * 所以这里落一份完整 JSON，配合 `diff` 使用：
  *
  * <pre>
@@ -43,7 +43,8 @@ class ReportViewRenderDumpTest {
 
     private final ObjectMapper mapper = new ObjectMapper();
     private final ReportSnapshotService snapshots = new ReportSnapshotService(mapper);
-    private final ReportViewRenderer renderer = new ReportViewRenderer(mapper);
+    private final ReportViewRenderer renderer =
+            new ReportViewRenderer(mapper, StubProjects.withName(7L, "EHT pytest 用例库工程"));
 
     @Test
     @DisplayName("EXTERNAL 视图逐字段落盘，供抽常量前后 diff")
@@ -74,7 +75,8 @@ class ReportViewRenderDumpTest {
                 Map.of("SW_BUILD", "build-2.1", "DUT", "10.202.54.106",
                         "CASE_KIND", "基本功能测试", "QA_PROJECT", "qa-e2e-report",
                         "LINK", "http://lab.local/case/1",
-                        "OPERATOR", "someone", "RUN_ID", "RUN-W2-0001"),
+                        "CASE_ID", "IM-CER-008", "OPERATOR", "someone",
+                        "RUN_ID", "RUN-W2-0001"),
                 8, 1, 1, Instant.parse("2026-11-06T08:00:00Z"),
                 Instant.parse("2026-11-06T08:10:00Z"));
     }

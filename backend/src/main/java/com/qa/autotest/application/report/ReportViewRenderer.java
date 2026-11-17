@@ -1,6 +1,7 @@
 package com.qa.autotest.application.report;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.qa.autotest.application.repository.ProjectRepository;
 import com.qa.autotest.common.security.SecretRedactor;
 import com.qa.autotest.domain.report.MetadataGate;
 import com.qa.autotest.domain.report.ReportSnapshot;
@@ -40,9 +41,17 @@ public class ReportViewRenderer {
             "(?i)(robot|pabot|pytest|iperf3|ssh|mysql)\\s+-{1,2}[A-Za-z]\\S*");
 
     private final ObjectMapper mapper;
+    private final ProjectRepository projects;
 
-    public ReportViewRenderer(ObjectMapper mapper) {
+    /**
+     * v5.22.0 / W72-02：注入 {@link ProjectRepository} 只为把 `projectName` 渲染成真名。
+     *
+     * <p>原实现是 `"project-" + projectId` 拼出来的，实测对外视图显示 `project-95` 这种
+     * 内部编号——对外文件里出现数据库自增 ID 既无意义也不该露。按 R6 走构造器注入。
+     */
+    public ReportViewRenderer(ObjectMapper mapper, ProjectRepository projects) {
         this.mapper = mapper;
+        this.projects = projects;
     }
 
     /**
@@ -143,10 +152,9 @@ public class ReportViewRenderer {
                 view.put(key, all.get(key));
             }
         }
-        view.put("caseCovered", all.getOrDefault("caseTotal", 0));
-        view.put("coverageRate", 100.0);
-        view.put("failureDistribution", Map.of("fail", all.getOrDefault("failCount", 0)));
-        view.put("trend", java.util.List.of());
+        // v5.22.0：`caseCovered` / `coverageRate` / `failureDistribution` / `trend` 已移除。
+        // 它们没有任何数据源（分别是「恒等 caseTotal」「恒 100.0」「恒等 failCount」「恒空数组」），
+        // 留在对外文件里就是失实陈述。C5 文档 v1.2 已同步删除。
         putMetadata(view, all);
         view.put("disclaimer", "INTERNAL USE ONLY - NOT FOR EXTERNAL DISTRIBUTION");
         view.put("watermark", watermark);
@@ -207,16 +215,61 @@ public class ReportViewRenderer {
         return fields;
     }
 
-    private static void putMetadata(Map<String, Object> view, Map<String, Object> all) {
-        Object raw = all.get("metadata");
-        if (raw instanceof Map<?, ?> map) {
+    /**
+     * v5.22.0 / W72-02：metadata 七键 + 真项目名。
+     *
+     * <p>旧实现只放 `swBuild` / `caseKind`，而快照里 `QA_PROJECT` / `DUT` / `LINK` 一直有值——
+     * 「数据在快照里、却没渲染出来」是对外报告最隐蔽的一种缺字段：单看导出件完全看不出少了东西，
+     * 只有把快照拆开对才知道。
+     *
+     * <p>`runId` / `caseId` 优先取 metadata（output.xml 里带的），缺失时回退到快照根键：
+     * 老快照没有这两个 metadata 键，但根键 `runId` 一直存在，不能因为没登记 metadata 就空着。
+     */
+    private void putMetadata(Map<String, Object> view, Map<String, Object> all) {
+        if (all.get("metadata") instanceof Map<?, ?> map) {
             view.put("swBuild", value(map, "SW_BUILD"));
             view.put("caseKind", value(map, "CASE_KIND"));
+            view.put("qaProject", value(map, "QA_PROJECT"));
+            view.put("dut", value(map, "DUT"));
+            view.put("link", value(map, "LINK"));
+            view.put("caseId", firstNonBlank(value(map, "CASE_ID"), plain(all.get("caseId"))));
+            view.put("runId", firstNonBlank(value(map, "RUN_ID"), plain(all.get("runId"))));
         } else {
-            view.put("swBuild", "");
-            view.put("caseKind", "");
+            for (String key : new String[]{"swBuild", "caseKind", "qaProject", "dut",
+                    "link", "caseId", "runId"}) {
+                view.put(key, "");
+            }
+            view.put("caseId", plain(all.get("caseId")));
+            view.put("runId", plain(all.get("runId")));
         }
-        view.put("projectName", "project-" + String.valueOf(all.getOrDefault("projectId", "0")));
+        view.put("projectName", projectName(all));
+    }
+
+    /**
+     * 项目名取真名，取不到才回退成内部编号。
+     *
+     * <p>回退值不是"更好的假名"，而是**让缺失可见**：`project-95` 一眼能看出没查到，
+     * 若回退成空串，对外文件里就是一片空白，看不出是数据问题还是渲染问题。
+     */
+    private String projectName(Map<String, Object> all) {
+        Object raw = all.get("projectId");
+        if (!(raw instanceof Number n)) {
+            return "";
+        }
+        long id = n.longValue();
+        return projects.findById(id)
+                .map(project -> scrub(project.name() == null ? "" : project.name()))
+                .filter(name -> !name.isBlank())
+                .orElse("project-" + id);
+    }
+
+    /** 快照根键取值：统一转字符串并过脱敏，null 转空串。 */
+    private static String plain(Object raw) {
+        return raw == null ? "" : scrub(String.valueOf(raw));
+    }
+
+    private static String firstNonBlank(String first, String fallback) {
+        return first == null || first.isBlank() ? fallback : first;
     }
 
     /** Map&lt;?,?&gt; 的 getOrDefault 会把默认值也推成 capture，故用 get + 显式 Object。 */
@@ -259,7 +312,7 @@ public class ReportViewRenderer {
         }
     }
 
-    /** metadata 只保留 C5 白名单键，且值一律脱敏。 */
+    /** metadata 只保留 C5 白名单七键，且值一律脱敏。 */
     public static Map<String, String> safeMetadata(Map<String, String> metadata) {
         Map<String, String> safe = new LinkedHashMap<>();
         if (metadata == null) {
@@ -277,7 +330,7 @@ public class ReportViewRenderer {
     /**
      * v5.14.0 / W7 真实 HTTP 探针修复：三段式附录的 metadata 十项口径。
      *
-     * <p>{@link #safeMetadata(Map)} 是「对外视图」的 C5 五键白名单，不能拿去填
+     * <p>{@link #safeMetadata(Map)} 是「对外视图」的 C5 七键白名单，不能拿去填
      * {@code EhtSections.metadataRequired} 的十项清单 —— 否则另外五项永远显示「未提供」，
      * 即使 run 的 output.xml 真的带了这些值。这里按 {@link MetadataGate#REQUIRED}
      * 逐项取真值并同样过 {@link #scrub}：只放宽键集合，不放宽脱敏；对外五键口径零改动。

@@ -15,23 +15,23 @@ import org.junit.jupiter.api.Test;
 class ReportTemplateKernelTest {
 
     @Test
-    void genericOrderStaysAt21() {
-        // 判据 2：标准 RF 工程字段数不变——pytest 专属字段只扩「允许集合」，不进默认顺序。
-        assertEquals(21, ReportFieldWhitelist.EXTERNAL_ORDER.size());
-        assertEquals(21, ReportFieldWhitelist.selectable("robot").size());
-        assertEquals(21, ReportFieldWhitelist.selectable("any").size());
+    void genericOrderStaysAt22() {
+        // v5.22.0：进 5 出 4，字段数 21 → 22。pytest 专属字段仍只扩「允许集合」，不进默认顺序。
+        assertEquals(22, ReportFieldWhitelist.EXTERNAL_ORDER.size());
+        assertEquals(22, ReportFieldWhitelist.selectable("robot").size());
+        assertEquals(22, ReportFieldWhitelist.selectable("any").size());
     }
 
     @Test
     void pytestKernelAddsFiveDedicatedFields() {
         List<String> fields = ReportFieldWhitelist.selectable("pytest");
-        assertEquals(26, fields.size());
+        assertEquals(27, fields.size());
         assertTrue(fields.contains("nodeId"));
         assertTrue(fields.contains("criteriaConclusion"));
         assertTrue(ReportFieldWhitelist.allows("artifactPath"));
         assertFalse(ReportFieldWhitelist.allows("notAField"));
         // 未知内核默认拒绝扩展，不给「随便传个 kernel 就放开字段」的口子。
-        assertEquals(21, ReportFieldWhitelist.selectable("something-else").size());
+        assertEquals(22, ReportFieldWhitelist.selectable("something-else").size());
     }
 
     @Test
@@ -90,13 +90,13 @@ class ReportTemplateKernelTest {
 
     @Test
     void invalidKernelOnReadPathIsRejectedNotSilentlyDowngraded() {
-        // W7 真实探针：GET /fields?kernel=bogus 曾静默返回 21 项。
+        // W7 真实探针：GET /fields?kernel=bogus 曾静默返回 22 项。
         assertEquals("robot", ReportTemplateService.selectableKernel(null));
         assertEquals("robot", ReportTemplateService.selectableKernel("  "));
         assertEquals("pytest", ReportTemplateService.selectableKernel(" PyTest "));
         assertThrows(BusinessException.class,
                 () -> ReportTemplateService.selectableKernel("ruby"));
-        assertEquals(21, ReportFieldWhitelist.selectable(
+        assertEquals(22, ReportFieldWhitelist.selectable(
                 ReportTemplateService.selectableKernel(null)).size());
     }
 

@@ -30,7 +30,7 @@ class ReportTemplateFreezeTest {
 
     private final ObjectMapper mapper = new ObjectMapper();
     private final ReportSnapshotService snapshots = new ReportSnapshotService(mapper);
-    private final ReportViewRenderer renderer = new ReportViewRenderer(mapper);
+    private final ReportViewRenderer renderer = new ReportViewRenderer(mapper, StubProjects.empty());
 
     private static ReportRecord source() {
         return new ReportRecord(7L, "RUN-TPLX-0001", "FINISHED", true, List.of(),

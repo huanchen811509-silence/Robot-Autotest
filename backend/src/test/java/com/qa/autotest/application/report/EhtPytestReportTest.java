@@ -177,8 +177,12 @@ class EhtPytestReportTest {
             assertTrue(safe.containsKey(key), "三段式缺项: " + key);
             assertFalse(safe.get(key).contains("10.20.30.40"), "IP 未脱敏: " + key);
         }
-        // 旧对外视图仍严格五键，零回归。
-        assertEquals(5, ReportViewRenderer.safeMetadata(raw).size());
+        // v5.22.0：对外 metadata 由五键扩到七键（加 CASE_ID / RUN_ID），仍严格过滤十项里的其余三项。
+        Map<String, String> safeExternal = ReportViewRenderer.safeMetadata(raw);
+        assertEquals(7, safeExternal.size());
+        assertTrue(safeExternal.containsKey("CASE_ID"), "对外视图缺 CASE_ID");
+        assertTrue(safeExternal.containsKey("RUN_ID"), "对外视图缺 RUN_ID");
+        assertFalse(safeExternal.containsKey("OPERATOR"), "OPERATOR 不该进对外视图");
         EhtSections s = new EhtSections("pytest", counts(), List.of(), List.of(), safe,
                 MetadataGate.REQUIRED, "abc123", EhtSections.Diff.none());
         String html = html(s);

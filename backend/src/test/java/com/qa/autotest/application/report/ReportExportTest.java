@@ -101,16 +101,17 @@ class ReportExportTest {
     }
 
     @Test
-    void structuredValuesAreNotDroppedInXlsx() throws Exception {
+    void customStructuredValueIsSerializedAsJsonNotToString() throws Exception {
+        // v5.22.0：白名单里已经没有结构化字段（failureDistribution / trend 已删），
+        // 这里守的是导出器本身的通用能力——以后若再加 Map/List 字段，不能退化成 {a=1} 的 toString。
         Map<String, Object> v = view();
-        v.put("failureDistribution", Map.of("fail", 0));
-        v.put("trend", java.util.List.of());
+        v.put("customJson", Map.of("fail", 0));
         byte[] xlsx = service.export("xlsx", v);
         try (XSSFWorkbook workbook = new XSSFWorkbook(new ByteArrayInputStream(xlsx))) {
             Sheet sheet = workbook.getSheetAt(0);
             String text = null;
             for (int i = 1; i <= sheet.getLastRowNum(); i++) {
-                if ("failureDistribution".equals(sheet.getRow(i).getCell(0).getStringCellValue())) {
+                if ("customJson".equals(sheet.getRow(i).getCell(0).getStringCellValue())) {
                     text = sheet.getRow(i).getCell(2).getStringCellValue();
                 }
             }

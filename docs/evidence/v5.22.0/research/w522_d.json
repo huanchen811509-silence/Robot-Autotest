@@ -1,0 +1,148 @@
+{
+  "D1_run_xlsx": {
+    "status": 200,
+    "body": null,
+    "result": {
+      "exportId": 53,
+      "format": "xlsx",
+      "mode": "external",
+      "bytes": 7051,
+      "fileName": null,
+      "qualityGate": {
+        "passed": true,
+        "missing": [],
+        "label": "FINAL"
+      }
+    },
+    "downloadUrl": "/api/exports/53/download?projectId=95",
+    "downloadStatus": 200,
+    "probe": {
+      "bytes": 7051,
+      "sheets": [
+        "report",
+        "用例明细"
+      ],
+      "rowCounts": {
+        "sheet1.xml": 16,
+        "sheet2.xml": 71
+      },
+      "sharedStringsLen": 3797,
+      "hasSample": "<?xml version=\"1.0\" encoding=\"UTF-8\"?> <sst count=\"328\" uniqueCount=\"112\" xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><si><t>FIELD_KEY</t></si><si><t>TITLE</t></si><si><t>VALUE</t></si><si><t>runId</t></si><si><t>EHT-FAKE-1794805219801</t></si><si><t>state</t></si><si><t>failed</t></si><si><t>passCount</t></si><si><t>failCount</t></si><si><t>skipCount</t></si><si><t>caseTotal",
+      "has_用例明细": true,
+      "has_用例编号": false,
+      "has_CASE": true,
+      "has_nodeId": false,
+      "has_失败原因": true
+    }
+  },
+  "D1_run_pdf": {
+    "status": 200,
+    "body": null,
+    "result": {
+      "exportId": 54,
+      "format": "pdf",
+      "mode": "external",
+      "bytes": 539607,
+      "fileName": null,
+      "qualityGate": {
+        "passed": true,
+        "missing": [],
+        "label": "FINAL"
+      }
+    },
+    "downloadUrl": "/api/exports/54/download?projectId=95",
+    "downloadStatus": 200,
+    "probe": {
+      "bytes": 539607,
+      "has_CASE_ID": false,
+      "has_RUN_ID": false,
+      "has_SW_BUILD": false,
+      "has_DUT": false,
+      "head": "%PDF-1.4 %Óëéá 1 0 obj <</Title <FEFF004100490044004381EA52A853166D4B8BD5> /Creator (Mozilla/5.0 \\(Windows NT 10.0; Win6"
+    }
+  },
+  "D2_report22_xlsx": {
+    "status": 200,
+    "bytes": 4104,
+    "probe": {
+      "bytes": 4104,
+      "sheets": [
+        "report"
+      ],
+      "rowCounts": {
+        "sheet1.xml": 22
+      },
+      "sharedStringsLen": 1121,
+      "hasSample": "<?xml version=\"1.0\" encoding=\"UTF-8\"?> <sst count=\"57\" uniqueCount=\"36\" xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><si><t>FIELD_KEY</t></si><si><t>TITLE</t></si><si><t>VALUE</t></si><si><t>reportId</t></si><si><t>title</t></si><si><t>撤销后改名</t></si><si><t>version</t></si><si><t>frozenAt</t></si><si><t>2026-11-14T10:39:53.088Z</t></si><si><t>conclusion</t></si><si><t>FAIL</t><",
+      "has_用例明细": false,
+      "has_用例编号": false,
+      "has_CASE": false,
+      "has_nodeId": false,
+      "has_失败原因": false
+    }
+  },
+  "D2_report22_pdf": {
+    "status": 200,
+    "bytes": 1521,
+    "probe": {
+      "bytes": 1521,
+      "has_CASE_ID": false,
+      "has_RUN_ID": false,
+      "has_SW_BUILD": false,
+      "has_DUT": false,
+      "head": "%PDF-1.4 1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj 2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj 3 0 o"
+    }
+  },
+  "D2_report20_xlsx": {
+    "status": 200,
+    "bytes": 4068,
+    "probe": {
+      "bytes": 4068,
+      "sheets": [
+        "report"
+      ],
+      "rowCounts": {
+        "sheet1.xml": 22
+      },
+      "sharedStringsLen": 1098,
+      "hasSample": "<?xml version=\"1.0\" encoding=\"UTF-8\"?> <sst count=\"57\" uniqueCount=\"36\" xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><si><t>FIELD_KEY</t></si><si><t>TITLE</t></si><si><t>VALUE</t></si><si><t>reportId</t></si><si><t>title</t></si><si><t>W57 smoke</t></si><si><t>version</t></si><si><t>frozenAt</t></si><si><t/></si><si><t>conclusion</t></si><si><t>FAIL</t></si><si><t>passCount</t",
+      "has_用例明细": false,
+      "has_用例编号": false,
+      "has_CASE": false,
+      "has_nodeId": false,
+      "has_失败原因": false
+    }
+  },
+  "D2_report20_pdf": {
+    "status": 200,
+    "bytes": 1501,
+    "probe": {
+      "bytes": 1501,
+      "has_CASE_ID": false,
+      "has_RUN_ID": false,
+      "has_SW_BUILD": false,
+      "has_DUT": false,
+      "head": "%PDF-1.4 1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj 2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj 3 0 o"
+    }
+  },
+  "D3_external": {
+    "status": 404,
+    "body": {
+      "code": 40400,
+      "codeName": "NOT_FOUND",
+      "message": "报告不存在: w56-24-retry-2",
+      "data": null,
+      "success": false
+    }
+  },
+  "D3_internal": {
+    "status": 404,
+    "body": {
+      "code": 40400,
+      "codeName": "NOT_FOUND",
+      "message": "报告不存在: w56-24-retry-2",
+      "data": null,
+      "success": false
+    }
+  }
+}
