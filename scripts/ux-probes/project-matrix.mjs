@@ -120,7 +120,12 @@ async function main() {
           m = await s.evaluate(MEASURE)
         }
         const emptyOnly = m.rows === 0 && Boolean(m.emptyText)
-        const tallEnough = page.kind === 'table-below-fold' ? true : m.tableH >= 300
+        // 表高期望与 row-hit.mjs 同口径：数据多时要求吃掉剩余空间（≥300），
+        // 数据少时只要求不被裁（表头 + 行高）。同仓两个探针不能对同一现象用两套标准——
+        // 项目 1 的执行计划只有 2 行，表高 132 正好 = 2×44+44，硬卡 300 会把它判红，
+        // 而 row-hit 对同一页面判绿。真塌陷（只剩表头）在两种口径下都过不了。
+        const needH = Math.min(300, m.rows * 44 + 44)
+        const tallEnough = page.kind === 'table-below-fold' ? true : m.tableH >= needH
         const ok = emptyOnly || (tallEnough && (m.rows === 0 || m.firstRowHit === true))
         if (!ok) fails += 1
         rows.push({

@@ -198,7 +198,16 @@ function measureExpr(pageKey, wantActions) {
     }
     if (${wantActions ? 'true' : 'false'}) {
       const btns = [...document.querySelectorAll('tbody button, tbody a')].filter((b) => (b.innerText || '').trim().length > 0 && b.getBoundingClientRect().width > 0);
+      // 行在表格内部滚动区之外时，按钮坐标会落在容器下面（实测落到 DIV.n-pagination），
+      // 那是「要滚一下才能看到」，不是「被别的层盖住」——两者要分开判：
+      // 前者是列表有内部滚动条的正常形态，后者才是本探针要抓的真缺陷。
+      // 做法：逐个把所属行滚进最近的滚动容器再判命中；判完把页面滚动恢复，
+      // 避免污染 docScrollTop（那条判据是「整页不许被滚」）。
+      const scroller = document.scrollingElement || document.documentElement;
+      const savedWinY = scroller ? scroller.scrollTop : 0;
       out.actions = btns.slice(0, 24).map((b) => {
+        const tr = b.closest('tr');
+        if (tr && tr.scrollIntoView) tr.scrollIntoView({ block: 'nearest', inline: 'nearest' });
         const r = b.getBoundingClientRect();
         const top = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
         return {
@@ -208,6 +217,7 @@ function measureExpr(pageKey, wantActions) {
           topCls: top ? top.tagName + '.' + (top.className || '').toString().slice(0, 30) : null,
         };
       });
+      if (scroller) scroller.scrollTop = savedWinY;
     }
     return out;
   })()`
