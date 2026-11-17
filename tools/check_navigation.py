@@ -12,7 +12,7 @@
 守什么
 ------
 1. 层级 ≤ 2（不存在三级菜单）；
-2. 全局一级恰 5 组、项目一级恰 7 组；
+2. 全局一级恰 6 组、项目一级恰 8 组；
 3. 每个一级组 children 非空；全局**每组 ≥ 2 项**（防退化成单叶伪分组）；
 4. 同一 path 的叶子其 `query` 两两不同（防两个页签写成一个，选中态互抢）；
 5. 每个叶子都有 `path`。
@@ -48,7 +48,11 @@ NAV = ROOT / "frontend" / "src" / "config" / "navigation.ts"
 SETTINGS = ROOT / "frontend" / "src" / "config" / "settingsNav.ts"
 
 GLOBAL_EXPECTED = 6
-PROJECT_EXPECTED = 7
+# v5.23.0 / FR-v5.23-01（报告菜单拆组）：一级「执行与报告」拆成「执行管理」+「报告管理」，
+# 项目一级项 7 → 8（workbench / execution / reports / cases / assets / environment /
+# ops / settings）。这是**已批准的菜单重构**，不是漏拦：拆出的两组 children 均非空、
+# 层级仍 ≤2、同 path 的 query 仍两两互异，其余判据一律不放宽。
+PROJECT_EXPECTED = 8
 GLOBAL_MIN_CHILDREN = 2
 # v5.6.0 / FR-v5.6-01、02：全量菜单。pytest 工程与标准工程共用同一套菜单，
 # 唯一差别是一个增量叶子。原「第二棵树 + 禁项前缀」判据已随树一起删除——
@@ -282,8 +286,19 @@ def self_test() -> int:
             count=1,
             flags=re.S,
         )
+        # v5.23 收口：v5.10.0 给 global-templates 加了第三叶（新建模板向导），只删一个
+        # 叶子该组仍有 2 项，按「每组 ≥2」不构成违规——旧自检因此从 v5.10.0 起就恒报
+        # 「机检形同虚设」（自检本身坏了，不是机检坏了）。改为连删两叶，让该组只剩 1 项，
+        # 破坏才真正命中规则。
+        text = re.sub(
+            r"\n      \{\n(?:[ \t]*//[^\n]*\n)*[ \t]*key: 'global-templates-new',.*?\n      \},",
+            "",
+            text,
+            count=1,
+            flags=re.S,
+        )
         fake.write_text(text, encoding="utf-8")
-        print("--- self-test 1：删掉「自定义模板」叶后应判失败 ---")
+        print("--- self-test 1：删掉「自定义模板」「新建向导」两叶后应判失败 ---")
         if run(fake) == 0:
             print("[FAIL] 自检未拦住单叶组——机检形同虚设")
             return 1
