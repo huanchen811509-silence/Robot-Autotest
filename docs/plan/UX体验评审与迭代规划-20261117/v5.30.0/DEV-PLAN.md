@@ -23,7 +23,7 @@
 | W80-01 | 新增 `tools/check_ux.py`（合并术语/日期/placeholder/静默失败/无确认/空态重复 6 类）；接入 `scripts/gates.sh` 第 69 步；`--self-test` 注入 | 门禁 PASS；注入后判红 | `bash scripts/gates.sh 2>&1 \| grep -E "69-.*(PASS\|FAIL)"` → 含 PASS；`python3 tools/check_ux.py --self-test` → `SELFCHECK PASS` | 3.0 人日 | TC-01/02/03 |
 | W80-02 | 12 页截图基线（`docs/evidence/v5.30.0/baseline/*.png`）+ 像素 diff 脚本 + 第 70 步（动态区域遮罩） | diff 超阈值 FAIL；基线单独提交可识别 | `python3 tools/check_screenshot_diff.py` → 12 页全 PASS（diff < 阈值） | 2.0 人日 | TC-04/05 |
 | W80-03 | 前端 `OnboardingTasks.vue`（4 步任务卡，进度落 `user_preference`），帮助入口可重看；仅对零操作记录账号出现 | 新账号出现；完成消失；可重看 | `python3 docs/evidence/v5.30.0/W80-03/run.py` → 新账号断言任务卡存在；完成 4 步后断言消失 | 2.0 人日 | TC-06/07 |
-| W80-04 | 前端 `AppHeader.vue` 模式指示（"当前：项目 · XXX"）；全局模式隐藏项目选择器 | 全局无选择器；项目显示全名 | `python3 docs/evidence/v5.30.0/W80-04/run.py` → 切全局断言 `hasPicker == 0` | 0.5 人日 | TC-08/09 |
+| W80-04 | 前端 `AppHeader.vue` 模式指示；全局模式隐藏项目选择器。**2026-11-17 大师反馈调整**：移除切换器旁"当前：项目 · XXX"文字（右侧项目下拉框选中即当前，重复），由下拉框承担"当前项目可见" | 全局无选择器；项目模式下拉框选中项=当前项目全名且无"当前："重复文字 | `python3 docs/evidence/v5.30.0/W80-04/run.py` → 切全局断言 `hasPicker == 0`；断言 `[data-testid=mode-current]` 不存在 | 0.5 人日 | TC-08/09 |
 | W80-05 | 前端 `PytestWorkbenchView.vue` 8 个 tab 加 `aria-selected` + 分组标签 + 键盘可达 | 唯一高亮 | `python3 docs/evidence/v5.30.0/W80-05/run.py` | 0.5 人日 | TC-10 |
 | W80-06 | 前后端：`usage_event` 表（操作类型/耗时/结果，不记内容）+ 3 个比率聚合接口 + 看板页 | 3 个比率可查且来自真实数据 | `python3 docs/evidence/v5.30.0/W80-06/run.py` → 断言看板数值与 SQL 聚合一致 | 2.0 人日 | TC-11/12 |
 
@@ -57,7 +57,9 @@
 
 ## 实施进度回写（⑦ / 2026-11-17 17:50）
 
-本版重点：**FR-04 双模式状态可见**。顶栏常显「当前：项目 · EHT pytest 用例库工程」已实现并 UI 实测 PASS。FR-01 体验机检进门禁：check_i18n 已覆盖术语/日期/枚举（34 值全覆盖），但尚未挂到第 69 步门禁脚本；FR-02 视觉基线 / FR-03 新手引导 / FR-05 二级导航高亮 / FR-06 度量看板属专项，列后续。
+本版重点：**FR-04 双模式状态可见**。顶栏曾常显「当前：项目 · EHT pytest 用例库工程」并 UI 实测 PASS；
+**2026-11-17 大师反馈「与右侧下拉框重复、多此一举」→ 已移除该文字**，改由项目下拉框选中项体现当前项目
+（实测 `[data-testid=mode-current]` 不存在、下拉选中「EHT pytest 用例库工程」，证据 `docs/evidence/fix-first-run-contrast/02-header-after.png`）。FR-01 体验机检进门禁：check_i18n 已覆盖术语/日期/枚举（34 值全覆盖），但尚未挂到第 69 步门禁脚本；FR-02 视觉基线 / FR-03 新手引导 / FR-05 二级导航高亮 / FR-06 度量看板属专项，列后续。
 
 **验证基线**：全量单测 `159 文件 / 1258 测试 PASS`；i18n 机检 PASS（键集相等/无硬编码中文/枚举全覆盖）；
 前端构建成功（dist 17:47，`index-D8dBl9KX.js`）；UI 实测零 console 错误。
