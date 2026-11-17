@@ -32,6 +32,8 @@ const apiState = vi.hoisted(() => ({
   // 失败数也接出来：用来证明「结论与 failCount 解耦」
   passCount: 3,
   failCount: 1,
+  // v5.22.0 / FR-v5.22-06 判据 06-4：测试项数 = 三个结论之和，skip 也要能改
+  skipCount: 0,
   // v5.17.0 / W67-02：深链用例需要控制一级套件列表
   suites: [] as Array<{ name: string; status: string; suites: unknown[]; cases: unknown[] }>,
 }))
@@ -52,7 +54,7 @@ vi.mock('@/api/reports', async (importOriginal) => {
         metadataMissing: apiState.metadataMissing,
         passCount: apiState.passCount,
         failCount: apiState.failCount,
-        skipCount: 0,
+        skipCount: apiState.skipCount,
         criteriaConclusion: apiState.conclusion,
         criteriaEvaluated: apiState.evaluated,
         criteriaMissingCount: apiState.missing,
@@ -272,6 +274,7 @@ beforeEach(() => {
   apiState.missing = 0
   apiState.passCount = 3
   apiState.failCount = 1
+  apiState.skipCount = 0
   apiState.suites = []
   routeState.query = {}
   vi.clearAllMocks()
@@ -532,5 +535,26 @@ describe('深链 ?suite=', () => {
     routeState.query = {}
     const root = await mountView()
     expect(root.querySelector('[data-testid="suite-deeplink-notice"]')).toBeNull()
+  })
+})
+
+/**
+ * v5.22.0 / FR-v5.22-06 判据 06-4（**降级版**）。
+ *
+ * 原期望「61 用例 → 70 测试项」。箭头的左半边在库里不存在（test_set_id / case_id 全 NULL，
+ * case_key 是 70 个互不相同的编号），所以只交真实的右半边。这条测试同时钉住两件事：
+ * ① 数字真的来自三个结论之和，不是写死的；② 界面上不出现「→」这种看起来有来源的箭头。
+ */
+describe('ReportDetailView 测试项计数（判据 06-4 降级版）', () => {
+  it('显示真实展开的测试项数，且不出「N 用例 → M 测试项」箭头', async () => {
+    apiState.passCount = 5
+    apiState.failCount = 4
+    apiState.skipCount = 61
+    const root = await mountView()
+
+    const chip = root.querySelector<HTMLElement>('[data-testid="report-test-items"]')
+    expect(chip).not.toBeNull()
+    expect(chip!.textContent?.trim()).toBe('共 70 测试项')
+    expect(chip!.textContent).not.toContain('→')
   })
 })

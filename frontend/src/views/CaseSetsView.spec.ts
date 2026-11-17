@@ -160,6 +160,10 @@ beforeEach(() => {
   vi.mocked(assetVersionApi.sync).mockClear()
   vi.mocked(platformCaseSetApi.page).mockClear()
   vi.mocked(platformCaseSetApi.items).mockClear()
+  // v5.22.0 / FR-v5.22-06：新建与路由跳转要按用例隔离计数
+  vi.mocked(caseSetApi.create).mockClear()
+  vi.mocked(caseSetApi.items).mockClear()
+  routerState.push.mockClear()
 })
 
 afterEach(() => {
@@ -168,6 +172,87 @@ afterEach(() => {
   app = null
   host = null
   pinia = null
+})
+
+describe('CaseSetsView 空态三动作（FR-v5.22-06 判据 06-2）', () => {
+  const emptyPage = { items: [], total: 0, page: 1, size: 100 }
+
+  it('真·空列表给三个动作，导入与查看样例各自跳到对应页', async () => {
+    vi.mocked(caseSetApi.page).mockResolvedValueOnce(emptyPage)
+    const root = await mountView()
+
+    const box = root.querySelector<HTMLElement>('[data-testid="case-sets-empty-actions"]')
+    expect(box).not.toBeNull()
+    expect(box!.querySelectorAll('button')).toHaveLength(3)
+
+    root.querySelector<HTMLButtonElement>('[data-testid="case-sets-empty-import"]')!.click()
+    expect(routerState.push).toHaveBeenCalledWith({ name: 'imports' })
+
+    root.querySelector<HTMLButtonElement>('[data-testid="case-sets-empty-sample"]')!.click()
+    expect(routerState.push).toHaveBeenCalledWith({ name: 'global-case-sets' })
+  })
+
+  it('viewer（无 case:write）只看到「导入」与「查看样例」两个动作', async () => {
+    // 只读口径：能力集里没有 case:write
+    seedMenuCapabilities(['case:read'])
+    vi.mocked(caseSetApi.page).mockResolvedValueOnce(emptyPage)
+    const root = await mountView()
+
+    const box = root.querySelector<HTMLElement>('[data-testid="case-sets-empty-actions"]')
+    expect(box!.querySelectorAll('button')).toHaveLength(2)
+    expect(box!.querySelector('[data-testid="case-sets-empty-create"]')).toBeNull()
+  })
+})
+
+describe('CaseSetsView 新建即选中（FR-v5.22-06 判据 06-1）', () => {
+  it('新建成功后右栏自动展开成员面板，无需再点一次「管理用例」', async () => {
+    const created = {
+      id: 9,
+      projectId: 1,
+      setCode: 'NEW-001',
+      name: '新建集合',
+      description: null,
+      itemCount: 0,
+    }
+    vi.mocked(caseSetApi.create).mockResolvedValueOnce(created)
+    // 两次列表读：① 挂载时两条；② 新建后重拉返回三条（含新集合）。
+    // 都用 `Once`，不改成常驻返回值——常驻会污染后面所有用例的列表。
+    vi.mocked(caseSetApi.page)
+      .mockResolvedValueOnce({ items: sets, total: 2, page: 1, size: 100 })
+      .mockResolvedValueOnce({ items: [...sets, created], total: 3, page: 1, size: 100 })
+
+    const root = await mountView()
+    const createButton = [...root.querySelectorAll<HTMLButtonElement>('button')].find(
+      (item) => item.textContent?.trim() === i18n.global.t('caseSets.create'),
+    )
+    expect(createButton).toBeTruthy()
+    createButton!.click()
+    await nextTick()
+
+    const card = root.querySelector<HTMLElement>('.form-card')
+    expect(card).not.toBeNull()
+    const inputs = [...card!.querySelectorAll<HTMLInputElement>('input')]
+    inputs[0].value = 'NEW-001'
+    inputs[0].dispatchEvent(new Event('input'))
+    inputs[1].value = '新建集合'
+    inputs[1].dispatchEvent(new Event('input'))
+    await nextTick()
+
+    // `.form-card` 本身就是那个 <form>（v-if="formOpen"），不要在它内部再找一次
+    card!.dispatchEvent(new Event('submit'))
+    // 建集合 → 重拉列表 → 展开面板（拉成员 + 搜用例 + 拉资产版本）是四段异步
+    for (let i = 0; i < 6; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 0))
+      await nextTick()
+    }
+
+    expect(caseSetApi.create).toHaveBeenCalledTimes(1)
+    // 判据 06-1 的实质：新建完直接按 created.id 拉了成员，等于「已选中」
+    expect(caseSetApi.items).toHaveBeenCalledWith(1, 9)
+    expect(root.textContent).toContain('新建集合')
+    // 创建成功的提示不能被展开面板顺手清掉（openItems 开头会清 message）
+    expect(root.textContent).toContain(i18n.global.t('caseSets.created', { name: '新建集合' }))
+  })
 })
 
 describe('CaseSetsView 列表', () => {

@@ -597,6 +597,9 @@ export default {
     disabled: 'Disabled',
     cases: 'Cases',
     runs7d: 'Runs (7d)',
+    // v5.22.0 / FR-v5.22-06 judgement 06-3: zero runs renders as an em dash, the hint explains why.
+    runsZeroHint: 'No runs in the last 7 days',
+    firstRun: 'Start first run',
     passRate: 'Pass rate (7d)',
     lastRun: 'Last run',
     devices: 'Devices',
@@ -1072,6 +1075,9 @@ export default {
     confirmRun: 'Run test set “{name}” now?',
     triggered: 'Run {runId} created; executions queue strictly in order — track it on the runs page',
     empty: 'No test sets yet',
+    // v5.22.0 / FR-v5.22-06 judgement 06-2: empty-state actions (create reuses caseSets.create).
+    emptyActionImport: 'Import cases',
+    emptyActionSample: 'View samples',
     emptyHint: 'Create a test set, then add cases to it',
     totalCount: '{count} case set(s)',
     itemsTitle: 'Cases in {name}',
@@ -1357,6 +1363,8 @@ export default {
     finishedAt: 'Finished at',
     exportable: 'Exportable',
     notExportable: 'Missing metadata',
+    // v5.22.0 / FR-v5.22-06 judgement 06-4 (downgraded): real expanded count only, no "N cases -> M items" arrow
+    testItems: '{count} test item(s)',
     conclusionTitle: 'Conclusion',
     conclusion: {
       PASS: 'Pass',

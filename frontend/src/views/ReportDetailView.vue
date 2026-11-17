@@ -85,6 +85,20 @@ const conclusionNote = computed(() => {
 // 速览（FR-3.1-07）：独立请求，失败不拖垮详情；数字直接来自后端聚合。
 const summary = ref<ReportSummary | null>(null)
 const summaryLoading = ref(false)
+
+/**
+ * v5.22.0 / FR-v5.22-06 判据 06-4（**降级版**）：本次运行实际展开的测试项数。
+ *
+ * <p>PRD 原期望是「61 用例 → 70 测试项」。这个箭头**做不了**，且不是懒：
+ * 全库 550 个 run 的 `test_set_id` 全为 NULL、`test_result.case_id` 也全为 NULL，
+ * `case_key` 是 70 个互不相同的用例编号——参数化之前的 61 个 pytest 函数在解析入库时就没有落点。
+ * 库里没有「61」这个数，写出来只能是编的。大师 2026-11-17 拍板降级为只标真实的一侧。
+ *
+ * <p>M 是真实的：`test_result` 一行 = 一个测试项，三个结论之和就是展开数（W72-07 已把它对齐）。
+ */
+const testItemCount = computed(
+  () => (detail.value?.passCount ?? 0) + (detail.value?.failCount ?? 0) + (detail.value?.skipCount ?? 0),
+)
 const summaryError = ref<ErrorLine | null>(null)
 
 // v3.3.0 报告叙述：按需生成，不阻塞首屏；事实/推测由后端分段。
@@ -784,6 +798,10 @@ watch(granularity, () => {
         <span class="text-ok">PASS {{ detail.passCount }}</span>
         <span class="text-fail">FAIL {{ detail.failCount }}</span>
         <span class="muted">SKIP {{ detail.skipCount }}</span>
+        <!-- v5.22.0 / FR-v5.22-06 判据 06-4（降级版）：只标真实的测试项数，不编「N 用例 →」 -->
+        <span class="muted" data-testid="report-test-items">
+          {{ t('reports.testItems', { count: testItemCount }) }}
+        </span>
         <span v-if="detail.exportable" class="text-ok">{{ t('reports.exportable') }}</span>
         <span v-else class="text-fail">
           {{ t('reports.notExportable') }}：{{ detail.metadataMissing.join(', ') }}

@@ -604,6 +604,9 @@ export default {
     disabled: '已停用',
     cases: '用例',
     runs7d: '近 7 天运行',
+    // v5.22.0 / FR-v5.22-06 判据 06-3：0 次运行显示 —，并用 title 说清「0」是怎么来的。
+    runsZeroHint: '近 7 天没有运行记录',
+    firstRun: '发起第一次运行',
     passRate: '近 7 天通过率',
     lastRun: '最近运行',
     devices: '设备',
@@ -1084,6 +1087,9 @@ export default {
     confirmRun: '确认立即执行用例集「{name}」？',
     triggered: '已创建运行 {runId}；执行严格串行排队，可在运行记录页查看',
     empty: '还没有用例集',
+    // v5.22.0 / FR-v5.22-06 判据 06-2：空态三个动作（第三个「新建」复用 caseSets.create）。
+    emptyActionImport: '导入用例',
+    emptyActionSample: '查看样例',
     emptyHint: '先新建一个用例集，再把用例加进来',
     totalCount: '共 {count} 个用例集',
     itemsTitle: '用例集内容：{name}',
@@ -1371,6 +1377,8 @@ export default {
     finishedAt: '结束时间',
     exportable: '可对外',
     notExportable: '缺项',
+    // v5.22.0 / FR-v5.22-06 判据 06-4（降级版）：只报真实展开数，不做「N 用例 → M 测试项」箭头
+    testItems: '共 {count} 测试项',
     conclusionTitle: '结论',
     conclusion: {
       PASS: '通过',

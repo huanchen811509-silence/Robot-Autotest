@@ -49,7 +49,23 @@ const lastRun = computed(() =>
   props.card.lastRunAt ? formatDateTime(props.card.lastRunAt) : t('workbench.noData'),
 )
 const caseCount = computed(() => formatNumber(props.card.caseCount, t('workbench.noData')))
-const runCount = computed(() => formatNumber(props.card.runCount, t('workbench.noData')))
+/**
+ * v5.22.0 / FR-v5.22-06 判据 06-3：`runCount === 0` 显示 `—`，不显示 `0`。
+ *
+ * <p>为什么不显示 0：这个数是「近 7 天运行数」，`0` 与「从没跑过」在界面上长得一模一样，
+ * 而这两种情况要给的下一步完全不同（前者等一等，后者该点「发起第一次运行」）。
+ * `null` / 字段缺失仍显示 `—`（后端没采集），与 0 一样落到同一个占位符，但在 title 上区分开。
+ */
+const runCount = computed(() =>
+  props.card.runCount === 0
+    ? t('workbench.noData')
+    : formatNumber(props.card.runCount, t('workbench.noData')),
+)
+/** 从没跑过：卡片要给「发起第一次运行」入口（判据 06-3）。 */
+const neverRun = computed(() => props.card.runCount === 0)
+const runsTitle = computed(() =>
+  neverRun.value ? t('workbench.runsZeroHint') : t('workbench.runs7d'),
+)
 const deviceCount = computed(() => formatNumber(props.card.deviceCount, t('workbench.noData')))
 const memberCount = computed(() => formatNumber(props.card.memberCount, t('workbench.noData')))
 
@@ -94,6 +110,17 @@ function enter(): void {
   void router.push('/overview')
 }
 
+/**
+ * v5.22.0 / FR-v5.22-06 判据 06-3：从「从没跑过」直接去发起页。
+ *
+ * <p>先 `setProject` 再跳：发起页读的是当前项目上下文，不切项目就会拿着上一个项目的
+ * 用例集去发起，用户会以为「我的用例不见了」。
+ */
+function startFirstRun(): void {
+  auth.setProject(props.card.id)
+  void router.push('/execution-plans')
+}
+
 function setCurrent(): void {
   auth.setProject(props.card.id)
 }
@@ -132,7 +159,7 @@ function setCurrent(): void {
         <dd class="metric__value" data-testid="card-cases">{{ caseCount }}</dd>
       </div>
       <div class="metric">
-        <dt class="metric__label">{{ t('workbench.runs7d') }}</dt>
+        <dt class="metric__label" :title="runsTitle">{{ t('workbench.runs7d') }}</dt>
         <dd class="metric__value" data-testid="card-runs">{{ runCount }}</dd>
       </div>
       <div class="metric">
@@ -166,6 +193,16 @@ function setCurrent(): void {
     </dl>
 
     <div class="project-card__actions">
+      <!-- v5.22.0 / FR-v5.22-06 判据 06-3：从没跑过的项目，给一条明确的下一条路。 -->
+      <button
+        v-if="neverRun"
+        type="button"
+        class="btn btn-first-run"
+        data-testid="card-first-run"
+        @click="startFirstRun"
+      >
+        {{ t('workbench.firstRun') }}
+      </button>
       <button type="button" class="btn" data-testid="card-enter" @click="enter">
         {{ t('workbench.enter') }}
       </button>
@@ -348,5 +385,17 @@ function setCurrent(): void {
 
 .project-card__actions .btn {
   margin-top: 0;
+}
+
+/* v5.22.0 / FR-v5.22-06 判据 06-3：从没跑过的项目，这条是唯一该点的动作，给主色描边。
+   不用 `.btn-primary`：那是各组件自己的 scoped 类，全局只有 `.btn` / `.btn-ghost` / `.danger`。 */
+.project-card__actions .btn-first-run {
+  color: var(--accent);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+.project-card__actions .btn-first-run:hover:not(:disabled) {
+  background: var(--accent-soft);
 }
 </style>

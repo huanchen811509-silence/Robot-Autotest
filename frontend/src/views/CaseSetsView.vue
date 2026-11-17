@@ -298,6 +298,23 @@ function openCreate(): void {
   formOpen.value = true
 }
 
+/**
+ * v5.22.0 / FR-v5.22-06 判据 06-2：空态的另外两个动作。
+ *
+ * <p>空态只给「清筛选 / 重试」的时代，新项目打开这一页只有一句"还没有用例集"，
+ * 用户不知道下一步该点哪里。三个动作对应三条真实入口：
+ * 新建（本页弹窗）/ 导入（预检页）/ 查看样例（平台级公共样例集，按一级分类组织）。
+ *
+ * <p>「新建」按 `case:write` 显隐（viewer 看不到），另两个只要是能进本页的角色都给。
+ */
+function goImport(): void {
+  void router.push({ name: 'imports' })
+}
+
+function goSamples(): void {
+  void router.push({ name: 'global-case-sets' })
+}
+
 function openEdit(row: TestSet): void {
   editingId.value = row.id
   form.value = {
@@ -320,13 +337,15 @@ async function submit(): Promise<void> {
   saving.value = true
   try {
     const description = form.value.description.trim() || undefined
+    // v5.22.0 / FR-v5.22-06 判据 06-1：新建成功即选中并展开成员面板。
+    // 先建出来再 `openItems`，是因为面板标题取的是 `activeSet.name`，拿不到 id/name 就没法展开。
+    let created: TestSet | null = null
     if (editingId.value === null) {
-      const created = await caseSetApi.create(projectId.value, {
+      created = await caseSetApi.create(projectId.value, {
         setCode: form.value.setCode.trim(),
         name: form.value.name.trim(),
         description,
       })
-      message.value = t('caseSets.created', { name: created.name })
     } else {
       const updated = await caseSetApi.update(projectId.value, editingId.value, {
         name: form.value.name.trim(),
@@ -337,6 +356,12 @@ async function submit(): Promise<void> {
     }
     closeForm()
     await load()
+    if (created) {
+      await openItems(created)
+      // 顺序不能反：`openItems` 开头会把 `message` 清空（切集合时清掉上一条提示是它的既定语义），
+      // 先置消息就会被吃掉，「已创建」的反馈一句都不剩。
+      message.value = t('caseSets.created', { name: created.name })
+    }
   } catch (e) {
     error.value = localizeError(e)
   } finally {
@@ -854,6 +879,7 @@ void load()
       @update:filters="onSetsFilterChange"
     >
       <!-- v5.20.0 / FR-v5.20-01：无结果 → 清筛选；加载失败 → 重试 -->
+      <!-- v5.22.0 / FR-v5.22-06 判据 06-2：真·空列表 → 三个动作（新建 / 导入 / 查看样例） -->
       <template #emptyAction>
         <NButton v-if="setsFilters.isFiltered.value" size="small" @click="setsFilters.clearAll()">
           {{ t('common.clearFilters') }}
@@ -866,6 +892,23 @@ void load()
         >
           {{ t('common.retry') }}
         </NButton>
+        <div v-else class="empty-actions" data-testid="case-sets-empty-actions">
+          <NButton
+            v-if="can('case:write')"
+            size="small"
+            type="primary"
+            data-testid="case-sets-empty-create"
+            @click="openCreate"
+          >
+            {{ t('caseSets.create') }}
+          </NButton>
+          <NButton size="small" data-testid="case-sets-empty-import" @click="goImport">
+            {{ t('caseSets.emptyActionImport') }}
+          </NButton>
+          <NButton quaternary size="small" data-testid="case-sets-empty-sample" @click="goSamples">
+            {{ t('caseSets.emptyActionSample') }}
+          </NButton>
+        </div>
       </template>
     </DataTable>
 
@@ -1158,6 +1201,14 @@ void load()
 </template>
 
 <style scoped>
+/* v5.22.0 / FR-v5.22-06 判据 06-2：空态三个动作一行排开；窄屏允许换行，
+   但按钮本身不拉伸（拉伸后三个动作看起来像一个分段控件，反而分不清是三个入口）。 */
+.empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  justify-content: center;
+}
 /* W57-15/16 列表三件套：筛选条与批量条 */
 .member-filters {
   display: flex;

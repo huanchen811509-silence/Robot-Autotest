@@ -2,7 +2,8 @@
  * `ProjectCard` 组件回归（v2.3 / UI-03，FR-UI-11 / FR-UI-13）。
  *
  * <p>三件最容易「看起来对、其实错」的事：
- * ① 空值不能退化成 0 —— `null` 显示「—」，0 是真实数据；
+ * ① 空值不能退化成 0 —— `null` 显示「—」；0 在**用例数 / 设备数**上是真实数据照常显示，
+ *    但 **运行数** 例外（v5.22.0 起 0 也显示「—」，见本文件末尾「零运行」一组）；
  * ② 「进入」与「设为当前」语义分离：前者切项目 + 跳转，后者只切项目；
  * ③ 当前项目卡要能被辅助技术识别（`aria-current`），并把「设为当前」置灰。
  */
@@ -119,6 +120,44 @@ describe('ProjectCard 三层字段', () => {
     expect(pick(root, 'card-role').textContent).toBe('—')
     // 通过率不能退化成「0.0%」——那会被读成「跑过且全挂」
     expect(pick(root, 'card-pass-rate').textContent).not.toContain('0.0%')
+  })
+})
+
+/**
+ * v5.22.0 / FR-v5.22-06 判据 06-3。
+ *
+ * 这一组推翻了本文件开头那句「0 是真实数据」——**对 `runCount` 不成立**：
+ * 它是「近 7 天运行数」，0 与「从没跑过」在界面上长得一模一样，而这两种情况
+ * 该给的下一步完全不同。其余计数（用例数 / 设备数）保持 0 就显示 0。
+ */
+describe('ProjectCard 零运行（FR-v5.22-06 判据 06-3）', () => {
+  it('近 7 天 0 次运行显示「—」而不是 0，并给「发起第一次运行」入口', async () => {
+    const root = await mountCard({ ...base, runCount: 0, lastRunAt: null })
+
+    expect(pick(root, 'card-runs').textContent).toBe('—')
+    const cta = pick(root, 'card-first-run') as HTMLButtonElement
+    expect(cta).toBeTruthy()
+    expect(cta.textContent?.trim()).toBe(i18n.global.t('workbench.firstRun'))
+    // 用例数为 0 时仍显示 0：只有「运行数」这一个指标有「从没跑过」的语义
+    expect(pick(root, 'card-devices').textContent).toBe('0')
+  })
+
+  it('点「发起第一次运行」先切到该卡片项目，再进发起页', async () => {
+    const root = await mountCard({ ...base, runCount: 0 })
+    pick(root, 'card-first-run').click()
+    await nextTick()
+
+    // 不切项目就跳，发起页会拿着上一个项目的用例集去渲染
+    expect(useAuthStore().projectId).toBe(7)
+    expect(push).toHaveBeenCalledTimes(1)
+    expect(push).toHaveBeenCalledWith('/execution-plans')
+  })
+
+  it('有运行时不给「发起第一次运行」，数字照常显示', async () => {
+    const root = await mountCard(base)
+
+    expect(root.querySelector('[data-testid="card-first-run"]')).toBeNull()
+    expect(pick(root, 'card-runs').textContent).toBe('3')
   })
 })
 
