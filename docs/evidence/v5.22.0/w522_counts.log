@@ -1,0 +1,57 @@
+############ 05-1 desc run 含 skipped_tests ############
+total_tests	int	YES		NULL	
+passed_tests	int	YES		NULL	
+failed_tests	int	YES		NULL	
+skipped_tests	int	YES		NULL	
+
+############ 05-3 幂等：连跑两次只比 SUMMARY 行 ############
+--- 第一次 ---
+[backfill] repaired mismatchBefore=0 mismatchAfter=0
+[backfill] SUMMARY runs=550 withDetail=516 backfilled=516 pending=34 dispatched=4 total=794 passed=165 failed=497 skipped=132 mismatch=0
+--- 第二次 ---
+[backfill] repaired mismatchBefore=0 mismatchAfter=0
+[backfill] SUMMARY runs=550 withDetail=516 backfilled=516 pending=34 dispatched=4 total=794 passed=165 failed=497 skipped=132 mismatch=0
+[05-3] PASS 两次 SUMMARY 完全一致
+
+############ 05-2 抽样 20 个 run（pytest 10 + robot 10） ############
+pytest	EHT-FAKE-1794805219801	70	70	5	5	4	4	61	61	OK
+pytest	EHT-FAKE-DEL-1794704818956	1	1	0	0	0	0	1	1	OK
+pytest	EHT-REAL-1794671083499	1	1	1	1	0	0	0	0	OK
+pytest	EHT-REAL-1794670732223	1	1	0	0	1	1	0	0	OK
+pytest	EHT-REAL-1794670251436	1	1	0	0	1	1	0	0	OK
+pytest	EHT-FAKE-1794661209912	70	70	5	5	4	4	61	61	OK
+pytest	w56-24-retry-2	1	1	0	0	1	1	0	0	OK
+pytest	EHT-FAKE-1794591240849	1	1	0	0	0	0	1	1	OK
+pytest	w56-async-ingest-1794591215	1	1	0	0	1	1	0	0	OK
+pytest	w56-ingest-check-1	1	1	0	0	1	1	0	0	OK
+robot	RUN-20261117030052-cf0000	1	1	0	0	1	1	0	0	OK
+robot	RUN-20261117030022-cf0000	1	1	0	0	1	1	0	0	OK
+robot	RUN-20261117030021-cf0000	1	1	0	0	1	1	0	0	OK
+robot	RUN-20261116030103-460000	1	1	0	0	1	1	0	0	OK
+robot	RUN-20261116030030-460001	1	1	0	0	1	1	0	0	OK
+robot	RUN-20261116030030-460000	1	1	0	0	1	1	0	0	OK
+robot	RUN-20261115030052-fb0000	1	1	0	0	1	1	0	0	OK
+robot	RUN-20261115030020-fb0000	1	1	0	0	1	1	0	0	OK
+robot	RUN-20261115030019-fb0000	1	1	0	0	1	1	0	0	OK
+robot	RUN-20261114030058-1c0000	1	1	0	0	1	1	0	0	OK
+--- 全库差异行数（应为 0） ---
+0
+
+############ 05-5 DISPATCHED 不计入 total，单列可查 ############
+4
+29	RUN-20261107011350-850000	0	1	1
+29	RUN-20261107012427-3f0000	1	2	1
+29	RUN-20261107012440-3f0000	1	2	1
+29	RUN-20261107014329-910000	0	1	1
+--- 接口读数（报告详情 counts 不含 DISPATCHED） ---
+RUN-20261107011350-850000 → counts.pass=0 counts.fail=0 counts.skip=0
+RUN-20261107012427-3f0000 → counts.pass=0 counts.fail=1 counts.skip=0
+
+############ 05-4 打回旧形状 → 真实入库 → 等式成立 ############
+--- 原始 ---
+EHT-FAKE-1794805219801	70	5	4	61	5	4	61
+--- 打回旧 pytest 形状（passed=0 / skipped=NULL） ---
+EHT-FAKE-1794805219801	70	0	4	NULL	0	4	61
+[05-4] 入库接口 http=200
+--- 入库后（diff 必须为 0） ---
+EHT-FAKE-1794805219801	70	5	4	61	70	0	5	4	61

@@ -71,6 +71,30 @@ public interface RunRepository {
     int updateCounts(String runId, int total, int passed, int failed, String artifactsDir);
 
     /**
+     * 按明细重算计数（v5.22.0 / FR-v5.22-05）。
+     *
+     * <p>计数有且只有一个真源：{@code test_result} 的逐用例结论。`run` 表上并存的两组计数列
+     * ——{@code total_tests/passed_tests/failed_tests/skipped_tests}（V4_1 起）与
+     * {@code pass_count/fail_count/skip_count}（V5_1 起）——都只是<b>物化镜像</b>，
+     * 由本方法用同一段聚合 SQL 一起写，避免「执行页一套数字、报告页另一套」（L-19-06）。
+     *
+     * <p>口径：
+     * <ul>
+     *   <li>{@code total = passed + failed + skipped}；</li>
+     *   <li>{@code verdict = 'DISPATCHED'}（已下发未落定）不计入任何一列，单列可查；</li>
+     *   <li>该 run 一条明细都没有时<b>不写 0</b>，返回 0 让调用方保留执行期估值——
+     *       把「没跑过」写成「跑了 0 条」就再也分不开了。</li>
+     * </ul>
+     *
+     * <p>默认空实现（返回 0），保证内存仓储与既有测试桩无需改动；JDBC 实现必须覆盖。
+     *
+     * @return 实际更新的行数（0 或 1）
+     */
+    default int recountFromResults(long projectId, long runId) {
+        return 0;
+    }
+
+    /**
      * 回写本次运行使用的测试内核（v2.7 FR-04，run 级事实快照，路由真源仍是 KernelSelector）。
      * 默认空实现，保证内存仓储与既有测试无需改动；JDBC 实现必须覆盖。
      */

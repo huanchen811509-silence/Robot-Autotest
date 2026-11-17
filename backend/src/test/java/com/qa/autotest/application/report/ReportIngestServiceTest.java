@@ -43,12 +43,22 @@ class ReportIngestServiceTest {
     private FakeRunRepository runs;
     private FakeReportRepository reports;
     private ReportIngestService service;
+    /**
+     * 两个桩共用的调用时间线（v5.22.0 / FR-v5.22-05）。
+     *
+     * <p>为什么不满足于「调用次数」：重算计数只有在<b>明细已经写进去之后</b>跑才有意义，
+     * 顺序反了照样能写出 0/0/0 而断言全绿。时间线是唯一能钉住顺序的证据。
+     */
+    private final List<String> timeline = new java.util.ArrayList<>();
 
     @BeforeEach
     void setUp() {
         TenantContext.set(1L, "admin", PROJECT);
+        timeline.clear();
         runs = new FakeRunRepository();
+        runs.observe(timeline);
         reports = new FakeReportRepository();
+        reports.observe(timeline);
         service = new ReportIngestService(runs, new FakeArtifacts(), reports,
                 new AccessControlService(adminUsers(), emptyProjects()), new OutputXmlParser());
         RunRecord stored = runs.insert(new RunRecord(0, RUN_ID, PROJECT, null, RunState.FINISHED,
@@ -97,6 +107,16 @@ class ReportIngestServiceTest {
         assertEquals(1, record.failCount());
         assertEquals(1, record.skipCount());
         assertEquals(4, reports.testRowCount(RUN_ID));
+    }
+
+    @Test
+    @DisplayName("入库后按明细重算计数，且重算发生在明细落库之后（FR-v5.22-05）")
+    void 入库后按明细重算计数() throws Exception {
+        service.parseAndIngest(PROJECT, RUN_ID, fixture("pabot-merged.xml").toString());
+
+        assertEquals(1, runs.recountCalls, "入库必须触发一次重算（计数以 test_result 为准）");
+        // 顺序断言：先 replace（明细落库），再 recount。反过来的话重算只会把计数清零。
+        assertEquals(List.of("replace", "recount"), timeline);
     }
 
     @Test
@@ -176,6 +196,19 @@ class ReportIngestServiceTest {
 
         private final Map<String, RunRecord> byRunId = new LinkedHashMap<>();
         private long seq;
+        private int recountCalls;
+        private List<String> timeline = List.of();
+
+        private void observe(List<String> sink) {
+            this.timeline = sink;
+        }
+
+        @Override
+        public int recountFromResults(long projectId, long runId) {
+            recountCalls++;
+            timeline.add("recount");
+            return 1;
+        }
 
         @Override
         public RunRecord insert(RunRecord draft, String jobNo, String runRequestId, Long operatorId) {
@@ -271,6 +304,11 @@ class ReportIngestServiceTest {
         private final Map<Long, String> runIdByDbId = new HashMap<>();
         private final Map<String, Integer> testRows = new HashMap<>();
         private int replaceCount;
+        private List<String> timeline = List.of();
+
+        private void observe(List<String> sink) {
+            this.timeline = sink;
+        }
 
         private void bindRunId(long runDbId, String runId) {
             runIdByDbId.put(runDbId, runId);
@@ -288,6 +326,7 @@ class ReportIngestServiceTest {
         public void replace(long projectId, long runDbId, ParsedReport parsed, GateResult gate, Instant startedAt) {
             String runId = runIdByDbId.get(runDbId);
             replaceCount++;
+            timeline.add("replace");
             ReportRecord previous = byRunId.get(runId);
             Instant effectiveStarted = startedAt == null && previous != null
                     ? previous.startedAt() : startedAt;

@@ -155,6 +155,11 @@ public class ReportIngestService {
         Instant startedAt = parseStartedAt(parsed.metadataValue("STARTED_AT"));
 
         reports.replace(projectId, run.id(), parsed, gate, startedAt);
+        // v5.22.0 / FR-v5.22-05：计数以**落库的明细**为准。
+        // 解析器的算术（ParsedReport 的 pass/fail/skip）与执行期估算（updateCounts 传 passed=0）
+        // 都不算数——只有 test_result 里那几行才算数。放在同一事务里，入库与计数一起提交，
+        // 不存在「明细进去了、计数还是旧的」的中间态。
+        runs.recountFromResults(projectId, run.id());
         return reports.find(projectId, runId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "报告入库后读取失败: " + runId));
     }

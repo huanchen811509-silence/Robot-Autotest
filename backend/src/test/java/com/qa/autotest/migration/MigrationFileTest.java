@@ -128,6 +128,35 @@ class MigrationFileTest {
                 "down 脚本不得使用目标库不支持的 DROP COLUMN IF EXISTS（G1 #4 现场 ERROR 1064）");
     }
 
+    @Test
+    @DisplayName("V11_83 补 run.skipped_tests 且 down 脚本齐全（FR-v5.22-05）")
+    void 计数四列补齐() throws IOException {
+        assertTrue(Files.exists(ROOT.resolve("migration/V11_83__v5_22_run_skipped_tests.sql")),
+                "缺少 migration/V11_83__v5_22_run_skipped_tests.sql");
+        assertTrue(Files.exists(ROOT.resolve("down/V11_83__v5_22_run_skipped_tests.down.sql")),
+                "缺少 down/V11_83__v5_22_run_skipped_tests.down.sql");
+
+        String sql = read("migration/V11_83__v5_22_run_skipped_tests.sql");
+        assertTrue(sql.contains("ALTER TABLE `run`"), "V11_83 必须 ALTER 既有 run 表，不得重建");
+        assertTrue(sql.contains("`skipped_tests`"), "V11_83 缺少 skipped_tests 列");
+        // 允许 NULL 是刻意的：NULL=尚未回填，与「真的是 0」必须分得开；
+        // 写成 NOT NULL DEFAULT 0 会让「没跑过」和「跑了 0 条」永久混在一起。
+        assertTrue(sql.contains("NULL"), "V11_83 的 skipped_tests 必须可空（NULL=未回填）");
+        assertTrue(!sql.contains("NOT NULL"), "V11_83 不得给 skipped_tests 加 NOT NULL");
+        // 只追加列：出现 DROP/MODIFY/CHANGE 说明动了既有语义。
+        for (String forbidden : List.of("DROP COLUMN", "MODIFY COLUMN", "CHANGE COLUMN")) {
+            assertTrue(sql.lines().noneMatch(line -> !line.stripLeading().startsWith("--")
+                            && line.toUpperCase().contains(forbidden)),
+                    "V11_83 只允许追加列，不得出现 " + forbidden);
+        }
+
+        String down = read("down/V11_83__v5_22_run_skipped_tests.down.sql");
+        assertTrue(down.contains("DROP COLUMN `skipped_tests`"), "V11_83 down 缺少列删除");
+        assertTrue(down.lines().noneMatch(line -> !line.stripLeading().startsWith("--")
+                        && line.contains("DROP COLUMN IF EXISTS")),
+                "down 脚本不得使用目标库不支持的 DROP COLUMN IF EXISTS");
+    }
+
     private static String read(String relative) throws IOException {
         return Files.readString(ROOT.resolve(relative), StandardCharsets.UTF_8);
     }

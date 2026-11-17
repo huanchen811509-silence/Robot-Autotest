@@ -109,7 +109,8 @@ public class OverviewRepositoryJdbc implements OverviewRepository {
                    s.name AS test_set_name,
                    (SELECT COUNT(*) FROM test_result t WHERE t.run_id = r.id AND t.verdict = 'PASS') AS case_pass,
                    (SELECT COUNT(*) FROM test_result t WHERE t.run_id = r.id AND t.verdict = 'FAIL') AS case_fail,
-                   (SELECT COUNT(*) FROM test_result t WHERE t.run_id = r.id AND t.verdict = 'SKIP') AS case_skip
+                   (SELECT COUNT(*) FROM test_result t WHERE t.run_id = r.id AND t.verdict = 'SKIP') AS case_skip,
+                   (SELECT COUNT(*) FROM test_result t WHERE t.run_id = r.id) AS case_rows
               FROM run r
               LEFT JOIN test_set s ON s.id = r.test_set_id AND s.project_id = r.project_id
              WHERE r.project_id = ?
@@ -206,10 +207,16 @@ public class OverviewRepositoryJdbc implements OverviewRepository {
             Instant enqueued = JdbcSupport.instant(rs.getTimestamp("enqueued_at"));
             Long duration = started == null || finished == null
                     ? null : finished.toEpochMilli() - started.toEpochMilli();
-            int total = rs.getInt("total_tests");
-            if (total <= 0) {
-                total = pass + fail + skip;
-            }
+            // v5.22.0 / FR-v5.22-05：计数只认明细聚合。
+            // 原来写的是 `pass > 0 ? pass : passed_tests`——「哪个非零用哪个」，在两个真源之间
+            // 反复横跳：明细 0 PASS 而列里存着 5 的时候（正是 L-19-06 的形状）它恰好会挑错的那个。
+            // 现在规则只有一条：**有明细用明细，没明细才退到列上的执行期估值**。
+            // 四列已由入库重算与 backfill-run-counts.sh 对齐，这里的兜底只是给「根本没明细」的 run 留个脸。
+            int rows = rs.getInt("case_rows");
+            boolean detailed = rows > 0;
+            int total = detailed
+                    ? pass + fail + skip
+                    : Math.max(0, rs.getInt("total_tests"));
             return new ProjectOverview.RecentRun(
                     rs.getString("run_id"),
                     rs.getString("run_status"),
@@ -217,8 +224,8 @@ public class OverviewRepositoryJdbc implements OverviewRepository {
                     finished,
                     duration,
                     total,
-                    pass > 0 ? pass : rs.getInt("passed_tests"),
-                    fail > 0 ? fail : rs.getInt("failed_tests"),
+                    detailed ? pass : rs.getInt("passed_tests"),
+                    detailed ? fail : rs.getInt("failed_tests"),
                     rs.getString("dut"),
                     rs.getString("link"),
                     rs.getString("test_set_name"),

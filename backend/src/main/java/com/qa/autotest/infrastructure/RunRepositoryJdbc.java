@@ -243,6 +243,41 @@ public class RunRepositoryJdbc implements RunRepository {
         return jdbc.update(sql, total, passed, failed, artifactsDir, runId);
     }
 
+    /**
+     * v5.22.0 / FR-v5.22-05：按 `test_result` 聚合重算 7 个计数列。
+     *
+     * <p>用一条 `UPDATE ... JOIN (聚合子查询)` 完成，是为了让两组列<b>在同一条语句里</b>落定：
+     * 分两条语句写就有中间态，一旦第二条失败就又多出一个「执行页与报告页不一致」的 run。
+     *
+     * <p>`SUM(verdict = 'PASS')` 借的是 MySQL/MariaDB 的布尔转 0/1，`DISPATCHED` 天然落在三列之外，
+     * 因此 `total = p + f + s` 这句口径不需要额外排除条件——排除条件写在 WHERE 里反而容易漏。
+     *
+     * <p>该 run 没有明细行时 JOIN 不产生行，UPDATE 影响 0 行，调用方据此保留执行期估值。
+     */
+    @Override
+    public int recountFromResults(long projectId, long runId) {
+        String sql = """
+                UPDATE `run` r
+                  JOIN (SELECT `run_id` AS `rid`,
+                               SUM(`verdict` = 'PASS') AS `p`,
+                               SUM(`verdict` = 'FAIL') AS `f`,
+                               SUM(`verdict` = 'SKIP') AS `s`
+                          FROM `test_result`
+                         GROUP BY `run_id`) agg ON agg.`rid` = r.`id`
+                   SET r.`total_tests`   = agg.`p` + agg.`f` + agg.`s`,
+                       r.`passed_tests`  = agg.`p`,
+                       r.`failed_tests`  = agg.`f`,
+                       r.`skipped_tests` = agg.`s`,
+                       r.`pass_count`    = agg.`p`,
+                       r.`fail_count`    = agg.`f`,
+                       r.`skip_count`    = agg.`s`,
+                       r.`updated_at`    = CURRENT_TIMESTAMP(3)
+                 WHERE r.`project_id` = ? AND r.`id` = ?
+                """;
+        TenantGuard.requireProjectScope(sql, "run");
+        return jdbc.update(sql, projectId, runId);
+    }
+
     @Override
     public void updateKernel(String runId, String kernel) {
         String sql = """
