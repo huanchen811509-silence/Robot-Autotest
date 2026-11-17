@@ -7,6 +7,7 @@
   1. 静态契约：ops 脚本齐备且带护栏、打包脚本覆盖必需路径、CI workflow 用
      GitHub-hosted runner 且上传 artifact、交付指南与凭据模板齐备且无明文口令；
   2. 产物实证：优先校验 releases/*.tar.gz（解包清单 + sha256 + MANIFEST）；
+     多份并存时取 **mtime 最新**的一份（包名里的 sha 前缀无序，不能按文件名排序取末尾）；
      本地未打包时校验入库的 docs/evidence/v3.11.0-delivery/bundle-manifest.json；
      **两者都没有判红**（证据缺失不算通过）；
   3. 自校验：--self-check 用临时骨架做正负样本，证明上述判据真会变红。
@@ -172,7 +173,11 @@ def validate_manifest(data: object, root: pathlib.Path) -> list[str]:
 def check_artifact(root: pathlib.Path) -> tuple[list[str], str]:
     fails: list[str] = []
     releases = root / "releases"
-    tarballs = sorted(releases.glob("*.tar.gz")) if releases.is_dir() else []
+    # 取"最新产物"要按 mtime，不能按文件名字典序：包名里的 sha 前缀是随机的
+    # （robot-autotest-5.23.0-4e3719a 排在 -e56d0b5 之前），字典序取末尾会校验到旧包，
+    # 于是"刚打的包没被验"却显示 PASS（v5.23.0 收口实测踩到）。
+    tarballs = (sorted(releases.glob("*.tar.gz"), key=lambda p: p.stat().st_mtime)
+                if releases.is_dir() else [])
     if tarballs:
         tarball = tarballs[-1]
         checksum = pathlib.Path(str(tarball) + ".sha256")
