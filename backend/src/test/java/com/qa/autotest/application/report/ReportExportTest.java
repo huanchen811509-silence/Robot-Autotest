@@ -14,6 +14,7 @@ import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class ReportExportTest {
@@ -116,6 +117,32 @@ class ReportExportTest {
                 }
             }
             assertEquals("{\"fail\":0}", text);
+        }
+    }
+
+    @Test
+    @DisplayName("W72-04：明细为空 + 说明时仍出明细 sheet，且只有一行说明")
+    void emptyDetailsWithNoteStillProducesDetailSheet() throws Exception {
+        byte[] xlsx = service.export("xlsx", view(), Map.of(), java.util.List.of(),
+                "该报告冻结时未记录用例明细（历史版本快照）；重新冻结后即包含逐条明细。");
+        try (XSSFWorkbook workbook = new XSSFWorkbook(new ByteArrayInputStream(xlsx))) {
+            assertEquals(2, workbook.getNumberOfSheets());
+            Sheet detail = workbook.getSheet(ReportExportService.DETAIL_SHEET);
+            // 只有表头 + 一行说明
+            assertEquals(1, detail.getLastRowNum());
+            assertTrue(detail.getRow(1).getCell(0).getStringCellValue().contains("未记录用例明细"));
+            // 说明行的其余列写占位符，不留 null
+            assertEquals(ReportExportService.EMPTY_CELL,
+                    detail.getRow(1).getCell(1).getStringCellValue());
+        }
+    }
+
+    @Test
+    @DisplayName("不带说明的旧签名仍然只出一个 sheet（run 级链路零回归）")
+    void emptyDetailsWithoutNoteKeepsSingleSheet() throws Exception {
+        byte[] xlsx = service.export("xlsx", view());
+        try (XSSFWorkbook workbook = new XSSFWorkbook(new ByteArrayInputStream(xlsx))) {
+            assertEquals(1, workbook.getNumberOfSheets());
         }
     }
 

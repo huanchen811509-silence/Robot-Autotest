@@ -16,6 +16,7 @@ import com.qa.autotest.domain.report.GateResult;
 import com.qa.autotest.domain.report.KeywordNode;
 import com.qa.autotest.domain.report.MetadataOverlay;
 import com.qa.autotest.domain.report.ParsedReport;
+import com.qa.autotest.domain.report.ReportCaseRow;
 import com.qa.autotest.domain.report.ReportRecord;
 import com.qa.autotest.application.execution.CriteriaEvaluation;
 import com.qa.autotest.domain.report.SuiteNode;
@@ -181,6 +182,36 @@ public class ReportRepositoryJdbc implements ReportRepository {
     public void updateGate(long projectId, String runId, GateResult gate) {
         TenantGuard.requireProjectScope(UPDATE_GATE, "run");
         jdbc.update(UPDATE_GATE, gate.missingCsv(), gate.exportable() ? 1 : 0, projectId, runId);
+    }
+
+    /**
+     * 用例明细（v5.22.0 / FR-v5.22-02）。
+     *
+     * <p>{@code test_result} 没有 {@code project_id}，租户口径统一经 {@code run} 定位；
+     * 软删的 run 不返回（与 {@link #find} 一致，否则会出现「报告能导出、明细却能查到已删执行」）。
+     * {@code test_case} 用 LEFT JOIN：pytest 场景的用例未必建了台账行，此时编号回退
+     * {@code case_key}——宁可给个可追溯的路径名，也不留空列。
+     */
+    @Override
+    public List<ReportCaseRow> cases(long projectId, String runId) {
+        String sql = """
+                SELECT COALESCE(NULLIF(c.`case_code`, ''), tr.`case_key`) AS `case_code`,
+                       COALESCE(NULLIF(c.`title`, ''), tr.`case_key`)     AS `case_name`,
+                       tr.`verdict`, tr.`duration_ms`, tr.`failure_msg`, tr.`command_text`
+                  FROM `test_result` tr
+                  JOIN `run` r ON r.`id` = tr.`run_id`
+                  LEFT JOIN `test_case` c ON c.`id` = tr.`case_id`
+                 WHERE r.`project_id` = ? AND r.`run_id` = ? AND r.`deleted_at` IS NULL
+                 ORDER BY tr.`id`
+                """;
+        TenantGuard.requireProjectScope(sql, "run");
+        return jdbc.query(sql, (rs, rowNum) -> new ReportCaseRow(
+                rs.getString("case_code"),
+                rs.getString("case_name"),
+                rs.getString("verdict"),
+                rs.getObject("duration_ms") == null ? null : rs.getLong("duration_ms"),
+                rs.getString("failure_msg"),
+                rs.getString("command_text")), projectId, runId);
     }
 
     @Override

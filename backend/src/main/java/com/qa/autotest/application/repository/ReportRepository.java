@@ -3,8 +3,10 @@ package com.qa.autotest.application.repository;
 import com.qa.autotest.domain.common.PageResult;
 import com.qa.autotest.domain.report.GateResult;
 import com.qa.autotest.domain.report.ParsedReport;
+import com.qa.autotest.domain.report.ReportCaseRow;
 import com.qa.autotest.domain.report.ReportRecord;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -28,6 +30,15 @@ public interface ReportRepository {
 
     /** 分页查询项目下的报告视图。 */
     PageResult<ReportRecord> page(long projectId, int page, int size);
+
+    /**
+     * 逐条用例明细（v5.22.0 / FR-v5.22-02）：冻结时写进快照，导出时不再回查。
+     *
+     * <p>口径：按 {@code test_result.id} 升序（= 执行顺序）；{@code case_code} 优先取台账
+     * {@code test_case.case_code}，没有台账行（如纯 pytest 场景）回退 {@code case_key}，
+     * 保证任何 run 都能给出可追溯的编号而不是空列。
+     */
+    List<ReportCaseRow> cases(long projectId, String runId);
 
     /**
      * 回写门禁结论（HRD-02 补录后重算）：只改 {@code metadata_missing} / {@code exportable}，

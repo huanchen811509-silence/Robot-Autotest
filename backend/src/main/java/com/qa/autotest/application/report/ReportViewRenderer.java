@@ -122,6 +122,53 @@ public class ReportViewRenderer {
         return titles;
     }
 
+    /**
+     * 读快照里的布尔标记（{@code exportable} 等）。
+     *
+     * <p>为什么从快照读而不是回查 run：报告的状态可能比 run 活得久（run 会被保留策略清理、
+     * 也可能被软删）。导出闸如果回查 run，就会出现「报告还在、闸查不到源」的 404——
+     * 那正是 v5.22 调研发现的 L-22-01（同一份报告两个入口给出相反答案）。
+     */
+    public boolean flag(ReportSnapshot snapshot, String key, boolean fallback) {
+        Object raw = read(snapshot.json()).get(key);
+        if (raw instanceof Boolean value) {
+            return value;
+        }
+        return fallback;
+    }
+
+    /** 读快照里的字符串数组（{@code metadataMissing}）；缺失或类型不符返回空列表。 */
+    public List<String> strings(ReportSnapshot snapshot, String key) {
+        if (!(read(snapshot.json()).get(key) instanceof List<?> list)) {
+            return List.of();
+        }
+        return list.stream().filter(item -> item != null).map(String::valueOf).toList();
+    }
+
+    /**
+     * 快照里的用例明细（v5.22.0 / W72-03 写入的 {@code cases} 数组）。
+     *
+     * @return {@code null} = 该键不存在（历史报告 / 冻结时未采集）；空列表 = 采集到 0 条。
+     *         导出层必须能区分这两种，否则「没记录」会被写成「确实没有用例」。
+     */
+    public List<Map<String, Object>> caseRows(ReportSnapshot snapshot) {
+        Object raw = read(snapshot.json()).get("cases");
+        if (!(raw instanceof List<?> list)) {
+            return null;
+        }
+        List<Map<String, Object>> out = new ArrayList<>(list.size());
+        for (Object item : list) {
+            if (item instanceof Map<?, ?> map) {
+                Map<String, Object> row = new LinkedHashMap<>();
+                for (Map.Entry<?, ?> entry : map.entrySet()) {
+                    row.put(String.valueOf(entry.getKey()), entry.getValue());
+                }
+                out.add(row);
+            }
+        }
+        return out;
+    }
+
     /** 快照里记录的模板回指；没有模板（历史快照）时返回 `bound=false` 的空值。 */
     public TemplateRef templateRef(ReportSnapshot snapshot) {
         Map<String, Object> all = read(snapshot.json());

@@ -1,0 +1,133 @@
+{
+  "projectId": 95,
+  "runId": "EHT-FAKE-1794805219801",
+  "tempTemplateId": 19,
+  "originalDefaultTemplateId": 1,
+  "newReportId": 37,
+  "newReportView": {
+    "status": 200,
+    "keyCount": 22,
+    "orderOk": true
+  },
+  "xlsx": {
+    "status": 200,
+    "bytes": 7314,
+    "sheets": [
+      "report",
+      "用例明细"
+    ],
+    "worksheetRows": {
+      "sheet1.xml": 23,
+      "sheet2.xml": 71
+    }
+  },
+  "pdf": {
+    "status": 200,
+    "bytes": 95778,
+    "pages": 1,
+    "textHead": "W72 导出能⼒验收\n字段 名称 值\nreportId reportId 37\ntitle title W72 导出能⼒验收\nversion version 7\nfrozenAt frozenAt\nconclusion conclusion UNDETERMINED\npassCount passCount 5\nfailCount failCount 4\nskipCount skipCount 61\npassRate passRate 7.14\ncaseTotal caseTotal 70\nprojectName projectName EHT pytest ⽤例库⼯程\nswBuild swBu",
+    "hasChinese": true,
+    "hasProjectName": true,
+    "hasQaProject": true,
+    "hasDut": true,
+    "hasLink": true
+  },
+  "revoked": {
+    "pdf": {
+      "status": 409,
+      "body": {
+        "code": 40900,
+        "codeName": "CONFLICT",
+        "message": "报告已撤回（REVOKED），不可导出；如需对外交付请重新建报告并冻结",
+        "data": {
+          "metadataMissing": [],
+          "state": "REVOKED"
+        },
+        "success": false
+      }
+    },
+    "html": {
+      "status": 409,
+      "body": {
+        "code": 40900,
+        "codeName": "CONFLICT",
+        "message": "报告已撤回（REVOKED），不可导出；如需对外交付请重新建报告并冻结",
+        "data": {
+          "metadataMissing": [],
+          "state": "REVOKED"
+        },
+        "success": false
+      }
+    },
+    "docx": {
+      "status": 409,
+      "body": {
+        "code": 40900,
+        "codeName": "CONFLICT",
+        "message": "报告已撤回（REVOKED），不可导出；如需对外交付请重新建报告并冻结",
+        "data": {
+          "metadataMissing": [],
+          "state": "REVOKED"
+        },
+        "success": false
+      }
+    },
+    "xlsx": {
+      "status": 409,
+      "body": {
+        "code": 40900,
+        "codeName": "CONFLICT",
+        "message": "报告已撤回（REVOKED），不可导出；如需对外交付请重新建报告并冻结",
+        "data": {
+          "metadataMissing": [],
+          "state": "REVOKED"
+        },
+        "success": false
+      }
+    }
+  },
+  "metadataGate": {
+    "external": {
+      "status": 400,
+      "body": {
+        "code": 40001,
+        "codeName": "INVALID_ARGUMENT",
+        "message": "报告元数据缺项，不能对外导出：STARTED_AT；补齐后重新冻结，或改用 mode=internal 导出内部版",
+        "data": {
+          "metadataMissing": [
+            "STARTED_AT"
+          ],
+          "state": "DRAFT"
+        },
+        "success": false
+      }
+    },
+    "internal": {
+      "status": 200,
+      "bytes": 4801,
+      "shape": {
+        "bytes": 4801,
+        "sheets": [
+          "report",
+          "用例明细"
+        ],
+        "worksheetRows": {
+          "sheet1.xml": 18,
+          "sheet2.xml": 2
+        }
+      }
+    }
+  },
+  "legacyNoCases": {
+    "status": 200,
+    "bytes": 5009,
+    "sheets": [
+      "report",
+      "用例明细"
+    ],
+    "worksheetRows": {
+      "sheet1.xml": 23,
+      "sheet2.xml": 2
+    }
+  }
+}

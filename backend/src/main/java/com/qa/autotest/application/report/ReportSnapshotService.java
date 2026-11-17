@@ -2,6 +2,9 @@ package com.qa.autotest.application.report;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.qa.autotest.common.BusinessException;
+import com.qa.autotest.common.ErrorCode;
+import com.qa.autotest.domain.report.ReportCaseRow;
 import com.qa.autotest.domain.report.ReportRecord;
 import com.qa.autotest.domain.report.ReportSnapshot;
 import com.qa.autotest.domain.report.ReportTemplate;
@@ -64,6 +67,81 @@ public class ReportSnapshotService {
         String html = sections == null ? html(root) : threeSections(source, version, sections);
         return new ReportSnapshot(json, html, sha256(json + "\n" + html), version,
                 summary(source, template));
+    }
+
+    /**
+     * v5.22.0 / FR-v5.22-02（W72-03）：带用例明细的快照。
+     *
+     * <p>明细写进根键 {@code cases}，导出时**不再回查 {@code test_result}**：
+     * 报告的生命周期比 run 长（保留策略会清 run），冻结件必须能独立交付。
+     *
+     * <p>三种状态刻意可区分：
+     * <ul>
+     *   <li>{@code cases == null} → **不写该键**（历史报告 / 调用方未采集），导出时说「未记录明细」；</li>
+     *   <li>{@code cases.isEmpty()} → 写空数组，导出时说「本次执行没有用例级记录」；</li>
+     *   <li>有数据 → 逐条写入。</li>
+     * </ul>
+     * 把「没采集」和「采集到 0 条」混成一个空数组，是最容易在对外文件里撒谎的一种合并。
+     *
+     * <p><b>凭据闸</b>：{@code failureMsg} / {@code commandText} 命中凭据形态（口令 / token / key 赋值）
+     * 时**拒绝冻结**，不做「遮蔽后照发」——凭据类不是「涂黑一下还能给」的东西，
+     * 遮蔽规则漏一种写法就是一次泄漏。命中信息只报用例编号，不回显命中内容。
+     */
+    public ReportSnapshot build(ReportRecord source, int version, ReportTemplate template,
+                                EhtSections sections, List<ReportCaseRow> cases) {
+        if (cases != null) {
+            rejectCredentialBearingCases(cases);
+        }
+        Map<String, Object> root = baseRoot(source, version, template);
+        root.put("eht", sections);
+        if (cases != null) {
+            root.put("cases", caseNodes(cases));
+        }
+        String json = write(root);
+        String html = sections == null ? html(root) : threeSections(source, version, sections);
+        return new ReportSnapshot(json, html, sha256(json + "\n" + html), version,
+                summary(source, template));
+    }
+
+    /**
+     * 凭据形态：与 {@code ReportViewRenderer.CREDENTIAL} 同口径（那边负责「渲染前遮蔽」，
+     * 这里负责「冻结前拒绝」）。两处分开写而不是共用，是因为处置动作相反：
+     * 一边是redact，一边是 fail-closed。
+     */
+    private static final java.util.regex.Pattern CREDENTIAL = java.util.regex.Pattern.compile(
+            "(?i)(password|passwd|api[_-]?key|secret|token|authorization)\\s*[:=]\\s*\\S+");
+
+    private static void rejectCredentialBearingCases(List<ReportCaseRow> cases) {
+        for (ReportCaseRow row : cases) {
+            if (hitsCredential(row.failureMsg()) || hitsCredential(row.commandText())) {
+                throw new BusinessException(ErrorCode.CONFLICT,
+                        "报告明细含凭据形态，拒绝冻结（用例 " + row.caseCode() + "）；"
+                                + "请从执行记录中清除凭据后重新执行");
+            }
+        }
+    }
+
+    private static boolean hitsCredential(String text) {
+        return text != null && CREDENTIAL.matcher(text).find();
+    }
+
+    private static List<Map<String, Object>> caseNodes(List<ReportCaseRow> cases) {
+        List<Map<String, Object>> out = new ArrayList<>(cases.size());
+        for (ReportCaseRow row : cases) {
+            Map<String, Object> node = new LinkedHashMap<>();
+            node.put("caseCode", blankToEmpty(row.caseCode()));
+            node.put("name", blankToEmpty(row.name()));
+            node.put("verdict", blankToEmpty(row.verdict()));
+            node.put("durationMs", row.durationMs());
+            node.put("failureMsg", blankToEmpty(row.failureMsg()));
+            node.put("commandText", blankToEmpty(row.commandText()));
+            out.add(node);
+        }
+        return out;
+    }
+
+    private static String blankToEmpty(String value) {
+        return value == null ? "" : value;
     }
 
     private Map<String, Object> baseRoot(ReportRecord source, int version,

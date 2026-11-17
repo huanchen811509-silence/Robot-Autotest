@@ -124,10 +124,36 @@ public class TestReportController {
                 com.qa.autotest.domain.report.ReportState.ARCHIVED));
     }
 
+    /**
+     * 导出（v5.22.0 / FR-v5.22-06 加闸）。
+     *
+     * <p>闸的三条口径：
+     * <ul>
+     *   <li>{@code REVOKED} / {@code ARCHIVED} → 409，任何 mode 都不放行（撤回=不可对外）；</li>
+     *   <li>{@code exportable=false} 且 {@code mode=external} → 400，错误体带缺失键清单；</li>
+     *   <li>{@code mode=internal} 豁免 metadata 缺项，**不**豁免状态。</li>
+     * </ul>
+     * 返回类型从 {@code ResponseEntity<byte[]>} 放宽成 {@code ResponseEntity<?>}：
+     * 出错时要给结构化 JSON（带 state / metadataMissing），只说一句「不可导出」用户没法处置。
+     */
     @GetMapping("/{id}/export")
-    public ResponseEntity<byte[]> export(@PathVariable long id, @RequestParam String format) {
+    public ResponseEntity<?> export(@PathVariable long id, @RequestParam String format,
+                                    @RequestParam(defaultValue = "external") String mode) {
         access.requireProjectAccess(reports.find(id).projectId());
-        byte[] bytes = reports.export(id, format);
+        TestReportService.ExportGuard guard = reports.exportGuard(id, mode);
+        if (!guard.allowed()) {
+            Map<String, Object> body = new java.util.LinkedHashMap<>();
+            body.put("code", guard.status() == 409 ? 40900 : 40001);
+            body.put("codeName", guard.codeName());
+            body.put("message", guard.message());
+            body.put("data", Map.of("state", guard.state(),
+                    "metadataMissing", guard.metadataMissing()));
+            body.put("success", false);
+            return ResponseEntity.status(guard.status())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(body);
+        }
+        byte[] bytes = reports.export(id, format, mode);
         String ext = com.qa.autotest.application.report.ReportExportService.extension(format);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION,

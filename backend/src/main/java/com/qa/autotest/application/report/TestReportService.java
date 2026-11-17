@@ -31,11 +31,13 @@ public class TestReportService {
     private final ReportTemplateRepository templates;
     private final TestSetRepository caseSets;
     private final EhtSectionRepository ehtSections;
+    private final ReportPdfService pdfs;
 
     public TestReportService(TestReportRepository repository, ReportSnapshotService snapshots,
                              ReportViewRenderer renderer, ReportExportService exports,
                              ReportQueryService queries, ReportTemplateRepository templates,
-                             TestSetRepository caseSets, EhtSectionRepository ehtSections) {
+                             TestSetRepository caseSets, EhtSectionRepository ehtSections,
+                             ReportPdfService pdfs) {
         this.repository = repository;
         this.snapshots = snapshots;
         this.renderer = renderer;
@@ -44,6 +46,7 @@ public class TestReportService {
         this.templates = templates;
         this.caseSets = caseSets;
         this.ehtSections = ehtSections;
+        this.pdfs = pdfs;
     }
 
     public TestReport find(long id) {
@@ -100,7 +103,8 @@ public class TestReportService {
         int version = repository.maxVersion(projectId, runId) + 1;
         ReportRecord detail = queries.detail(projectId, runId);
         ReportSnapshot snapshot = snapshots.build(detail, version,
-                defaultTemplate(projectId, runId), sectionsOf(detail));
+                defaultTemplate(projectId, runId), sectionsOf(detail),
+                queries.cases(projectId, runId));
         long id = repository.insert(projectId, runId, sourceType, caseSetId,
                 title == null || title.isBlank() ? "报告 " + runId : title, version, snapshot);
         repository.audit(id, "CREATE", null, ReportState.DRAFT.name(), null);
@@ -124,7 +128,8 @@ public class TestReportService {
         int version = repository.maxVersion(report.projectId(), report.runId()) + 1;
         ReportRecord detail = queries.detail(report.projectId(), report.runId());
         ReportSnapshot snapshot = snapshots.build(detail, version,
-                defaultTemplate(report.projectId(), report.runId()), sectionsOf(detail));
+                defaultTemplate(report.projectId(), report.runId()), sectionsOf(detail),
+                queries.cases(report.projectId(), report.runId()));
         repository.freeze(id, snapshot);
         repository.audit(id, "FREEZE", report.state().name(), ReportState.FROZEN.name(), null);
         return find(id);
@@ -222,8 +227,23 @@ public class TestReportService {
      *
      * <p>字段顺序与标题都来自快照内模板，所以「先冻结、后改模板、再导出」拿到的仍是
      * 冻结那一刻的字段集合——这是 TPLX-02 的核心判据。
+     *
+     * <p>v5.22.0 / W72-04：明细来自快照 {@code cases}（**不回查 test_result**）。
+     * 对外模式不出命令原文（C5 §3 禁止），内部模式才出。
      */
     public byte[] export(long id, String format) {
+        return export(id, format, "external");
+    }
+
+    public byte[] export(long id, String format, String mode) {
+        ExportGuard guard = exportGuard(id, mode);
+        if (!guard.allowed()) {
+            // 控制器会先查 exportGuard 并返回结构化错误体；走到这里说明调用方绕过了控制器。
+            throw new BusinessException(
+                    "REVOKED".equals(guard.state()) || "ARCHIVED".equals(guard.state())
+                            ? ErrorCode.CONFLICT : ErrorCode.INVALID_ARGUMENT,
+                    guard.message());
+        }
         TestReport report = find(id);
         // W69-07：空快照必须拒导，而不是渲染出一份"看着像报告、其实没内容"的文件。
         // 实测对外导出 PDF 恒定 1,521 字节（两个不同报告字节数完全相同）——
@@ -236,14 +256,140 @@ public class TestReportService {
                     "报告尚未物化快照（无法导出）。请先在报告详情点「冻结」再导出");
         }
         ReportSnapshot snapshot = snapshotOf(report);
+        boolean internal = isInternal(mode);
         Map<String, Object> view = renderer.external(snapshot, report.id(), report.title(),
                 report.frozenAt() == null ? "" : report.frozenAt().toString(),
                 ReportExportService.WATERMARK);
-        byte[] bytes = exports.export(format, view, renderer.fieldTitles(snapshot));
+        List<ReportExportService.CaseDetailRow> details = caseDetails(snapshot, internal);
+        byte[] bytes;
+        if (isPdf(format)) {
+            // v5.22.0 / W72-05：PDF 走「快照 HTML → 无头浏览器打印」，不再手写 PDF obj。
+            // 原实现用 Helvetica 单字体 + ascii()，中文一律变 '?'（实测 1,521 字节单页空壳），
+            // 补 CJK 字体嵌入成本极高且易错，改用与 run 级同一套 PdfRenderer。
+            ReportExportService.assertNoSecrets(view, renderer.fieldTitles(snapshot));
+            bytes = pdfs.renderView(view, renderer.fieldTitles(snapshot), report.title());
+        } else {
+            bytes = exports.export(format, view, renderer.fieldTitles(snapshot),
+                    details, detailNote(snapshot));
+        }
         String ext = ReportExportService.extension(format);
         repository.insertExport(id, ext, "report-" + id + "." + ext, bytes.length,
                 ReportExportService.WATERMARK);
         return bytes;
+    }
+
+    /**
+     * 导出前置判定（v5.22.0 / FR-v5.22-06）。
+     *
+     * <p>判定**只读快照**，不回查 run / metadata 表：报告比 run 活得久，
+     * 回查会在 run 被清理后产生 404——那正是 L-22-01 的口径分裂。
+     *
+     * <p>返回结构而不是直接抛异常，是因为错误体要带 {@code state} 与 {@code metadataMissing}：
+     * 只说「不可导出」，用户不知道该重新冻结还是该补 metadata。
+     */
+    public ExportGuard exportGuard(long id, String mode) {
+        TestReport report = find(id);
+        String state = report.state().name();
+        if (report.state() == ReportState.REVOKED) {
+            return ExportGuard.blocked(409, "CONFLICT",
+                    "报告已撤回（" + state + "），不可导出；如需对外交付请重新建报告并冻结",
+                    state, List.of());
+        }
+        if (report.state() == ReportState.ARCHIVED) {
+            return ExportGuard.blocked(409, "CONFLICT",
+                    "报告已归档（" + state + "），只读留档不可导出", state, List.of());
+        }
+        if (isInternal(mode)) {
+            return ExportGuard.ok();
+        }
+        ReportSnapshot snapshot = snapshotOf(report);
+        if (renderer.flag(snapshot, "exportable", false)) {
+            return ExportGuard.ok();
+        }
+        List<String> missing = renderer.strings(snapshot, "metadataMissing");
+        return ExportGuard.blocked(400, "INVALID_ARGUMENT",
+                "报告元数据缺项，不能对外导出"
+                        + (missing.isEmpty() ? "" : "：" + String.join(" / ", missing))
+                        + "；补齐后重新冻结，或改用 mode=internal 导出内部版",
+                state, missing);
+    }
+
+    /**
+     * 导出前置判定的结果。
+     *
+     * @param allowed         是否放行
+     * @param status          HTTP 状态（放行时 200；撤回/归档 409；metadata 缺项 400）
+     * @param codeName        统一响应体里的 codeName
+     * @param message         给人看的原因（含下一步动作）
+     * @param state           报告状态（REVOKED / ARCHIVED / DRAFT / FROZEN）
+     * @param metadataMissing 缺失的 metadata 键（仅 400 时有值）
+     */
+    public record ExportGuard(boolean allowed, int status, String codeName, String message,
+                              String state, List<String> metadataMissing) {
+
+        static ExportGuard ok() {
+            return new ExportGuard(true, 200, "OK", "", "", List.of());
+        }
+
+        static ExportGuard blocked(int status, String codeName, String message, String state,
+                                   List<String> missing) {
+            return new ExportGuard(false, status, codeName, message, state, List.copyOf(missing));
+        }
+    }
+
+    private static boolean isInternal(String mode) {
+        return mode != null && "internal".equalsIgnoreCase(mode.trim());
+    }
+
+    private static boolean isPdf(String format) {
+        return format != null && "pdf".equalsIgnoreCase(format.trim());
+    }
+
+    /**
+     * 快照明细 → 导出行。
+     *
+     * <p>对外模式把 {@code commandText} 置 null（C5 §3 禁止对外文件出现命令原文），
+     * {@code failureMsg} 过 {@link ReportViewRenderer#scrub}；内部模式原样输出，
+     * 因为内部件的用途就是排查，脱敏会把定位线索一起抹掉。
+     */
+    private List<ReportExportService.CaseDetailRow> caseDetails(ReportSnapshot snapshot,
+                                                                boolean internal) {
+        List<Map<String, Object>> rows = renderer.caseRows(snapshot);
+        if (rows == null || rows.isEmpty()) {
+            return List.of();
+        }
+        List<ReportExportService.CaseDetailRow> out = new java.util.ArrayList<>(rows.size());
+        for (Map<String, Object> row : rows) {
+            String failure = text(row.get("failureMsg"));
+            String command = text(row.get("commandText"));
+            out.add(new ReportExportService.CaseDetailRow(
+                    text(row.get("caseCode")),
+                    text(row.get("verdict")),
+                    row.get("durationMs") instanceof Number n ? n.longValue() : null,
+                    internal ? failure : scrubOrEmpty(failure),
+                    internal ? command : null));
+        }
+        return out;
+    }
+
+    /** 明细为空时写进 sheet 的说明；{@code null} = 不出明细 sheet（不该发生，兜底用）。 */
+    private String detailNote(ReportSnapshot snapshot) {
+        List<Map<String, Object>> rows = renderer.caseRows(snapshot);
+        if (rows == null) {
+            return "该报告冻结时未记录用例明细（历史版本快照）；重新冻结后即包含逐条明细。";
+        }
+        if (rows.isEmpty()) {
+            return "本次执行没有用例级记录（采集成功但结果为空）。";
+        }
+        return null;
+    }
+
+    private static String text(Object value) {
+        return value == null ? "" : String.valueOf(value);
+    }
+
+    private static String scrubOrEmpty(String value) {
+        return value == null || value.isBlank() ? "" : ReportViewRenderer.scrub(value);
     }
 
     public List<TestReportExport> exports(long id) {

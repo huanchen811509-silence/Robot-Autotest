@@ -272,6 +272,12 @@ class RunMetadataServiceTest {
         public void updateGate(long projectId, String runId, GateResult gate) {
             this.lastGate = gate;
         }
+
+        /** v5.22.0：明细查询不在本用例关注面内，返回空列表即可（不代表「没采集」）。 */
+        @Override
+        public List<com.qa.autotest.domain.report.ReportCaseRow> cases(long projectId, String runId) {
+            return List.of();
+        }
     }
 
     /** 记录型审计仓库。 */

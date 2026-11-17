@@ -415,6 +415,12 @@ class ExportServiceTest {
         public void updateGate(long projectId, String runId, GateResult gate) {
             // 导出路径不重算门禁
         }
+
+        /** v5.22.0：明细由 run 级关键字树装配，不经过本仓储。 */
+        @Override
+        public List<com.qa.autotest.domain.report.ReportCaseRow> cases(long projectId, String runId) {
+            return List.of();
+        }
     }
 
     /** 导出记录仓储伪造：保存实际插入字段，供断言校验。 */

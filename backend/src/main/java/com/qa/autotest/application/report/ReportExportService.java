@@ -97,6 +97,20 @@ public class ReportExportService {
      */
     public byte[] export(String format, Map<String, Object> view, Map<String, String> titles,
                          List<CaseDetailRow> details) {
+        return export(format, view, titles, details, null);
+    }
+
+    /**
+     * 导出（带用例明细 + 明细缺失说明）。
+     *
+     * <p>v5.22.0 / W72-04：报告级导出读快照里的 {@code cases}。存量报告没有这个键，
+     * 或者采集到 0 条——这两种都要在明细 sheet 里**说清楚是哪种**，而不是干脆不出这个 sheet：
+     * 少一张 sheet 时读者只会以为「忘记做了」，写一行说明才能让人知道下一步该做什么。
+     *
+     * @param detailNote 明细为空时要写进 sheet 的说明；{@code null} 表示不出明细 sheet（旧行为）
+     */
+    public byte[] export(String format, Map<String, Object> view, Map<String, String> titles,
+                         List<CaseDetailRow> details, String detailNote) {
         // FR-v4.0-01：导出件是最后一个可能把凭据带出去的表面。四格式共用同一道
         // 「命中即阻断」闸门，避免 HTML 过了、DOCX 漏了。已脱敏文本幂等，不会误伤。
         assertNoSecrets(view, titles);
@@ -108,7 +122,7 @@ public class ReportExportService {
             case "html" -> html(view, headers).getBytes(StandardCharsets.UTF_8);
             case "pdf" -> pdf(view, headers);
             case "docx" -> docx(view, headers);
-            case "xlsx" -> xlsx(view, headers, rows);
+            case "xlsx" -> xlsx(view, headers, rows, detailNote);
             default -> throw new IllegalArgumentException("不支持的导出格式: " + format);
         };
     }
@@ -295,7 +309,7 @@ public class ReportExportService {
      * 拼在一起会让「明细行数 = 用例数」这条判据没法校验。
      */
     private static byte[] xlsx(Map<String, Object> view, Map<String, String> titles,
-                               List<CaseDetailRow> details) {
+                               List<CaseDetailRow> details, String detailNote) {
         try (XSSFWorkbook workbook = new XSSFWorkbook();
              ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             Sheet sheet = workbook.createSheet("report");
@@ -316,7 +330,9 @@ public class ReportExportService {
             sheet.setColumnWidth(1, 28 * 256);
             sheet.setColumnWidth(2, 48 * 256);
             if (details != null && !details.isEmpty()) {
-                writeDetailSheet(workbook, details);
+                writeDetailSheet(workbook, details, null);
+            } else if (detailNote != null) {
+                writeDetailSheet(workbook, List.of(), detailNote);
             }
             workbook.write(out);
             return out.toByteArray();
@@ -325,8 +341,14 @@ public class ReportExportService {
         }
     }
 
-    /** 明细 sheet：固定五列、首行冻结、空值写 {@link #EMPTY_CELL}。 */
-    private static void writeDetailSheet(XSSFWorkbook workbook, List<CaseDetailRow> details) {
+    /**
+     * 明细 sheet：固定五列、首行冻结、空值写 {@link #EMPTY_CELL}。
+     *
+     * <p>{@code note} 非空且没有数据行时，第 2 行写一行说明（其余列占位符）——
+     * 说明里必须能区分「这份报告冻结时没记明细」与「这次执行确实 0 条用例」。
+     */
+    private static void writeDetailSheet(XSSFWorkbook workbook, List<CaseDetailRow> details,
+                                         String note) {
         Sheet sheet = workbook.createSheet(DETAIL_SHEET);
         Row head = sheet.createRow(0);
         for (int i = 0; i < DETAIL_HEADER.length; i++) {
@@ -346,6 +368,13 @@ public class ReportExportService {
             }
             row.createCell(3).setCellValue(textOf(detail.failureMsg()));
             row.createCell(4).setCellValue(textOf(detail.command()));
+        }
+        if (details.isEmpty() && note != null) {
+            Row row = sheet.createRow(rowIndex);
+            row.createCell(0).setCellValue(note);
+            for (int i = 1; i < DETAIL_HEADER.length; i++) {
+                row.createCell(i).setCellValue(EMPTY_CELL);
+            }
         }
         sheet.createFreezePane(0, 1);
         sheet.setColumnWidth(0, 16 * 256);

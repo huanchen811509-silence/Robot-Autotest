@@ -316,5 +316,11 @@ class ReportIngestServiceTest {
         public void updateGate(long projectId, String runId, GateResult gate) {
             // 入库路径不重算门禁
         }
+
+        /** v5.22.0：入库链路不读明细（明细由 TestReportService 冻结时写快照）。 */
+        @Override
+        public List<com.qa.autotest.domain.report.ReportCaseRow> cases(long projectId, String runId) {
+            return List.of();
+        }
     }
 }
