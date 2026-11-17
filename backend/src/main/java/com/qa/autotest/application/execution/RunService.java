@@ -441,6 +441,26 @@ public class RunService {
                 current.startedAt(), current.finishedAt(), current.deviceScope(), current.runRequestId());
     }
 
+    /**
+     * v5.24.0：按真实三态（含 skipped）回填计数。
+     *
+     * <p>与 4 参版本的区别只是多写 `skipped_tests` 与 `skip_count`。分成两个方法而不是
+     * 直接把 4 参改成 5 参，是为了不惊动既有调用点（节点执行、分片聚合那几处暂时拿不到
+     * skipped 语义，传 0 会把「跳过」写成「不存在」）。
+     */
+    @Transactional
+    public RunRecord updateCounts(String runId, int total, int passed, int failed, int skipped,
+                                  String artifactsDir) {
+        long projectId = TenantContext.requireProjectId();
+        int affected = runs.updateCountsDetailed(runId, total, passed, failed,
+                Math.max(0, skipped), artifactsDir);
+        if (affected != 1) {
+            throw new BusinessException(ErrorCode.CONFLICT, "运行统计已被并发修改: " + runId);
+        }
+        return runs.findByRunId(projectId, runId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "运行不存在: " + runId));
+    }
+
     private void validate(CreateRunCommand cmd) {
         if (cmd == null) {
             throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "请求为空");

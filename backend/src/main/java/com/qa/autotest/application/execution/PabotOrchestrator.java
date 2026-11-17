@@ -125,11 +125,31 @@ public class PabotOrchestrator {
         ArtifactVerifier.ShardIntegrity shards = verifier.checkShards(outputDir);
         // FR-v0.4-24：单用例超时（套件级 Test Timeout）不是整体超时，但 run 原因要能区分。
         boolean testTimedOut = !timeoutHit && verifier.testTimedOut(outputXml);
-        String reason = timeoutHit ? "timeout"
-                : (!shards.ok() ? shards.reason()
-                : (testTimedOut ? "test_timeout" : verified.reason()));
-        boolean success = !timeoutHit && !testTimedOut && exitCode == 0
-                && verified.success() && shards.ok();
+
+        // v5.24.0：把「执行器跑起来了没有」与「用例是否全通过」拆成两个正交结论。
+        //   executionOk —— 无整体超时、无启动失败、产物可解析、分片完整：只回答「这一轮有效吗」。
+        //   success     —— executionOk 且退出码 0：回答「是否全绿」，语义与旧版一致，
+        //                  不动 PytestNicRunController 等既有调用方。
+        // 旧版把「退出码非 0」（= 至少一条用例失败）也算进 success，导致用例失败被
+        // 当成执行器故障，run 被记成 INFRA，且 reason 明明解析成功却报 "ok"。
+        boolean executionOk = !timeoutHit && verified.success() && shards.ok();
+        boolean success = executionOk && exitCode == 0 && !testTimedOut;
+        String reason;
+        if (timeoutHit) {
+            reason = "timeout";
+        } else if (!shards.ok()) {
+            reason = shards.reason();
+        } else if (!verified.success()) {
+            reason = verified.reason();
+        } else if (testTimedOut) {
+            reason = "test_timeout";
+        } else if (exitCode != 0) {
+            // 执行器正常、产物完整，只是有用例没过——必须给一个真原因。
+            // 旧版这里沿用 verified.reason()="ok"，于是 run 变成「分片执行失败: ok」。
+            reason = "tests_failed";
+        } else {
+            reason = "ok";
+        }
         if (!shards.ok()) {
             emit(runId, runLog, logSink, "[system] 分片不完整: reason=" + shards.reason()
                     + ", 空分片=" + shards.emptyShards());
@@ -139,16 +159,27 @@ public class PabotOrchestrator {
                     "[system] 存在单用例超时（Test Timeout 命中），run 记为 test_timeout");
         }
         if (success) {
-            emit(runId, runLog, logSink, "[system] 产物校验通过，totalTests=" + verified.totalTests());
+            emit(runId, runLog, logSink, "[system] 产物校验通过，totalTests=" + verified.totalTests()
+                    + "，passed=" + verified.stats().passed()
+                    + "，failed=" + verified.stats().failed()
+                    + "，skipped=" + verified.stats().skipped());
+        } else if (executionOk) {
+            // 这一支是新增的：执行事实有效，只是有用例没过。以前它和「跑不起来」混在一起。
+            emit(runId, runLog, logSink,
+                    "[system] 执行器正常结束，用例未全通过: passed=" + verified.stats().passed()
+                            + "，failed=" + verified.stats().failed()
+                            + "，skipped=" + verified.stats().skipped()
+                            + "，exit=" + exitCode + "，reason=" + reason);
         } else {
             emit(runId, runLog, logSink,
-                    "[system] 产物校验失败: reason=" + reason + ", exit=" + exitCode);
+                    "[system] 执行器故障: reason=" + reason + ", exit=" + exitCode);
             diagnose(outputDir, runId, runLog, logSink);
         }
         if (progress != null) {
             progress.phase(runId, "done");
         }
-        return new ShardResult(success, reason, verified.totalTests(), exitCode, outputXml);
+        return new ShardResult(success, reason, verified.totalTests(), exitCode, outputXml,
+                executionOk, verified.stats());
     }
 
     private void diagnose(Path outputDir, String runId, Path runLog, Consumer<String> logSink) {
@@ -222,8 +253,53 @@ public class PabotOrchestrator {
         }
     }
 
+    /**
+     * 一次分片执行的结果。
+     *
+     * <p><b>{@code success} 与 {@code executionOk} 是两个正交结论，不要混用</b>（v5.24.0）：
+     *
+     * <ul>
+     *   <li>{@code executionOk}：执行器是否正常完成 —— 无整体超时、无启动失败、
+     *       产物可解析、分片完整。它只回答「这一轮的执行事实可信吗」。</li>
+     *   <li>{@code success}：整单是否<b>全绿</b> —— {@code executionOk} 且退出码 0 且无单用例超时。
+     *       语义与 v5.23 之前一致，既有调用方（FINISHED/FAILED 判定）无需改动。</li>
+     * </ul>
+     *
+     * <p>两者组合的含义：
+     * <table border="1">
+     *   <caption>结果组合</caption>
+     *   <tr><th>executionOk</th><th>success</th><th>含义</th><th>failure_class</th></tr>
+     *   <tr><td>true</td><td>true</td><td>全部通过</td><td>—（FINISHED）</td></tr>
+     *   <tr><td>true</td><td>false</td><td>执行事实有效，有用例未通过</td><td>ASSERT</td></tr>
+     *   <tr><td>false</td><td>false</td><td>执行器/环境故障，结果不可信</td><td>INFRA / ENV</td></tr>
+     * </table>
+     *
+     * @param stats 逐用例三态统计；旧构造器给的 {@code unknown} 表示「没读到」，
+     *              调用方不得把它的 0 当成「全过」
+     */
     public record ShardResult(boolean success, String reason, int totalTests, int exitCode,
-                              Path outputXml) {
+                              Path outputXml, boolean executionOk, OutputXmlProbe.Stats stats) {
+
+        public ShardResult {
+            stats = stats == null ? OutputXmlProbe.Stats.unknown(totalTests) : stats;
+        }
+
+        /**
+         * 兼容旧调用：未显式给出执行器结论与统计时，按「success 即全绿」保守推导。
+         *
+         * <p>只应出现在测试桩与历史调用点；生产链路必须用全参构造，否则统计会退化成
+         * 「全过 or 全不过」的旧口径。
+         */
+        public ShardResult(boolean success, String reason, int totalTests, int exitCode,
+                           Path outputXml) {
+            this(success, reason, totalTests, exitCode, outputXml, success,
+                    OutputXmlProbe.Stats.unknown(totalTests));
+        }
+
+        /** 执行器正常但有用例未通过 —— 「用例失败」，不是「跑不起来」。 */
+        public boolean testsFailed() {
+            return executionOk && !success;
+        }
     }
 
     public static final class ExecutionHandleCodes {

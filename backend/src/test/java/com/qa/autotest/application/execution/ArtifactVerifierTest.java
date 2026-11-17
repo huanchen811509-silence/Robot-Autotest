@@ -165,4 +165,37 @@ class ArtifactVerifierTest {
         assertTrue(result.ok());
         assertEquals("no_shard_dir", result.reason());
     }
+
+    @Test
+    void 三态统计只认_test_的直接子_status() throws Exception {
+        // v5.24.0：样本里 <kw> 内部也有 <status>，若误用文档级 getElementsByTagName("status")
+        // 会把关键字状态也算成用例（这里会从 5 条变成 9 条）。
+        OutputXmlProbe.Stats stats = new OutputXmlProbe().stats(fixture("mixed-status.xml"));
+        assertEquals(5, stats.total(), "5 个 <test> 节点");
+        assertEquals(2, stats.passed());
+        assertEquals(1, stats.failed());
+        assertEquals(2, stats.skipped(), "SKIP 与 NOT RUN 都计入跳过，不能混进失败");
+        assertTrue(stats.known());
+        // 硬口径：三态相加必须等于总数，否则 run 表的 total = p + f + s 就不成立。
+        assertEquals(stats.total(), stats.passed() + stats.failed() + stats.skipped());
+    }
+
+    @Test
+    void 产物校验把三态统计透传出去() throws Exception {
+        // 产物「有效」与「用例全绿」是两件事：这里 success=true（产物四条件满足），
+        // 但统计里明明有失败与跳过。调用方必须能同时拿到这两个结论，才不会把它们混为一谈。
+        ArtifactVerifier.VerifyResult result = verifier.verify(fixture("mixed-status.xml"));
+        assertTrue(result.success());
+        assertEquals("ok", result.reason());
+        assertEquals(5, result.stats().total());
+        assertEquals(1, result.stats().failed());
+    }
+
+    @Test
+    void 产物缺失时统计为未知而不是全零可信() throws Exception {
+        // 「没读到」与「跑了 0 条」必须能区分：known=false 时调用方不得据此写 0。
+        ArtifactVerifier.VerifyResult result = verifier.verify(tmp.resolve("none.xml"));
+        assertFalse(result.stats().known());
+        assertEquals(0, result.stats().total());
+    }
 }

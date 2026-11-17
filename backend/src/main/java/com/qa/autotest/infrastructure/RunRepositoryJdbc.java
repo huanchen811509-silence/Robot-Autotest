@@ -244,6 +244,28 @@ public class RunRepositoryJdbc implements RunRepository {
     }
 
     /**
+     * v5.24.0：执行期按真实三态回填，7 列一起写。
+     *
+     * <p>与 {@code recountFromResults} 的口径逐字一致（{@code total = passed + failed + skipped}），
+     * 这样「执行完立刻看」与「报告入库后看」是同一组数字，不会因为摄取晚到而跳动。
+     */
+    @Override
+    public int updateCountsDetailed(String runId, int total, int passed, int failed, int skipped,
+                                    String artifactsDir) {
+        int safeSkipped = Math.max(0, skipped);
+        String sql = """
+                UPDATE run
+                   SET total_tests = ?, passed_tests = ?, failed_tests = ?, skipped_tests = ?,
+                       pass_count = ?, fail_count = ?, skip_count = ?,
+                       artifacts_dir = ?, updated_at = CURRENT_TIMESTAMP(3)
+                 WHERE run_id = ? AND project_id > 0
+                """;
+        TenantGuard.requireProjectScope(sql, "run");
+        return jdbc.update(sql, total, passed, failed, safeSkipped,
+                passed, failed, safeSkipped, artifactsDir, runId);
+    }
+
+    /**
      * v5.22.0 / FR-v5.22-05：按 `test_result` 聚合重算 7 个计数列。
      *
      * <p>用一条 `UPDATE ... JOIN (聚合子查询)` 完成，是为了让两组列<b>在同一条语句里</b>落定：

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- v5.24.0 执行结论口径修复的样本：2 条通过、1 条失败、2 条未执行（SKIP + NOT RUN）。
+     特意让 <kw> 内部也带 <status>，用来锁定「只认 test 的直接子 status」这条判据：
+     若实现误用 getElementsByTagName("status")，会把关键字级状态也数成用例。 -->
+<robot generator="Robot 7.5.1 (Python 3.14.4 on linux)" rpa="false" schemaversion="7">
+  <suite id="s1" name="Mixed">
+    <test id="s1-t1" name="A 通过">
+      <kw name="Log" owner="BuiltIn">
+        <msg time="2026-11-17T20:00:00.000+08:00" level="INFO">step ok</msg>
+        <status status="PASS" elapsed="0.001"/>
+      </kw>
+      <kw name="Log" owner="BuiltIn">
+        <msg time="2026-11-17T20:00:00.100+08:00" level="INFO">step ok 2</msg>
+        <status status="PASS" elapsed="0.001"/>
+      </kw>
+      <status status="PASS" elapsed="0.010"/>
+    </test>
+    <test id="s1-t2" name="B 通过">
+      <kw name="Should Be Equal" owner="BuiltIn">
+        <status status="PASS" elapsed="0.002"/>
+      </kw>
+      <status status="PASS" elapsed="0.005"/>
+    </test>
+    <test id="s1-t3" name="C 断言失败">
+      <kw name="Should Be Equal" owner="BuiltIn">
+        <msg time="2026-11-17T20:00:01.000+08:00" level="FAIL">1 != 2</msg>
+        <status status="FAIL" elapsed="0.002"/>
+      </kw>
+      <status status="FAIL" elapsed="0.006">1 != 2</status>
+    </test>
+    <test id="s1-t4" name="D 跳过">
+      <status status="SKIP" elapsed="0.000">前置条件不满足</status>
+    </test>
+    <test id="s1-t5" name="E 未执行">
+      <status status="NOT RUN" elapsed="0.000">前序用例失败，未执行</status>
+    </test>
+    <status status="FAIL" elapsed="0.030"/>
+  </suite>
+  <statistics>
+    <total>
+      <stat pass="2" fail="1" skip="2">All Tests</stat>
+      <stat pass="2" fail="0" skip="0">Critical Tests</stat>
+    </total>
+  </statistics>
+  <!-- 说明：本样本只服务于单元测试。为满足 ArtifactVerifier 的 size>1024 下限，
+       以下为填充行，不代表真实执行结果。
+       padding-padding-padding-padding-padding-padding-padding-padding-padding-padding;
+       padding-padding-padding-padding-padding-padding-padding-padding-padding-padding;
+       padding-padding-padding-padding-padding-padding-padding-padding-padding-padding;
+       padding-padding-padding-padding-padding-padding-padding-padding-padding-padding;
+       padding-padding-padding-padding-padding-padding-padding-padding-padding-padding;
+       padding-padding-padding-padding-padding-padding-padding-padding-padding-padding;
+       padding-padding-padding-padding-padding-padding-padding-padding-padding-padding;
+       padding-padding-padding-padding-padding-padding-padding-padding-padding-padding;
+       padding-padding-padding-padding-padding-padding-padding-padding-padding-padding;
+       padding-padding-padding-padding-padding-padding-padding-padding-padding-padding;
+       padding-padding-padding-padding-padding-padding-padding-padding-padding-padding;
+       padding-padding-padding-padding-padding-padding-padding-padding-padding-padding. -->
+</robot>

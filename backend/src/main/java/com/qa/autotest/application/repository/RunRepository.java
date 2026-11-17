@@ -71,6 +71,26 @@ public interface RunRepository {
     int updateCounts(String runId, int total, int passed, int failed, String artifactsDir);
 
     /**
+     * 执行期按真实三态回填计数（v5.24.0）。
+     *
+     * <p>与 {@link #recountFromResults} <b>同口径写 7 列</b>：{@code total_tests/passed_tests/
+     * failed_tests/skipped_tests} 与 {@code pass_count/fail_count/skip_count} 一起落定。
+     * 只写前三列会留下 `skipped_tests` 为 NULL，界面按 `total = p + f + s` 校验时对不上。
+     *
+     * <p>为什么执行期就要写对：报告摄取（{@code recountFromResults}）不是每条链路都必然发生
+     * ——RF 路径要人工触发报告解析，摄取之前界面读到的就是这张表。执行期写错，用户第一眼看到
+     * 的数字就是错的，而且 failure_class 一旦落成 INFRA 再也不会被计数重算纠正。
+     *
+     * <p>默认空实现返回 0，保证内存仓储与既有测试桩无需改动。
+     *
+     * @return 实际更新的行数（正常为 1）
+     */
+    default int updateCountsDetailed(String runId, int total, int passed, int failed, int skipped,
+                                     String artifactsDir) {
+        return updateCounts(runId, total, passed, failed, artifactsDir);
+    }
+
+    /**
      * 按明细重算计数（v5.22.0 / FR-v5.22-05）。
      *
      * <p>计数有且只有一个真源：{@code test_result} 的逐用例结论。`run` 表上并存的两组计数列

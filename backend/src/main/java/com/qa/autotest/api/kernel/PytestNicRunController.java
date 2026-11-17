@@ -24,6 +24,8 @@ import com.qa.autotest.domain.caseasset.TestCase;
 import com.qa.autotest.domain.caseasset.CaseScriptBinding;
 import com.qa.autotest.domain.execution.RunRecord;
 import com.qa.autotest.domain.execution.RunState;
+import com.qa.autotest.domain.execution.FailureClass;
+import com.qa.autotest.domain.kernel.CaseStatus;
 import com.qa.autotest.domain.kernel.NormalizedCaseResult;
 import com.qa.autotest.domain.kernel.NormalizedRun;
 import jakarta.annotation.PreDestroy;
@@ -350,7 +352,7 @@ public class PytestNicRunController {
                 .orElse(false);
         if (!terminal) {
             runRepo.updateState(runId, RunState.RUNNING, RunState.CANCELED,
-                    null, Instant.now(), "USER_CANCEL", "用户取消", null);
+                    null, Instant.now(), FailureClass.CANCELED.name(), "用户取消", null);
             // 内存表里如果没有这条（同步执行路径），补一条终态快照，
             // 否则页面取消后轮询会看到「404」而不是「已取消」。
             progress.complete(runId, PytestRunProgressRegistry.Stage.CANCELED);
@@ -565,20 +567,36 @@ public class PytestNicRunController {
         }
         int total = normalized == null ? 0 : normalized.cases().size();
         int failed = 0;
+        int skipped = 0;
         if (normalized != null) {
             for (NormalizedCaseResult one : normalized.cases()) {
                 if (one.status().isFailure()) {
                     failed++;
+                } else if (one.status() != CaseStatus.PASS) {
+                    // SKIP / XFAIL：既不是通过也不是失败，单列一栏。混进任一侧都会让
+                    // total = passed + failed + skipped 这条硬口径不成立。
+                    skipped++;
                 }
             }
         }
-        runRepo.updateCounts(runId, total, 0, failed, runDir.toString());
+        int passed = Math.max(0, total - failed - skipped);
+        // v5.24.0：这里原本把 passed 写死 0——跑完一次就有失败用例时，界面显示
+        // 「0 条通过 / N 条失败」，与自己刚看到的进度条对不上。后续报告摄取会按
+        // test_result 重算覆盖，但摄取失败或取消的 run 永远不会被纠正。
+        runRepo.updateCounts(runId, total, passed, failed, runDir.toString());
         boolean canceled = "canceled".equals(result.reason());
         RunState terminal = canceled ? RunState.CANCELED
                 : result.success() ? RunState.FINISHED : RunState.FAILED;
+        // v5.24.0：failure_class 只写规范枚举值，不再写 "PYTEST_EXIT" 这种自由文本。
+        // 前端按枚举映射中文（ASSERT=断言失败 / INFRA=平台故障 / CANCELED=已取消），
+        // 认不出的值只能原样显示，用户看到「PYTEST_EXIT」既读不懂也判断不了该找谁。
+        // pytest 退出码 1 = 有用例失败（正确归类 ASSERT），2~5 才是执行器/配置故障（INFRA）。
+        String failureClass = canceled ? FailureClass.CANCELED.name()
+                : result.success() ? null
+                : ("pytest_exit_1".equals(result.reason())
+                        ? FailureClass.ASSERT.name() : FailureClass.INFRA.name());
         runRepo.updateState(runId, RunState.RUNNING, terminal,
-                started, Instant.now(), canceled ? "USER_CANCEL" : "PYTEST_EXIT",
-                result.reason(), null);
+                started, Instant.now(), failureClass, result.reason(), null);
 
         List<String> notes = new ArrayList<>();
         // 请求里的 metadata 必须落 run_metadata：报告解析读的是 run_artifact 侧的 junit，

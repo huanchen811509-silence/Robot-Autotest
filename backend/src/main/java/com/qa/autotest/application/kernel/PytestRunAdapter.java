@@ -132,20 +132,60 @@ public class PytestRunAdapter {
                 + "，耗时=" + Duration.between(started, clock.instant()));
 
         int total;
+        com.qa.autotest.domain.kernel.NormalizedRun normalized;
+        Path reportJson = outputDir.resolve("pytest-report.json");
         try {
-            total = kernel.normalize(outputDir, runId).total();
+            // v5.24.0：归一结果不再只取 total —— 逐用例三态统计就在 cases 里，
+            // 丢掉它就只能靠「退出码 0 与否」猜，猜出来的就是「全过 or 全不过」。
+            normalized = kernel.normalize(outputDir, runId);
+            total = normalized.total();
         } catch (Exception ex) {
             emit(runLog, "[system] 产物归一失败: " + ex.getMessage());
             return new PabotOrchestrator.ShardResult(
                     false, "pytest_artifact_invalid: " + ex.getMessage(), 0, exitCode,
-                    outputDir.resolve("pytest-report.json"));
+                    reportJson, false,
+                    com.qa.autotest.application.execution.OutputXmlProbe.Stats.unknown(0));
         }
-        if (exitCode != 0) {
-            return new PabotOrchestrator.ShardResult(false, "pytest_exit_" + exitCode,
-                    total, exitCode, outputDir.resolve("pytest-report.json"));
+        int failed = normalized.failures();
+        int skipped = countSkipped(normalized);
+        int passed = Math.max(0, total - failed - skipped);
+        var stats = new com.qa.autotest.application.execution.OutputXmlProbe.Stats(
+                total, passed, failed, skipped);
+
+        // pytest 官方退出码语义：0 全通过，1 有用例失败，2 被中断，3 内部错误，
+        // 4 用法错误，5 未收集到用例。
+        // 只有 0 和 1 代表「执行器正常跑完了」——1 是用例失败，2~5 是执行器/配置故障。
+        // 旧版把 1 也归到 false 并沿用一个不含原因的分支，与 RF 侧同款混淆。
+        if (total <= 0) {
+            return new PabotOrchestrator.ShardResult(
+                    false, "no_tests_executed", 0, exitCode, reportJson, false, stats);
         }
-        return new PabotOrchestrator.ShardResult(true, "ok", total, exitCode,
-                outputDir.resolve("pytest-report.json"));
+        boolean testsOnlyFailure = exitCode == 1;
+        boolean executionOk = exitCode == 0 || testsOnlyFailure;
+        boolean success = exitCode == 0 && failed == 0;
+        String reason = exitCode == 0 ? "ok"
+                : (testsOnlyFailure ? "tests_failed" : "pytest_exit_" + exitCode);
+        return new PabotOrchestrator.ShardResult(success, reason, total, exitCode, reportJson,
+                executionOk, stats);
+    }
+
+    /**
+     * 记入 skipped 的用例数。
+     *
+     * <p>口径与 {@code CaseStatus.isFailure()} 严格互补：不是失败也不是通过的，都算跳过
+     * （{@code SKIP} 与 {@code XFAIL}）。写进 run 表的三列必须满足
+     * {@code total = passed + failed + skipped}，否则执行页与报告页又会出现两套数字。
+     */
+    private static int countSkipped(com.qa.autotest.domain.kernel.NormalizedRun run) {
+        int skipped = 0;
+        for (com.qa.autotest.domain.kernel.NormalizedCaseResult one : run.cases()) {
+            com.qa.autotest.domain.kernel.CaseStatus status = one.status();
+            if (status == com.qa.autotest.domain.kernel.CaseStatus.SKIP
+                    || status == com.qa.autotest.domain.kernel.CaseStatus.XFAIL) {
+                skipped++;
+            }
+        }
+        return skipped;
     }
 
     private static void emit(Path runLog, String line) {

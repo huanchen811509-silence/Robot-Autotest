@@ -58,17 +58,20 @@ public final class ArtifactVerifier {
             return new VerifyResult(false, "parse_failed", 0, size, expectedCaseCount);
         }
         int total = probeResult.totalTests();
+        // v5.24.0：三态统计与「产物是否有效」是两个正交结论。产物哪怕只跑了一半，
+        // 已落定的用例结论仍然是真的——诊断「到底几条过、几条挂」必须靠它。
+        OutputXmlProbe.Stats stats = probe.stats(outputXml);
         if (total <= 0) {
-            return new VerifyResult(false, "no_tests_executed", 0, size, expectedCaseCount);
+            return new VerifyResult(false, "no_tests_executed", 0, size, expectedCaseCount, stats);
         }
         if (expectedCaseCount > 0 && total < expectedCaseCount) {
             // 少 = 有用例没跑到，必须判失败。多 = 重复执行或收集重复，同样不可信。
-            return new VerifyResult(false, "partial_results", total, size, expectedCaseCount);
+            return new VerifyResult(false, "partial_results", total, size, expectedCaseCount, stats);
         }
         if (expectedCaseCount > 0 && total > expectedCaseCount) {
-            return new VerifyResult(false, "unexpected_extra", total, size, expectedCaseCount);
+            return new VerifyResult(false, "unexpected_extra", total, size, expectedCaseCount, stats);
         }
-        return new VerifyResult(true, "ok", total, size, expectedCaseCount);
+        return new VerifyResult(true, "ok", total, size, expectedCaseCount, stats);
     }
 
     /**
@@ -133,13 +136,24 @@ public final class ArtifactVerifier {
 
     /**
      * @param expectedTests 调用方期望的用例数；0 表示未知
+     * @param stats         逐用例三态统计；产物不可读时 {@link OutputXmlProbe.Stats#unknown(int)}
      */
     public record VerifyResult(boolean success, String reason, int totalTests, long sizeBytes,
-                               int expectedTests) {
+                               int expectedTests, OutputXmlProbe.Stats stats) {
+
+        public VerifyResult {
+            stats = stats == null ? OutputXmlProbe.Stats.unknown(totalTests) : stats;
+        }
 
         /** 兼容旧调用：不涉及期望条数时用这个。 */
         public VerifyResult(boolean success, String reason, int totalTests, long sizeBytes) {
             this(success, reason, totalTests, sizeBytes, 0);
+        }
+
+        public VerifyResult(boolean success, String reason, int totalTests, long sizeBytes,
+                            int expectedTests) {
+            this(success, reason, totalTests, sizeBytes, expectedTests,
+                    OutputXmlProbe.Stats.unknown(totalTests));
         }
     }
 

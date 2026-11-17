@@ -88,6 +88,27 @@ class RunExecutionServiceTest {
     }
 
     @Test
+    void 用例失败按真实三态回填并记为_ASSERT() throws Exception {
+        // mixed-status.xml：2 通过 / 1 失败 / 2 未执行；RF 有失败用例时退出码是 1。
+        // 这是 v5.24.0 修的那条主路径——修复前这里会得到 5/0/5 + INFRA
+        // + 「分片执行失败: ok」。
+        Fixture fixture = new Fixture("mixed-status.xml", true, List.of(), 1);
+        RunRecord run = fixture.service.execute(command());
+
+        assertEquals(RunState.FAILED, run.state());
+        // 判据一：执行器是正常的，不能算 INFRA（INFRA 会被当成平台故障去排查）。
+        assertEquals("ASSERT", run.failureClass());
+        assertEquals("tests_failed", run.failureReason());
+        // 判据二：不再「一条失败就把通过数清零」。
+        assertEquals(5, run.totalTests());
+        assertEquals(2, run.passedTests());
+        assertEquals(1, run.failedTests());
+        // 判据三：skipped 在执行期就落库，不等报告摄取（RF 路径要人工触发摄取）。
+        assertEquals(2, fixture.repo.lastSkipped);
+        assertTrue(run.failureMessage().contains("1 条失败"), run.failureMessage());
+    }
+
+    @Test
     void 预检失败在_RUNNING_之前终止() throws Exception {
         Fixture fixture = new Fixture("ok.xml", false);
         RunRecord run = fixture.service.execute(command());
@@ -235,8 +256,14 @@ class RunExecutionServiceTest {
 
         private Fixture(String fixtureName, boolean pabotExists,
                         List<RobotFile> scripts) throws Exception {
+            this(fixtureName, pabotExists, scripts, 0);
+        }
+
+        private Fixture(String fixtureName, boolean pabotExists,
+                        List<RobotFile> scripts, int exitCode) throws Exception {
             this.launcher = new FakeLauncher(Path.of(getClass().getClassLoader()
                     .getResource("fixtures/output-xml/" + fixtureName).toURI()));
+            this.launcher.exitCode = exitCode;
             this.launcher.leaseProbe = leaseRepo::size;
             this.props = new ExecutionProperties();
             props.setVenvBin(tmp.resolve("venv").resolve("bin").toString());
@@ -271,6 +298,8 @@ class RunExecutionServiceTest {
         private Path workDir;
         private IntSupplier leaseProbe = () -> 0;
         private int leaseSizeAtLaunch = -1;
+        /** v5.24.0：RF 退出码要用真实值——有失败用例时是 1，不是 0。 */
+        private int exitCode;
 
         private FakeLauncher(Path sourceXml) {
             this.sourceXml = sourceXml;
@@ -288,11 +317,17 @@ class RunExecutionServiceTest {
             } catch (IOException ex) {
                 throw new UncheckedIOException(ex);
             }
-            return new FakeHandle();
+            return new FakeHandle(exitCode);
         }
     }
 
     private static final class FakeHandle implements ProcessLauncher.ExecutionHandle {
+
+        private final int exitCode;
+
+        private FakeHandle(int exitCode) {
+            this.exitCode = exitCode;
+        }
 
         @Override
         public long pid() {
@@ -301,7 +336,7 @@ class RunExecutionServiceTest {
 
         @Override
         public int waitFor(Duration timeout) {
-            return 0;
+            return exitCode;
         }
 
         @Override
@@ -411,6 +446,16 @@ class RunExecutionServiceTest {
                     current.failureReason(), current.failureMessage(), artifactsDir,
                     current.enqueuedAt(), current.startedAt(), current.finishedAt(), current.deviceScope(), null));
             return 1;
+        }
+
+        /** v5.24.0：记录 skipped，用来断言执行期就把三态写对了（不等报告摄取）。 */
+        private int lastSkipped = -1;
+
+        @Override
+        public int updateCountsDetailed(String runId, int total, int passed, int failed, int skipped,
+                                        String artifactsDir) {
+            lastSkipped = skipped;
+            return updateCounts(runId, total, passed, failed, artifactsDir);
         }
 
         @Override

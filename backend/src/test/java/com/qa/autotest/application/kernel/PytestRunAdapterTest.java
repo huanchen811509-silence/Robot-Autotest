@@ -82,7 +82,7 @@ class PytestRunAdapterTest {
     }
 
     @Test
-    void runFailsOnNonZeroExitEvenWithArtifacts() throws Exception {
+    void runRecordsTestsFailedOnExitOneEvenWithArtifacts() throws Exception {
         Path outputDir = dir.resolve("kernel-pytest-0");
         Files.createDirectories(outputDir);
         Files.writeString(outputDir.resolve("pytest-report.json"), """
@@ -90,9 +90,30 @@ class PytestRunAdapterTest {
         PytestRunAdapter adapter = adapter(new ExecutionProperties(), null, 1);
         PabotOrchestrator.ShardResult result = adapter.run("RUN1",
                 adapter.build(1L, "RUN1", List.of("tests/"), 1, dir, dir), Duration.ofSeconds(30));
+        // v5.24.0：pytest 退出码 1 的官方语义是「有用例失败」，执行器本身是正常的。
+        // 旧版把它并入「执行器故障」，于是 failure_class 记成 INFRA，把用例问题误导成平台问题。
         assertFalse(result.success());
-        assertTrue(result.reason().contains("pytest_exit_"));
+        assertTrue(result.executionOk());
+        assertEquals("tests_failed", result.reason());
         assertEquals(1, result.totalTests());
+        assertEquals(0, result.stats().passed());
+        assertEquals(1, result.stats().failed());
+        assertEquals(0, result.stats().skipped());
+    }
+
+    @Test
+    void runTreatsNonOneExitAsExecutorFailure() throws Exception {
+        Path outputDir = dir.resolve("kernel-pytest-0");
+        Files.createDirectories(outputDir);
+        Files.writeString(outputDir.resolve("pytest-report.json"), """
+                {"tests":[{"nodeid":"t::a","outcome":"passed","duration":0.01}]}""");
+        // 退出码 3 = pytest 内部错误：这才是执行器故障，结果不可用于判定用例质量。
+        PytestRunAdapter adapter = adapter(new ExecutionProperties(), null, 3);
+        PabotOrchestrator.ShardResult result = adapter.run("RUN2",
+                adapter.build(1L, "RUN2", List.of("tests/"), 1, dir, dir), Duration.ofSeconds(30));
+        assertFalse(result.success());
+        assertFalse(result.executionOk());
+        assertTrue(result.reason().contains("pytest_exit_"));
     }
 
     /** 假启动器：不真跑进程，退出码可注入；stdout/stderr 给空流。 */

@@ -328,10 +328,20 @@ public class RunExecutionService {
             register(created.projectId(), created.id(), "junit_xml",
                     command.outputDir().resolve("junit.xml"), 0);
 
-            int total = result.totalTests();
-            int passed = result.success() ? total : 0;
-            int failed = total - passed;
-            runs.updateCounts(created.runId(), total, passed, failed, runDir.toString());
+            // v5.24.0 计数口径修复：按产物的**真实三态**回填，不再 `success ? total : 0`。
+            //
+            // 旧实现只要有一条用例失败（RF 退出码非 0）就把 passed 清零、failed 记满，
+            // 于是「7 过 2 挂 1 跳」在界面上变成「10 条全失败」。这不是显示问题——
+            // 数会进数据库、进报告、进对外交付件。
+            //
+            // stats 未知（产物不可读）时退回旧口径，但这只发生在执行器故障分支：
+            // 那种情况下 run 本来就不该展示「N 条通过」，全记失败是正确的。
+            int total = result.stats().known() ? result.stats().total() : result.totalTests();
+            int passed = result.stats().known()
+                    ? result.stats().passed() : (result.success() ? total : 0);
+            int failed = result.stats().known() ? result.stats().failed() : total - passed;
+            int skipped = result.stats().known() ? result.stats().skipped() : 0;
+            runs.updateCounts(created.runId(), total, passed, failed, skipped, runDir.toString());
 
             if (result.success()) {
                 results.write(created.projectId(), created.id(), "run-" + created.runId(),
@@ -340,6 +350,28 @@ public class RunExecutionService {
                 return runs.transition(created.runId(), RunState.FINISHED,
                         new RunService.TransitionContext(null, clock.instant(), null, null, null,
                                 true, true));
+            }
+
+            // 失败分两类落库，failure_class 与文案都不同（这是本修复的另一半）：
+            //   ① 执行器故障（executionOk=false）：INFRA/ENV，原因用真实 reason
+            //      （timeout / launch_failed / parse_failed / shard_incomplete…）
+            //   ② 用例失败（executionOk=true）：ASSERT，原因固定 tests_failed，
+            //      文案说清几条没过。旧版在这里写「分片执行失败: ok」——一个成功原因冒充失败原因，
+            //      而 failure_class 又被算成 INFRA，把「用例挂了」误导成「平台坏了」。
+            if (result.executionOk()) {
+                // reason 保留 tests_failed / test_timeout 的区分：前者是对断言的否定，
+                // 后者是单用例超时，处置动作不同（看断言 vs 调超时阈值）。
+                String caseReason = result.reason();
+                results.write(created.projectId(), created.id(), "run-" + created.runId(),
+                        "FAIL", 0, caseReason, 1);
+                releaseReason = "failed";
+                String prefix = "test_timeout".equals(caseReason)
+                        ? "有用例超时（Test Timeout）被判定失败：" : "用例未全部通过：";
+                String message = prefix + failed + " 条失败 / 共 " + total + " 条"
+                        + (skipped > 0 ? "（跳过 " + skipped + " 条）" : "");
+                return runs.transition(created.runId(), RunState.FAILED,
+                        new RunService.TransitionContext(null, clock.instant(),
+                                FailureClass.ASSERT.name(), caseReason, message, true, true));
             }
             results.write(created.projectId(), created.id(), "run-" + created.runId(),
                     "FAIL", 0, result.reason(), 1);
