@@ -122,6 +122,9 @@ check_structure() {
   grep -qE '^run 65 project_matrix ' "$file" || { echo "STRUCT_FAIL 缺少步骤 65 project_matrix"; bad=1; }
   grep -qE '^run 66 route_capability ' "$file" || { echo "STRUCT_FAIL 缺少步骤 66 route_capability"; bad=1; }
   grep -qE '^run 67 case_soft_delete ' "$file" || { echo "STRUCT_FAIL 缺少步骤 67 case_soft_delete"; bad=1; }
+  # 68 为 v5.22.0 新增（对外字段白名单与 C5 文档同源）：删掉它，字段集就又回到
+  # "六处各自单测全绿、合起来差一项"的状态。
+  grep -qE '^run 68 report_whitelist_doc ' "$file" || { echo "STRUCT_FAIL 缺少步骤 68 report_whitelist_doc"; bad=1; }
   return "$bad"
 
 }
@@ -189,6 +192,7 @@ if [ "${1:-}" = "--selfcheck" ]; then
   sed '/^run 30 /d' "$SELF" > "$tmp/no30.sh"
   sed '/^run 31 /d' "$SELF" > "$tmp/no31.sh"
   sed '/^run 32 /d' "$SELF" > "$tmp/no32.sh"
+  sed '/^run 68 /d' "$SELF" > "$tmp/no68.sh"
   if check_structure "$tmp/no13.sh"; then
     echo 'SELFCHECK 删步骤 13 FAIL（删了仍然绿）'; FAILS=$((FAILS + 1))
   else
@@ -254,6 +258,13 @@ if [ "${1:-}" = "--selfcheck" ]; then
     echo 'SELFCHECK 33-36 PASS（新增四步负向自检均判红 / 干净判绿）'
   else
     echo 'SELFCHECK 33-36 FAIL'; FAILS=$((FAILS + 1))
+  fi
+  # v5.22.0 / FR-v5.22-07 判据 07-4：把步骤 68 整行删掉，结构自检必须判红。
+  # 只加「步骤存在」不够——check_structure 本身失灵时它照样返回 0。
+  if check_structure "$tmp/no68.sh"; then
+    echo 'SELFCHECK 删步骤 68 FAIL（删了仍然绿）'; FAILS=$((FAILS + 1))
+  else
+    echo 'SELFCHECK 删步骤 68 PASS（删了变红）'
   fi
   rm -rf "$tmp"
   printf '\nSELFCHECK_RESULT FAILS=%s\n' "$FAILS"
@@ -559,6 +570,12 @@ run 66 route_capability "python3 tools/check_route_capability.py && python3 tool
 # 67 用例软删（FR-v5.21-03 判据 9）：用户删除必须软删，物理删除只允许"撤销自己刚插入的行"
 #    （需就地写 soft-delete-exempt 并说明理由）。静态扫描能挡住藏在回滚分支里的物理删。
 run 67 case_soft_delete "python3 tools/check_case_soft_delete.py && python3 tools/check_case_soft_delete.py --self-test"
+
+# 68 对外报告字段白名单同源（v5.22.0 / FR-v5.22-07 判据 07-1）：C5 文档 §2 字段表与
+#    ReportFieldWhitelist.EXTERNAL_ORDER 必须逐项相等且顺序一致（顺序即导出列序）。
+#    以前字段集散在 6 处，各自单测全绿而文档与代码已经差一项——只有跨文件比对能发现。
+#    self-test 双层：纯函数注入 3 组 + 临时副本上的文件级注入 1 组，真文件零改动。
+run 68 report_whitelist_doc "python3 tools/check_report_whitelist_doc.py && python3 tools/check_report_whitelist_doc.py --self-test"
 
 printf '\nGATES_RESULT FAILS=%s UNJUDGED=%s\n' "$FAILS" "${UNJUDGED:-0}"
 
