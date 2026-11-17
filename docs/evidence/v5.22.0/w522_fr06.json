@@ -1,0 +1,18 @@
+{
+  "06-1": {
+    "expanded": true,
+    "titleShowsNewName": true,
+    "screenshot": "/home/evergreen/robot-autotest/docs/evidence/v5.22.0/w522-06-1-after.png"
+  },
+  "06-3": {
+    "cards": 5,
+    "zeroRuns": 3,
+    "withFirstRunCta": 3,
+    "ctaIsLinkToExecutionPlans": true
+  },
+  "06-4": {
+    "chipFound": true,
+    "text": "共 0 测试项",
+    "hasArrow": false
+  }
+}

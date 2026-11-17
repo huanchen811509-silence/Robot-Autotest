@@ -1,0 +1,314 @@
+{
+  "targetReport": 37,
+  "archiveReport": 36,
+  "view": {
+    "status": 200,
+    "keyCount": 22,
+    "keys": [
+      "reportId",
+      "title",
+      "version",
+      "frozenAt",
+      "conclusion",
+      "passCount",
+      "failCount",
+      "skipCount",
+      "passRate",
+      "caseTotal",
+      "projectName",
+      "swBuild",
+      "caseKind",
+      "qaProject",
+      "dut",
+      "link",
+      "caseId",
+      "runId",
+      "startedAt",
+      "finishedAt",
+      "disclaimer",
+      "watermark"
+    ]
+  },
+  "formats": {
+    "xlsx": {
+      "status": 200,
+      "bytes": 7314,
+      "hit": [
+        "reportId",
+        "title",
+        "conclusion",
+        "skipCount",
+        "passRate",
+        "caseTotal",
+        "projectName",
+        "swBuild",
+        "caseKind",
+        "qaProject",
+        "dut",
+        "link",
+        "caseId",
+        "runId",
+        "startedAt",
+        "finishedAt",
+        "watermark"
+      ],
+      "miss": [],
+      "skip": [
+        "version",
+        "frozenAt",
+        "passCount",
+        "failCount",
+        "disclaimer"
+      ],
+      "hitRate": "17/17",
+      "fakeKeysPresent": [],
+      "fakeLabelsPresent": []
+    },
+    "pdf": {
+      "status": 200,
+      "bytes": 95778,
+      "hit": [
+        "reportId",
+        "title",
+        "conclusion",
+        "skipCount",
+        "passRate",
+        "caseTotal",
+        "projectName",
+        "swBuild",
+        "caseKind",
+        "qaProject",
+        "dut",
+        "link",
+        "caseId",
+        "runId",
+        "startedAt",
+        "finishedAt",
+        "watermark"
+      ],
+      "miss": [],
+      "skip": [
+        "version",
+        "frozenAt",
+        "passCount",
+        "failCount",
+        "disclaimer"
+      ],
+      "hitRate": "17/17",
+      "fakeKeysPresent": [],
+      "fakeLabelsPresent": []
+    },
+    "html": {
+      "status": 200,
+      "bytes": 1596,
+      "hit": [
+        "reportId",
+        "title",
+        "conclusion",
+        "skipCount",
+        "passRate",
+        "caseTotal",
+        "projectName",
+        "swBuild",
+        "caseKind",
+        "qaProject",
+        "dut",
+        "link",
+        "caseId",
+        "runId",
+        "startedAt",
+        "finishedAt",
+        "watermark"
+      ],
+      "miss": [],
+      "skip": [
+        "version",
+        "frozenAt",
+        "passCount",
+        "failCount",
+        "disclaimer"
+      ],
+      "hitRate": "17/17",
+      "fakeKeysPresent": [],
+      "fakeLabelsPresent": []
+    },
+    "docx": {
+      "status": 200,
+      "bytes": 2759,
+      "hit": [
+        "reportId",
+        "title",
+        "conclusion",
+        "skipCount",
+        "passRate",
+        "caseTotal",
+        "projectName",
+        "swBuild",
+        "caseKind",
+        "qaProject",
+        "dut",
+        "link",
+        "caseId",
+        "runId",
+        "startedAt",
+        "finishedAt",
+        "watermark"
+      ],
+      "miss": [],
+      "skip": [
+        "version",
+        "frozenAt",
+        "passCount",
+        "failCount",
+        "disclaimer"
+      ],
+      "hitRate": "17/17",
+      "fakeKeysPresent": [],
+      "fakeLabelsPresent": []
+    }
+  },
+  "pdfFonts": {
+    "fontCount": 27,
+    "subtypes": [
+      "/Type3"
+    ],
+    "fontFamilies": [
+      "Noto Sans CJK SC"
+    ],
+    "baseFonts": [],
+    "sampled": {
+      "/F4": {
+        "subtype": "/Type3",
+        "baseFont": "",
+        "fontFamily": "Noto Sans CJK SC",
+        "embedded": false
+      },
+      "/F5": {
+        "subtype": "/Type3",
+        "baseFont": "",
+        "fontFamily": "Noto Sans CJK SC",
+        "embedded": false
+      },
+      "/F6": {
+        "subtype": "/Type3",
+        "baseFont": "",
+        "fontFamily": "Noto Sans CJK SC",
+        "embedded": false
+      }
+    },
+    "hasHelvetica": false,
+    "embeddedFontFileCount": 0,
+    "type3Count": 27,
+    "hasCjkFamily": true
+  },
+  "pdfVsXlsx": {
+    "pairs": {
+      "passCount": {
+        "value": "5",
+        "inPdf": true,
+        "inXlsx": true
+      },
+      "failCount": {
+        "value": "4",
+        "inPdf": true,
+        "inXlsx": true
+      },
+      "skipCount": {
+        "value": "61",
+        "inPdf": true,
+        "inXlsx": true
+      },
+      "passRate": {
+        "value": "7.14",
+        "inPdf": true,
+        "inXlsx": true
+      },
+      "caseTotal": {
+        "value": "70",
+        "inPdf": true,
+        "inXlsx": true
+      },
+      "projectName": {
+        "value": "EHT pytest 用例库工程",
+        "inPdf": true,
+        "inXlsx": true
+      },
+      "qaProject": {
+        "value": "EHT-PYTEST-LIB",
+        "inPdf": true,
+        "inXlsx": true
+      },
+      "dut": {
+        "value": "EHT-TESTBED-01",
+        "inPdf": true,
+        "inXlsx": true
+      },
+      "link": {
+        "value": "NIC-RDMA-P0",
+        "inPdf": true,
+        "inXlsx": true
+      },
+      "caseId": {
+        "value": "IM-CER-008",
+        "inPdf": true,
+        "inXlsx": true
+      },
+      "runId": {
+        "value": "EHT-FAKE-1794805219801",
+        "inPdf": true,
+        "inXlsx": true
+      },
+      "swBuild": {
+        "value": "v5.18.0-eht",
+        "inPdf": true,
+        "inXlsx": true
+      }
+    },
+    "consistent": true,
+    "bothHit": 12,
+    "total": 12
+  },
+  "freeze": {
+    "status": 409,
+    "body": {
+      "code": 40900,
+      "codeName": "CONFLICT",
+      "message": "只有 DRAFT 可以冻结",
+      "data": null,
+      "success": false
+    }
+  },
+  "archive": {
+    "status": 409,
+    "body": {
+      "code": 40900,
+      "codeName": "CONFLICT",
+      "message": "不允许的状态流转: ARCHIVED -> ARCHIVED",
+      "data": null,
+      "success": false
+    }
+  },
+  "archivedExport": {
+    "xlsx": {
+      "status": 409,
+      "state": "ARCHIVED",
+      "message": "报告已归档（ARCHIVED），只读留档不可导出"
+    },
+    "pdf": {
+      "status": 409,
+      "state": "ARCHIVED",
+      "message": "报告已归档（ARCHIVED），只读留档不可导出"
+    },
+    "html": {
+      "status": 409,
+      "state": "ARCHIVED",
+      "message": "报告已归档（ARCHIVED），只读留档不可导出"
+    },
+    "docx": {
+      "status": 409,
+      "state": "ARCHIVED",
+      "message": "报告已归档（ARCHIVED），只读留档不可导出"
+    }
+  },
+  "archivedGateOk": true
+}
