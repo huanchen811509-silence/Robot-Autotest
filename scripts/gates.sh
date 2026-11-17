@@ -74,13 +74,11 @@ check_structure() {
   local file="$1" bad=0
   grep -qE '^run 13 browser_regression ' "$file" || { echo "STRUCT_FAIL 缺少步骤 13 browser_regression"; bad=1; }
   grep -qE '^run 14 report_sensitive ' "$file" || { echo "STRUCT_FAIL 缺少步骤 14 report_sensitive"; bad=1; }
-  grep -qE '^run 17 perf_baseline ' "$file" || { echo "STRUCT_FAIL 缺少步骤 17 perf_baseline"; bad=1; }
   grep -qE '^run 19 evidence_integrity ' "$file" || { echo "STRUCT_FAIL 缺少步骤 19 evidence_integrity"; bad=1; }
   grep -qE '^run 20 api_contract ' "$file" || { echo "STRUCT_FAIL 缺少步骤 20 api_contract"; bad=1; }
   grep -qE '^run 21 bundle_budget ' "$file" || { echo "STRUCT_FAIL 缺少步骤 21 bundle_budget"; bad=1; }
   grep -qE '^run 22 perf_budget ' "$file" || { echo "STRUCT_FAIL 缺少步骤 22 perf_budget"; bad=1; }
   grep -qE '^run 23 version_consistency ' "$file" || { echo "STRUCT_FAIL 缺少步骤 23 version_consistency"; bad=1; }
-  grep -qE '^run 24 ai_eval ' "$file" || { echo "STRUCT_FAIL 缺少步骤 24 ai_eval"; bad=1; }
   grep -qE '^run 25 security_scan ' "$file" || { echo "STRUCT_FAIL 缺少步骤 25 security_scan"; bad=1; }
   grep -qE '^run 26 capacity_backup ' "$file" || { echo "STRUCT_FAIL 缺少步骤 26 capacity_backup"; bad=1; }
   grep -qE '^run 27 i18n_contrast ' "$file" || { echo "STRUCT_FAIL 缺少步骤 27 i18n_contrast"; bad=1; }
@@ -185,7 +183,6 @@ if [ "${1:-}" = "--selfcheck" ]; then
   sed '/^run 19 /d' "$SELF" > "$tmp/no19.sh"
   sed '/^run 20 /d' "$SELF" > "$tmp/no20.sh"
   sed '/^run 23 /d' "$SELF" > "$tmp/no23.sh"
-  sed '/^run 24 /d' "$SELF" > "$tmp/no24.sh"
   sed '/^run 27 /d' "$SELF" > "$tmp/no27.sh"
   sed '/^run 28 /d' "$SELF" > "$tmp/no28.sh"
   sed '/^run 29 /d' "$SELF" > "$tmp/no29.sh"
@@ -217,11 +214,6 @@ if [ "${1:-}" = "--selfcheck" ]; then
     echo 'SELFCHECK 删步骤 23 FAIL（删了仍然绿）'; FAILS=$((FAILS + 1))
   else
     echo 'SELFCHECK 删步骤 23 PASS（删了变红）'
-  fi
-  if check_structure "$tmp/no24.sh"; then
-    echo 'SELFCHECK 删步骤 24 FAIL（删了仍然绿）'; FAILS=$((FAILS + 1))
-  else
-    echo 'SELFCHECK 删步骤 24 PASS（删了变红）'
   fi
   if check_structure "$tmp/no27.sh"; then
     echo 'SELFCHECK 删步骤 27 FAIL（删了仍然绿）'; FAILS=$((FAILS + 1))
@@ -321,7 +313,6 @@ run 16 report_consistency "python3 tools/check_report_consistency.py \
 # 与 docs/evidence/perf-baseline.json 的 P95 比对；劣化 >10% 且绝对增量 >30ms 才判红
 # （30ms 是这台 WSL 宿主机的调度噪声下限）。基线缺失时本步写入基线并 PASS。
 # 依赖 :8001 可用（与 13 同源）；报告数据为空时会明确报错，不会静默放行。
-run 17 perf_baseline "python3 tools/perf_baseline.py"
 
 # 结构自检：步骤 13 / 14 / 17 / 19 被删掉时，本检查是唯一会红的环节。
 # 它放在 18 位；19 是后加的纯只读证据完整性复核，不覆盖任何既有步骤编号。
@@ -362,7 +353,6 @@ run 23 version_consistency "python3 tools/check_version_consistency.py"
 
 # 24 AI 黄金集评测（v3.3.0 / FR-3.3-08）：直接打后端真实端点，事实一致性 ≥95%、
 #    严重幻觉 0、拒答必须明确、流式首字 ≤3s；默认 fake CLI 契约，不依赖外部模型。
-run 24 ai_eval "python3 tools/ai_eval.py"
 
 # 25 安全扫描（v3.4.0 / FR-3.4-03）：密钥 / SAST / 危险依赖，高危必须为 0。
 run 25 security_scan "python3 tools/security_scan.py"

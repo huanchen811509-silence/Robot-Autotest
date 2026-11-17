@@ -93,11 +93,13 @@ async function doExport(): Promise<void> {
   color: inherit;
 }
 
+/* 用 theme.css 的真实令牌：--fail / --ok。原先写的 --error-color / --success-color
+   在 theme.css 里不存在，变量回落成硬编码色值——换个主题就不跟色了（门禁 15 判红）。 */
 .export-message-error {
-  color: var(--error-color, #e88080);
+  color: var(--fail);
   font-weight: 500;
 }
 .export-message-ok {
-  color: var(--success-color, #63e2b7);
+  color: var(--ok);
 }
 </style>

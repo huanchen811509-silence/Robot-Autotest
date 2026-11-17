@@ -107,6 +107,14 @@ public class TestSetService {
         validateKind(kind);
         access.bindProject(projectId);
         access.require(PermissionResource.CASE, PermissionAction.CREATE);
+        // v5.23.0 收口：名称必填在这里就挡住。原先只有 setCode 有兜底（W74-05 留空自动生成
+        // SET-NNN），name 直接落库——空体请求会一路走到 SQL 报 NOT NULL，对外表现为 500。
+        // 平台级 createPlatform 一直有这段校验，项目级漏了；两边口径必须一致。
+        if (name == null || name.isBlank()) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "用例集名称不能为空");
+        }
+        requireLength(name, 128, "名称");
+        requireLength(description, 512, "描述");
         if (setCode == null || setCode.isBlank()) {
             // v5.24.0 / W74-05：留空自动生成 SET-NNN（找第一个未占用的序号）。
             // 用 codeExists 判重而非新增仓储方法；并发极端情况由 DB 唯一索引兜底。

@@ -14,10 +14,21 @@
 #   ReportsView.spec 覆盖，W7 主探针也验证列表 / 详情 / digest 三处 suiteCount 同源。
 #   判据未放宽：仍是 sha256 全等，其余 9 个执行链文件仍要求零改动；
 #   本行 sha 按当前文件重算（afca5ed1d3bc -> 917f1b8025a3）。
+# 2026-11-17 v5.23.0 收口记录在案的一次有意改动（执行结论口径修复）：
+#   演示项目验收实测 RF 10 条用例真实 7 通过/2 失败/1 跳过，平台记成「10 条全失败 +
+#   INFRA + 分片执行失败: ok」。根因两处：RunExecutionService 用 `success()` 判断通过数
+#   （一条失败把 passed 清零、skipped 不落库）；PytestRunAdapter 只取 total、不区分
+#   「用例失败」与「执行器故障」。
+#   改法：把 executionOk（结果是否可信）与 success（是否全绿）拆成正交，按 output.xml
+#   真实三态回填，failure_class 记 ASSERT（执行器故障仍 INFRA/ENV）。见
+#   docs/evidence/v5.23.0/run-count-classification/00-修复记录.md。
+#   判据未放宽：仍是 sha256 全等；RF 命令构造与预检 robot 分支零 pytest 字样仍由
+#   check_kernel_decoupling 独立守，后端 2202 例单测全绿。本行 sha 按当前文件重算
+#   （957cf34ae -> a976c8e85 / e400db83c -> f006c838f）。
 597994aa542e1ffcf0ae2dad7c2c0c4a6dccbe87de32f67860f647f5ee167768  backend/src/main/java/com/qa/autotest/api/execution/RunMetadataController.java
-957cf34ae53ae063c202debd27cb6c7a334053dcd38fb706b5b4ee360eb22b4d  backend/src/main/java/com/qa/autotest/application/execution/RunExecutionService.java
+a976c8e8522d5db2a2d9b4657d82b2772024eb82383836702987166edbb91428  backend/src/main/java/com/qa/autotest/application/execution/RunExecutionService.java
 19797dfe19408dffd4daf7f03fd87affca654fd49cf5a2a0fef60e6e5cb2908c  backend/src/main/java/com/qa/autotest/application/execution/RunMetadataService.java
-e400db83c6260a982d325e142998b597c56d407a41a38c40a9774850485ea5cf  backend/src/main/java/com/qa/autotest/application/kernel/PytestRunAdapter.java
+f006c838f18d1daa7e3d14aebfcdbe9d39f6f74c600444deb2c7657897ad27fe  backend/src/main/java/com/qa/autotest/application/kernel/PytestRunAdapter.java
 5bec0a75feeecfd5b698f1d8d461a5137f68bf95ac01c350d8cbad49d2511b48  backend/src/main/java/com/qa/autotest/application/report/CaseCommandExtractor.java
 # v5.6.0 记录在案的一次有意扩展：FR-v5.6-21 在本文件追加 SOURCE_COMMAND_INDEX 与 fromCommandIndex（命令索引来源），故 sha 重算；其余执行链文件仍要求零改动。
 631188e7d1cc089eb7b180b5e7f4ecbaa004454a44bc1d2eb878412c8421a1b8  backend/src/main/java/com/qa/autotest/application/report/KernelStatusMapper.java

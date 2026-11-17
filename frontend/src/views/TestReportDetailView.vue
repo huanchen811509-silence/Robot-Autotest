@@ -288,7 +288,7 @@ watch(id, () => void load(), { immediate: true })
 .meta-fix-hint {
   margin-top: var(--space-3);
   padding: var(--space-2) var(--space-3);
-  border-left: 3px solid var(--warn, #e8b339);
+  border-left: 3px solid var(--warn);
   background: var(--panel);
   font-size: var(--font-size-sm);
 }
@@ -299,9 +299,9 @@ watch(id, () => void load(), { immediate: true })
 }
 .customer-banner {
   padding: var(--space-2) var(--space-3);
-  border: 2px solid var(--warn, #e8b339);
+  border: 2px solid var(--warn);
   border-radius: var(--radius-sm);
-  color: var(--warn, #e8b339);
+  color: var(--warn);
   font-weight: 600;
   margin-bottom: var(--space-3);
 }
