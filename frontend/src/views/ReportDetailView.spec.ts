@@ -34,6 +34,8 @@ const apiState = vi.hoisted(() => ({
   failCount: 1,
   // v5.22.0 / FR-v5.22-06 判据 06-4：测试项数 = 三个结论之和，skip 也要能改
   skipCount: 0,
+  /** 真接口形状开关：打开后夹具按 `counts:{pass,fail,skip}` 返回，而不是扁平字段。 */
+  useCountsShape: false,
   // v5.17.0 / W67-02：深链用例需要控制一级套件列表
   suites: [] as Array<{ name: string; status: string; suites: unknown[]; cases: unknown[] }>,
 }))
@@ -55,6 +57,10 @@ vi.mock('@/api/reports', async (importOriginal) => {
         passCount: apiState.passCount,
         failCount: apiState.failCount,
         skipCount: apiState.skipCount,
+        // 真接口给的是这份（列表页 W69-03 已按它读，详情页 v5.22.0 才补）
+        counts: apiState.useCountsShape
+          ? { pass: apiState.passCount, fail: apiState.failCount, skip: apiState.skipCount }
+          : undefined,
         criteriaConclusion: apiState.conclusion,
         criteriaEvaluated: apiState.evaluated,
         criteriaMissingCount: apiState.missing,
@@ -275,6 +281,7 @@ beforeEach(() => {
   apiState.passCount = 3
   apiState.failCount = 1
   apiState.skipCount = 0
+  apiState.useCountsShape = false
   apiState.suites = []
   routeState.query = {}
   vi.clearAllMocks()
@@ -556,5 +563,24 @@ describe('ReportDetailView 测试项计数（判据 06-4 降级版）', () => {
     expect(chip).not.toBeNull()
     expect(chip!.textContent?.trim()).toBe('共 70 测试项')
     expect(chip!.textContent).not.toContain('→')
+  })
+
+  /**
+   * 真实接口返回的是 `counts:{pass,fail,skip}`，不是扁平字段（列表页 W69-03 已改，详情页漏了）。
+   * 这条用例专门用**真形状**挂载：夹具给扁平字段时全绿也说明不了真页面有数字。
+   */
+  it('接口按 counts 形状返回时，PASS/FAIL/SKIP 与测试项数都要有数字', async () => {
+    apiState.useCountsShape = true
+    apiState.passCount = 5
+    apiState.failCount = 4
+    apiState.skipCount = 61
+    const root = await mountView()
+
+    const bar = root.querySelector('.summary-bar')
+    expect(bar!.textContent).toContain('PASS 5')
+    expect(bar!.textContent).toContain('FAIL 4')
+    expect(bar!.textContent).toContain('SKIP 61')
+    expect(root.querySelector<HTMLElement>('[data-testid="report-test-items"]')!.textContent?.trim())
+      .toBe('共 70 测试项')
   })
 })

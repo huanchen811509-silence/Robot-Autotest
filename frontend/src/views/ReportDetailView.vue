@@ -41,7 +41,7 @@ import AiAnswerCard from '@/components/AiAnswerCard.vue'
 import { aiWorkbenchApi, type AiResult } from '@/api/aiWorkbench'
 import StatusTag from '@/components/StatusTag.vue'
 import { localizeError, type ErrorLine } from '@/utils/errors'
-import { formatBytes, formatDateTime, formatDuration } from '@/utils/format'
+import { countTriple, formatBytes, formatDateTime, formatDuration } from '@/utils/format'
 import { verdictTone, type StatusTone } from '@/utils/statusLabels'
 import { confirmAction } from '@/composables/useConfirm'
 
@@ -95,9 +95,23 @@ const summaryLoading = ref(false)
  * 库里没有「61」这个数，写出来只能是编的。大师 2026-11-17 拍板降级为只标真实的一侧。
  *
  * <p>M 是真实的：`test_result` 一行 = 一个测试项，三个结论之和就是展开数（W72-07 已把它对齐）。
+ *
+ * <p>**顺带修掉一个 v5.21 遗留缺陷**：这块原来直接读 `detail.passCount`，而详情接口返回的是
+ * `counts:{pass,fail,skip}`（列表页在 W69-03 已经改过，详情页漏了）——真页面上
+ * PASS/FAIL/SKIP 后面一直是空的，而单测夹具给的是扁平字段，所以 18 条测试全绿也看不出来。
+ * 现在统一走 `countTriple`（`counts` 优先、扁平兜底、缺值给 `—`）。
  */
+const counts = computed(() => countTriple(detail.value ?? {}))
+const countNumbers = computed(() => {
+  const c = (detail.value?.counts ?? {}) as { pass?: number; fail?: number; skip?: number }
+  return {
+    pass: c.pass ?? detail.value?.passCount ?? 0,
+    fail: c.fail ?? detail.value?.failCount ?? 0,
+    skip: c.skip ?? detail.value?.skipCount ?? 0,
+  }
+})
 const testItemCount = computed(
-  () => (detail.value?.passCount ?? 0) + (detail.value?.failCount ?? 0) + (detail.value?.skipCount ?? 0),
+  () => countNumbers.value.pass + countNumbers.value.fail + countNumbers.value.skip,
 )
 const summaryError = ref<ErrorLine | null>(null)
 
@@ -795,9 +809,9 @@ watch(granularity, () => {
       </section>
 
       <div class="toolbar summary-bar">
-        <span class="text-ok">PASS {{ detail.passCount }}</span>
-        <span class="text-fail">FAIL {{ detail.failCount }}</span>
-        <span class="muted">SKIP {{ detail.skipCount }}</span>
+        <span class="text-ok">PASS {{ counts[0] }}</span>
+        <span class="text-fail">FAIL {{ counts[1] }}</span>
+        <span class="muted">SKIP {{ counts[2] }}</span>
         <!-- v5.22.0 / FR-v5.22-06 判据 06-4（降级版）：只标真实的测试项数，不编「N 用例 →」 -->
         <span class="muted" data-testid="report-test-items">
           {{ t('reports.testItems', { count: testItemCount }) }}

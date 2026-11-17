@@ -38,6 +38,15 @@ export interface ReportListItem {
 }
 
 export interface ReportDetail extends ReportListItem {
+  /**
+   * 三结论计数（v5.22.0 补登记）。
+   *
+   * 详情接口真实返回的是 `counts:{pass,fail,skip}`，而本接口此前只声明了扁平的
+   * `passCount/failCount/skipCount`（继承自列表项），于是详情页读到 undefined、
+   * PASS/FAIL/SKIP 后面一直是空的，单测因为夹具给的是扁平字段而全绿。
+   * 列表页在 v5.21（W69-03）已修，详情页漏了；两个形状都保留，读的时候走 `countTriple`。
+   */
+  counts?: { pass?: number; fail?: number; skip?: number } | null
   metadata: Record<string, string>
   /** 判据汇总结论（FR-v5.8-01）：PASS / FAIL / UNDETERMINED。未声明判据时恒为 UNDETERMINED。 */
   criteriaConclusion: string
