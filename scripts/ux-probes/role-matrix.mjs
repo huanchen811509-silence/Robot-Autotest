@@ -17,7 +17,8 @@
  *   node scripts/ux-probes/role-matrix.mjs --self-test     # 注入一条错误期望，必须判红
  *   node scripts/ux-probes/role-matrix.mjs --json          # 输出 JSON（写证据用）
  *
- * 环境变量：APP_BASE（默认 8001）、QA_E2E_PASSWORD（夹具口令）、QA_ADMIN_PASSWORD。
+ * 环境变量：APP_BASE（默认 8001）、QA_E2E_PASSWORD（夹具口令）、QA_ADMIN_PASSWORD、
+ *           QA_SEED_PROJECT（夹具工程号，显式指定）、QA_SEED_PROJECT_CODE（默认 demo）。
  */
 import { writeFileSync } from 'node:fs'
 
@@ -26,6 +27,8 @@ const FIXTURE_PASS = process.env.QA_E2E_PASSWORD
 const ADMIN_PASS = process.env.QA_ADMIN_PASSWORD ?? 'Admin@2026'
 const SELF_TEST = process.argv.includes('--self-test')
 const JSON_OUT = process.argv.includes('--json')
+/** 夹具工程 code：未显式给 QA_SEED_PROJECT 时按它解析工程号（与 seed-qa-accounts.sh 同口径）。 */
+const SEED_PROJECT_CODE = process.env.QA_SEED_PROJECT_CODE ?? 'demo'
 
 const ACCOUNTS = [
   { role: 'admin', user: 'admin', pass: ADMIN_PASS },
@@ -109,12 +112,25 @@ async function main() {
   const projects = await fetch(`${BASE}/api/projects?page=1&size=5`, {
     headers: { Authorization: `Bearer ${tokens.admin}` },
   }).then((r) => r.json()).catch(() => ({}))
-  // v5.21 / L-21-03：夹具账号只在 QA_SEED_PROJECT（默认 29）里是成员；
+  // v5.21 / L-21-03：夹具账号只在"夹具工程"里是成员；
   // 拿别的工程做上下文，pm/engineer 也会被项目成员闸挡住 403，测不出角色差异。
   // 直接用夹具工程号：列表接口是"可见工程"视图，夹具工程不一定排在第一页，
   // 靠 items[0] 会把上下文落到别的工程上（然后所有项目级调用都因为"不是成员"403，
   // 看起来像角色判别失效，其实是上下文选错了）。
-  const projectId = Number(process.env.QA_SEED_PROJECT ?? 29)
+  //
+  // v5.23 收口：原先默认写死 29，而项目 29 已随演示工程瘦身被清除，写死 id 会静默指向
+  // 不存在的工程（pm/engineer 一律 403，看着像角色判别失效，其实是上下文没了）。
+  // 改成按 code 解析（与 seed-qa-accounts.sh 同一口径），QA_SEED_PROJECT 仍可显式覆盖。
+  const projectId = process.env.QA_SEED_PROJECT
+    ? Number(process.env.QA_SEED_PROJECT)
+    : await (async () => {
+        const list = await fetch(`${BASE}/api/projects?page=1&size=100`, {
+          headers: { Authorization: `Bearer ${tokens.admin}` },
+        }).then((r) => r.json()).catch(() => ({}))
+        const items = Array.isArray(list?.data) ? list.data : []
+        const hit = items.find((p) => p.code === SEED_PROJECT_CODE) ?? items[0]
+        return hit ? Number(hit.id) : 1
+      })()
   const ctx = { projectId }
   console.log(`[role-matrix] 工程上下文 projectId=${projectId}`)
 

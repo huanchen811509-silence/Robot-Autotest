@@ -15,10 +15,13 @@
 2. `<DataTable>` 实例数不得低于现状下限（防「壳不好用就删掉整张表」式过关）；
 3. 壳必须保留三条实现探针：骨架条、默认 EmptyState、`max-height`（粘性表头前提）。
    探针是字符串匹配，写死在这里是有意的 —— 它们不是「可选优化」，是规范本身；
-4. 原生 `<table>` 白名单只有三处：
+4. 原生 `<table>` 白名单只有四处：
    - `ReportPrintView.vue`：打印页按设计**零库依赖**（§2.2 步骤 5），不能引组件库；
    - `ReportDetailView.vue`：十项 metadata 是**定义表**（th + td 两列），不是数据网格，
      塞进 NDataTable 会多一行表头并丢掉 `<th>` 语义（TC-S1-17）；
+   - `TestReportDetailView.vue`：客户视图预览同样是 **key → value 两列定义表**
+     （`v-for (value, key) in customerView`，22 个字段逐行铺开），无分页、无排序、
+     无行选择——用分页数据网格是错配；
    - `StyleguideView.vue`：设计系统展示页，需要演示原生表格样式本身。
 
 用法
@@ -51,6 +54,7 @@ MIN_VUE_FILES = 100  # 低于这个数说明扫描范围没覆盖到（现状 11
 NATIVE_TABLE_ALLOW = {
     "ReportPrintView.vue": "打印页零库依赖（§2.2 步骤 5）",
     "ReportDetailView.vue": "十项 metadata 是定义表，不是数据网格",
+    "TestReportDetailView.vue": "客户视图预览是 22 字段 key→value 定义表，无分页/排序/选行",
     "StyleguideView.vue": "设计系统展示页，演示原生表格样式",
 }
 

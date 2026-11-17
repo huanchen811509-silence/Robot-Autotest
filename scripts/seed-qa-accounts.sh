@@ -18,6 +18,8 @@
 #   ADMIN_USERNAME     默认 admin
 #   ADMIN_PASSWORD     管理员口令（**必填**；不写死默认口令，`scripts/secret-scan.sh` 会判明文）
 #   QA_E2E_PASSWORD    夹具账号口令（创建新账号时使用；未设置则跳过创建并告警）
+#   QA_SEED_PROJECT    夹具工程号（显式指定；不写则按 QA_SEED_PROJECT_CODE 解析）
+#   QA_SEED_PROJECT_CODE  夹具工程 code，默认 demo
 set -euo pipefail
 
 BASE="${APP_BASE:-http://127.0.0.1:8001}"
@@ -123,9 +125,38 @@ ensure_account "qa-e2e-nobody"    "-"        "E2E 无角色"
 # 让任务级权限真的能被区分出来。
 #
 # 只加成员，不删不改：`POST /members` 命中已存在成员会 409，按"已就绪"处理。
-SEED_PROJECT="${QA_SEED_PROJECT:-29}"
+#
+# v5.23 收口：原先默认写死 29，而项目 29 已随演示工程瘦身被清除——写死 id 会静默把成员
+# 加到不存在的工程上（`POST /members` 404，看起来像"加成员失败"，其实是工程没了）。
+# 改为按 code 解析（`QA_SEED_PROJECT_CODE`，默认 demo）；`QA_SEED_PROJECT` 仍可显式指定。
+SEED_PROJECT_CODE="${QA_SEED_PROJECT_CODE:-demo}"
+resolve_seed_project() {
+    if [[ -n "${QA_SEED_PROJECT:-}" ]]; then echo "$QA_SEED_PROJECT"; return 0; fi
+    local out pid
+    # `set -euo pipefail` 下：api 失败或 jq 无匹配都会让赋值语句返回非 0 → 整个脚本退出，
+    # 这里显式兜底（曾因 `$(... | head -1)` 无匹配而中途终止）。
+    out=$(api GET "/api/projects?page=1&size=100" 2>/dev/null || echo '{"data":[]}')
+    pid=$(printf '%s' "$out" | jq -r --arg c "$SEED_PROJECT_CODE" \
+        '.data[]? | select(.code == $c) | .id' 2>/dev/null | head -1 || true)
+    if [[ -z "$pid" || "$pid" == "null" ]]; then
+        pid=$(printf '%s' "$out" | jq -r '.data[0].id // empty' 2>/dev/null | head -1 || true)
+    fi
+    echo "${pid:-}"
+    return 0
+}
+SEED_PROJECT="$(resolve_seed_project)"
+if [[ -z "$SEED_PROJECT" || "$SEED_PROJECT" == "null" ]]; then
+    echo "[seed][WARN] 找不到可用工程，跳过成员绑定（只建账号）" >&2
+    SEED_PROJECT=""
+else
+    echo "[seed] 夹具工程 projectId=$SEED_PROJECT（code=$SEED_PROJECT_CODE）"
+fi
 seed_member() { # seed_member <username> <projectRole>
     local username="$1" role_code="$2"
+    if [[ -z "$SEED_PROJECT" ]]; then
+        echo "[seed][WARN] 无可用工程，跳过 $username 的成员绑定" >&2
+        return 0
+    fi
     if [[ $DRY_RUN -eq 1 ]]; then
         echo "[dry-run] 将把 $username 加入工程 $SEED_PROJECT（$role_code）"
         return
