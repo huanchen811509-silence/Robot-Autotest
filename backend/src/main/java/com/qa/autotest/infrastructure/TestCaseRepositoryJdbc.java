@@ -246,6 +246,8 @@ public class TestCaseRepositoryJdbc implements TestCaseRepository {
             TenantGuard.requireProjectScope(sql, table);
             jdbc.update(sql, id, projectId, id);
         }
+        // soft-delete-exempt: 大师 2026-11-20 裁决推翻 2026-11-16 的"不得物理删除"口径，
+        // 用户删除用例必须走物理删（FR-v5.24-07）；六张子表已按依赖顺序先行清理。
         String hardDelete = """
                 DELETE FROM test_case WHERE project_id = ? AND id = ?
                 """;
