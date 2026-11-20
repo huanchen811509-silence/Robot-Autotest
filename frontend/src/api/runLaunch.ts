@@ -38,6 +38,8 @@ export interface RunConfirmPayload {
   testTimeoutSeconds?: number
   includeTag?: string
   runRequestId?: string
+  /** 未定级知情确认（FR-v5.31-07）：确认后由 CaseRunService 判级并记审计。 */
+  confirmUnrated?: boolean
 }
 
 export interface RunConfirmResult {

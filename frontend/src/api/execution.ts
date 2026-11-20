@@ -209,6 +209,8 @@ export interface CaseRunPayload {
   testTimeoutSeconds?: number
   includeTag?: string | null
   runRequestId?: string
+  /** 未定级知情确认（FR-v5.31-07）：勾选「已知悉风险」后置 true，后端记审计。 */
+  confirmUnrated?: boolean
 }
 
 /** 被安全级拦下的用例（EXEC-15 残余）：编号给人看，id 用来定位勾选状态。 */
@@ -228,6 +230,12 @@ export interface SafetyPrecheck {
   total: number
   allowed: boolean
   blocked: BlockedCase[]
+  /** 未定级用例（LX）：confirm 模式下不阻断，但要展示并显式确认（FR-v5.31-07）。 */
+  unrated?: BlockedCase[]
+  /** 未评审（非 approved）条数：默认只软提示（FR-v5.31-08）。 */
+  unreviewed?: number
+  /** 后端是否已开启「仅允许已批准用例执行」开关。 */
+  requireApproved?: boolean
 }
 
 export type PrecheckVerdict = 'BLOCK' | 'WARN' | 'OK'

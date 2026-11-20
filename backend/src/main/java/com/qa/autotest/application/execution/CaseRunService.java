@@ -5,6 +5,7 @@ import com.qa.autotest.application.iam.AuditService;
 import com.qa.autotest.application.repository.TestCaseRepository;
 import com.qa.autotest.common.BusinessException;
 import com.qa.autotest.common.ErrorCode;
+import com.qa.autotest.domain.caseasset.ReviewStatus;
 import com.qa.autotest.domain.caseasset.SafetyLevel;
 import com.qa.autotest.domain.caseasset.TestCase;
 import com.qa.autotest.domain.execution.RunRecord;
@@ -56,11 +57,22 @@ public class CaseRunService {
      */
     private String unratedMode = "block";
 
+    /**
+     * 评审态是否进执行门禁（v5.31.0 / FR-v5.31-08）。默认 {@code false}：只软提示不阻断。
+     * 置 {@code true} 时未批准（draft/pending/rejected）用例被拦，供将来收紧。
+     */
+    private boolean requireApproved = false;
+
     private AuditService audit;
 
     @org.springframework.beans.factory.annotation.Value("${execution.unrated-mode:block}")
     void setUnratedMode(String mode) {
         this.unratedMode = (mode == null || mode.isBlank()) ? "block" : mode.trim().toLowerCase();
+    }
+
+    @org.springframework.beans.factory.annotation.Value("${execution.require-approved:false}")
+    void setRequireApproved(boolean require) {
+        this.requireApproved = require;
     }
 
     @org.springframework.beans.factory.annotation.Autowired(required = false)
@@ -108,6 +120,12 @@ public class CaseRunService {
                         "count=" + selection.unrated().size()
                                 + ";codes=" + codesSummary(selection.unrated()));
             }
+        }
+        // FR-v5.31-08：默认只提示；开关打开时才拦，配置改了行为立刻变，不留「显示不生效」。
+        if (requireApproved && selection.unreviewed() > 0) {
+            throw new BusinessException(ErrorCode.SAFETY_LEVEL_BLOCKED,
+                    "已开启「仅允许已批准用例执行」，本次有 " + selection.unreviewed()
+                            + " 条用例未通过评审，请先在用例评审中处理");
         }
         Set<String> codes = selection.codes();
 
@@ -162,9 +180,11 @@ public class CaseRunService {
         access.require(PermissionResource.EXECUTION, PermissionAction.READ);
         Selection selection = collect(projectId, caseIds);
         boolean allowed = selection.blocked().isEmpty()
-                && (selection.unrated().isEmpty() || confirmMode());
+                && (selection.unrated().isEmpty() || confirmMode())
+                && !(requireApproved && selection.unreviewed() > 0);
         return new SafetyPrecheck(selection.codes().size(), allowed,
-                selection.blocked(), selection.unrated());
+                selection.blocked(), selection.unrated(), selection.unreviewed(),
+                requireApproved);
     }
 
     private boolean confirmMode() {
@@ -176,6 +196,7 @@ public class CaseRunService {
         Set<String> codes = new LinkedHashSet<>();
         List<BlockedCase> blocked = new ArrayList<>();
         List<BlockedCase> unrated = new ArrayList<>();
+        int unreviewed = 0;
         for (Long id : ids) {
             if (id == null) {
                 continue;
@@ -188,6 +209,10 @@ public class CaseRunService {
                         "用例缺少编号，无法解析脚本: " + id);
             }
             SafetyLevel level = SafetyLevel.from(testCase.safetyLevel());
+            // FR-v5.31-08：评审态默认只做软提示，不改判定；开关打开时才计入拦截。
+            if (ReviewStatus.from(testCase.reviewStatus()) != ReviewStatus.APPROVED) {
+                unreviewed++;
+            }
             if (level == SafetyLevel.LX) {
                 unrated.add(new BlockedCase(testCase.id(), testCase.caseCode().trim(), level.name()));
             } else if (level.blocksExecution()) {
@@ -198,7 +223,7 @@ public class CaseRunService {
         if (codes.isEmpty()) {
             throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "至少选择一条用例");
         }
-        return new Selection(codes, blocked, unrated);
+        return new Selection(codes, blocked, unrated, unreviewed);
     }
 
     private static String codesSummary(List<BlockedCase> items) {
@@ -219,7 +244,7 @@ public class CaseRunService {
     }
 
     private record Selection(Set<String> codes, List<BlockedCase> blocked,
-                             List<BlockedCase> unrated) {
+                             List<BlockedCase> unrated, int unreviewed) {
     }
 
     /** 被安全级拦下的用例：编号给用户看，id 给前端勾选状态用。 */
@@ -231,11 +256,12 @@ public class CaseRunService {
      * {@code unrated} 单列未定级用例（v5.31.0）：confirm 模式下它们不阻断，但要展示并确认。
      */
     public record SafetyPrecheck(int total, boolean allowed, List<BlockedCase> blocked,
-                                 List<BlockedCase> unrated) {
+                                 List<BlockedCase> unrated, int unreviewed,
+                                 boolean requireApproved) {
 
         /** 兼容构造器：旧调用方只关心 blocked。 */
         public SafetyPrecheck(int total, boolean allowed, List<BlockedCase> blocked) {
-            this(total, allowed, blocked, List.of());
+            this(total, allowed, blocked, List.of(), 0, false);
         }
     }
 

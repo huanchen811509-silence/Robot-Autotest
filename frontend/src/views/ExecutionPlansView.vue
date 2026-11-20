@@ -177,11 +177,23 @@ const scriptPrecheck = ref<ScriptPrecheck | null>(null)
 const skipConfirmed = ref(false)
 const unboundCodes = computed(() => (scriptPrecheck.value?.unbound ?? []).map((u) => u.caseCode))
 const blockedCodes = computed(() => (precheck.value?.blocked ?? []).map((item) => item.caseCode))
+/** 未定级用例（FR-v5.31-07）：confirm 模式下不阻断，但必须勾选 + 敲条数才能发起。 */
+const unratedSelected = computed(() => precheck.value?.unrated ?? [])
+/** 未评审条数（FR-v5.31-08）：只软提示，不参与 canStart。 */
+const unreviewedCount = computed(() => precheck.value?.unreviewed ?? 0)
+const unratedAck = ref(false)
+const unratedInput = ref('')
+const unratedAcked = computed(() => {
+  const count = unratedSelected.value.length
+  if (count === 0) return true
+  return unratedAck.value && unratedInput.value.trim() === String(count)
+})
 /** ALL 模式靠 allSelected 也能发起，其余模式靠逐条 selectedCount。 */
 const canStart = computed(
   () =>
     (selectedCount.value > 0 || (mode.value === 'ALL' && allSelected.value)) &&
     precheck.value?.allowed !== false &&
+    unratedAcked.value &&
     (unboundCodes.value.length === 0 || skipConfirmed.value) &&
     !starting.value,
 )
@@ -199,6 +211,9 @@ const startDisabledWhy = computed<string>(() => {
     return t('executionPlans.whyNoCase')
   }
   if (precheck.value?.allowed === false) return t('executionPlans.whyBlocked')
+  if (!unratedAcked.value) {
+    return t('executionPlans.whyUnratedPending', { count: unratedSelected.value.length })
+  }
   if (unboundCodes.value.length > 0 && !skipConfirmed.value) return t('executionPlans.whySkipUnconfirmed')
   return ''
 })
@@ -217,6 +232,9 @@ async function runPrecheck(): Promise<void> {
     precheck.value = result
     precheckFailed.value = false
     skipConfirmed.value = false
+    // 每次选择变化都要重新确认未定级风险（FR-v5.31-07：不做「记住我的选择」）
+    unratedAck.value = false
+    unratedInput.value = ''
     // FR-READY-07：同一选择并行取脚本预检清单；失败不阻塞（后端预检仍会兜底）
     try {
       scriptPrecheck.value = await runLaunchApi.precheckScripts(projectId.value, {
@@ -267,6 +285,10 @@ async function start(): Promise<void> {
   if (timeoutSeconds.value !== null) confirmPayload.timeoutSeconds = timeoutSeconds.value
   if (testTimeoutSeconds.value !== null) confirmPayload.testTimeoutSeconds = testTimeoutSeconds.value
   if (includeTag.value.trim()) confirmPayload.includeTag = includeTag.value.trim()
+  // 有未定级用例且已勾选确认 → 携凭据；后端据此记审计（FR-v5.31-07）
+  if (unratedSelected.value.length > 0 && unratedAcked.value) {
+    confirmPayload.confirmUnrated = true
+  }
 
   try {
     const preview = await runLaunchApi.preview(projectId.value, previewPayload)
@@ -347,6 +369,31 @@ onMounted(async () => {
     <!-- 阻断提示：把「哪条用例、什么安全级」直接说出来 -->
     <p v-if="blockedCodes.length" class="error" data-testid="blocked-hint">
       {{ t('executionPlans.blocked', { codes: blockedCodes.join('、') }) }}
+    </p>
+
+    <!-- 未定级知情确认（FR-v5.31-07）：勾选 + 敲条数双确认，未完成不得发起 -->
+    <div v-if="unratedSelected.length" class="unrated-hint" data-testid="unrated-hint">
+      <p class="unrated-title">{{ t('executionPlans.unratedTitle', { count: unratedSelected.length }) }}</p>
+      <p class="muted small">{{ unratedSelected.slice(0, 10).map((u) => u.caseCode).join('、') }}</p>
+      <label class="skip-confirm">
+        <input type="checkbox" v-model="unratedAck" data-testid="unrated-ack" />
+        {{ t('executionPlans.unratedAck') }}
+      </label>
+      <div class="unrated-input">
+        <span class="muted small">{{ t('executionPlans.unratedTypeCount', { count: unratedSelected.length }) }}</span>
+        <input
+          v-model="unratedInput"
+          class="count-input"
+          type="text"
+          inputmode="numeric"
+          data-testid="unrated-count"
+        />
+      </div>
+    </div>
+
+    <!-- 未评审软提示（FR-v5.31-08）：只提示不阻断 -->
+    <p v-if="unreviewedCount > 0" class="unreviewed-hint" data-testid="unreviewed-hint">
+      {{ t('executionPlans.unreviewedHint', { count: unreviewedCount }) }}
     </p>
 
     <!-- FR-READY-08：脚本跳过清单 + 确认跳过（未确认不得发起） -->
@@ -537,5 +584,43 @@ onMounted(async () => {
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* 未定级风险块（FR-v5.31-07）：与「脚本跳过」同款版式，警告色区分 */
+.unrated-hint {
+  border: 1px solid var(--warn-border);
+  background: var(--warn-soft);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.unrated-title {
+  margin: 0 0 var(--space-1);
+  font-weight: 600;
+  color: var(--warn);
+}
+
+.unrated-input {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.count-input {
+  width: 96px;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--warn-border);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+  color: var(--text);
+}
+
+/* 未评审软提示（FR-v5.31-08）：只提示不阻断 */
+.unreviewed-hint {
+  color: var(--warn);
+  font-size: var(--font-size-sm);
+  margin: 0 0 var(--space-2);
 }
 </style>

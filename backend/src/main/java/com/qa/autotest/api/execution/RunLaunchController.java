@@ -211,7 +211,8 @@ public class RunLaunchController {
             created.set(caseRuns.run(new CaseRunService.CaseRunCommand(
                     projectId, frozen, request.environmentId(), List.of(),
                     request.concurrency(), request.timeoutSeconds(),
-                    request.testTimeoutSeconds(), request.includeTag(), runRequestId)));
+                    request.testTimeoutSeconds(), request.includeTag(), runRequestId,
+                    request.confirmUnrated())));
         });
         return ResponseEntity.ok(ApiResponse.ok(created.get()));
     }
@@ -295,7 +296,9 @@ public class RunLaunchController {
                                          Integer timeoutSeconds,
                                          Integer testTimeoutSeconds,
                                          String includeTag,
-                                         String runRequestId) {
+                                         String runRequestId,
+                                         /** 未定级知情确认（FR-v5.31-07）；透传给 CaseRunService 判级。 */
+                                         Boolean confirmUnrated) {
     }
 
     /** 409 差异体：added/removed/reordered 均为 1-based 位置编号数组。 */

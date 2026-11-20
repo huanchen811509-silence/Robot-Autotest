@@ -159,6 +159,12 @@ const runTimeout = ref(3600)
 const runTestTimeout = ref(0)
 const runTag = ref('')
 const runError = ref<ErrorLine | null>(null)
+/**
+ * 未定级知情确认（FR-v5.31-07）：用例执行恒为真实执行，所以走「双重确认」——
+ * 勾选「已知悉风险」并敲入未定级条数。两者都对上才允许提交。
+ */
+const runUnratedAck = ref(false)
+const runUnratedInput = ref('')
 
 /** 用例表单字段（新建与编辑共用）；草稿也按同一结构落盘。 */
 interface CaseForm {
@@ -369,6 +375,45 @@ const blockedSelected = computed<BlockedCase[]>(() => {
 const blockedCodes = computed(() =>
   blockedSelected.value.map((item) => `${item.caseCode}(${item.safetyLevel})`).join('、'),
 )
+
+/**
+ * 未定级用例（FR-v5.31-07）：优先取后端预检（跨页可信），预检未归时退回当前页本地判断。
+ * 预检把 LX 单列在 `unrated`，不再混进 `blocked`——这就是「阻断」变「风险项」的分界。
+ */
+const unratedSelected = computed<BlockedCase[]>(() => {
+  if (precheck.value && precheckedKey.value === selectionKey.value) {
+    return precheck.value.unrated ?? []
+  }
+  return cases.value
+    .filter((item) => isSelected(item.id) && item.safetyLevel === 'LX')
+    .map((item) => ({ caseId: item.id, caseCode: item.caseCode, safetyLevel: 'LX' }))
+})
+
+/** 未定级清单摘要：超过 10 条只列前 10 条，避免撑爆面板。 */
+const unratedCodes = computed(() =>
+  unratedSelected.value
+    .slice(0, 10)
+    .map((item) => item.caseCode)
+    .join('、') + (unratedSelected.value.length > 10 ? ' …' : ''),
+)
+
+/** 未评审条数（FR-v5.31-08）：只做软提示，不参与 canRun 判定。 */const unreviewedCount = computed<number>(() => {
+  if (precheck.value && precheckedKey.value === selectionKey.value) {
+    return precheck.value.unreviewed ?? 0
+  }
+  return cases.value.filter((item) => isSelected(item.id) && item.reviewStatus !== 'approved')
+    .length
+})
+
+/** 未定级确认是否已完成：无未定级用例时恒为真；有条数时必须勾选 + 敲入正确条数。 */
+const unratedAcked = computed<boolean>(() => {
+  const count = unratedSelected.value.length
+  if (count === 0) return true
+  return runUnratedAck.value && runUnratedInput.value.trim() === String(count)
+})
+
+/** 执行门是否可开：L2 阻断优先，其次未定级未确认。 */
+const canRun = computed<boolean>(() => blockedSelected.value.length === 0 && unratedAcked.value)
 
 // ---- 保存视图 / 列设置（v3.1.0「顺手」）----
 const CASE_COLUMN_KEYS = [
@@ -660,7 +705,8 @@ const dataColumns = computed<Record<CaseColumnKey, DataTableColumns<TestCase>[nu
           }),
   },
   reviewStatus: {
-    title: t('cases.status'),
+    // FR-v5.31-08：表头 hover 说明评审态的作用边界，避免「显示有状态却不生效」的误解
+    title: () => h('span', { title: t('cases.reviewScopeHint') }, t('cases.status')),
     key: 'reviewStatus',
     width: 110,
     render: (row) =>
@@ -852,6 +898,9 @@ let precheckSeq = 0
 
 watch(selectedIds, () => {
   window.clearTimeout(precheckTimer)
+  // 每次选择变化都要重新确认（FR-v5.31-07：不做「记住我的选择」）
+  runUnratedAck.value = false
+  runUnratedInput.value = ''
   if (selectedIds.value.size === 0 || !projectId.value) {
     precheck.value = null
     precheckedKey.value = ''
@@ -929,12 +978,21 @@ async function submitRun(): Promise<void> {
     }
     return
   }
+  // FR-v5.31-07：未定级必须勾选 + 敲入条数，否则不放行（前端先挡，后端还有一道）
+  if (!unratedAcked.value) {
+    runError.value = {
+      summary: t('cases.run.unratedAckRequired', { count: unratedSelected.value.length }),
+      detail: null,
+    }
+    return
+  }
   runLoading.value = true
   runError.value = null
   message.value = ''
   try {
     const run = await executionApi.runCases(projectId.value, {
       caseIds: [...selectedIds.value],
+      confirmUnrated: unratedSelected.value.length > 0 ? true : undefined,
       environmentId: runEnv.value,
       concurrency: runConcurrency.value,
       timeoutSeconds: runTimeout.value,
@@ -1562,6 +1620,28 @@ async function runCommit(): Promise<void> {
     <div v-if="runOpen && selectedCount > 0" class="card run-card">
       <h2 class="card-title">{{ t('cases.run.title', { count: selectedCount }) }}</h2>
       <p class="muted">{{ t('cases.run.hint') }}</p>
+      <div v-if="unratedSelected.length" class="run-risk" data-testid="run-unrated-block">
+        <p class="run-risk__title">
+          {{ t('cases.run.unratedTitle', { count: unratedSelected.length }) }}
+        </p>
+        <p class="muted">{{ t('cases.run.unratedCodes') }}</p>
+        <p class="run-risk__codes">{{ unratedCodes }}</p>
+        <NCheckbox v-model:checked="runUnratedAck" data-testid="run-unrated-ack">
+          {{ t('cases.run.unratedAck') }}
+        </NCheckbox>
+        <div class="run-risk__input">
+          <span class="muted">{{ t('cases.run.unratedTypeCount', { count: unratedSelected.length }) }}</span>
+          <NInput
+            v-model:value="runUnratedInput"
+            style="width: 110px"
+            :placeholder="String(unratedSelected.length)"
+            data-testid="run-unrated-count"
+          />
+        </div>
+      </div>
+      <p v-if="unreviewedCount > 0" class="run-warn" data-testid="run-unreviewed-hint">
+        {{ t('cases.run.unreviewedHint', { count: unreviewedCount }) }}
+      </p>
       <div class="toolbar">
         <NInputNumber
           v-model:value="runEnv"
@@ -1594,7 +1674,7 @@ async function runCommit(): Promise<void> {
           style="width: 140px"
           :placeholder="t('cases.run.tag')"
         />
-        <NButton type="primary" :loading="runLoading" :disabled="blockedSelected.length > 0" @click="submitRun">
+        <NButton type="primary" :loading="runLoading" :disabled="!canRun" @click="submitRun">
           {{ t('cases.run.submit') }}
         </NButton>
         <NButton quaternary :disabled="runLoading" @click="runOpen = false">
@@ -1845,5 +1925,41 @@ async function runCommit(): Promise<void> {
   .views-item {
     transition: none;
   }
+}
+
+/* 未定级风险块（FR-v5.31-07）：警告色但不遮挡表单，勾选与输入并排 */
+.run-risk {
+  border: 1px solid var(--warn-border);
+  background: var(--warn-soft);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.run-risk__title {
+  font-weight: 600;
+  color: var(--warn);
+  margin: 0 0 var(--space-1);
+}
+
+.run-risk__codes {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  margin: 0 0 var(--space-2);
+  word-break: break-all;
+}
+
+.run-risk__input {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+/* 未评审软提示（FR-v5.31-08）：只提示不阻断 */
+.run-warn {
+  color: var(--warn);
+  font-size: var(--font-size-sm);
+  margin: 0 0 var(--space-2);
 }
 </style>

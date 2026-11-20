@@ -580,9 +580,37 @@ async function batchRemove(): Promise<void> {
   }
 }
 
+/**
+ * 批量确认脚本绑定（W81-03 / FR-v5.31-01）。
+ *
+ * 只对「已绑定待确认」（BOUND_UNVERIFIED）的成员发起：其余状态调了也会被后端拒，
+ * 提前筛掉可以少一批无意义的失败明细。失败逐条回报，不整体回滚——已确认的就是已确认。
+ */
+async function batchConfirmBinding(): Promise<void> {
+  if (selectedItemIds.value.length === 0) return
+  const picked = new Set(selectedItemIds.value)
+  const targets = items.value
+    .filter((row) => picked.has(row.id) && row.bindingState === 'BOUND_UNVERIFIED')
+    .map((row) => row.id)
+  itemsError.value = null
+  message.value = ''
+  if (targets.length === 0) {
+    message.value = t('w62.confirmBindingNone')
+    return
+  }
+  try {
+    const result = await caseApi.confirmBindings(projectId.value, targets)
+    await loadItems()
+    message.value = result.failed.length
+      ? t('w62.confirmBindingPartial', { ok: result.confirmed, failed: result.failed.length })
+      : t('w62.confirmBindingDone', { ok: result.confirmed })
+  } catch (e) {
+    itemsError.value = localizeError(e)
+  }
+}
+
 /** 选中的成员作为一个整体前后挪一位，未选中的相对顺序不变。 */
-async function batchMove(delta: number): Promise<void> {
-  if (!activeSet.value || selectedItemIds.value.length === 0) return
+async function batchMove(delta: number): Promise<void> {  if (!activeSet.value || selectedItemIds.value.length === 0) return
   const picked = new Set(selectedItemIds.value)
   const chosen = items.value.filter((row) => picked.has(row.id))
   const others = items.value.filter((row) => !picked.has(row.id))
@@ -1010,6 +1038,8 @@ void load()
                  @click="batchMove(1)">{{ t('w62.moveDown') }}</NButton>
         <NButton size="small" :disabled="selectedItemIds.length === 0" data-testid="member-batch-export"
                  @click="exportCsv">{{ t('w62.batchExport') }}</NButton>
+        <NButton size="small" :disabled="selectedItemIds.length === 0" data-testid="member-batch-confirm-binding"
+                 @click="batchConfirmBinding">{{ t('w62.batchConfirmBinding') }}</NButton>
         <NButton size="small" quaternary data-testid="member-batch-select-all" @click="selectAllItems">
           {{ t('w57.caseSets.selectAllMatching') }}
         </NButton>

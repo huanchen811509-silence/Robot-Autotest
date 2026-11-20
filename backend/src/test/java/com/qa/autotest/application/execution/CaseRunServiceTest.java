@@ -189,6 +189,48 @@ class CaseRunServiceTest {
     }
 
     @Test
+    @DisplayName("v5.31 FR-v5.31-08：未评审计数随选择返回，默认只提示不阻断")
+    void 未评审软提示计数() {
+        Map<Long, TestCase> cases = Map.of(
+                21L, testCase(21L, "REV-001", "L1", "approved"),
+                22L, testCase(22L, "REV-002", "L1", "draft"),
+                23L, testCase(23L, "REV-003", "L1", "pending"));
+        CaseRunService service = new CaseRunService(repo(cases), ExecutionTestSupport.access(),
+                new CaseScriptResolver(files(Map.of())), new RecordingQuickRun());
+
+        CaseRunService.SafetyPrecheck result = service.precheck(PROJECT, List.of(21L, 22L, 23L));
+
+        assertEquals(3, result.total());
+        assertEquals(2, result.unreviewed(), "draft + pending 计 2，approved 不计");
+        assertTrue(result.allowed(), "默认 require-approved=false，评审态不得阻断");
+        assertTrue(!result.requireApproved(), "预检回传开关状态，前端据此判断提示口径");
+    }
+
+    @Test
+    @DisplayName("v5.31 FR-v5.31-08：require-approved 打开后未批准用例被拦，已批准仍可跑")
+    void 评审门禁开关() {
+        Map<Long, TestCase> cases = Map.of(
+                21L, testCase(21L, "REV-001", "L1", "approved"),
+                22L, testCase(22L, "REV-002", "L1", "draft"));
+        RecordingQuickRun quick = new RecordingQuickRun();
+        CaseRunService service = new CaseRunService(repo(cases), ExecutionTestSupport.access(),
+                new CaseScriptResolver(files(Map.of())), quick);
+        service.setRequireApproved(true);
+
+        CaseRunService.SafetyPrecheck blocked = service.precheck(PROJECT, List.of(21L, 22L));
+        assertTrue(!blocked.allowed(), "含 draft 时必须判为不可执行");
+        assertTrue(blocked.requireApproved());
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> service.run(command(List.of(21L, 22L))));
+        assertEquals(ErrorCode.SAFETY_LEVEL_BLOCKED, ex.errorCode());
+        assertTrue(ex.getMessage().contains("未通过评审"), ex.getMessage());
+        assertTrue(quick.last == null, "被拦时不得派发");
+
+        assertTrue(service.precheck(PROJECT, List.of(21L)).allowed(), "全为 approved 时放行");
+    }
+
+    @Test
     @DisplayName("v5.31 FR-v5.31-07：confirm 模式下 LX 可放行，但必须带确认凭据")
     void 未定级知情确认() {
         Map<Long, TestCase> cases = Map.of(13L, testCase(13L, "UNKNOWN-001", "LX"));
@@ -261,8 +303,12 @@ class CaseRunServiceTest {
     }
 
     private static TestCase testCase(long id, String code, String safetyLevel) {
+        return testCase(id, code, safetyLevel, "draft");
+    }
+
+    private static TestCase testCase(long id, String code, String safetyLevel, String reviewStatus) {
         return new TestCase(id, PROJECT, code, code, null, null, null, null,
-                null, "draft", null, null, null, safetyLevel);
+                null, reviewStatus, null, null, null, safetyLevel);
     }
 
     private static TestCaseRepository repo(Map<Long, TestCase> cases) {
