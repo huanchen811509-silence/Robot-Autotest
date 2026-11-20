@@ -96,8 +96,10 @@ const kernelLabel = computed(() => {
 })
 
 /**
- * 「彻底删除」的界面预判：用例 / 运行 / 设备任一非空就只能停用。
- * 报告、文件等其它数据由后端做最终校验（409 带具体条数）。
+ * 是否带业务数据（仅用于 USER 项目的提示文案，不再用于置灰）。
+ *
+ * <p>FR-ORIGIN 修正：USER 项目走级联真删，带数据也应能点删除——旧的「有数据只能停用」
+ * 是 BUILTIN 口径，不能套到 USER 上（否则切了来源还是删不掉，正是大师反馈的问题）。
  */
 const hasData = computed(
   () => props.card.caseCount > 0 || props.card.runCount > 0 || props.card.deviceCount > 0,
@@ -113,10 +115,13 @@ const originLabel = computed(() =>
 const deleteLockedByOrigin = computed(
   () => (props.card.origin ?? 'BUILTIN').toUpperCase() !== 'USER',
 )
-/** 删除按钮悬停提示三分支：来源锁 > 有数据 > 可删（FR-ORIGIN-05 / N6）。 */
+/**
+ * 删除按钮悬停提示三分支：来源锁 > USER 有数据（级联提示） > 可直接删。
+ * 注意 USER 项目不再因 hasData 置灰——它走的是级联真删，不是老的「只能停用」。
+ */
 const deleteTitle = computed(() => {
   if (deleteLockedByOrigin.value) return t('workbench.deleteOriginBlocked')
-  if (hasData.value) return t('workbench.deleteBlocked')
+  if (hasData.value) return t('workbench.deleteCascadeHint')
   return t('workbench.delete')
 })
 
@@ -266,7 +271,7 @@ function setCurrent(): void {
         type="button"
         class="btn btn-ghost danger"
         data-testid="card-delete"
-        :disabled="busy || deleteLockedByOrigin || hasData"
+        :disabled="busy || deleteLockedByOrigin"
         :title="deleteTitle"
         @click="emit('requestDelete', card)"
       >

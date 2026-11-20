@@ -139,6 +139,10 @@ const canChangeOrigin = computed(() => auth.isAdmin)
 const deleteMatched = computed(
   () => deleteTarget.value !== null && deleteCode.value.trim() === deleteTarget.value.code,
 )
+/** USER 项目走级联真删（带数据也能删）；BUILTIN 空项目走老删除端点。决定弹层文案。 */
+const deleteIsCascade = computed(
+  () => (deleteTarget.value?.origin ?? 'BUILTIN').toUpperCase() === 'USER',
+)
 
 /** 顶栏项目下拉与卡片共用同一份项目列表，动作后要一起刷新，避免状态不同步。 */
 async function refreshProjects(): Promise<void> {
@@ -333,11 +337,15 @@ async function confirmChangeOrigin(): Promise<void> {
           role="dialog"
           aria-modal="true"
           tabindex="-1"
-          :aria-label="t('workbench.deleteTitle')"
+          :aria-label="deleteIsCascade ? t('workbench.deleteCascadeTitle') : t('workbench.deleteTitle')"
         >
-          <h2 class="delete-card__title">{{ t('workbench.deleteTitle') }}</h2>
+          <h2 class="delete-card__title">
+            {{ deleteIsCascade ? t('workbench.deleteCascadeTitle') : t('workbench.deleteTitle') }}
+          </h2>
           <p class="delete-card__hint">
-            {{ t('workbench.deleteHint', { code: deleteTarget.code }) }}
+            {{ deleteIsCascade
+              ? t('workbench.deleteCascadeHintFull', { code: deleteTarget.code })
+              : t('workbench.deleteHint', { code: deleteTarget.code }) }}
           </p>
           <label class="delete-card__field" for="delete-code-input">
             <span>{{ t('workbench.deleteCodeLabel') }}</span>

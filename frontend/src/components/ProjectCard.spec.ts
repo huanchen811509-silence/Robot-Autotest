@@ -238,12 +238,12 @@ describe('ProjectCard 停用与彻底删除（FR-v4.3-09）', () => {
     expect(onToggleEnabled).toHaveBeenCalledTimes(1)
   })
 
-  it('有用例 / 运行 / 设备的项目：彻底删除置灰并给出原因', async () => {
-    const root = await mountManaged(base)
+  it('用户自建 + 有数据：彻底删除仍可点，提示级联删除（大师反馈回归）', async () => {
+    const root = await mountManaged(base) // base: origin=USER, caseCount=813
     const remove = pick(root, 'card-delete') as HTMLButtonElement
 
-    expect(remove.disabled).toBe(true)
-    expect(remove.getAttribute('title')).toContain('只能停用')
+    expect(remove.disabled).toBe(false)
+    expect(remove.getAttribute('title')).toContain('级联')
   })
 
   it('空项目：彻底删除可点，点击只发请求事件', async () => {
