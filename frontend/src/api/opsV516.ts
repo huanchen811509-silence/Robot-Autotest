@@ -11,6 +11,10 @@ const OPS = '/ops'
 export const opsPaths = {
   health: (projectId: number) => `${OPS}/health${toQuery({ projectId })}`,
   backups: (projectId: number) => `${OPS}/backups${toQuery({ projectId })}`,
+  /** v5.33.0 / FR-v5.33-06：删除单份备份（后端校验文件名白名单）。 */
+  deleteBackup: (projectId: number, name: string) =>
+    `${OPS}/backups/${encodeURIComponent(name)}${toQuery({ projectId })}`,
+  retention: (projectId: number) => `${OPS}/backups/retention${toQuery({ projectId })}`,
   tasks: (projectId: number, limit = 20) => `${OPS}/tasks${toQuery({ projectId, limit })}`,
   task: (projectId: number, id: number) => `${OPS}/tasks/${id}${toQuery({ projectId })}`,
   createTask: (projectId: number) => `${OPS}/tasks${toQuery({ projectId })}`,
@@ -57,6 +61,17 @@ export const opsApi = {
   },
   backups(projectId: number): Promise<Record<string, unknown>[]> {
     return request<Record<string, unknown>[]>(opsPaths.backups(projectId))
+  },
+  /** 删除单份备份：后端只接受 backups 目录内的 `<name>.gz`，其余一律 400。 */
+  deleteBackup(projectId: number, name: string): Promise<string[]> {
+    return request<string[]>(opsPaths.deleteBackup(projectId, name), { method: 'DELETE' })
+  },
+  retention(projectId: number): Promise<{
+    retainCount: number
+    total: number
+    overRetention: string[]
+  }> {
+    return request(opsPaths.retention(projectId))
   },
   tasks(projectId: number, limit = 20): Promise<OpsTask[]> {
     return request<OpsTask[]>(opsPaths.tasks(projectId, limit))

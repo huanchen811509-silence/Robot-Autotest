@@ -8,7 +8,7 @@
  */
 import { computed, h, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NButton, NInput, NTag, type DataTableColumns } from 'naive-ui'
+import { NButton, NInput, NModal, NTag, type DataTableColumns } from 'naive-ui'
 import DataTable from '@/components/DataTable.vue'
 import ReadOnlyRecoverView from '@/views/maintenance/ReadOnlyRecoverView.vue'
 import { useAuthStore } from '@/stores/auth'
@@ -48,6 +48,21 @@ const columns = computed<DataTableColumns<BackupItem>>(() => [
         { default: () => row.sha256State }),
   },
   { title: t('opsV516.backup.colVerify'), key: 'verifyState', width: 130 },
+  {
+    // v5.33.0 / FR-v5.33-06：删除要输入备份名确认——目录里全是 .gz，
+    // 点错一个就少一份可回滚点，确认成本必须高于误触成本
+    title: '',
+    key: 'actions',
+    width: 110,
+    render: (row) =>
+      h(NButton, {
+        size: 'small',
+        quaternary: true,
+        type: 'error',
+        'data-testid': 'backup-delete',
+        onClick: () => startDelete(row.name),
+      }, { default: () => t('opsV516.backup.delete') }),
+  },
 ])
 
 /**
@@ -74,10 +89,52 @@ async function load() {
   try {
     rows.value = (await opsApi.backups(projectId.value)) as unknown as BackupItem[]
     tasks.value = await opsApi.tasks(projectId.value, 20)
+    // 保留策略读数失败不该挡住清单：它只是提示，不是判定
+    try {
+      retention.value = await opsApi.retention(projectId.value)
+    } catch {
+      retention.value = null
+    }
   } catch {
     errorText.value = t('opsV516.common.loadFailed')
   } finally {
     loading.value = false
+  }
+}
+
+/* --------------------------------------------------- 删除备份（v5.33.0 / FR-v5.33-06） */
+
+const retention = ref<{ retainCount: number; total: number; overRetention: string[] } | null>(null)
+const deleteTarget = ref<string | null>(null)
+const deleteInput = ref('')
+const deleting = ref(false)
+
+function startDelete(name: string): void {
+  deleteTarget.value = name
+  deleteInput.value = ''
+  errorText.value = ''
+  notice.value = ''
+}
+
+const canDelete = computed(
+  () => deleteTarget.value !== null && deleteInput.value.trim() === deleteTarget.value
+    && !deleting.value,
+)
+
+async function confirmDelete(): Promise<void> {
+  if (!canDelete.value || deleteTarget.value === null) return
+  const name = deleteTarget.value
+  deleting.value = true
+  errorText.value = ''
+  try {
+    await opsApi.deleteBackup(projectId.value, name)
+    deleteTarget.value = null
+    notice.value = t('opsV516.backup.deleted', { name })
+    await load()
+  } catch (e) {
+    errorText.value = (e as { message?: string }).message ?? t('opsV516.common.loadFailed')
+  } finally {
+    deleting.value = false
   }
 }
 
@@ -157,6 +214,43 @@ onMounted(load)
       :empty-title="t('opsV516.backup.empty')"
       :empty-description="t('opsV516.backup.emptyDesc')"
     />
+
+    <!-- 保留策略读数（v5.33.0 / FR-v5.33-06）：只提示，不自动删 -->
+    <p v-if="retention && retention.overRetention.length" class="ops-muted" data-testid="backup-retention">
+      {{ t('opsV516.backup.retentionHint', {
+        total: retention.total,
+        keep: retention.retainCount,
+        over: retention.overRetention.length,
+      }) }}
+    </p>
+
+    <!-- 删除确认：输入完整备份名才可提交，与「删除项目」同款手法 -->
+    <NModal
+      :show="deleteTarget !== null"
+      preset="card"
+      :title="t('opsV516.backup.deleteTitle')"
+      style="max-width: 560px"
+      @update:show="deleteTarget = null"
+    >
+      <p class="ops-muted">{{ t('opsV516.backup.deleteHint', { name: deleteTarget ?? '' }) }}</p>
+      <NInput
+        v-model:value="deleteInput"
+        :placeholder="deleteTarget ?? ''"
+        data-testid="backup-delete-input"
+      />
+      <template #footer>
+        <NButton quaternary @click="deleteTarget = null">{{ t('common.cancel') }}</NButton>
+        <NButton
+          type="error"
+          :disabled="!canDelete"
+          :loading="deleting"
+          data-testid="backup-delete-confirm"
+          @click="confirmDelete"
+        >
+          {{ t('opsV516.backup.deleteConfirm') }}
+        </NButton>
+      </template>
+    </NModal>
 
     <h3 class="ops-sub">{{ t('opsV516.backup.drill') }}</h3>
     <p class="ops-muted">{{ t('opsV516.backup.drillHint') }}</p>

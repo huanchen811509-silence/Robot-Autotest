@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -137,6 +138,94 @@ public class OpsConsoleController {
         this.tasks = tasks;
         this.access = access;
         this.jdbc = jdbc;
+    }
+
+    /**
+     * 审计（可选注入）：备份删除是破坏性动作，必须留痕；但既有单测直接 new 本控制器，
+     * 所以用 setter 注入而不是加构造器参数。
+     */
+    private com.qa.autotest.application.iam.AuditService audit;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setAudit(com.qa.autotest.application.iam.AuditService audit) {
+        this.audit = audit;
+    }
+
+    /**
+     * 备份文件名白名单（v5.33.0 / FR-v5.33-06）。
+     *
+     * <p>只允许「字母数字 . _ -」且必须以 .gz 结尾：删文件是按名字拼路径的，
+     * 不挡住 `../` 就等于给了一个删任意文件的接口。
+     */
+    private static final Pattern BACKUP_FILE = Pattern.compile("[A-Za-z0-9._-]{1,120}\\.gz");
+
+    /** 保留策略：只保留最近 N 份，超出的由运维清理（不自动删，先看清单）。 */
+    @org.springframework.beans.factory.annotation.Value("${ops.backup.retain-count:20}")
+    private int backupRetainCount = 20;
+
+    /**
+     * 删除一份备份（及其 .sha256 清单）。
+     *
+     * @return 实际删掉的文件名列表（顺序：先 .gz 后 .sha256）
+     */
+    @DeleteMapping("/backups/{name}")
+    public ApiResponse<List<String>> deleteBackup(@PathVariable String name,
+                                                  @RequestParam long projectId) {
+        access.requireProjectAccess(projectId);
+        // 与其它运维端点同口径（项目可访问），再叠一道管理员闸：删备份不可逆，不该人人可做
+        if (!access.isAdmin()) {
+            throw new com.qa.autotest.common.BusinessException(
+                    com.qa.autotest.common.ErrorCode.FORBIDDEN, "删除备份仅管理员可操作");
+        }
+        if (name == null || !BACKUP_FILE.matcher(name).matches() || name.contains("..")) {
+            throw new com.qa.autotest.common.BusinessException(
+                    com.qa.autotest.common.ErrorCode.INVALID_ARGUMENT,
+                    "备份文件名非法，只允许字母数字与 . _ -，且必须以 .gz 结尾");
+        }
+        Path dir = appHome().resolve("backups");
+        Path target = dir.resolve(name).normalize();
+        // 二次确认仍在目录内：normalize 之后跑出父目录的一律拒绝
+        if (!target.getParent().equals(dir.normalize())) {
+            throw new com.qa.autotest.common.BusinessException(
+                    com.qa.autotest.common.ErrorCode.INVALID_ARGUMENT, "备份文件名非法");
+        }
+        if (!Files.isRegularFile(target)) {
+            throw new com.qa.autotest.common.BusinessException(
+                    com.qa.autotest.common.ErrorCode.NOT_FOUND, "备份不存在: " + name);
+        }
+        List<String> deleted = new ArrayList<>();
+        try {
+            Files.delete(target);
+            deleted.add(name);
+            Path manifest = Paths.get(target + ".sha256");
+            if (Files.isRegularFile(manifest)) {
+                Files.delete(manifest);
+                deleted.add(manifest.getFileName().toString());
+            }
+        } catch (IOException ex) {
+            throw new com.qa.autotest.common.BusinessException(
+                    com.qa.autotest.common.ErrorCode.CONFLICT,
+                    "删除失败（已删除 " + deleted.size() + " 个文件）：" + ex.getMessage());
+        }
+        if (audit != null) {
+            audit.record("OPS_BACKUP_DELETE", "backup", name,
+                    "deleted=" + String.join(",", deleted));
+        }
+        return ApiResponse.ok(deleted);
+    }
+
+    /** 保留策略读数：超期/超量的候选清单由前端勾选删除，后端不自动删。 */
+    public record RetentionView(int retainCount, int total, List<String> overRetention) {
+    }
+
+    @GetMapping("/backups/retention")
+    public ApiResponse<RetentionView> retention(@RequestParam long projectId) {
+        access.requireProjectAccess(projectId);
+        List<BackupView> rows = scanBackups();
+        // scanBackups 已按文件名倒序（新的在前），超出 retainCount 的就是候选
+        List<String> over = rows.stream().skip(Math.max(0, backupRetainCount))
+                .map(BackupView::name).toList();
+        return ApiResponse.ok(new RetentionView(backupRetainCount, rows.size(), over));
     }
 
     @GetMapping("/health")
