@@ -86,9 +86,17 @@ public class PytestResultNormalizer {
                                   boolean allSkipped,
                                   Path sidecar) {
 
-        /** 全部跳过（fake 模式）时通过率「不适用」，不能显示成 0% 或 100%。 */
+        /**
+         * 通过率是否「适用」。两种情况都不适用：
+         * <ul>
+         *   <li>全部 SKIP（fake / Plan-only）；</li>
+         *   <li><b>空执行（0 条用例）</b>——旧逻辑只在 {@code !merged.isEmpty()} 时判 allSkipped，
+         *       于是 0 用例空跑会走进「通过率适用」，被算成 0% 或 100%，这正是
+         *       「空执行却显示成功/百分比」假报告的直接来源（v5.24.0 / FR-EHT-04）。</li>
+         * </ul>
+         */
         public boolean passRateApplicable() {
-            return !allSkipped;
+            return !allSkipped && run != null && !run.cases().isEmpty();
         }
     }
 

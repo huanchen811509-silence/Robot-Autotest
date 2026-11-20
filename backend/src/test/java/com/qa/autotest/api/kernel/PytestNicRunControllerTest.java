@@ -73,7 +73,7 @@ class PytestNicRunControllerTest {
                 mock(RunMetadataRepository.class), bindings, cases,
                 progress, mock(PytestReadinessService.class), mock(DeviceRepository.class),
                 mock(ProcessRegistry.class), mock(AccessControlService.class),
-                new com.qa.autotest.application.report.PytestCommandEnricher(), ingest);
+                new com.qa.autotest.application.report.PytestCommandEnricher(), ingest, null);
     }
 
     private MockMvc mvc(PytestNicRunService runs, ProjectSettingRepository settings) {
@@ -411,7 +411,7 @@ class PytestNicRunControllerTest {
                 mock(RunRepository.class), artifacts, mock(RunMetadataRepository.class),
                 bindings, cases, new PytestRunProgressRegistry(), readiness, devices,
                 mock(ProcessRegistry.class), mock(AccessControlService.class),
-                new com.qa.autotest.application.report.PytestCommandEnricher(), null);
+                new com.qa.autotest.application.report.PytestCommandEnricher(), null, null);
         MockMvc mvc = MockMvcBuilders.standaloneSetup(controller)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();

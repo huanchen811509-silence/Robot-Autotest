@@ -2,6 +2,7 @@ package com.qa.autotest.api.kernel;
 
 import com.qa.autotest.application.execution.ProcessRegistry;
 import com.qa.autotest.application.iam.AccessControlService;
+import com.qa.autotest.application.kernel.pytest.PytestEvidenceService;
 import com.qa.autotest.application.kernel.pytest.PytestNicRunService;
 import com.qa.autotest.application.kernel.pytest.PytestProjectSettings;
 import com.qa.autotest.application.kernel.pytest.PytestReadinessService;
@@ -118,6 +119,18 @@ public class PytestNicRunController {
      */
     private final ReportIngestService reportIngest;
 
+    /**
+     * 跑完即抽步骤证据（构造器注入，可传 null）。
+     *
+     * <p><b>为什么必须自动调</b>：{@code pytest_case_step} 之前只在手动端点
+     * {@code POST /runs/{runId}/evidence} 被调用时才写，结果就是「执行成功、过程记录全空」——
+     * 用户看到空的步骤表，误判成没跑。执行完自动抽一次，手动端点保留作幂等补抽。
+     *
+     * <p><b>顺序</b>：必须在 {@link #reportIngest} 之后——步骤要挂到 {@code test_result} 行上，
+     * 而 test_result 由报告入库写入。放在入库前会全部挂不上（testResultId 为空）。
+     */
+    private final PytestEvidenceService evidence;
+
     /** 异步执行线程池。固定 2 线程：同时跑两个 pytest 批次已经是这台机器的上限。 */
     private final ExecutorService worker = Executors.newFixedThreadPool(2, runnable -> {
         Thread thread = new Thread(runnable, "pytest-async-run");
@@ -139,7 +152,8 @@ public class PytestNicRunController {
                                   AccessControlService access,
                                   com.qa.autotest.application.report.PytestCommandEnricher
                                           commandEnricher,
-                                  ReportIngestService reportIngest) {
+                                  ReportIngestService reportIngest,
+                                  PytestEvidenceService evidence) {
         this.runs = runs;
         this.settings = settings;
         this.runRepo = runRepo;
@@ -154,6 +168,7 @@ public class PytestNicRunController {
         this.access = access;
         this.commandEnricher = commandEnricher;
         this.reportIngest = reportIngest;
+        this.evidence = evidence;
     }
 
     @PreDestroy
@@ -627,6 +642,22 @@ public class PytestNicRunController {
                 LOG.warn("pytest run {} 自动入库失败，可手工调用 /api/reports/{}/parse 重试",
                         runId, runId, ex);
                 notes.add("报告入库失败（可手工重试 parse）：" + ex.getMessage());
+            }
+        }
+        // 跑完即抽步骤证据（W-EHT-03 / FR-EHT-02）：此前只有手动端点会写 pytest_case_step，
+        // 自动执行后该表恒为 0 行，用户看到「执行成功、过程记录全空」——"空执行"投诉的真因之一。
+        // 必须在报告入库之后：步骤要挂到 test_result 行（testResultId）上，而它由 parseAndIngest 写入。
+        // 与报告入库同为附加动作：失败只记 note + 日志，不把已跑完的执行判成失败。
+        if (evidence != null && !canceled) {
+            try {
+                PytestEvidenceService.ExtractResult ev =
+                        evidence.extract(prepared.projectId(), runId, true);
+                notes.add("步骤证据已入库：" + ev.cases() + " 用例 / "
+                        + ev.stepCount() + " 步 / " + ev.commandCount() + " 条命令");
+            } catch (RuntimeException ex) {
+                LOG.warn("pytest run {} 自动抽取步骤证据失败，可手工调用 "
+                        + "POST /api/pytest-projects/{{projectId}}/runs/{}/evidence 重试", runId, runId, ex);
+                notes.add("步骤证据抽取失败（可手工重试 evidence）：" + ex.getMessage());
             }
         }
         // 进度终态放在最后上报：页面看到「已完成」就会去点报告，若那时还没入库，

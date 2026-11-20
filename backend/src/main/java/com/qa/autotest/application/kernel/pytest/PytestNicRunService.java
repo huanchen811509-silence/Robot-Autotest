@@ -304,14 +304,29 @@ public class PytestNicRunService {
             emit(request.runDir().resolve("run.log"), "[plan-gap] " + gap.notice());
         }
 
-        // 复测把失败跑成了通过：对外的结论按最终结论算，退出码同理归 0——
-        // 对外说「这次运行失败」却拿不出失败用例，比说「通过（含抖动）」更误导。
-        String reason = lastExit == 0 ? "ok" : "pytest_exit_" + lastExit;
-        boolean success = lastExit == 0;
-        if (!success && retriesRun > 0 && failures(normalized.run()).isEmpty()) {
+        // v5.24.0 / FR-EHT-04：空执行（0 条用例）一律不算成功。
+        // 旧逻辑只看退出码：pytest 收集到 0 条用例时退出码仍是 0，于是落 FINISHED，
+        // 界面显示「执行成功 / 0 条用例」——正是「空执行、假报告」投诉的核心来源。
+        // 这里把「实际执行了用例」作为 success 的必要条件，0 用例无论退出码都判失败。
+        boolean executed = normalized != null && normalized.run() != null
+                && !normalized.run().cases().isEmpty();
+        String reason;
+        boolean success;
+        if (!executed) {
+            success = false;
+            reason = "no_tests_executed";
+        } else if (lastExit == 0) {
+            success = true;
+            reason = "ok";
+        } else if (retriesRun > 0 && failures(normalized.run()).isEmpty()) {
+            // 复测把失败跑成了通过：对外的结论按最终结论算，退出码同理归 0——
+            // 对外说「这次运行失败」却拿不出失败用例，比说「通过（含抖动）」更误导。
             success = true;
             reason = "ok_after_retry";
             lastExit = 0;
+        } else {
+            success = false;
+            reason = "pytest_exit_" + lastExit;
         }
         return new ExecuteResult(success, reason, normalized.run(), render, normalized,
                 batches, lastExit, Duration.between(started, clock.instant()),

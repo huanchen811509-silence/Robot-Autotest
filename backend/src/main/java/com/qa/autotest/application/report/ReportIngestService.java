@@ -221,12 +221,21 @@ public class ReportIngestService {
                     criteriaPayload = criteriaText.byCaseName().get(item.nodeId().substring(sep + 2));
                 }
             }
+            // v5.24.0 / FR-EHT-03：CriteriaEvaluation 只吃结构化 {"criteria":[...]}；
+            // 直接把 [明细]/[判定] 纯文本塞进去会被判「采集异常 → MISSING」。
+            // 这里优先转成结构化（CRITERIA_JSON 哨兵原样 / [判定] 行合成）；
+            // 转不出来（如 Plan-only 只有 [明细]）时保留原文，供报告证据层如实展示。
+            String effectiveCriteria = com.qa.autotest.application.kernel.pytest
+                    .PytestCriteriaExtractor.toStructured(criteriaPayload);
+            if (effectiveCriteria == null) {
+                effectiveCriteria = criteriaPayload;
+            }
             cases.add(new com.qa.autotest.domain.report.CaseNode(
                     displayName(item.nodeId(), item.name(), codeIndex), status,
                     Math.round(item.durationSeconds() * 1000.0), message,
                     java.util.List.of(), spans.offsetOf(item.nodeId()), spans.spanOf(item.nodeId()),
                     item.commandText(), item.commandSource(), item.commandExitCode(),
-                    item.retryCount(), item.flaky(), criteriaPayload));
+                    item.retryCount(), item.flaky(), effectiveCriteria));
         }
         String rootStatus = fail > 0 ? "FAIL" : pass + skip == cases.size() ? "PASS" : "UNKNOWN";
         com.qa.autotest.domain.report.SuiteNode root =

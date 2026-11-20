@@ -60,12 +60,22 @@ public final class PytestCriteriaExtractor {
     private PytestCriteriaExtractor() {
     }
 
-    /** 扫产物目录：先取 json-report（主通道），再用 junit 补位（兼容兜底）。 */
+    /**
+     * 扫产物目录：junit 与 json-report 都读，各自产出两类索引。
+     *
+     * <p><b>v5.24.0 / FR-EHT-03</b>：junit 现在也产出 {@code classname::name} 形式的
+     * {@code byNodeId}，与 {@code test_result.nodeid} 同一口径。此前只有 json-report 提供
+     * {@code byNodeId} 且是斜杠 nodeid，和归一后的点分 nodeid 永远对不上，只能靠
+     * 「取 nodeId 的 :: 后段再查 byCaseName」的兜底——一旦命名有差异就整条判据丢失。
+     */
     public static Extraction scan(Path artifactDir) {
         Extraction junit = scanJunit(artifactDir);
-        Map<String, String> byNodeId = scanJsonReport(artifactDir);
-        return new Extraction(junit.byCaseName(), byNodeId, junit.files(),
-                byNodeId.isEmpty() ? 0 : 1, junit.unassigned());
+        Map<String, String> jsonNode = scanJsonReport(artifactDir);
+        Map<String, String> nodeIndex = new LinkedHashMap<>(jsonNode);
+        // junit 的点分 key 与 json 的斜杠 key 互不冲突，合并后按 nodeid 一次命中。
+        nodeIndex.putAll(junit.byNodeId());
+        return new Extraction(junit.byCaseName(), Map.copyOf(nodeIndex), junit.files(),
+                jsonNode.isEmpty() ? 0 : 1, junit.unassigned());
     }
 
     /**
@@ -149,22 +159,24 @@ public final class PytestCriteriaExtractor {
             return Extraction.empty();
         }
         Map<String, String> byName = new LinkedHashMap<>();
+        Map<String, String> byNodeId = new LinkedHashMap<>();
         int files = 0;
         int unassigned = 0;
         for (Path xml : xmls) {
             try (InputStream in = Files.newInputStream(xml)) {
                 int[] counter = new int[1];
-                readOne(in, byName, counter);
+                readOne(in, byName, byNodeId, counter);
                 unassigned += counter[0];
                 files++;
             } catch (Exception ignored) {
                 // 单个文件坏掉不影响其它文件；判据缺了会在 criteria_missing 里体现。
             }
         }
-        return new Extraction(Map.copyOf(byName), Map.of(), files, 0, unassigned);
+        return new Extraction(Map.copyOf(byName), Map.copyOf(byNodeId), files, 0, unassigned);
     }
 
-    private static void readOne(InputStream in, Map<String, String> byName, int[] unassigned)
+    private static void readOne(InputStream in, Map<String, String> byName,
+                                Map<String, String> byNodeId, int[] unassigned)
             throws Exception {
         XMLInputFactory factory = XMLInputFactory.newInstance();
         // 禁用外部实体：artifact 目录里的文件可能来自被测环境，不能让它读取本机文件。
@@ -172,6 +184,7 @@ public final class PytestCriteriaExtractor {
         factory.setProperty(XMLInputFactory.SUPPORT_DTD, Boolean.FALSE);
         XMLStreamReader reader = factory.createXMLStreamReader(in);
         String currentCase = null;
+        String currentClass = null;
         StringBuilder buffer = null;
         try {
             while (reader.hasNext()) {
@@ -180,7 +193,12 @@ public final class PytestCriteriaExtractor {
                     String local = reader.getLocalName();
                     if ("testcase".equals(local)) {
                         currentCase = attribute(reader, "name");
-                    } else if ("system-out".equals(local)) {
+                        currentClass = attribute(reader, "classname");
+                    } else if ("system-out".equals(local) || "system-err".equals(local)) {
+                        // v5.24.0 / FR-EHT-01：两个标签都要读。框架的 logging.StreamHandler()
+                        // 默认写 stderr，pytest xunit2 把 capstderr 放 <system-err>；只读
+                        // system-out 会让 9/10 个用例的 [明细] 全部漏掉（只剩 print 到 stdout
+                        // 的 IM-FUN-014 有值）——与 PytestStepExtractor.capturedOf 同一口径。
                         if (currentCase == null) {
                             unassigned[0]++;
                         } else {
@@ -194,21 +212,146 @@ public final class PytestCriteriaExtractor {
                     }
                 } else if (event == XMLStreamConstants.END_ELEMENT) {
                     String local = reader.getLocalName();
-                    if ("system-out".equals(local) && buffer != null) {
+                    if (("system-out".equals(local) || "system-err".equals(local)) && buffer != null) {
+                        // 同名用例（参数化/多阶段）按块追加并去重：pytest 会在 setup/call
+                        // 各写一份内容逐字相同的捕获块，直接 put 会让后者覆盖前者、丢一半明细。
                         String text = buffer.toString();
-                        if (!text.isBlank()) {
-                            // 同名用例（参数化重复）后出现的覆盖前面：后一轮是最终事实。
-                            byName.put(currentCase, text);
-                        }
+                        appendCase(byName, currentCase, text);
+                        // classname::name 与 test_result.nodeid 同口径，供按 nodeid 直接命中。
+                        String caseKey = currentClass == null || currentClass.isEmpty()
+                                ? currentCase : currentClass + "::" + currentCase;
+                        appendCase(byNodeId, caseKey, text);
                         buffer = null;
                     } else if ("testcase".equals(local)) {
                         currentCase = null;
+                        currentClass = null;
                     }
                 }
             }
         } finally {
             reader.close();
         }
+    }
+
+    /**
+     * 把一个捕获块合并到用例已有文本，按行去重。
+     *
+     * <p>pytest xunit2 下同一用例会在 setup / call 阶段各写一份 system-out/system-err，
+     * 两份内容高度重复（实测 3 条步骤被写了 6 遍）。按行去重既保留不同步骤，
+     * 又不会把「条数翻倍」当成用例写了两遍。与 {@code PytestStepExtractor} 的去重口径一致。
+     */
+    private static void appendCase(Map<String, String> byName, String caseName, String text) {
+        if (caseName == null || text == null || text.isBlank()) {
+            return;
+        }
+        java.util.LinkedHashSet<String> lines = new java.util.LinkedHashSet<>();
+        String prev = byName.get(caseName);
+        if (prev != null && !prev.isBlank()) {
+            for (String line : prev.split("\\R")) {
+                lines.add(line);
+            }
+        }
+        for (String line : text.split("\\R")) {
+            lines.add(line);
+        }
+        byName.put(caseName, String.join("\n", lines).trim());
+    }
+
+    /** 判定标记，与框架 {@code step.check()} 的 {@code [判定] 标签：结论} 对齐。 */
+    private static final String VERDICT_TEXT = "[判定]";
+
+    /** {@code CRITERIA_JSON} 哨兵：用例显式声明的结构化判据块。 */
+    private static final String SENTINEL = "CRITERIA_JSON";
+
+    /**
+     * 把捕获文本转成 {@code CriteriaEvaluation} 能吃的结构化 JSON（v5.24.0 / FR-EHT-03）。
+     *
+     * <p>两类来源，优先级从高到低：
+     * <ol>
+     *   <li>用例显式打印的 {@code CRITERIA_JSON {...}} 哨兵块——原样取出，不改一字；</li>
+     *   <li>框架 {@code step.check()} 打的 {@code [判定] 步骤N：通过 / 不通过（原因）}
+     *       ——按行合成 {@code {"criteria":[{metric,actual,passed}]}}。这是把用例
+     *       <b>自己已经给出的结论</b>转成结构化，不新增判断、不编造。</li>
+     * </ol>
+     *
+     * <p>Plan-only 只有 {@code [明细]}、没有 {@code [判定]}，故返回 {@code null}（未声明判据）；
+     * 报告如实显示 MISSING/未判定，不伪造通过。调用方拿到 null 时应保留原文供证据层展示。
+     */
+    public static String toStructured(String text) {
+        if (text == null || text.isBlank()) {
+            return null;
+        }
+        String explicit = extractSentinelJson(text);
+        if (explicit != null) {
+            return explicit;
+        }
+        java.util.List<java.util.Map<String, Object>> criteria = new java.util.ArrayList<>();
+        for (String line : text.split("\\R")) {
+            int at = line.indexOf(VERDICT_TEXT);
+            if (at < 0) {
+                continue;
+            }
+            String body = line.substring(at + VERDICT_TEXT.length()).trim();
+            if (body.isEmpty()) {
+                continue;
+            }
+            boolean failed = body.startsWith("不通过") || body.contains("：不通过");
+            boolean passed = !failed && (body.startsWith("通过") || body.contains("：通过")
+                    || body.contains("均有有效回显"));
+            if (!passed && !failed) {
+                continue;
+            }
+            int colon = body.indexOf('：');
+            String metric = colon > 0 ? body.substring(0, colon).trim() : body;
+            String actual = colon > 0 ? body.substring(colon + 1).trim() : body;
+            java.util.Map<String, Object> item = new java.util.LinkedHashMap<>();
+            item.put("metric", metric);
+            item.put("actual", actual);
+            item.put("passed", passed);
+            criteria.add(item);
+        }
+        if (criteria.isEmpty()) {
+            return null;
+        }
+        try {
+            return JSON.writeValueAsString(java.util.Map.of("criteria", criteria));
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /** 取 {@code CRITERIA_JSON} 之后的第一个完整 JSON 对象（按括号配对，跳过字符串内括号）。 */
+    private static String extractSentinelJson(String text) {
+        int idx = text.indexOf(SENTINEL);
+        if (idx < 0) {
+            return null;
+        }
+        int start = text.indexOf('{', idx);
+        if (start < 0) {
+            return null;
+        }
+        int depth = 0;
+        boolean inString = false;
+        for (int i = start; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (inString) {
+                if (c == '\\') {
+                    i++;
+                } else if (c == '"') {
+                    inString = false;
+                }
+            } else if (c == '"') {
+                inString = true;
+            } else if (c == '{') {
+                depth++;
+            } else if (c == '}') {
+                depth--;
+                if (depth == 0) {
+                    return text.substring(start, i + 1);
+                }
+            }
+        }
+        return null;
     }
 
     private static String attribute(XMLStreamReader reader, String name) {

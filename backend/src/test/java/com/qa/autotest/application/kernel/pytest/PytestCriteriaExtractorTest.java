@@ -60,6 +60,80 @@ class PytestCriteriaExtractorTest {
     }
 
     @Test
+    @DisplayName("system-err 里的 [明细] 也能提取（logging 默认写 stderr）")
+    void extractsFromSystemErr() throws Exception {
+        write("junit.xml", """
+                <testsuite name="pytest">
+                  <testcase classname="tests.nic.base.test_im_fun_020"
+                            name="test_im_fun_020_pci_device_info">
+                    <system-out>--------------------------------- Captured Out ---------------------------------
+
+                </system-out>
+                    <system-err>2026-11-19 INFO [root] [明细] 步骤1：Plan-only 无真实回显</system-err>
+                  </testcase>
+                </testsuite>
+                """);
+        PytestCriteriaExtractor.Extraction r = PytestCriteriaExtractor.scan(tempDir);
+        assertThat(r.byCaseName()).containsKey("test_im_fun_020_pci_device_info");
+        assertThat(r.byCaseName().get("test_im_fun_020_pci_device_info")).contains("[明细]");
+    }
+
+    @Test
+    @DisplayName("[判定] 行转结构化判据；Plan-only 无判定时返回 null 不伪造")
+    void structuredFromVerdictLines() {
+        String text = """
+                2026-11-19 INFO [root] [明细] 步骤1：读取 PCI 地址
+                [判定] 步骤1：通过
+                [判定] 步骤2：不通过（速率 25GT/s 低于基线 32GT/s）
+                """;
+        String json = PytestCriteriaExtractor.toStructured(text);
+        assertThat(json).contains("\"criteria\"")
+                .contains("\"metric\":\"步骤1\"").contains("\"passed\":true")
+                .contains("\"passed\":false");
+        // 只有 [明细]、没有 [判定]：未声明判据，不得伪造通过
+        assertThat(PytestCriteriaExtractor.toStructured(
+                "[明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过")).isNull();
+    }
+
+    @Test
+    @DisplayName("[判定] 合成的结构化判据能被 CriteriaEvaluation 判 PASS")
+    void structuredVerdictFeedsEvaluationPass() {
+        String json = PytestCriteriaExtractor.toStructured(
+                "[判定] 步骤1：通过\n[判定] 步骤2：通过");
+        var result = com.qa.autotest.application.execution.CriteriaEvaluation.evaluate(json);
+        assertThat(result.json()).isNotNull();
+        assertThat(result.verdict()).isEqualTo("PASS");
+    }
+
+    @Test
+    @DisplayName("[判定] 含不通过 → CriteriaEvaluation 判 FAIL")
+    void structuredVerdictFeedsEvaluationFail() {
+        String json = PytestCriteriaExtractor.toStructured(
+                "[判定] 步骤1：通过\n[判定] 步骤2：不通过（速率 25GT/s 低于基线）");
+        var result = com.qa.autotest.application.execution.CriteriaEvaluation.evaluate(json);
+        assertThat(result.verdict()).isEqualTo("FAIL");
+    }
+
+    @Test
+    @DisplayName("Plan-only 无判定 → 判据为空，评测结果未声明（诚实，不伪造 PASS）")
+    void planOnlyHasNoStructuredCriteria() {
+        String json = PytestCriteriaExtractor.toStructured(
+                "[明细] 步骤1：Plan-only 无真实回显，本步骤取值打印与判定跳过");
+        assertThat(json).isNull();
+        assertThat(com.qa.autotest.application.execution.CriteriaEvaluation.evaluate(json)
+                .verdict()).isNull();
+    }
+
+    @Test
+    @DisplayName("CRITERIA_JSON 哨兵原样取出，不做二次加工")
+    void structuredFromSentinel() {
+        String text = "[明细] x\nCRITERIA_JSON "
+                + "{\"criteria\":[{\"metric\":\"m\",\"actual\":\"1\",\"passed\":true}]}";
+        assertThat(PytestCriteriaExtractor.toStructured(text))
+                .isEqualTo("{\"criteria\":[{\"metric\":\"m\",\"actual\":\"1\",\"passed\":true}]}");
+    }
+
+    @Test
     @DisplayName("testsuite 级 system-out 不归属给任何用例")
     void suiteLevelOutputIsNotAssigned() throws Exception {
         write("junit.xml", """
@@ -164,7 +238,9 @@ class PytestCriteriaExtractorTest {
 
         PytestCriteriaExtractor.Extraction result = PytestCriteriaExtractor.scan(tempDir);
         assertThat(result.jsonFiles()).isZero();
-        assertThat(result.byNodeId()).isEmpty();
+        // v5.24.0：junit 现在也产 classname::name 索引；该用例无 classname，key 退化为 name。
+        // 坏 json-report 不能再让 byNodeId 全空（那会让判据匹配只能靠脆弱的 fallback）。
+        assertThat(result.byNodeId()).containsKey("test_ok");
         assertThat(result.byCaseName()).containsKey("test_ok");
         assertThat(result.files()).isEqualTo(1);
     }

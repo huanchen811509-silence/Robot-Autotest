@@ -1,6 +1,7 @@
 package com.qa.autotest.application.report;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -9,7 +10,11 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import javax.xml.parsers.DocumentBuilderFactory;
 import org.springframework.stereotype.Component;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -71,7 +76,11 @@ public class PytestLogPersister {
         }
         Path report = artifactDir.resolve("pytest-report.json");
         if (!Files.isRegularFile(report)) {
-            return new Spans(Map.of());
+            // v5.24.0 / FR-EHT-01：自研用例库装不了 json-report，真实产物只有 junit.xml。
+            // 旧代码在这里直接返回空 Spans，导致 log_offset/log_span 恒为 -1/null、日志抽屉全空。
+            // 改从 junit 的 <testcase> 捕获文本（system-out/err）生成日志，key 用 classname::name，
+            // 与 test_result.nodeId 同一口径（json-report 的斜杠 nodeid 本就和它对不上）。
+            return fromJunit(artifactDir);
         }
         try {
             JsonNode root = mapper.readTree(Files.readAllBytes(report));
@@ -113,6 +122,103 @@ public class PytestLogPersister {
         } catch (IOException e) {
             throw new UncheckedIOException("写 pytest 用例日志失败: " + artifactDir, e);
         }
+    }
+
+    /**
+     * 无 json-report 时从 junit 生成日志与区间（v5.24.0 / FR-EHT-01）。
+     *
+     * <p>junit 的 {@code <testcase classname name>} 天然是按用例分组的边界；
+     * 捕获文本在 {@code <system-out>}（print）与 {@code <system-err>}（logging 默认写 stderr）
+     * 两处，都要读并按行去重——pytest 会按 setup/call 阶段各写一份，内容高度重复。
+     *
+     * <p>key 用 {@code classname::name}，与 {@code PytestResultNormalizer} 生成的
+     * {@code test_result.nodeid} 同口径；否则区间永远匹配不上，抽屉还是空。
+     */
+    private Spans fromJunit(Path artifactDir) {
+        List<Path> xmls;
+        try (var stream = Files.list(artifactDir)) {
+            xmls = stream.filter(p -> {
+                String n = p.getFileName().toString();
+                return n.startsWith("junit") && n.endsWith(".xml");
+            }).sorted().toList();
+        } catch (IOException e) {
+            return new Spans(Map.of());
+        }
+        if (xmls.isEmpty()) {
+            return new Spans(Map.of());
+        }
+        Map<String, long[]> spans = new LinkedHashMap<>();
+        List<String> rows = new ArrayList<>();
+        long seq = 0;
+        for (Path xml : xmls) {
+            seq = appendJunit(xml, spans, rows, seq);
+        }
+        if (rows.isEmpty()) {
+            return new Spans(Map.of());
+        }
+        try {
+            Files.write(artifactDir.resolve(LOG_FILE), rows, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new UncheckedIOException("写 pytest 用例日志失败: " + artifactDir, e);
+        }
+        return new Spans(spans);
+    }
+
+    /** 解析一个 junit 文件，追加日志行并登记用例区间；返回新的全局序号。 */
+    private long appendJunit(Path xml, Map<String, long[]> spans, List<String> rows, long seq) {
+        try (InputStream in = Files.newInputStream(xml)) {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            // 与 PytestStepExtractor 同一套安全设置：禁 DOCTYPE、禁外部实体。
+            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            factory.setXIncludeAware(false);
+            factory.setExpandEntityReferences(false);
+            Document doc = factory.newDocumentBuilder().parse(in);
+            NodeList nodes = doc.getElementsByTagName("testcase");
+            for (int i = 0; i < nodes.getLength(); i++) {
+                Element tc = (Element) nodes.item(i);
+                String classname = tc.getAttribute("classname");
+                String name = tc.getAttribute("name");
+                String nodeId = classname.isEmpty() ? name : classname + "::" + name;
+                String text = captured(tc);
+                if (text.isBlank()) {
+                    continue;
+                }
+                long start = seq;
+                for (String line : text.split("\\R")) {
+                    rows.add(row(seq++, "INFO", "call", line));
+                }
+                if (seq > start) {
+                    spans.put(nodeId, new long[] {start, seq});
+                }
+            }
+        } catch (Exception ignored) {
+            // 单个文件坏掉不影响其它文件；缺日志的用例抽屉显示「暂无日志」。
+        }
+        return seq;
+    }
+
+    /** testcase 下的 system-out + system-err 文本，按行去重（跨阶段重复）。 */
+    private static String captured(Element testcase) {
+        StringBuilder sb = new StringBuilder();
+        java.util.LinkedHashSet<String> seen = new java.util.LinkedHashSet<>();
+        for (String tag : new String[] {"system-out", "system-err"}) {
+            NodeList list = testcase.getElementsByTagName(tag);
+            for (int i = 0; i < list.getLength(); i++) {
+                String text = list.item(i).getTextContent();
+                if (text == null || text.isBlank()) {
+                    continue;
+                }
+                for (String line : text.split("\\R")) {
+                    if (seen.add(line)) {
+                        if (sb.length() > 0) {
+                            sb.append('\n');
+                        }
+                        sb.append(line);
+                    }
+                }
+            }
+        }
+        return sb.toString();
     }
 
     /** 单行 JSON。手写而不是用 mapper：字段固定且要保证不转义中文以外无差异。 */

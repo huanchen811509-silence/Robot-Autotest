@@ -101,6 +101,23 @@ class PytestResultNormalizerTest {
     }
 
     @Test
+    void 空执行时通过率不适用(@TempDir Path dir) throws Exception {
+        // 0 条用例：pytest 收集不到用例时仍会产出空 testsuite、退出码仍是 0。
+        // 旧逻辑 allSkipped = skipped == merged.size() && !merged.isEmpty() → 空集为 false，
+        // 通过率被判成「适用」，空跑显示 0%/100%——v5.24.0 / FR-EHT-04 修掉。
+        Path junit = writeJunit(dir, """
+                <testsuite tests="0" errors="0" failures="0" skipped="0">
+                </testsuite>
+                """);
+
+        PytestResultNormalizer.NormalizeResult result = normalizer().normalize(PROJECT, "RUN-1",
+                List.of(junit), Map.of(), dir);
+
+        assertThat(result.run().cases()).isEmpty();
+        assertThat(result.passRateApplicable()).isFalse();
+    }
+
+    @Test
     void 失败与错误分别映射(@TempDir Path dir) throws Exception {
         Path junit = writeJunit(dir, """
                 <testsuite tests="2">
