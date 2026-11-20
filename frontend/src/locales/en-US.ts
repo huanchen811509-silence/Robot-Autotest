@@ -3437,6 +3437,10 @@ export default {
     emptyValue: 'No value in source',
     yes: 'Yes',
     no: 'No',
+    confirmBinding: 'Confirm script binding',
+    confirmBindingHint: 'Marks this case binding as confirmed; execution no longer treats it as unverified.',
+    confirmBindingDone: 'Confirmed {count}',
+    confirmBindingFailed: 'Confirm failed: {reason}',
     group: {
       identity: 'Identity',
       category: 'Category',

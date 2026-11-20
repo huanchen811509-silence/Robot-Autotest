@@ -66,7 +66,7 @@ public class SampleSetSeeder {
             boolean fresh = false;
             if (existing == null) {
                 String code = nextSampleCode(index);
-                setId = sets.insertPlatform(code, category.name() + " · 样例",
+                setId = sets.insertPlatform(code, category.name(),
                         "按一级分类「" + category.name() + "」自动派生的样例集",
                         category.name(), TenantContext.userId());
                 created++;
@@ -113,13 +113,18 @@ public class SampleSetSeeder {
         return rows.isEmpty() ? null : rows.get(0);
     }
 
-    /** SAMPLE-<序号>：序号被占用时顺延，保证唯一键不冲突。 */
+    /**
+     * 三位序号（001、002…）：按分类 sort_no 稳定分配（v5.31.0 / FR-v5.31-06）。
+     *
+     * <p>为什么不再用 SAMPLE-n：字符串排序会把 10 排在 2 前面，而「编号-中文名」本身
+     * 就是给人看的位置编号。序号被占用时顺延，保证唯一键不冲突。
+     */
     private String nextSampleCode(int start) {
-        int n = start;
-        String code = "SAMPLE-" + n;
-        while (sets.platformCodeExists(code, null)) {
+        int n = Math.max(1, start);
+        String code = String.format("%03d", n);
+        while (sets.platformCodeExists(code, null) && n < start + 999) {
             n++;
-            code = "SAMPLE-" + n;
+            code = String.format("%03d", n);
         }
         return code;
     }

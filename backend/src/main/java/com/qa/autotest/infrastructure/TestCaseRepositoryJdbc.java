@@ -273,9 +273,9 @@ public class TestCaseRepositoryJdbc implements TestCaseRepository {
             PreparedStatement ps = connection.prepareStatement("""
                     INSERT INTO test_case
                       (project_id, case_code, title, case_kind, source_type, priority, safety_level,
-                       domain_tag, status, description, precondition, expected, review_status,
+                       domain_tag, description, precondition, expected, review_status,
                        source, capability, created_by, updated_by)
-                    VALUES (?, ?, ?, ?, 'ledger', ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?)
+                    VALUES (?, ?, ?, ?, 'ledger', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """, Statement.RETURN_GENERATED_KEYS);
             ps.setLong(1, testCase.projectId());
             ps.setString(2, testCase.caseCode());

@@ -210,6 +210,20 @@ export const caseApi = {
   get(projectId: number, id: number) {
     return request<CaseDetail>(`${base(projectId)}/cases/${id}`)
   },
+  /** v5.31.0 / FR-v5.31-01：人工确认脚本绑定（把 verified 置 1，留审计）。 */
+  confirmBinding(projectId: number, caseId: number, kernel = 'pytest') {
+    return request<{ confirmed: number; failed: { caseId: number; reason: string }[] }>(
+      `${base(projectId)}/cases/${caseId}/binding/confirm?kernel=${encodeURIComponent(kernel)}`,
+      { method: 'POST' },
+    )
+  },
+  /** 批量确认：部分成功语义，失败项逐条返回。 */
+  confirmBindings(projectId: number, caseIds: number[], kernel = 'pytest') {
+    return request<{ confirmed: number; failed: { caseId: number; reason: string }[] }>(
+      `${base(projectId)}/cases/binding/confirm-batch`,
+      { method: 'POST', body: JSON.stringify({ caseIds, kernel }) },
+    )
+  },
   /**
    * 删除影响面（v5.11.0 / FR-v5.11-07）：三个数字**只用于确认弹窗**。
    * 与删除拦截不是一回事 —— 拦截看脚本绑定，用例集引用删除时会级联移出。

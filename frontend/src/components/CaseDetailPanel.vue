@@ -13,6 +13,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { caseDetailApi, type CaseDetailSource, type CaseDetailView } from '@/api/caseDetail'
+import { caseApi } from '@/api/cases'
 import CaseScriptLink from '@/components/CaseScriptLink.vue'
 
 /**
@@ -161,6 +162,37 @@ async function load(): Promise<void> {
   }
 }
 
+/**
+ * v5.31.0 / FR-v5.31-01：人工确认脚本绑定。
+ *
+ * 只对项目用例开放（公共库是 robot 内核，绑定态恒「不适用」）；权限由后端 403 兜底。
+ */
+const confirming = ref(false)
+const confirmMsg = ref('')
+
+async function confirmBinding(): Promise<void> {
+  if (!props.projectId) {
+    return
+  }
+  confirming.value = true
+  confirmMsg.value = ''
+  try {
+    const result = await caseApi.confirmBinding(Number(props.projectId), Number(props.caseId))
+    confirmMsg.value = result.confirmed > 0
+      ? t('caseDetail.confirmBindingDone', { count: result.confirmed })
+      : t('caseDetail.confirmBindingFailed', {
+          reason: result.failed[0]?.reason ?? t('caseDetail.emptyValue'),
+        })
+    await load()
+  } catch (ex) {
+    confirmMsg.value = t('caseDetail.confirmBindingFailed', {
+      reason: (ex as { message?: string }).message ?? t('caseDetail.emptyValue'),
+    })
+  } finally {
+    confirming.value = false
+  }
+}
+
 // mounted 即按 caseId 拉取：URL 复制后直达不依赖列表页状态；路由参数变化也跟着刷新。
 onMounted(load)
 watch([() => props.caseId, () => props.source, () => props.projectId], () => void load())
@@ -191,6 +223,20 @@ watch([() => props.caseId, () => props.source, () => props.projectId], () => voi
         <code v-if="detail.scriptNodeId" class="case-detail-node" data-testid="case-detail-node-id">
           {{ detail.scriptNodeId }}
         </code>
+        <button
+          v-if="projectId && detail.scriptPath"
+          type="button"
+          class="case-detail-confirm"
+          data-testid="case-detail-confirm-binding"
+          :disabled="confirming"
+          :title="t('caseDetail.confirmBindingHint')"
+          @click="confirmBinding"
+        >
+          {{ confirming ? t('caseDetail.loading') : t('caseDetail.confirmBinding') }}
+        </button>
+        <span v-if="confirmMsg" class="case-detail-confirm-msg" data-testid="case-detail-confirm-msg">
+          {{ confirmMsg }}
+        </span>
       </div>
 
       <!-- 副本专属徽章：来源 external_id / 同步作业号 / 本地覆盖 / 来源徽章 -->
@@ -345,5 +391,24 @@ watch([() => props.caseId, () => props.source, () => props.projectId], () => voi
   .case-detail-grid {
     grid-template-columns: 1fr;
   }
+}
+.case-detail-confirm {
+  margin-left: var(--space-2);
+  padding: 2px var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--font-sm);
+  cursor: pointer;
+}
+.case-detail-confirm:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.case-detail-confirm-msg {
+  color: var(--text-muted);
+  font-size: var(--font-sm);
 }
 </style>

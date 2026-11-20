@@ -3451,6 +3451,10 @@ export default {
     emptyValue: '源表无值',
     yes: '是',
     no: '否',
+    confirmBinding: '确认脚本绑定',
+    confirmBindingHint: '确认后该用例的脚本绑定标记为「已确认」，执行时不再按未校验处理。',
+    confirmBindingDone: '已确认 {count} 条',
+    confirmBindingFailed: '确认失败：{reason}',
     group: {
       identity: '标识',
       category: '分类',

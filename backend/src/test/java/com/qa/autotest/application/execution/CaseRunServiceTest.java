@@ -179,12 +179,42 @@ class CaseRunServiceTest {
         CaseRunService.SafetyPrecheck result = service.precheck(PROJECT, List.of(11L, 12L, 13L));
 
         assertEquals(3, result.total());
-        assertTrue(!result.allowed(), "含 L2 与 LX 时必须判为不可执行");
-        assertEquals(List.of("DESTRUCT-001", "UNKNOWN-001"),
+        assertTrue(!result.allowed(), "含 L2 时默认必须判为不可执行");
+        // v5.31.0 / FR-v5.31-07：L2 与 LX 分列 —— L2 阻断，LX 进 unrated（默认 block 模式下仍不放行）
+        assertEquals(List.of("DESTRUCT-001"),
                 result.blocked().stream().map(CaseRunService.BlockedCase::caseCode).toList());
-        assertEquals(List.of(12L, 13L),
-                result.blocked().stream().map(CaseRunService.BlockedCase::caseId).toList());
+        assertEquals(List.of("UNKNOWN-001"),
+                result.unrated().stream().map(CaseRunService.BlockedCase::caseCode).toList());
         assertTrue(quick.last == null, "预检是只读的，不得触发执行");
+    }
+
+    @Test
+    @DisplayName("v5.31 FR-v5.31-07：confirm 模式下 LX 可放行，但必须带确认凭据")
+    void 未定级知情确认() {
+        Map<Long, TestCase> cases = Map.of(13L, testCase(13L, "UNKNOWN-001", "LX"));
+        RecordingQuickRun quick = new RecordingQuickRun();
+        CaseRunService service = new CaseRunService(repo(cases), ExecutionTestSupport.access(),
+                new CaseScriptResolver(files(Map.of())), quick);
+        service.setUnratedMode("confirm");
+
+        CaseRunService.SafetyPrecheck pre = service.precheck(PROJECT, List.of(13L));
+        assertTrue(pre.allowed(), "confirm 模式下预检应放行未定级用例");
+        assertEquals(1, pre.unrated().size());
+
+        // 不带确认凭据 → 400，且不产生执行
+        assertThrows(com.qa.autotest.common.BusinessException.class,
+                () -> service.run(command(List.of(13L))));
+        assertTrue(quick.last == null, "未确认时不得下发执行");
+
+        // 带确认凭据 → 越过安全闸（后续可能因未绑定脚本 400，但绝不能是「需显式确认」）
+        CaseRunService.CaseRunCommand confirmed = new CaseRunService.CaseRunCommand(
+                PROJECT, List.of(13L), null, null, null, null, null, null, null, true);
+        try {
+            service.run(confirmed);
+        } catch (com.qa.autotest.common.BusinessException ex) {
+            assertTrue(!String.valueOf(ex.getMessage()).contains("需显式确认"),
+                    "确认后不应再被知情确认拦截，实际：" + ex.getMessage());
+        }
     }
 
     @Test

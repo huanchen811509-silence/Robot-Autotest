@@ -32,10 +32,12 @@ public class ProjectCardController {
     /**
      * @param window  统计窗口，{@code 7d}（默认）/ {@code 30d}；非法值返回 400 INVALID_ARGUMENT
      * @param current 前端当前项目 id（localStorage 状态由调用方回传），用于回填 {@code isCurrent}
+     * @param scope   {@code all}（默认）/ {@code mine}；mine 用三源可见性，不靠前端 own/joined 过滤
      */
     @GetMapping
     public ApiResponse<List<ProjectCard>> list(@RequestParam(required = false) String window,
-                                               @RequestParam(required = false) Long current) {
-        return ApiResponse.ok(cards.cards(window, current));
+                                               @RequestParam(required = false) Long current,
+                                               @RequestParam(required = false) String scope) {
+        return ApiResponse.ok(cards.cards(window, current, scope));
     }
 }

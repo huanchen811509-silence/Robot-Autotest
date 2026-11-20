@@ -47,7 +47,7 @@ export const projectCardsApi = {
    * 一次拉全部项目卡牌（FR-UI-14：整个页面只发这一个请求，
    * 不许为每张卡再打 `/projects/{id}/overview`）。
    */
-  list(window: string = '7d', current?: number | null): Promise<ProjectCard[]> {
-    return request<ProjectCard[]>(`/projects/cards${toQuery({ window, current })}`)
+  list(window: string = '7d', current?: number | null, scope?: 'all' | 'mine'): Promise<ProjectCard[]> {
+    return request<ProjectCard[]>(`/projects/cards${toQuery({ window, current, scope })}`)
   },
 }

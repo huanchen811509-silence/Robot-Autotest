@@ -38,12 +38,24 @@ public class RunTrustJdbcStore implements
         SelectionResolver.CaseScopeQuery,
         CriteriaIngestService.ResultStore {
 
-    /** 允许出现在 test_case 查询里的筛选键 → 固定列名（白名单，非用户输入）。 */
+    /**
+     * 允许出现在 test_case 查询里的筛选键 → 固定列名（白名单，非用户输入）。
+     *
+     * <p>v5.31.0 / FR-v5.31-04：补齐 {@code reviewStatus} / {@code safetyLevel}，并删掉
+     * 已废弃的 {@code status}（该列在 V11_87 已删除，留着会直接 SQL 报错）。
+     * {@code bindingState} 走 EXISTS 子查询，不在本表里。
+     */
     private static final Map<String, String> FILTER_COLUMNS = Map.of(
             "domain", "domain_tag",
             "priority", "priority",
-            "status", "status",
-            "caseKind", "case_kind");
+            "caseKind", "case_kind",
+            "reviewStatus", "review_status",
+            "safetyLevel", "safety_level");
+
+    /** 支持的全部筛选键：白名单外的键一律 400，不再静默丢弃。 */
+    private static final java.util.Set<String> SUPPORTED_FILTERS =
+            java.util.Set.of("domain", "priority", "caseKind", "reviewStatus", "safetyLevel",
+                    "bindingState");
 
     private static final RowMapper<SelectionSnapshotService.SnapshotRow> SNAPSHOT_MAPPER =
             (rs, n) -> new SelectionSnapshotService.SnapshotRow(
@@ -248,22 +260,60 @@ public class RunTrustJdbcStore implements
     // ---------- 辅助 ----------
 
     /** 只拼固定列名（白名单）与 {@code ?} 占位符，值全部走参数绑定。 */
-    private static String scopeWhere(long projectId, Map<String, Object> filter,
-                                     List<Object> args) {
+    private String scopeWhere(long projectId, Map<String, Object> filter,
+                              List<Object> args) {
         StringBuilder sql = new StringBuilder(" FROM test_case WHERE project_id = ?");
         args.add(projectId);
         if (filter == null || filter.isEmpty()) {
             return sql.toString();
         }
         for (Map.Entry<String, Object> entry : filter.entrySet()) {
-            String column = FILTER_COLUMNS.get(entry.getKey());
+            String key = entry.getKey();
             Object value = entry.getValue();
-            if (column != null && value != null && !String.valueOf(value).isBlank()) {
-                sql.append(" AND ").append(column).append(" = ?");
-                args.add(String.valueOf(value));
+            if (value == null || String.valueOf(value).isBlank()) {
+                continue;
             }
+            if (!SUPPORTED_FILTERS.contains(key)) {
+                throw new com.qa.autotest.common.BusinessException(
+                        com.qa.autotest.common.ErrorCode.INVALID_ARGUMENT,
+                        "不支持的筛选键: " + key + "（可用：" + SUPPORTED_FILTERS + "）");
+            }
+            if ("bindingState".equals(key)) {
+                appendBindingState(sql, projectId, String.valueOf(value));
+                continue;
+            }
+            String column = FILTER_COLUMNS.get(key);
+            sql.append(" AND ").append(column).append(" = ?");
+            args.add(String.valueOf(value));
         }
         return sql.toString();
+    }
+
+    /**
+     * 绑定态筛选：用 EXISTS 而不是 JOIN，避免一条用例多内核绑定时重复计数。
+     *
+     * <p>NOT_APPLICABLE 依赖项目内核：robot 库「全部不适用」= 1=1；pytest 库「不适用」= 1=0。
+     */
+    private void appendBindingState(StringBuilder sql, long projectId, String raw) {
+        String state = raw.trim().toUpperCase(java.util.Locale.ROOT);
+        switch (state) {
+            case "BOUND_VERIFIED" -> sql.append(" AND EXISTS (SELECT 1 FROM case_script_binding b")
+                    .append(" WHERE b.case_id = test_case.id AND b.project_id = test_case.project_id")
+                    .append(" AND b.verified = 1)");
+            case "BOUND_UNVERIFIED" -> sql.append(" AND EXISTS (SELECT 1 FROM case_script_binding b")
+                    .append(" WHERE b.case_id = test_case.id AND b.project_id = test_case.project_id")
+                    .append(" AND b.verified = 0)");
+            case "UNBOUND" -> sql.append(" AND NOT EXISTS (SELECT 1 FROM case_script_binding b")
+                    .append(" WHERE b.case_id = test_case.id AND b.project_id = test_case.project_id)");
+            case "NOT_APPLICABLE" -> {
+                String kernel = jdbc.queryForObject(
+                        "SELECT test_kernel FROM project WHERE id = ?", String.class, projectId);
+                sql.append("pytest".equalsIgnoreCase(kernel) ? " AND 1=0" : " AND 1=1");
+            }
+            default -> throw new com.qa.autotest.common.BusinessException(
+                    com.qa.autotest.common.ErrorCode.INVALID_ARGUMENT,
+                    "非法 bindingState: " + raw);
+        }
     }
 
     private static List<Long> cleanIds(List<Long> ids) {

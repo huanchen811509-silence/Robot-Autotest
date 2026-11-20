@@ -649,11 +649,15 @@ const dataColumns = computed<Record<CaseColumnKey, DataTableColumns<TestCase>[nu
     title: t('cases.safetyLevel'),
     key: 'safetyLevel',
     width: 120,
+    // v5.31.0 / FR-v5.31-02：列表不再逐行显示「LX 未判定」——96% 的行都是它，
+    // 满屏红标等于没有信息。未定级只在筛选器与详情里出现。
     render: (row) =>
-      h(StatusTag, {
-        label: safetyLevelLabel(row.safetyLevel),
-        tone: safetyLevelTone(row.safetyLevel),
-      }),
+      row.safetyLevel === 'LX'
+        ? '—'
+        : h(StatusTag, {
+            label: safetyLevelLabel(row.safetyLevel),
+            tone: safetyLevelTone(row.safetyLevel),
+          }),
   },
   reviewStatus: {
     title: t('cases.status'),

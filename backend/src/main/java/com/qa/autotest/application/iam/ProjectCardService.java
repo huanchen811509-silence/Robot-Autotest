@@ -72,6 +72,14 @@ public class ProjectCardService {
         this.clock = executionClock;
     }
 
+    /** 三源可见（成员 ∪ 负责人 ∪ 组授权）的项目 id；仅 scope=mine 时用到。 */
+    private org.springframework.jdbc.core.JdbcTemplate jdbc;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setJdbc(org.springframework.jdbc.core.JdbcTemplate jdbc) {
+        this.jdbc = jdbc;
+    }
+
     /**
      * 当前用户可见的全部项目卡牌。
      *
@@ -79,12 +87,34 @@ public class ProjectCardService {
      * @param currentProjectId 前端当前项目 id，可为 {@code null}（此时所有卡牌 {@code isCurrent=false}）
      */
     public List<ProjectCard> cards(String window, Long currentProjectId) {
+        return cards(window, currentProjectId, "all");
+    }
+
+    /**
+     * v5.31.0 / FR-v5.31-05：按范围取卡牌。
+     *
+     * <p>{@code scope=mine} 必须用「成员 ∪ 负责人 ∪ 组授权」三源，而不是前端拿 own/joined
+     * 自己过滤——卡牌里的 {@code joined} 只来自 {@code project_member}，经用户组授权的项目
+     * 会 own=false、joined=false 被静默剔除，这就是「我参与的项目比总览少」的根因。
+     */
+    public List<ProjectCard> cards(String window, Long currentProjectId, String scope) {
         int days = windowDays(window);
         List<Project> visible = projects.visible();
         if (visible.isEmpty()) {
             return List.of();
         }
         long userId = TenantContext.requireUserId();
+        java.util.Set<Long> mine = java.util.Set.of();
+        if ("mine".equalsIgnoreCase(scope) && jdbc != null) {
+            java.util.Set<Long> mineIds = new java.util.HashSet<>(jdbc.queryForList(
+                    com.qa.autotest.application.iam.ProjectVisibilitySql.PROJECTS_OF_USER,
+                    Long.class, userId));
+            mine = mineIds;
+            visible = visible.stream().filter(p -> mineIds.contains(p.id())).toList();
+            if (visible.isEmpty()) {
+                return List.of();
+            }
+        }
         Instant windowStart = clock.instant().minus(Duration.ofDays(days));
         List<Long> projectIds = visible.stream().map(Project::id).toList();
         Map<Long, ProjectCardAggregate> aggregates = cards.aggregate(projectIds, windowStart, userId);
@@ -104,7 +134,9 @@ public class ProjectCardService {
                     // 显式 longValue()：ownerId 是 Long、userId 是 long，靠自动拆箱虽然也对，
                     // 但一旦哪天有人把它改写成两个 Long 相比，就会退化成引用比较且静默通过编译。
                     project.ownerId() != null && project.ownerId().longValue() == userId,
-                    memberRole != null && !memberRole.isBlank(),
+                    // 组授权项目 memberRole 为空，但它在三源集合里 —— joined 必须为真，
+                    // 否则前端 own||joined 的旧过滤会把它再剔一次。
+                    (memberRole != null && !memberRole.isBlank()) || mine.contains(project.id()),
                     project.testKernel(), project.origin()));
         }
         return result;

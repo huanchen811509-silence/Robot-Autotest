@@ -50,9 +50,9 @@ public class ReportDigestRepositoryJdbc implements ReportDigestRepository {
      */
     private static final String COVERAGE_COUNTS = """
             SELECT
-              (SELECT COUNT(*) FROM test_case c WHERE c.project_id = ? AND c.status = 1) AS case_total,
+              (SELECT COUNT(*) FROM test_case c WHERE c.project_id = ?) AS case_total,
               (SELECT COUNT(*) FROM test_case c
-                WHERE c.project_id = ? AND c.status = 1
+                WHERE c.project_id = ?
                   AND EXISTS (SELECT 1 FROM test_result t
                                 JOIN run r ON r.id = t.run_id
                                WHERE r.project_id = c.project_id

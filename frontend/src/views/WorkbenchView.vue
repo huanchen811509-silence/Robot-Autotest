@@ -57,17 +57,14 @@ function lastRunValue(value: string | null): number {
 
 const filtered = computed<ProjectCardData[]>(() => {
   const kw = keyword.value.trim().toLowerCase()
-  // `?scope=mine`：只要「我创建或我加入」，与 admin 的全局可见性无关。
-  const scoped =
-    props.scope === 'mine'
-      ? cards.value.filter((card) => card.own === true || card.joined === true)
-      : [...cards.value]
+  // v5.31.0 / FR-v5.31-05：`scope=mine` 的过滤由后端三源（成员∪负责人∪组授权）完成。
+  // 前端不再用 own||joined 二次过滤——组授权项目的 own/joined 都是 false，会被静默剔除。
   const rows = kw
-    ? scoped.filter(
+    ? cards.value.filter(
         (card) =>
           card.name.toLowerCase().includes(kw) || card.code.toLowerCase().includes(kw),
       )
-    : scoped
+    : cards.value
   return rows.sort((a, b) => {
     if (sortBy.value === 'name') return a.name.localeCompare(b.name)
     return lastRunValue(b.lastRunAt) - lastRunValue(a.lastRunAt)
@@ -79,7 +76,8 @@ async function load(): Promise<void> {
   loading.value = true
   error.value = null
   try {
-    cards.value = await projectCardsApi.list('7d', auth.projectId)
+    cards.value = await projectCardsApi.list('7d', auth.projectId,
+      props.scope === 'mine' ? 'mine' : 'all')
   } catch (e) {
     error.value = localizeError(e)
     cards.value = []

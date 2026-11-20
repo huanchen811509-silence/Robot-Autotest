@@ -23,7 +23,7 @@ import org.springframework.stereotype.Repository;
 public class OverviewRepositoryJdbc implements OverviewRepository {
 
     private static final String CASE_TOTAL = """
-            SELECT COUNT(*) FROM test_case WHERE project_id = ? AND status = 1
+            SELECT COUNT(*) FROM test_case WHERE project_id = ?
             """;
 
     /**
@@ -34,7 +34,7 @@ public class OverviewRepositoryJdbc implements OverviewRepository {
     private static final String CASE_BY_PRIORITY = """
             SELECT COALESCE(priority, '') AS k, COUNT(*) AS c
               FROM test_case
-             WHERE project_id = ? AND status = 1
+             WHERE project_id = ?
              GROUP BY k
              ORDER BY c DESC, k
             """;
@@ -42,7 +42,7 @@ public class OverviewRepositoryJdbc implements OverviewRepository {
     private static final String CASE_BY_REVIEW = """
             SELECT COALESCE(review_status, '') AS k, COUNT(*) AS c
               FROM test_case
-             WHERE project_id = ? AND status = 1
+             WHERE project_id = ?
              GROUP BY k
              ORDER BY c DESC, k
             """;
@@ -50,7 +50,7 @@ public class OverviewRepositoryJdbc implements OverviewRepository {
     private static final String CASE_TOP_DOMAINS = """
             SELECT COALESCE(domain_tag, '') AS k, COUNT(*) AS c
               FROM test_case
-             WHERE project_id = ? AND status = 1
+             WHERE project_id = ?
              GROUP BY k
              ORDER BY c DESC, k
              LIMIT ?

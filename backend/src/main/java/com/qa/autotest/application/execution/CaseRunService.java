@@ -1,6 +1,7 @@
 package com.qa.autotest.application.execution;
 
 import com.qa.autotest.application.iam.AccessControlService;
+import com.qa.autotest.application.iam.AuditService;
 import com.qa.autotest.application.repository.TestCaseRepository;
 import com.qa.autotest.common.BusinessException;
 import com.qa.autotest.common.ErrorCode;
@@ -47,6 +48,26 @@ public class CaseRunService {
         this.quickRuns = quickRuns;
     }
 
+    /**
+     * 未定级用例的执行口径（v5.31.0 / FR-v5.31-07 / ADR-0013 §4）。
+     *
+     * <p>{@code block} = 原行为（LX 按 L2 对待，整单 403）；{@code confirm} = 允许携带
+     * 「已知悉」凭据执行。默认 block，ADR 修订未生效前不会改变任何现网行为。
+     */
+    private String unratedMode = "block";
+
+    private AuditService audit;
+
+    @org.springframework.beans.factory.annotation.Value("${execution.unrated-mode:block}")
+    void setUnratedMode(String mode) {
+        this.unratedMode = (mode == null || mode.isBlank()) ? "block" : mode.trim().toLowerCase();
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setAudit(AuditService audit) {
+        this.audit = audit;
+    }
+
     public RunRecord run(CaseRunCommand cmd) {
         if (cmd == null) {
             throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "请求为空");
@@ -63,11 +84,30 @@ public class CaseRunService {
         access.require(PermissionResource.EXECUTION, PermissionAction.EXECUTE);
 
         Selection selection = collect(cmd.projectId(), ids);
-        // G2-3 / ADR-0013：L2 高危与 LX 未判定一律不得自动执行，整单拒绝并列明编号
+        // G2-3 / ADR-0013：L2 一律阻断；LX 由 execution.unrated-mode 决定阻断或知情确认
         if (!selection.blocked().isEmpty()) {
             throw new BusinessException(ErrorCode.SAFETY_LEVEL_BLOCKED,
-                    "以下用例安全级禁止自动执行（L2 高危 / LX 未判定按 L2 对待）："
+                    "以下用例安全级禁止自动执行（L2 高危）："
                             + blockedSummary(selection.blocked()));
+        }
+        if (!selection.unrated().isEmpty()) {
+            if (!confirmMode()) {
+                throw new BusinessException(ErrorCode.SAFETY_LEVEL_BLOCKED,
+                        "以下用例未定级（LX），默认按 L2 对待，禁止自动执行："
+                                + blockedSummary(selection.unrated())
+                                + "。可先批量定级，或开启知情确认后重试");
+            }
+            if (!Boolean.TRUE.equals(cmd.confirmUnrated())) {
+                throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                        "本次包含未定级用例 " + selection.unrated().size()
+                                + " 条，需显式确认后才能执行");
+            }
+            if (audit != null) {
+                audit.record("case.run.unrated.confirm", "test_case",
+                        String.valueOf(cmd.projectId()),
+                        "count=" + selection.unrated().size()
+                                + ";codes=" + codesSummary(selection.unrated()));
+            }
         }
         Set<String> codes = selection.codes();
 
@@ -121,14 +161,21 @@ public class CaseRunService {
         access.bindProject(projectId);
         access.require(PermissionResource.EXECUTION, PermissionAction.READ);
         Selection selection = collect(projectId, caseIds);
-        return new SafetyPrecheck(selection.codes().size(), selection.blocked().isEmpty(),
-                selection.blocked());
+        boolean allowed = selection.blocked().isEmpty()
+                && (selection.unrated().isEmpty() || confirmMode());
+        return new SafetyPrecheck(selection.codes().size(), allowed,
+                selection.blocked(), selection.unrated());
+    }
+
+    private boolean confirmMode() {
+        return "confirm".equals(unratedMode);
     }
 
     /** 逐条取用例并判级：执行与预检共用，保证两条路径的结论一致。 */
     private Selection collect(long projectId, List<Long> ids) {
         Set<String> codes = new LinkedHashSet<>();
         List<BlockedCase> blocked = new ArrayList<>();
+        List<BlockedCase> unrated = new ArrayList<>();
         for (Long id : ids) {
             if (id == null) {
                 continue;
@@ -141,7 +188,9 @@ public class CaseRunService {
                         "用例缺少编号，无法解析脚本: " + id);
             }
             SafetyLevel level = SafetyLevel.from(testCase.safetyLevel());
-            if (level.blocksExecution()) {
+            if (level == SafetyLevel.LX) {
+                unrated.add(new BlockedCase(testCase.id(), testCase.caseCode().trim(), level.name()));
+            } else if (level.blocksExecution()) {
                 blocked.add(new BlockedCase(testCase.id(), testCase.caseCode().trim(), level.name()));
             }
             codes.add(testCase.caseCode().trim());
@@ -149,7 +198,15 @@ public class CaseRunService {
         if (codes.isEmpty()) {
             throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "至少选择一条用例");
         }
-        return new Selection(codes, blocked);
+        return new Selection(codes, blocked, unrated);
+    }
+
+    private static String codesSummary(List<BlockedCase> items) {
+        int limit = 10;
+        String head = items.subList(0, Math.min(limit, items.size())).stream()
+                .map(BlockedCase::caseCode)
+                .collect(Collectors.joining(","));
+        return items.size() <= limit ? head : head + ",...(" + items.size() + ")";
     }
 
     /** 拒绝文案：超过 10 条只列前 10 条，避免长列表撑爆界面。 */
@@ -161,7 +218,8 @@ public class CaseRunService {
         return blocked.size() <= limit ? head : head + " 等 " + blocked.size() + " 条";
     }
 
-    private record Selection(Set<String> codes, List<BlockedCase> blocked) {
+    private record Selection(Set<String> codes, List<BlockedCase> blocked,
+                             List<BlockedCase> unrated) {
     }
 
     /** 被安全级拦下的用例：编号给用户看，id 给前端勾选状态用。 */
@@ -170,8 +228,15 @@ public class CaseRunService {
 
     /**
      * 预检结果：{@code allowed = false} 表示这一单不能执行，{@code blocked} 逐条给出原因。
+     * {@code unrated} 单列未定级用例（v5.31.0）：confirm 模式下它们不阻断，但要展示并确认。
      */
-    public record SafetyPrecheck(int total, boolean allowed, List<BlockedCase> blocked) {
+    public record SafetyPrecheck(int total, boolean allowed, List<BlockedCase> blocked,
+                                 List<BlockedCase> unrated) {
+
+        /** 兼容构造器：旧调用方只关心 blocked。 */
+        public SafetyPrecheck(int total, boolean allowed, List<BlockedCase> blocked) {
+            this(total, allowed, blocked, List.of());
+        }
     }
 
     public record CaseRunCommand(long projectId,
@@ -182,6 +247,15 @@ public class CaseRunService {
                                  Integer timeoutSeconds,
                                  Integer testTimeoutSeconds,
                                  String includeTag,
-                                 String runRequestId) {
+                                 String runRequestId,
+                                 Boolean confirmUnrated) {
+
+        /** 兼容构造器：九参旧签名（confirmUnrated 缺省为未确认）。 */
+        public CaseRunCommand(long projectId, List<Long> caseIds, Long environmentId,
+                              List<String> deviceKeys, Integer concurrency, Integer timeoutSeconds,
+                              Integer testTimeoutSeconds, String includeTag, String runRequestId) {
+            this(projectId, caseIds, environmentId, deviceKeys, concurrency, timeoutSeconds,
+                    testTimeoutSeconds, includeTag, runRequestId, null);
+        }
     }
 }
