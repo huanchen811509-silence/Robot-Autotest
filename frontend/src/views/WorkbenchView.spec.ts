@@ -148,8 +148,9 @@ describe('WorkbenchView 卡牌页', () => {
     expect(root.textContent).toContain('Zeta 项目')
     expect(root.textContent).toContain('共 3 个项目')
     // FR-UI-14：整页一次请求，参数是窗口 + 当前项目
+    // v5.31.0 / FR-v5.31-06：第三参 scope 交给后端过滤（工作台默认 all）
     expect(list).toHaveBeenCalledTimes(1)
-    expect(list).toHaveBeenCalledWith('7d', 1)
+    expect(list).toHaveBeenCalledWith('7d', 1, 'all')
   })
 
   it('搜索框按名称本地过滤，数量随之变化', async () => {

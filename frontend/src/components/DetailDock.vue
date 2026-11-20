@@ -44,6 +44,10 @@ watch(
       <h2 class="detail-dock-title" data-testid="detail-dock-title">
         {{ title || t('w61.dock.title') }}
       </h2>
+      <!-- 可选操作区（如成员详情的上/下一条）：不传时头部与原先完全一致 -->
+      <div v-if="$slots.actions" class="detail-dock-actions">
+        <slot name="actions" />
+      </div>
       <button type="button" class="link" data-testid="detail-dock-close" @click="emit('close')">
         {{ t('w61.dock.collapse') }}
       </button>
@@ -71,6 +75,14 @@ watch(
   justify-content: space-between;
   gap: var(--space-3);
   margin-bottom: var(--space-2);
+}
+
+/* 操作区贴着标题右侧；无操作时该节点不渲染，不影响原有布局 */
+.detail-dock-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: auto;
 }
 .detail-dock-title {
   margin: 0;

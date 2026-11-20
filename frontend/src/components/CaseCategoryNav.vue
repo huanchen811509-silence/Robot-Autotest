@@ -53,9 +53,39 @@ const emit = defineEmits<{ 'update:modelValue': [value: CategorySelection] }>()
 const { t } = useI18n()
 const rows = ref<GroupedCase[]>(props.groups ?? [])
 const failed = ref('')
-// 初始展开：URL 里已经选了一级分类时，恢复后要能直接看到二级
+/**
+ * 展开状态记忆（v5.32.0 / FR-v5.32-05）。
+ *
+ * 优先用 URL 里已选的一级分类（复制链接要能复现同一屏），
+ * 否则读本地上次展开的集合；两边都空时才全收起。
+ * 隐私模式下 `localStorage` 会直接抛，读写都包 try —— 记不住不算错误。
+ */
+const EXPANDED_KEY = 'case-category-expanded'
+
+function readExpandedMemory(): Set<number> {
+  try {
+    const raw = window.localStorage.getItem(EXPANDED_KEY)
+    const parsed = raw ? (JSON.parse(raw) as unknown) : null
+    return new Set(Array.isArray(parsed) ? parsed.filter((n) => typeof n === 'number') : [])
+  } catch {
+    return new Set()
+  }
+}
+
+function persistExpandedMemory(value: Set<number>): void {
+  try {
+    window.localStorage.setItem(EXPANDED_KEY, JSON.stringify([...value]))
+  } catch {
+    // 存不进去不影响本次会话的展开状态
+  }
+}
+
 const expanded = ref<Set<number>>(
-  new Set((props.groups ?? []).filter((row) => row.l1Name === props.modelValue.l1).map((row) => row.l1Id)),
+  (props.groups ?? []).some((row) => row.l1Name === props.modelValue.l1)
+    ? new Set((props.groups ?? [])
+        .filter((row) => row.l1Name === props.modelValue.l1)
+        .map((row) => row.l1Id))
+    : readExpandedMemory(),
 )
 const loading = ref(false)
 
@@ -118,6 +148,7 @@ function toggleL1(row: GroupedCase): void {
   if (next.has(row.l1Id)) next.delete(row.l1Id)
   else next.add(row.l1Id)
   expanded.value = next
+  persistExpandedMemory(next)
 }
 
 async function load(): Promise<void> {
@@ -241,7 +272,8 @@ watch(
 
 <style scoped>
 .category-nav {
-  width: 240px;
+  /* 宽度交给父栅格（220px）：写死 240 会溢出这一列并挤压右侧表格 */
+  width: 100%;
   flex: none;
   display: flex;
   flex-direction: column;
@@ -287,7 +319,11 @@ watch(
   text-align: left;
 }
 .nav-item.child {
-  padding-left: var(--space-4);
+  /*
+   * 二级缩进 = 一级文字起点（padding 6 + caret 20 + gap 4 = 30）再右移一个层级（4）。
+   * 原先写 var(--space-4)=12px，子项反而比母项左移 18px，看着像「子项挂到了上一个一级分类下」。
+   */
+  padding-left: 34px;
   color: var(--text-muted);
 }
 .nav-item:hover {

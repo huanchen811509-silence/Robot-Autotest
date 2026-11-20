@@ -15,7 +15,7 @@
 import { computed, h, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter, type LocationQueryRaw } from 'vue-router'
-import { NButton, type DataTableColumns } from 'naive-ui'
+import { NButton, NInput, NModal, NRadio, NRadioGroup, NSelect, type DataTableColumns } from 'naive-ui'
 import { useAuthStore } from '@/stores/auth'
 import {
   globalCaseApi,
@@ -31,7 +31,12 @@ import CaseDetailPanel from '@/components/CaseDetailPanel.vue'
 import CaseScriptLink from '@/components/CaseScriptLink.vue'
 import DetailDock from '@/components/DetailDock.vue'
 import { useDetailDock } from '@/composables/useDetailDock'
-import { globalGroupedApi, type GroupedCase } from '@/api/platformCaseSets'
+import {
+  globalGroupedApi,
+  platformCaseSetApi,
+  type GroupedCase,
+  type PlatformCaseSet,
+} from '@/api/platformCaseSets'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -88,6 +93,88 @@ const failed = ref('')
 const categories = ref<CaseCategoryRow[]>([])
 
 const canWrite = computed(() => auth.isAdmin)
+
+/* ------------------------------------------------------------------ 加入用例集（v5.32.0 / FR-v5.32-02）
+ *
+ * 公共库原先没有任何「把选中的用例归到一处」的入口：用户筛完只能看，不能收口。
+ * 这里补的是**平台用例集**方向（跨项目资产），项目内用例集不在此列。
+ */
+
+const checkedIds = ref<number[]>([])
+const setModalOpen = ref(false)
+const setTargetMode = ref<'existing' | 'new'>('existing')
+const setSelectedId = ref<number | null>(null)
+const setNewName = ref('')
+const setNewCode = ref('')
+const platformSets = ref<PlatformCaseSet[]>([])
+const setSaving = ref(false)
+const setError = ref('')
+const setResult = ref('')
+
+const setOptions = computed(() =>
+  platformSets.value.map((s) => ({
+    label: `${s.setCode} · ${s.name}（${s.itemCount}）`,
+    value: s.id,
+  })),
+)
+const canSaveSet = computed(() => {
+  if (checkedIds.value.length === 0 || setSaving.value) return false
+  return setTargetMode.value === 'existing'
+    ? setSelectedId.value !== null
+    : setNewName.value.trim().length > 0
+})
+
+/** 勾选跨页保留；换页/换筛选要清空——把上一组条件的勾选带进新结果是最容易误操作的一种。 */
+watch([page, keyword, bindingState, lifecycleStatus, categoryL1, categoryL2], () => {
+  checkedIds.value = []
+})
+
+async function openSetModal(): Promise<void> {
+  setError.value = ''
+  setResult.value = ''
+  setModalOpen.value = true
+  try {
+    platformSets.value = await platformCaseSetApi.list({ page: 1, size: 200 })
+  } catch {
+    setError.value = t('global.addToSetLoadFailed')
+  }
+}
+
+async function saveSet(): Promise<void> {
+  if (!canSaveSet.value) return
+  setSaving.value = true
+  setError.value = ''
+  setResult.value = ''
+  try {
+    if (setTargetMode.value === 'new') {
+      // 建集与入集一次提交：后端同事务，成员失败不会留下空集
+      const created = await platformCaseSetApi.createWithItems({
+        name: setNewName.value.trim(),
+        setCode: setNewCode.value.trim() || undefined,
+        caseIds: checkedIds.value,
+      })
+      setResult.value = t('global.addToSetNewDone', {
+        name: created.set.name,
+        added: created.added,
+        skipped: created.skipped,
+      })
+    } else {
+      const added = await platformCaseSetApi.addItems(setSelectedId.value as number, checkedIds.value)
+      setResult.value = t('global.addToSetExistingDone', {
+        added: added.added,
+        skipped: added.skipped,
+      })
+    }
+    setNewName.value = ''
+    setNewCode.value = ''
+    setSelectedId.value = null
+    await load()
+  } catch (e) {
+    setError.value = (e as { message?: string }).message ?? t('global.addToSetFailed')
+  } finally {
+    setSaving.value = false
+  }
+}
 
 async function load() {
   loading.value = true
@@ -202,7 +289,12 @@ function rowProps(row: GlobalCaseRow): Record<string, unknown> {
     style: 'cursor: pointer',
     'data-case-row': String(row.id),
     'aria-selected': String(row.id) === detailId.value ? 'true' : 'false',
-    onClick: () => selectRow(row),
+    // 勾选列在行内：点勾选框不该顺带打开详情，否则一次点击两个后果
+    onClick: (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null
+      if (target?.closest('input[type="checkbox"], label.n-checkbox, .n-checkbox')) return
+      selectRow(row)
+    },
   }
 }
 
@@ -454,6 +546,16 @@ onMounted(async () => {
         <p v-if="failed" class="error">{{ failed }}</p>
 
         <div class="list-area" data-testid="cases-list-area">
+          <!-- v5.32.0 / FR-v5.32-02：勾选后归入平台用例集（原先公共库只能看，不能收口） -->
+          <div v-if="checkedIds.length" class="set-bar" data-testid="global-set-bar">
+            <span class="muted">{{ t('global.selectedCount', { count: checkedIds.length }) }}</span>
+            <NButton size="small" type="primary" data-testid="global-add-to-set" @click="openSetModal">
+              {{ t('global.addToSet') }}
+            </NButton>
+            <NButton size="small" quaternary @click="checkedIds = []">
+              {{ t('global.clearSelection') }}
+            </NButton>
+          </div>
           <div data-testid="cases-grid">
             <DataTable
               :columns="columns"
@@ -464,6 +566,9 @@ onMounted(async () => {
               :error="Boolean(failed)"
               :empty-title="t('global.empty')"
               :max-height="420"
+              selectable
+              :checked-keys="checkedIds"
+              @update:checked-keys="(keys: Array<string | number>) => (checkedIds = keys.map(Number))"
             />
           </div>
 
@@ -515,6 +620,40 @@ onMounted(async () => {
       @open-batches="goImports"
       @committed="afterCommit"
     />
+
+    <!-- 归入平台用例集（v5.32.0 / FR-v5.32-02）：新建走「建集+入集」一次提交 -->
+    <NModal
+      v-model:show="setModalOpen"
+      preset="card"
+      :title="t('global.addToSetTitle')"
+      style="width: 560px"
+    >
+      <p class="muted">{{ t('global.addToSetHint', { count: checkedIds.length }) }}</p>
+      <NRadioGroup v-model:value="setTargetMode" class="set-mode">
+        <NRadio value="existing">{{ t('global.addToSetExisting') }}</NRadio>
+        <NRadio value="new">{{ t('global.addToSetNew') }}</NRadio>
+      </NRadioGroup>
+      <div v-if="setTargetMode === 'existing'" class="set-field">
+        <NSelect
+          v-model:value="setSelectedId"
+          :options="setOptions"
+          filterable
+          :placeholder="t('global.addToSetPickSet')"
+        />
+      </div>
+      <div v-else class="set-field">
+        <NInput v-model:value="setNewName" :placeholder="t('global.addToSetNewName')" />
+        <NInput v-model:value="setNewCode" :placeholder="t('global.addToSetNewCode')" />
+      </div>
+      <p v-if="setError" class="error" data-testid="global-set-error">{{ setError }}</p>
+      <p v-if="setResult" class="muted" data-testid="global-set-result">{{ setResult }}</p>
+      <template #footer>
+        <NButton @click="setModalOpen = false">{{ t('common.cancel') }}</NButton>
+        <NButton type="primary" :disabled="!canSaveSet" :loading="setSaving" @click="saveSet">
+          {{ t('global.addToSetSave') }}
+        </NButton>
+      </template>
+    </NModal>
   </section>
 </template>
 
@@ -570,36 +709,10 @@ onMounted(async () => {
   margin-top: var(--space-3);
 }
 
-.cases-sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  border-right: 1px solid var(--border);
-  padding-right: var(--space-3);
-}
-
 .sidebar-title {
   font-size: 13px;
   color: var(--text-muted);
   margin: 0 0 var(--space-2);
-}
-
-.category-item {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--space-2);
-  padding: 6px 8px;
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--text);
-  text-align: left;
-  cursor: pointer;
-}
-
-.category-item:hover,
-.category-item.active {
-  background: var(--panel);
 }
 
 .count {
@@ -779,11 +892,20 @@ onMounted(async () => {
   .cases-layout {
     grid-template-columns: 1fr;
   }
-
-  .cases-sidebar {
-    border-right: 0;
-    border-bottom: 1px solid var(--border);
-    padding-bottom: var(--space-2);
-  }
 }
+
+/* 勾选后浮出的操作条（v5.32.0）：没有勾选时整条不渲染，不占版面 */
+.set-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+}
+
+.set-mode { margin-bottom: var(--space-3); }
+.set-field { display: flex; flex-direction: column; gap: var(--space-2); }
 </style>

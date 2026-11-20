@@ -503,6 +503,25 @@ function closeMember(): void {
 }
 
 /**
+ * 成员详情上/下一条连续浏览（v5.32.0 / FR-v5.32-04）。
+ *
+ * 抽屉里逐条看的场景（核对一批成员的分类/优先级）不该让人「关掉→找下一行→再点开」。
+ * 顺序按当前列表实际显示顺序，到头即停，不循环——循环会让人误以为还有没看过的。
+ */
+const detailIndex = computed(() =>
+  detailItem.value ? items.value.findIndex((row) => row.id === detailItem.value?.id) : -1,
+)
+const hasPrevMember = computed(() => detailIndex.value > 0)
+const hasNextMember = computed(
+  () => detailIndex.value >= 0 && detailIndex.value < items.value.length - 1,
+)
+
+function stepMember(delta: number): void {
+  const next = items.value[detailIndex.value + delta]
+  if (next) openMember(next)
+}
+
+/**
  * 候选用例走服务端搜索（300ms 防抖）：台账可能有上千条，一次性拉全量既慢又占内存，
  * 而 `NSelect` 的本地过滤只能过滤已加载的部分，用户会误以为「搜不到就是没有」。
  */
@@ -1129,6 +1148,14 @@ void load()
 
       <!-- W62-02：成员详情停靠在成员列表之后，不是弹窗 / 抽屉 / 跳页 -->
       <DetailDock :open="detailOpen" :title="detailTitle" @close="closeMember">
+        <template v-if="detailItem" #actions>
+          <NButton size="tiny" :disabled="!hasPrevMember" data-testid="member-prev" @click="stepMember(-1)">
+            {{ t('w62.memberPrev') }}
+          </NButton>
+          <NButton size="tiny" :disabled="!hasNextMember" data-testid="member-next" @click="stepMember(1)">
+            {{ t('w62.memberNext') }}
+          </NButton>
+        </template>
         <CaseSetMemberDetail v-if="detailItem" :member="detailItem" />
       </DetailDock>
 

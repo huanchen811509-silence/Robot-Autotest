@@ -31,6 +31,11 @@ public class PlatformCaseSetController {
     public record CreatePlatformSetRequest(String setCode, String name, String description) {
     }
 
+    /** 建集 + 加成员一次提交（FR-v5.32-02）；`caseIds` 可为空，等价于只建空集。 */
+    public record CreateWithItemsRequest(String setCode, String name, String description,
+                                         List<Long> caseIds) {
+    }
+
     public record UpdatePlatformSetRequest(String name, String description) {
     }
 
@@ -74,6 +79,19 @@ public class PlatformCaseSetController {
     public ApiResponse<TestSet> create(@RequestBody CreatePlatformSetRequest request) {
         return ApiResponse.ok(sets.createPlatform(request.setCode(), request.name(),
                 request.description()));
+    }
+
+    /**
+     * 建集 + 加成员（v5.32.0 / FR-v5.32-02）。
+     *
+     * <p>独立路径而不是复用 `POST /`：后者语义是「只建集合」，
+     * 混在一起会让「我传了 caseIds 却只建了空集」这种错误没有接口层面的区分。
+     */
+    @PostMapping("/create-with-items")
+    public ApiResponse<TestSetService.PlatformSetWithItems> createWithItems(
+            @RequestBody CreateWithItemsRequest request) {
+        return ApiResponse.ok(sets.createPlatformWithItems(request.setCode(), request.name(),
+                request.description(), request.caseIds()));
     }
 
     @PutMapping("/{id}")

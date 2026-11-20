@@ -69,6 +69,18 @@ export const platformCaseSetApi = {
       body: JSON.stringify(body),
     })
   },
+  /**
+   * 建集并一次性加成员（v5.32.0 / FR-v5.32-02）。
+   *
+   * 与 `create` + `addItems` 两步调的差别在失败语义：两步调在第二步失败时留下空集，
+   * 这里后端合成一个事务，成员失败整体回滚。
+   */
+  createWithItems(body: PlatformCaseSetCommand & { caseIds: number[] }) {
+    return request<{ set: PlatformCaseSet; added: number; skipped: number }>(
+      '/platform/case-sets/create-with-items',
+      { method: 'POST', body: JSON.stringify(body) },
+    )
+  },
   update(id: number, body: PlatformCaseSetCommand) {
     return request<PlatformCaseSet>(`/platform/case-sets/${id}`, {
       method: 'PUT',

@@ -490,8 +490,26 @@ public class TestSetService {
         return requirePlatformSet(id);
     }
 
-    public TestSet updatePlatform(long id, String name, String description) {
-        requirePlatformWrite();
+    /**
+     * 建集并一次性加成员（v5.32.0 / FR-v5.32-02）。
+     *
+     * <p>「先 create 再 addItems」两次调用会在第二步失败时留下一个空集，
+     * 用户看到的是「建了个空集合，还得再筛一遍」。这里合成一个事务：
+     * 成员加失败整体回滚，不留半成品。
+     */
+    @Transactional
+    public PlatformSetWithItems createPlatformWithItems(String setCode, String name,
+                                                        String description, List<Long> caseIds) {
+        TestSet set = createPlatform(setCode, name, description);
+        AddItemsResult items = addItemsInternal(set.id(), caseIds, "create-with-items");
+        return new PlatformSetWithItems(set, items.added(), items.skipped());
+    }
+
+    /** 建集 + 加成员的结果：集合本身 + 实际入集/跳过的条数。 */
+    public record PlatformSetWithItems(TestSet set, int added, int skipped) {
+    }
+
+    public TestSet updatePlatform(long id, String name, String description) {        requirePlatformWrite();
         requirePlatformSet(id);
         if (name == null || name.isBlank()) {
             throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "用例集名称不能为空");

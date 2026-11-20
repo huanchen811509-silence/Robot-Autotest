@@ -159,8 +159,11 @@ describe('GlobalProjectsView 范围切换', () => {
     expect(list).toHaveBeenCalledTimes(1)
   })
 
-  it('?scope=mine 只留 own || joined，别人的项目即便 myRole=admin 也不出现', async () => {
+  it('?scope=mine 把范围交给后端，渲染后端返回的三源可见项目', async () => {
     routerState.route = { query: { scope: 'mine' } }
+    // v5.31.0 / FR-v5.31-06：可见性由后端「成员 ∪ 负责人 ∪ 用户组授权」三源计算，
+    // 前端不再用 own || joined 二次过滤（那会把组授权项目静默剔除）。
+    list.mockResolvedValue([cards[0], cards[1]])
     const root = await mountView()
 
     const names = cardNames(root)
@@ -168,6 +171,7 @@ describe('GlobalProjectsView 范围切换', () => {
     expect(names.join(' ')).toContain('我创建的项目')
     expect(names.join(' ')).toContain('我加入的项目')
     expect(root.textContent).not.toContain('别人的项目')
+    expect(list).toHaveBeenCalledWith('7d', 1, 'mine')
   })
 
   it('非法 scope（?scope=xx）按「全部」处理，不退化成空网格', async () => {
@@ -177,9 +181,9 @@ describe('GlobalProjectsView 范围切换', () => {
     expect(cardNames(root)).toHaveLength(3)
   })
 
-  it('mine 下没有任何关联项目时走空态而不是空白网格', async () => {
+  it('mine 下后端返回空集合时走空态而不是空白网格', async () => {
     routerState.route = { query: { scope: 'mine' } }
-    list.mockResolvedValue([cards[2]])
+    list.mockResolvedValue([])
     const root = await mountView()
 
     expect(cardNames(root)).toHaveLength(0)
@@ -191,6 +195,7 @@ describe('GlobalProjectsView 范围切换', () => {
     await mountView()
 
     expect(list).toHaveBeenCalledTimes(1)
-    expect(list).toHaveBeenCalledWith('7d', 1)
+    // v5.31.0 / FR-v5.31-06：`scope=mine` 交给后端按三源可见性过滤，不再本地筛 own||joined
+    expect(list).toHaveBeenCalledWith('7d', 1, 'mine')
   })
 })
