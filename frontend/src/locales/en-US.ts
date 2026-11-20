@@ -2464,6 +2464,7 @@ export default {
       fake_plan_file: 'Fake plan file',
       extra_args: 'Extra arguments',
       timeout_s: 'Run-level timeout (seconds)',
+      scan_exclude: 'Extra excluded dirs (comma separated, dir names only)',
     },
     title: 'pytest project',
     subtitle: 'The case repo is the git source of truth; the platform only renders assets, binds scripts and archives results',

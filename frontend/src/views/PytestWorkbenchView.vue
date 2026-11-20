@@ -126,6 +126,7 @@ const SETTING_FIELDS = [
   'fake_plan_file',
   'extra_args',
   'timeout_s',
+  'scan_exclude',
 ]
 
 const settingLabelKeys: Record<string, string> = {
@@ -140,6 +141,7 @@ const settingLabelKeys: Record<string, string> = {
   fake_plan_file: 'pytestWorkbench.settingLabels.fake_plan_file',
   extra_args: 'pytestWorkbench.settingLabels.extra_args',
   timeout_s: 'pytestWorkbench.settingLabels.timeout_s',
+  scan_exclude: 'pytestWorkbench.settingLabels.scan_exclude',
 }
 
 /**

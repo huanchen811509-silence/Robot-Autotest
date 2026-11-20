@@ -2475,6 +2475,7 @@ export default {
       fake_plan_file: 'Fake 计划文件',
       extra_args: '追加参数',
       timeout_s: 'run 级超时（秒）',
+      scan_exclude: '扫描排除目录（额外，逗号分隔，只写目录名）',
     },
     title: 'pytest 工程',
     subtitle: '用例库是 git 真源，平台只做资产渲染、脚本绑定与结果归档',
