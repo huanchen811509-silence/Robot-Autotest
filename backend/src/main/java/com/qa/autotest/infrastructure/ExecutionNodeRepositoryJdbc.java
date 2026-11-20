@@ -57,6 +57,55 @@ public class ExecutionNodeRepositoryJdbc implements ExecutionNodeRepository {
     }
 
     @Override
+    public List<ExecutionNode> list(boolean includeArchived) {
+        if (includeArchived) {
+            return list();
+        }
+        return jdbc.query(SELECT + " WHERE deleted_at IS NULL ORDER BY id",
+                ExecutionNodeRepositoryJdbc::map);
+    }
+
+    @Override
+    public java.util.Set<Long> archivedIds() {
+        return new java.util.HashSet<>(jdbc.queryForList(
+                "SELECT id FROM execution_node WHERE deleted_at IS NOT NULL", Long.class));
+    }
+
+    @Override
+    public void updateProfile(long id, String name, int maxConcurrency, String agentBaseUrl,
+                              Long operatorId) {
+        jdbc.update("""
+                UPDATE execution_node
+                   SET name = ?, max_concurrency = ?, agent_base_url = ?, updated_by = ?
+                 WHERE id = ?
+                """, name, maxConcurrency, agentBaseUrl, operatorId, id);
+    }
+
+    @Override
+    public void updateTokenHash(long id, String tokenHash, Long operatorId) {
+        jdbc.update("UPDATE execution_node SET token_hash = ?, updated_by = ? WHERE id = ?",
+                tokenHash, operatorId, id);
+    }
+
+    @Override
+    public void archive(long id, Instant at, Long operatorId) {
+        jdbc.update("""
+                UPDATE execution_node
+                   SET deleted_at = ?, status = 'OFFLINE', updated_by = ?
+                 WHERE id = ?
+                """, Timestamp.from(at), operatorId, id);
+    }
+
+    @Override
+    public void restore(long id, Long operatorId) {
+        jdbc.update("""
+                UPDATE execution_node
+                   SET deleted_at = NULL, status = 'NEW', updated_by = ?
+                 WHERE id = ?
+                """, operatorId, id);
+    }
+
+    @Override
     public ExecutionNode insert(String name, String tokenHash, boolean rfAvailable,
                                 boolean pytestAvailable, int maxConcurrency, Long operatorId,
                                 String agentBaseUrl) {

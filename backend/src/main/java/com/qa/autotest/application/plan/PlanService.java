@@ -247,6 +247,13 @@ public class PlanService {
         access.bindProject(projectId);
         access.require(PermissionResource.EXECUTION, PermissionAction.UPDATE);
         PlanRecord existing = load(projectId, id);
+        // 存量异常配置不许「恢复」：恢复后它就是真的每 60 秒以内的调度，
+        // 原先只是被暂停着才没出事（FR-v5.33-04 判据 4）。
+        String resumeIssue = CronSchedule.issue(existing.cron(), existing.timezone(), clock.instant());
+        if (resumeIssue != null) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                    "该计划配置异常，请先修正 cron 再恢复：" + resumeIssue);
+        }
         Instant now = clock.instant();
         CronSchedule schedule = CronSchedule.parse(existing.cron(), existing.timezone());
         Instant nextFire = schedule.nextAfter(now);
@@ -343,6 +350,12 @@ public class PlanService {
             CronSchedule.parse(command.cron(), command.timezone());
         } catch (IllegalArgumentException ex) {
             throw new BusinessException(ErrorCode.INVALID_ARGUMENT, ex.getMessage());
+        }
+        // v5.33.0 / FR-v5.33-04：能解析不等于能调。间隔 < 60 秒等价于「每秒跑一次」，
+        // 存量里就有 `0 * * * * *` 这种（每分钟，合法）与 `* * * * * *`（每秒，事故）混着。
+        String cronIssue = CronSchedule.issue(command.cron(), command.timezone(), clock.instant());
+        if (cronIssue != null) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT, cronIssue);
         }
         if (command.testSetId() != null && testSets.find(command.projectId(), command.testSetId()).isEmpty()) {
             throw new BusinessException(ErrorCode.INVALID_ARGUMENT,

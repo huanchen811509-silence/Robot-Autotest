@@ -32,7 +32,9 @@ public record PlanView(long id,
                        String lastRunState,
                        Instant lastRunFinishedAt,
                        Long createdBy,
-                       Instant createdAt) {
+                       Instant createdAt,
+                       /** 配置异常原因（v5.33.0 / FR-v5.33-04）；{@code null} = 正常。 */
+                       String cronIssue) {
 
     public static PlanView of(PlanRecord plan, List<Instant> nextFireTimes, List<Long> dependencyIds,
                               PlanLastRun lastRun) {
@@ -45,6 +47,8 @@ public record PlanView(long id,
                 lastRun == null ? null : lastRun.runId(),
                 lastRun == null ? null : lastRun.state(),
                 lastRun == null ? null : lastRun.finishedAt(),
-                plan.createdBy(), plan.createdAt());
+                plan.createdBy(), plan.createdAt(),
+                // 列表要能直接标出「这条计划配置有问题」，而不是等用户点恢复才报错
+                CronSchedule.issue(plan.cron(), plan.timezone()));
     }
 }

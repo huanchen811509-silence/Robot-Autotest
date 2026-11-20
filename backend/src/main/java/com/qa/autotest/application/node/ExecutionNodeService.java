@@ -5,6 +5,7 @@ import com.qa.autotest.application.iam.AuditService;
 import com.qa.autotest.application.repository.ExecutionNodeRepository;
 import com.qa.autotest.common.BusinessException;
 import com.qa.autotest.common.ErrorCode;
+import com.qa.autotest.common.tenant.TenantContext;
 import com.qa.autotest.domain.node.ExecutionNode;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -98,7 +99,9 @@ public class ExecutionNodeService {
                            boolean rfAvailable, boolean pytestAvailable,
                            int maxConcurrency, String lastHeartbeatAt,
                            int runningRuns, String agentBaseUrl,
-                           LastRunView lastRun) {
+                           LastRunView lastRun,
+                           /** v5.33.0 / FR-v5.33-02：已归档的节点只在「含归档」视图出现。 */
+                           boolean archived) {
     }
 
     /** 注册响应：明文令牌只在这里出现一次。 */
@@ -162,15 +165,27 @@ public class ExecutionNodeService {
     }
 
     public List<NodeView> list() {
+        return list(false);
+    }
+
+    /**
+     * 节点列表（v5.33.0 / FR-v5.33-02）。
+     *
+     * @param includeArchived 是否包含已归档节点；默认 false —— 归档的意义就是「不在健康视图里碍眼」
+     */
+    public List<NodeView> list(boolean includeArchived) {
         requireAdmin();
         java.util.Map<Long, Integer> running = nodes.runningRunsByNode();
         java.util.Map<Long, ExecutionNodeRepository.NodeLastRun> latest = nodes.latestRunsByNode();
-        return nodes.list().stream()
+        // 一次取回归档集合：逐节点查会把「列表」变成 N+1 次查询
+        java.util.Set<Long> archived = nodes.archivedIds();
+        return nodes.list(includeArchived).stream()
                 .map(node -> {
                     ExecutionNodeRepository.NodeLastRun lr = latest.get(node.id());
                     LastRunView lastRun = lr == null ? null
                             : new LastRunView(lr.runId(), lr.state(), lr.finishedAt());
-                    return view(node, running.getOrDefault(node.id(), 0), lastRun);
+                    return view(node, running.getOrDefault(node.id(), 0), lastRun,
+                            archived.contains(node.id()));
                 })
                 .toList();
     }
@@ -185,8 +200,114 @@ public class ExecutionNodeService {
         return setStatus(nodeId, ExecutionNode.NEW, "NODE_ENABLE");
     }
 
-    private NodeView setStatus(long nodeId, String status, String auditAction) {
+    /**
+     * 编辑节点资料（v5.33.0 / FR-v5.33-02）：名称、并发上限、agent 地址。
+     *
+     * <p>不碰状态与令牌：改名不该让在线节点掉线，改并发也不该让 agent 重新注册。
+     * 归档节点不可编辑——它已经不在健康视图里，先恢复再改。
+     */
+    @Transactional
+    public NodeView updateProfile(long nodeId, String name, Integer maxConcurrency,
+                                  String agentBaseUrl) {
         requireAdmin();
+        ExecutionNode node = nodes.find(nodeId).orElseThrow(() ->
+                new BusinessException(ErrorCode.NOT_FOUND, "节点不存在: " + nodeId));
+        if (nodes.archivedIds().contains(nodeId)) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                    "节点已归档，请先恢复再编辑: " + nodeId);
+        }
+        String nextName = name == null || name.isBlank() ? node.name() : name.trim();
+        if (nextName.length() > 64) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "节点名 ≤ 64 字符");
+        }
+        // 改名要查重，但「改成自己原来的名字」不算冲突
+        if (!nextName.equals(node.name()) && nodes.nameExists(nextName)) {
+            throw new BusinessException(ErrorCode.CONFLICT, "节点名已存在: " + nextName);
+        }
+        int nextConcurrency = maxConcurrency == null ? node.maxConcurrency() : maxConcurrency;
+        if (nextConcurrency < 1 || nextConcurrency > 64) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                    "并发上限必须是 1..64: " + nextConcurrency);
+        }
+        String nextAgentUrl = agentBaseUrl == null
+                ? node.agentBaseUrl() : normalizeAgentBaseUrl(agentBaseUrl);
+        nodes.updateProfile(nodeId, nextName, nextConcurrency, nextAgentUrl,
+                TenantContext.userId());
+        audit.recordChange("NODE_UPDATE", "execution_node", String.valueOf(nodeId),
+                "name=" + node.name() + "; maxConcurrency=" + node.maxConcurrency()
+                        + "; agent=" + node.agentBaseUrl(),
+                "name=" + nextName + "; maxConcurrency=" + nextConcurrency
+                        + "; agent=" + nextAgentUrl);
+        return view(nodes.find(nodeId).orElse(node));
+    }
+
+    /**
+     * 轮换节点令牌（v5.33.0 / FR-v5.33-02）：明文只返回一次，旧令牌立刻失效。
+     *
+     * <p>用于令牌泄露或接管：不必删节点重建（那会丢掉运行历史）。
+     */
+    @Transactional
+    public RegisterResult rotateToken(long nodeId) {
+        requireAdmin();
+        ExecutionNode node = nodes.find(nodeId).orElseThrow(() ->
+                new BusinessException(ErrorCode.NOT_FOUND, "节点不存在: " + nodeId));
+        byte[] raw = new byte[32];
+        random.nextBytes(raw);
+        String token = HexFormat.of().formatHex(raw);
+        nodes.updateTokenHash(nodeId, sha256(token), TenantContext.userId());
+        // 审计只记「发生过轮换」，绝不记明文或摘要片段
+        audit.record("NODE_TOKEN_ROTATE", "execution_node", String.valueOf(nodeId),
+                "name=" + node.name() + "; rotated=true");
+        return new RegisterResult(nodeId, node.name(), token);
+    }
+
+    /**
+     * 删除（归档）节点（v5.33.0 / FR-v5.33-02）。
+     *
+     * <p>硬删会让 `run.node_id` 变成悬空外键、历史报告查不到机器；所以只写 `deleted_at`。
+     * 只允许删「没在跑任务」且状态为 NEW/OFFLINE 的节点：ONLINE 节点还在心跳，
+     * 归档后它会继续上报，看着像「删了又活了」。
+     */
+    @Transactional
+    public void archive(long nodeId) {
+        requireAdmin();
+        ExecutionNode node = nodes.find(nodeId).orElseThrow(() ->
+                new BusinessException(ErrorCode.NOT_FOUND, "节点不存在: " + nodeId));
+        if (nodes.archivedIds().contains(nodeId)) {
+            return; // 幂等：重复删不报错，也不重复写审计
+        }
+        if (!ExecutionNode.NEW.equals(node.status())
+                && !ExecutionNode.OFFLINE.equals(node.status())) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                    "只有「未上线」或「已离线」的节点可以删除，当前状态: " + node.status()
+                            + "；请先停用并等待离线");
+        }
+        Integer running = nodes.runningRunsByNode().get(nodeId);
+        if (running != null && running > 0) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                    "该节点还有 " + running + " 个运行中的任务，删掉会中断执行");
+        }
+        nodes.archive(nodeId, clock.instant(), TenantContext.userId());
+        audit.record("NODE_ARCHIVE", "execution_node", String.valueOf(nodeId),
+                "name=" + node.name() + "; status=" + node.status());
+    }
+
+    /** 恢复已归档节点：回到 NEW，需重新心跳证明存活（历史心跳不作数）。 */
+    @Transactional
+    public NodeView restore(long nodeId) {
+        requireAdmin();
+        ExecutionNode node = nodes.find(nodeId).orElseThrow(() ->
+                new BusinessException(ErrorCode.NOT_FOUND, "节点不存在: " + nodeId));
+        if (!nodes.archivedIds().contains(nodeId)) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "该节点未归档，无需恢复");
+        }
+        nodes.restore(nodeId, TenantContext.userId());
+        audit.record("NODE_RESTORE", "execution_node", String.valueOf(nodeId),
+                "name=" + node.name());
+        return view(nodes.find(nodeId).orElse(node));
+    }
+
+    private NodeView setStatus(long nodeId, String status, String auditAction) {        requireAdmin();
         ExecutionNode node = nodes.find(nodeId).orElseThrow(() ->
                 new BusinessException(ErrorCode.NOT_FOUND, "节点不存在: " + nodeId));
         nodes.updateStatus(nodeId, status, null);
@@ -244,10 +365,15 @@ public class ExecutionNodeService {
     }
 
     private NodeView view(ExecutionNode node, int runningRuns, LastRunView lastRun) {
+        return view(node, runningRuns, lastRun, nodes.archivedIds().contains(node.id()));
+    }
+
+    private NodeView view(ExecutionNode node, int runningRuns, LastRunView lastRun,
+                          boolean archived) {
         return new NodeView(node.id(), node.name(), node.status(),
                 node.rfAvailable(), node.pytestAvailable(), node.maxConcurrency(),
                 node.lastHeartbeatAt() == null ? null : node.lastHeartbeatAt().toString(),
-                runningRuns, node.agentBaseUrl(), lastRun);
+                runningRuns, node.agentBaseUrl(), lastRun, archived);
     }
 
     static String sha256(String text) {

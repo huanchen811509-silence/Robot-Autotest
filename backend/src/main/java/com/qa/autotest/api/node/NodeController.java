@@ -4,12 +4,15 @@ import com.qa.autotest.application.execution.ShardService;
 import com.qa.autotest.application.node.ExecutionNodeService;
 import com.qa.autotest.common.ApiResponse;
 import java.util.List;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -62,8 +65,42 @@ public class NodeController {
     }
 
     @GetMapping
-    public ApiResponse<List<ExecutionNodeService.NodeView>> list() {
-        return ApiResponse.ok(nodes.list());
+    public ApiResponse<List<ExecutionNodeService.NodeView>> list(
+            @RequestParam(defaultValue = "false") boolean includeArchived) {
+        return ApiResponse.ok(nodes.list(includeArchived));
+    }
+
+    /** 编辑节点资料（v5.33.0 / FR-v5.33-02）：名称、并发上限、agent 地址。 */
+    public record UpdateNodeRequest(String name, Integer maxConcurrency, String agentBaseUrl) {
+    }
+
+    @PatchMapping("/{id}")
+    public ApiResponse<ExecutionNodeService.NodeView> update(
+            @PathVariable long id, @RequestBody UpdateNodeRequest request) {
+        return ApiResponse.ok(nodes.updateProfile(id, request.name(),
+                request.maxConcurrency(), request.agentBaseUrl()));
+    }
+
+    /** 轮换令牌：明文只在这次响应里出现。 */
+    @PostMapping("/{id}/rotate-token")
+    public ApiResponse<ExecutionNodeService.RegisterResult> rotateToken(@PathVariable long id) {
+        return ApiResponse.ok(nodes.rotateToken(id));
+    }
+
+    /**
+     * 删除节点 = 归档（v5.33.0 / FR-v5.33-02）。
+     *
+     * <p>不用 `DELETE` 的语义做物理删：`run.node_id` 还指着它，硬删会让历史运行查不到机器。
+     */
+    @DeleteMapping("/{id}")
+    public ApiResponse<Void> archive(@PathVariable long id) {
+        nodes.archive(id);
+        return ApiResponse.ok(null);
+    }
+
+    @PostMapping("/{id}/restore")
+    public ApiResponse<ExecutionNodeService.NodeView> restore(@PathVariable long id) {
+        return ApiResponse.ok(nodes.restore(id));
     }
 
     @PostMapping("/{id}/disable")

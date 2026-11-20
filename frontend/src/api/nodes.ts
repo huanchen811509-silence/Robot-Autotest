@@ -30,6 +30,8 @@ export interface ExecutionNodeView {
   agentBaseUrl: string | null
   /** 该节点最近一条 run（NODX-04），从未接过 run 时为 null。 */
   lastRun: NodeLastRunView | null
+  /** v5.33.0 / FR-v5.33-02：已归档节点只在 `includeArchived` 列表里出现。 */
+  archived?: boolean
 }
 
 export interface NodeRegisterResult {
@@ -40,8 +42,27 @@ export interface NodeRegisterResult {
 }
 
 export const nodeApi = {
-  list() {
-    return request<ExecutionNodeView[]>('/nodes')
+  list(includeArchived = false) {
+    const query = includeArchived ? '?includeArchived=true' : ''
+    return request<ExecutionNodeView[]>(`/nodes${query}`)
+  },
+  /** 编辑名称 / 并发上限 / agent 地址（v5.33.0 / FR-v5.33-02）。 */
+  update(id: number, body: { name?: string; maxConcurrency?: number; agentBaseUrl?: string }) {
+    return request<ExecutionNodeView>(`/nodes/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    })
+  },
+  /** 轮换令牌：明文只在这次响应里返回一次。 */
+  rotateToken(id: number) {
+    return request<NodeRegisterResult>(`/nodes/${id}/rotate-token`, { method: 'POST' })
+  },
+  /** 删除 = 归档（软删）；后端只允许「未上线 / 已离线且无在跑任务」的节点。 */
+  archive(id: number) {
+    return request<void>(`/nodes/${id}`, { method: 'DELETE' })
+  },
+  restore(id: number) {
+    return request<ExecutionNodeView>(`/nodes/${id}/restore`, { method: 'POST' })
   },
   register(body: {
     name: string

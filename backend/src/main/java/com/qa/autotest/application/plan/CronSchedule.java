@@ -57,6 +57,50 @@ public final class CronSchedule {
         }
     }
 
+    /** 两次相邻触发点的最小间隔（秒）。低于它等价于「配置成每秒跑」，属于事故级配置。 */
+    public static final int MIN_INTERVAL_SECONDS = 60;
+
+    /**
+     * 判定 cron 的配置问题（v5.33.0 / FR-v5.33-04）。
+     *
+     * @return {@code null} = 可用；否则是给用户看的中文原因
+     */
+    public static String issue(String cron, String timezone) {
+        return issue(cron, timezone, Instant.now());
+    }
+
+    /**
+     * 同上，但以 {@code from} 为起点判定间隔 —— 只有这样才能在单测里稳定复现，
+     * 不必依赖「跑测试那一刻」的时间。
+     */
+    public static String issue(String cron, String timezone, Instant from) {
+        if (cron == null || cron.isBlank()) {
+            return "cron 不能为空";
+        }
+        CronSchedule schedule;
+        try {
+            schedule = parse(cron, timezone);
+        } catch (IllegalArgumentException ex) {
+            return ex.getMessage();
+        }
+        Instant cursor = from == null ? Instant.now() : from;
+        Instant first = schedule.nextAfter(cursor);
+        if (first == null) {
+            // 永不触发（如 2 月 30 日）：Spring 不报错，但计划等于死配置
+            return "cron 永不触发：" + cron;
+        }
+        Instant second = schedule.nextAfter(first);
+        if (second == null) {
+            return "cron 只触发一次，不能作为周期计划：" + cron;
+        }
+        long gap = java.time.Duration.between(first, second).getSeconds();
+        if (gap < MIN_INTERVAL_SECONDS) {
+            return "cron 触发间隔 " + gap + " 秒，低于最小值 " + MIN_INTERVAL_SECONDS
+                    + " 秒（形如 `0 * * * * *` 是每分钟，`* * * * * *` 才是每秒）";
+        }
+        return null;
+    }
+
     public ZoneId zone() {
         return zone;
     }

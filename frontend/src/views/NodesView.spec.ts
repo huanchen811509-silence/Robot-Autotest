@@ -48,6 +48,10 @@ vi.mock('@/api/nodes', () => ({
     register: vi.fn(async () => ({ nodeId: 3, name: 'lab-node-03', token: 'tok-' + 'a'.repeat(64) })),
     disable: vi.fn(async () => ({ ...nodes[0], status: 'DISABLED' })),
     enable: vi.fn(async () => ({ ...nodes[0], status: 'NEW' })),
+    update: vi.fn(async () => ({ ...nodes[0], name: 'renamed' })),
+    archive: vi.fn(async () => undefined),
+    restore: vi.fn(async () => ({ ...nodes[1], archived: false })),
+    rotateToken: vi.fn(async () => ({ nodeId: 1, name: 'lab-node-01', token: 'new-' + 'b'.repeat(60) })),
   },
 }))
 
@@ -234,5 +238,73 @@ describe('NodesView 离线时长与最近任务（NODX-04）', () => {
     expect(cells[0]!.textContent).toContain('RUN-20261107-010000-1')
     expect(cells[0]!.textContent).toContain(i18n.global.t('enum.runStatus.finished'))
     expect(cells[1]!.textContent?.trim()).toBe('—')
+  })
+})
+
+/**
+ * v5.33.0 / FR-v5.33-02：编辑 / 删除 / 恢复 / 轮换令牌。
+ *
+ * 判据落在「按钮该不该可点」上：在线节点与有在跑任务的节点，删除按钮必须禁用，
+ * 否则用户点下去才吃 400，那是把后端校验当成交互设计。
+ */
+describe('NodesView 节点管理动作', () => {
+  const click = async (el: Element | null | undefined): Promise<void> => {
+    ;(el as HTMLElement | null)?.click()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    await nextTick()
+  }
+
+  it('在线节点的删除按钮禁用；离线空闲节点可点', async () => {
+    const root = await mountView()
+    const archives = [
+      ...root.querySelectorAll<HTMLButtonElement>('[data-testid="node-archive"]'),
+    ]
+    expect(archives).toHaveLength(2)
+    expect(archives[0]!.disabled, 'ONLINE 节点不得可删').toBe(true)
+    expect(archives[0]!.getAttribute('title')).toContain(
+      i18n.global.t('nodesView.archiveWhyOnline'),
+    )
+
+    // NEW 状态（未上线）允许删除
+    vi.mocked(nodeApi.list).mockResolvedValue([
+      { ...nodes[0], status: 'OFFLINE' },
+      nodes[1],
+    ])
+    const root2 = await mountView()
+    const offline = [
+      ...root2.querySelectorAll<HTMLButtonElement>('[data-testid="node-archive"]'),
+    ]
+    expect(offline[0]!.disabled).toBe(false)
+  })
+
+  it('编辑保存只提交三项资料，不带状态与令牌', async () => {
+    const root = await mountView()
+    await click(root.querySelector('[data-testid="node-edit"]'))
+    // NModal 走 teleport 挂到 body；NInput 把 data-testid 放在外层容器上，取内部 input 读值
+    const nameInput = document.querySelector<HTMLInputElement>('[data-testid="node-edit-name"] input')
+    expect(nameInput).not.toBeNull()
+    expect(nameInput!.value).toBe('lab-node-01')
+    await click(document.querySelector('[data-testid="node-edit-save"]'))
+    expect(nodeApi.update).toHaveBeenCalledWith(1, {
+      name: 'lab-node-01',
+      maxConcurrency: 2,
+      agentBaseUrl: 'http://10.0.0.8:8082',
+    })
+  })
+
+  it('已归档节点只显示「恢复」，不再给编辑/删除入口', async () => {
+    vi.mocked(nodeApi.list).mockResolvedValue([{ ...nodes[1], archived: true }])
+    const root = await mountView()
+    expect(root.querySelector('[data-testid="node-restore"]')).not.toBeNull()
+    expect(root.querySelector('[data-testid="node-archive"]')).toBeNull()
+    expect(root.querySelector('[data-testid="node-edit"]')).toBeNull()
+  })
+
+  it('「显示已归档」把 IncludeArchived 传给后端，而不是前端过滤', async () => {
+    const root = await mountView()
+    const box = root.querySelector<HTMLElement>('[data-testid="nodes-include-archived"]')
+    expect(box).not.toBeNull()
+    await click(box)
+    expect(nodeApi.list).toHaveBeenCalledWith(true)
   })
 })

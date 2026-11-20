@@ -29,6 +29,47 @@ public interface ExecutionNodeRepository {
     /** NODX-03：登记/更新 agent 接入地址（注册后也可单独补录）。 */
     void updateAgentBaseUrl(long id, String agentBaseUrl);
 
+    // ------------------------------------------------- v5.33.0 / FR-v5.33-02 节点 CRUD
+    //
+    // 以下四个方法给 default 实现：三个测试 fake 直接 implements 本接口，
+    // 加抽象方法会让它们编译不过；Jdbc 实现类覆盖即可。
+
+    /** 改名称 / 并发上限 / agent 地址（不碰状态与令牌）。 */
+    default void updateProfile(long id, String name, int maxConcurrency, String agentBaseUrl,
+                               Long operatorId) {
+        throw new UnsupportedOperationException("updateProfile");
+    }
+
+    /** 轮换令牌：只写新哈希，旧令牌随即失效（明文只在服务层返回一次）。 */
+    default void updateTokenHash(long id, String tokenHash, Long operatorId) {
+        throw new UnsupportedOperationException("updateTokenHash");
+    }
+
+    /** 归档（软删）：只写 deleted_at，行仍在，运行历史不断链。 */
+    default void archive(long id, java.time.Instant at, Long operatorId) {
+        throw new UnsupportedOperationException("archive");
+    }
+
+    /** 归档恢复：清 deleted_at 并回到 NEW（历史心跳不作数，需重新证明存活）。 */
+    default void restore(long id, Long operatorId) {
+        throw new UnsupportedOperationException("restore");
+    }
+
+    /** 列表是否包含已归档节点；默认不带，避免把归档节点混进健康视图。 */
+    default List<ExecutionNode> list(boolean includeArchived) {
+        return list();
+    }
+
+    /**
+     * 已归档的节点 id 集合。
+     *
+     * <p>不改 {@code ExecutionNode} 实体（那会牵动 17 处构造），归档态只在视图层需要，
+     * 用一次集合查询补上即可——节点是平台级资源，数量在两位数。
+     */
+    default java.util.Set<Long> archivedIds() {
+        return java.util.Set.of();
+    }
+
     /** 心跳：更新能力上报与 last_heartbeat_at，并置 ONLINE。 */
     void heartbeat(long id, boolean rfAvailable, boolean pytestAvailable);
 

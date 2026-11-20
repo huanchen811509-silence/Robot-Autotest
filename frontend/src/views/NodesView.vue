@@ -12,7 +12,7 @@
  *    「agent 挂了」在页面上无法区分；
  * ② 注册返回的明文令牌只展示一次（复制按钮 + 一次性对话框），组件里不落响应式缓存之外的地方。
  */
-import { computed, h, onMounted, ref } from 'vue'
+import { computed, h, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { NButton, NCheckbox, NInput, NInputNumber, NModal, type DataTableColumns } from 'naive-ui'
 import DataTable from '@/components/DataTable.vue'
@@ -21,6 +21,7 @@ import ErrorLineView from '@/components/ErrorLine.vue'
 import { nodeApi, type ExecutionNodeView, type NodeStatus } from '@/api/nodes'
 import { metricsApi, type MetricsView } from '@/api/observability'
 import { useAuthStore } from '@/stores/auth'
+import { confirmAction } from '@/composables/useConfirm'
 import { localizeError, type ErrorLine } from '@/utils/errors'
 import { EMPTY } from '@/utils/format'
 
@@ -32,6 +33,8 @@ const metrics = ref<MetricsView | null>(null)
 const loading = ref(false)
 const error = ref<ErrorLine | null>(null)
 const message = ref('')
+/** 是否把已归档节点也列出来（v5.33.0 / FR-v5.33-02）。 */
+const includeArchived = ref(false)
 
 const formOpen = ref(false)
 const saving = ref(false)
@@ -44,11 +47,26 @@ const form = ref({
 })
 const issuedToken = ref<string | null>(null)
 
+/* 编辑弹层：只改名称/并发/地址，状态与令牌另有入口 */
+const editTarget = ref<ExecutionNodeView | null>(null)
+const editForm = ref({ name: '', maxConcurrency: 1, agentBaseUrl: '' })
+const editSaving = ref(false)
+const editError = ref<ErrorLine | null>(null)
+
+/**
+ * 15 秒轮询（v5.33.0 / FR-v5.33-02）。
+ *
+ * 页面隐藏时不打请求：后台标签页轮询既费资源，也会让「状态变化高亮」在没有观察者时闪。
+ * 回到前台立即补一次，避免看到的还是切走前的旧状态。
+ */
+const POLL_MS = 15_000
+let pollTimer: number | undefined
+
 async function load(): Promise<void> {
   loading.value = true
   error.value = null
   try {
-    nodes.value = await nodeApi.list()
+    nodes.value = await nodeApi.list(includeArchived.value)
   } catch (e) {
     error.value = localizeError(e)
   } finally {
@@ -57,6 +75,36 @@ async function load(): Promise<void> {
   // 节点健康读数（W4）：失败不挡节点列表——辅助指标不该让整页报错
   await loadMetrics()
 }
+
+/** 轮询只刷列表，不刷指标（指标是分钟级窗口，15 秒一刷只是浪费）。 */
+async function pollOnce(): Promise<void> {
+  if (document.hidden) return
+  try {
+    nodes.value = await nodeApi.list(includeArchived.value)
+  } catch {
+    // 静默失败：轮询出错不该把用户在看的列表换成错误页，下次再试
+  }
+}
+
+function onVisibilityChange(): void {
+  if (!document.hidden) void pollOnce()
+}
+
+/**
+ * 「显示已归档」切换。
+ *
+ * 不用 `v-model` + `@update:checked="load"`：两个监听同 tick 触发时，
+ * load 里读到的可能还是旧值，于是勾了却没查归档（曾用 spec 抓到）。
+ */
+function onIncludeArchivedChange(value: boolean): void {
+  includeArchived.value = value
+  void load()
+}
+
+onBeforeUnmount(() => {
+  window.clearInterval(pollTimer)
+  document.removeEventListener('visibilitychange', onVisibilityChange)
+})
 
 async function loadMetrics(): Promise<void> {
   const projectId = auth.projectId ?? 0
@@ -130,6 +178,89 @@ async function toggleStatus(row: ExecutionNodeView): Promise<void> {
 
 function statusLabel(status: NodeStatus): string {
   return t(`nodesView.status.${status}`)
+}
+
+/* ------------------------------------------------------------ 编辑 / 删除（v5.33.0 / FR-v5.33-02） */
+
+function openEdit(row: ExecutionNodeView): void {
+  editTarget.value = row
+  editForm.value = {
+    name: row.name,
+    maxConcurrency: row.maxConcurrency,
+    agentBaseUrl: row.agentBaseUrl ?? '',
+  }
+  editError.value = null
+  message.value = ''
+}
+
+async function submitEdit(): Promise<void> {
+  const target = editTarget.value
+  if (!target || !editForm.value.name.trim()) return
+  editSaving.value = true
+  editError.value = null
+  try {
+    await nodeApi.update(target.id, {
+      name: editForm.value.name.trim(),
+      maxConcurrency: editForm.value.maxConcurrency,
+      agentBaseUrl: editForm.value.agentBaseUrl.trim(),
+    })
+    editTarget.value = null
+    message.value = t('nodesView.updated', { name: editForm.value.name.trim() })
+    await load()
+  } catch (e) {
+    editError.value = localizeError(e)
+  } finally {
+    editSaving.value = false
+  }
+}
+
+/**
+ * 删除 = 归档。确认框必须说明影响：历史运行记录还指着这台机器，节点只是从列表消失。
+ */
+async function archiveNode(row: ExecutionNodeView): Promise<void> {
+  const ok = await confirmAction(
+    t('nodesView.confirmArchive', { name: row.name }),
+    { tone: 'danger' },
+  )
+  if (!ok) return
+  error.value = null
+  message.value = ''
+  try {
+    await nodeApi.archive(row.id)
+    message.value = t('nodesView.archived', { name: row.name })
+    await load()
+  } catch (e) {
+    error.value = localizeError(e)
+  }
+}
+
+async function restoreNode(row: ExecutionNodeView): Promise<void> {
+  error.value = null
+  message.value = ''
+  try {
+    await nodeApi.restore(row.id)
+    message.value = t('nodesView.restored', { name: row.name })
+    await load()
+  } catch (e) {
+    error.value = localizeError(e)
+  }
+}
+
+/** 轮换令牌：明文只在弹层里出现一次，与注册一致。 */
+async function rotateNodeToken(row: ExecutionNodeView): Promise<void> {
+  const ok = await confirmAction(
+    t('nodesView.confirmRotate', { name: row.name }),
+    { tone: 'danger' },
+  )
+  if (!ok) return
+  error.value = null
+  try {
+    const result = await nodeApi.rotateToken(row.id)
+    issuedToken.value = result.token
+    message.value = t('nodesView.rotated', { name: row.name })
+  } catch (e) {
+    error.value = localizeError(e)
+  }
 }
 
 /** 四态着色（data-testid 供 spec 断言，class 供样式）；前端不推断状态，只着色。 */
@@ -212,25 +343,66 @@ const columns = computed<DataTableColumns<ExecutionNodeView>>(() => [
   {
     title: '',
     key: 'actions',
-    width: 110,
-    render: (row) =>
-      h(
-        NButton,
-        {
+    width: 230,
+    render: (row) => {
+      if (row.archived) {
+        return h(NButton, {
+          size: 'small',
+          quaternary: true,
+          'data-testid': 'node-restore',
+          onClick: () => void restoreNode(row),
+        }, { default: () => t('nodesView.restore') })
+      }
+      // 顺序固定：编辑 → 停用/启用 → 轮换令牌 → 删除；删放在最后，避免误点
+      return h('div', { class: 'node-actions' }, [
+        h(NButton, {
+          size: 'small',
+          quaternary: true,
+          'data-testid': 'node-edit',
+          onClick: () => openEdit(row),
+        }, { default: () => t('nodesView.edit') }),
+        h(NButton, {
           size: 'small',
           quaternary: true,
           'data-testid': 'node-toggle',
-          onClick: () => toggleStatus(row),
-        },
-        { default: () => (row.status === 'DISABLED'
+          onClick: () => void toggleStatus(row),
+        }, {
+          default: () => (row.status === 'DISABLED'
             ? t('nodesView.enable')
-            : t('nodesView.disable')) },
-      ),
+            : t('nodesView.disable')),
+        }),
+        h(NButton, {
+          size: 'small',
+          quaternary: true,
+          'data-testid': 'node-rotate',
+          onClick: () => void rotateNodeToken(row),
+        }, { default: () => t('nodesView.rotateToken') }),
+        h(NButton, {
+          size: 'small',
+          quaternary: true,
+          type: 'error',
+          'data-testid': 'node-archive',
+          // 在线节点本来就会被后端拒；这里先置灰并给出原因，别让用户点了才知道
+          disabled: row.status === 'ONLINE' || row.runningRuns > 0 || row.status === 'DISABLED',
+          title: row.status === 'ONLINE'
+            ? t('nodesView.archiveWhyOnline')
+            : row.runningRuns > 0
+              ? t('nodesView.archiveWhyBusy', { count: row.runningRuns })
+              : row.status === 'DISABLED'
+                ? t('nodesView.archiveWhyDisabled')
+                : undefined,
+          onClick: () => void archiveNode(row),
+        }, { default: () => t('nodesView.archive') }),
+      ])
+    },
   },
 ])
 
 onMounted(() => {
   void load()
+  // 15s 轮询 + 回到前台补一次（v5.33.0 / FR-v5.33-02）
+  pollTimer = window.setInterval(() => void pollOnce(), POLL_MS)
+  document.addEventListener('visibilitychange', onVisibilityChange)
 })
 </script>
 
@@ -243,6 +415,14 @@ onMounted(() => {
     <div class="toolbar">
       <NButton type="primary" @click="openCreate">{{ t('nodesView.register') }}</NButton>
       <NButton quaternary :loading="loading" @click="load">{{ t('common.refresh') }}</NButton>
+      <!-- v5.33.0：归档节点默认不列，需要追溯时勾上；先落状态再请求，避免读到旧值 -->
+      <NCheckbox
+        :checked="includeArchived"
+        data-testid="nodes-include-archived"
+        @update:checked="onIncludeArchivedChange"
+      >
+        {{ t('nodesView.includeArchived') }}
+      </NCheckbox>
     </div>
 
     <p class="muted">{{ t('nodesView.subtitle') }}</p>
@@ -335,6 +515,52 @@ onMounted(() => {
         <EmptyGuide to="/assets?tab=devices" :label="t('emptyGuide.action.assets')" />
       </template>
     </DataTable>
+
+    <!-- 编辑节点（v5.33.0 / FR-v5.33-02）：改名 / 并发 / agent 地址，不碰状态与令牌 -->
+    <NModal
+      :show="editTarget !== null"
+      preset="card"
+      :title="t('nodesView.editTitle')"
+      style="max-width: 520px"
+      @update:show="editTarget = null"
+    >
+      <div class="form-grid">
+        <label class="form-field">
+          <span>{{ t('nodesView.name') }}</span>
+          <NInput v-model:value="editForm.name" data-testid="node-edit-name" />
+        </label>
+        <label class="form-field">
+          <span>{{ t('nodesView.maxConcurrency') }}</span>
+          <NInputNumber
+            v-model:value="editForm.maxConcurrency"
+            :min="1"
+            :max="64"
+            data-testid="node-edit-concurrency"
+          />
+        </label>
+        <label class="form-field">
+          <span>{{ t('nodesView.agentBaseUrl') }}</span>
+          <NInput
+            v-model:value="editForm.agentBaseUrl"
+            :placeholder="t('nodesView.agentBaseUrlPlaceholder')"
+            data-testid="node-edit-agent"
+          />
+        </label>
+      </div>
+      <ErrorLineView v-if="editError" :error="editError" />
+      <template #footer>
+        <NButton quaternary @click="editTarget = null">{{ t('common.cancel') }}</NButton>
+        <NButton
+          type="primary"
+          :loading="editSaving"
+          :disabled="!editForm.name.trim()"
+          data-testid="node-edit-save"
+          @click="submitEdit"
+        >
+          {{ t('common.save') }}
+        </NButton>
+      </template>
+    </NModal>
 
     <NModal :show="issuedToken !== null" preset="card" :title="t('nodesView.tokenTitle')"
             style="max-width: 520px" @update:show="issuedToken = null">
@@ -432,5 +658,18 @@ onMounted(() => {
   background: var(--panel);
   font-family: var(--font-mono);
   word-break: break-all;
+}
+
+/* 操作列：四个按钮挤在 230px 里，不换行才对得齐状态列 */
+.node-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.form-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
 }
 </style>
