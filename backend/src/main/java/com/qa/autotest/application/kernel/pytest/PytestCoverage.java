@@ -72,7 +72,11 @@ public record PytestCoverage(long totalCases,
         long pending = 0;
         long boundExcludingPending = 0;
         for (Map.Entry<String, String> entry : priorities.entrySet()) {
-            boolean isPending = PRIORITY_PENDING.equals(trim(entry.getValue()));
+            // v5.31.0 / FR-v5.31-03：优先级归一后，「待评审」不再占用 priority（置 NULL，
+            // 语义移到 review_status=pending）。因此空优先级在 pytest 库里就是待评审，
+            // 否则 178 条会被算成 0，两个覆盖率口径同时失真。
+            String priority = trim(entry.getValue());
+            boolean isPending = PRIORITY_PENDING.equals(priority) || priority.isEmpty();
             if (isPending) {
                 pending++;
             }
