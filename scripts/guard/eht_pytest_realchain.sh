@@ -159,6 +159,23 @@ else
   echo "[INFO] 尚未找到含 plan 段的 $RUN_CODE 报告快照（如未生成报告可忽略）"
 fi
 
+# ---------- 断言 7：real 模式命令证据覆盖 100%（v5.24.0 / FR-v5.24-01） ----------
+# fake/Plan-only 没有命令产物，不检查；real 执行必须把框架 commands.jsonl 的命令带进库。
+if [ "$MODE" = "real" ]; then
+  CMD_OK="$(q "SELECT COUNT(*) FROM test_result
+                WHERE run_id=$RUN_ID AND command_text IS NOT NULL
+                  AND command_text<>'' AND command_text<>'NONE'")"
+  CMD_OK="${CMD_OK:-0}"
+  if [ "$TOTAL" -gt 0 ] && [ "$CMD_OK" = "$TOTAL" ]; then
+    ok "命令证据覆盖 100%：${CMD_OK}/${TOTAL}（来源为真实 commands.jsonl）"
+  else
+    bad "命令证据覆盖不全：${CMD_OK}/${TOTAL}（real 执行必须能看到下发了什么命令）"
+  fi
+else
+  CMD_OK=0
+  echo "[INFO] fake 模式无命令产物，跳过命令证据断言"
+fi
+
 echo
 echo "== 汇总：PASS=$PASS FAIL=$FAIL（mode=$MODE）=="
 
@@ -199,6 +216,35 @@ if [ "$SELFTEST" -eq 1 ]; then
   else
     echo "[FAIL] 回滚后数据不一致：期望 $SILENT，实际 $AFTER"
     FAIL=$((FAIL + 1))
+  fi
+
+  # 第二条真注入：清空命令证据，命令断言必须变红（同样事务回滚）。
+  CMD_TARGET="$(q "SELECT id FROM test_result WHERE run_id=$RUN_ID
+                     AND command_text IS NOT NULL AND command_text<>'NONE' LIMIT 1")"
+  if [ -z "$CMD_TARGET" ]; then
+    echo "[INFO] self-test 跳过命令注入：该 run 没有命令证据"
+  else
+    CMD_INJECTED="$(q "START TRANSACTION;
+                       UPDATE test_result SET command_text='NONE' WHERE id=$CMD_TARGET;
+                       SELECT COUNT(*) FROM test_result
+                        WHERE run_id=$RUN_ID AND command_text IS NOT NULL
+                          AND command_text<>'' AND command_text<>'NONE';
+                       ROLLBACK;")"
+    CMD_AFTER="$(q "SELECT COUNT(*) FROM test_result
+                     WHERE run_id=$RUN_ID AND command_text IS NOT NULL
+                       AND command_text<>'' AND command_text<>'NONE'")"
+    if [ -n "$CMD_INJECTED" ] && [ "$CMD_INJECTED" -lt "$TOTAL" ]; then
+      echo "[PASS] 命令注入后断言判红：覆盖降到 $CMD_INJECTED/$TOTAL"
+    else
+      echo "[FAIL] 命令注入后断言未判红——命令检查对缺证据不敏感"
+      FAIL=$((FAIL + 1))
+    fi
+    if [ "$CMD_AFTER" = "$CMD_OK" ]; then
+      echo "[PASS] 命令回滚后数据还原：覆盖回到 $CMD_AFTER/$TOTAL"
+    else
+      echo "[FAIL] 命令回滚后数据不一致：期望 $CMD_OK，实际 $CMD_AFTER"
+      FAIL=$((FAIL + 1))
+    fi
   fi
 fi
 

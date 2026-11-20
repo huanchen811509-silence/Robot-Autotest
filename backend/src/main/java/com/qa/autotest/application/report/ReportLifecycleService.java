@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Optional;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 报告 / 运行记录「展示层」生命周期（v5.7.0 / W57-31、33、34）。
@@ -20,14 +21,16 @@ import org.springframework.stereotype.Service;
  * 本服务只动这 7 个展示层列，{@code test_result / run_artifact / test_report_audit} 等
  * 原始事实表一律不碰。
  *
+ * <p><b>v5.24.0 口径变更（大师 2026-11-20 裁决）</b>：删除由软删改为**物理删除**。
+ * 原软删行（含历史 57 条 run）在删除接口被调用时一并清除；恢复接口返回不可恢复。
+ * 冻结/归档报告也允许直接删（裁决）。改标题仍保持"冻结件拒绝"的状态机约束。
+ *
  * <p>三条口径：
  * <ul>
- *   <li><b>软删幂等</b>：重复删不报错，返回 {@code deleted=false}；恢复重复调用同样不报错；</li>
- *   <li><b>冻结保护</b>：{@code test_report.state='FROZEN'} 拒绝软删与改标题，提示「已冻结，请先解冻」；
- *       只改 remark / tags 放行（那是备注，不是交付件标题）；</li>
- *   <li><b>默认过滤</b>：对外展示查询一律带 {@code deleted_at IS NULL}；生命周期操作
- *       （删除幂等 / 恢复）必须能看到已删行，故 {@link #findRunRow} 不加该条件——
- *       过滤落在展示入口，见 {@link #countVisibleRuns} 与仓储层的 find/page。</li>
+ *   <li><b>物理删幂等</b>：重复删不报错，返回 {@code deleted=false}；</li>
+ *   <li><b>冻结件可删</b>：仅"改标题"仍受冻结保护；删除不再受状态机限制；</li>
+ *   <li><b>子表无孤儿</b>：删 run 前按外键依赖顺序清 6 张子表并级联删其报告；
+ *       schema-contract 标为 append-only 的审计表保留（其 report_id 允许悬空）。</li>
  * </ul>
  *
  * <p>所有 SQL 参数绑定（{@code ?}），不拼接用户输入；截断到列长度，避免超长报错。
@@ -55,9 +58,32 @@ public class ReportLifecycleService {
              WHERE project_id = ? AND run_id = ? AND deleted_at IS NULL
             """;
 
-    private static final String SQL_SOFT_DELETE_RUN = """
-            UPDATE run SET deleted_at = NOW(3), deleted_by = ?, updated_at = NOW(3)
-             WHERE project_id = ? AND run_id = ? AND deleted_at IS NULL
+    // v5.24.0：物理删。六张子表都有 run_id 列且多数无 CASCADE，必须按顺序先清。
+    private static final String SQL_DELETE_CASE_STEPS = """
+            DELETE FROM pytest_case_step WHERE run_id =
+              (SELECT id FROM run WHERE project_id = ? AND run_id = ?)
+            """;
+    private static final String SQL_DELETE_MANUAL = """
+            DELETE FROM manual_execution WHERE run_id =
+              (SELECT id FROM run WHERE project_id = ? AND run_id = ?)
+            """;
+    private static final String SQL_DELETE_ARTIFACTS = """
+            DELETE FROM run_artifact WHERE run_id =
+              (SELECT id FROM run WHERE project_id = ? AND run_id = ?)
+            """;
+    private static final String SQL_DELETE_KEYWORDS = """
+            DELETE FROM keyword_result WHERE run_id =
+              (SELECT id FROM run WHERE project_id = ? AND run_id = ?)
+            """;
+    private static final String SQL_DELETE_TEST_RESULTS = """
+            DELETE FROM test_result WHERE run_id =
+              (SELECT id FROM run WHERE project_id = ? AND run_id = ?)
+            """;
+    private static final String SQL_DELETE_REPORTS_BY_RUN = """
+            DELETE FROM test_report WHERE project_id = ? AND run_id = ?
+            """;
+    private static final String SQL_DELETE_RUN = """
+            DELETE FROM run WHERE project_id = ? AND run_id = ?
             """;
 
     private static final String SQL_RESTORE_RUN = """
@@ -73,9 +99,8 @@ public class ReportLifecycleService {
              WHERE project_id = ? AND id = ? AND deleted_at IS NULL
             """;
 
-    private static final String SQL_SOFT_DELETE_REPORT = """
-            UPDATE test_report SET deleted_at = NOW(3), deleted_by = ?, updated_at = NOW(3)
-             WHERE project_id = ? AND id = ? AND deleted_at IS NULL
+    private static final String SQL_DELETE_REPORT = """
+            DELETE FROM test_report WHERE project_id = ? AND id = ?
             """;
 
     private static final String SQL_RESTORE_REPORT = """
@@ -142,29 +167,38 @@ public class ReportLifecycleService {
         return runMetaOf(runId, row);
     }
 
-    /** 软删 run；重复删幂等返回 deleted=false，不写第二条审计。 */
+    /**
+     * 物理删 run（v5.24.0 裁决）；历史软删行也在这里一并清除。
+     * 重复删幂等：找不到行返回 {@code deleted=false}。
+     */
+    @Transactional
     public DeleteResult deleteRun(long projectId, String runId) {
         requireRunId(runId);
-        Map<String, Object> row = requireRunRow(projectId, runId);
-        RunImpact impact = impact(projectId, runId);
-        if (isDeleted(row)) {
-            return new DeleteResult(false, impact);
+        if (findRunRow(projectId, runId).isEmpty()) {
+            return new DeleteResult(false, new RunImpact(0, 0));
         }
-        execute(SQL_SOFT_DELETE_RUN, Arrays.asList(TenantContext.userId(), projectId, runId));
-        audit.record("report.run.delete", "run", runId, "softDeleted=true; impact=" + impact);
+        RunImpact impact = impact(projectId, runId);
+        purgeRun(projectId, runId);
+        audit.record("report.run.delete", "run", runId,
+                "hardDeleted=true; impact=" + impact + "; by=" + TenantContext.userId());
         return new DeleteResult(true, impact);
     }
 
-    /** 恢复 run；未删除时幂等直接返回当前元数据。 */
+    /** 物理删后不可恢复；保留方法只为让旧调用方拿到明确错误，而不是 404 或空指针。 */
     public RunMeta restoreRun(long projectId, String runId) {
-        requireRunId(runId);
-        Map<String, Object> row = requireRunRow(projectId, runId);
-        if (!isDeleted(row)) {
-            return runMetaOf(runId, row);
-        }
-        execute(SQL_RESTORE_RUN, Arrays.asList(projectId, runId));
-        audit.record("report.run.restore", "run", runId, "restored=true");
-        return runMetaOf(runId, findRunRow(projectId, runId).orElse(row));
+        throw new BusinessException(ErrorCode.CONFLICT, "记录已物理删除，无法恢复: " + runId);
+    }
+
+    /** 按外键依赖顺序清子表 → 级联删报告 → 删主表。 */
+    private void purgeRun(long projectId, String runId) {
+        List<Object> args = Arrays.asList(projectId, runId);
+        execute(SQL_DELETE_CASE_STEPS, args);
+        execute(SQL_DELETE_MANUAL, args);
+        execute(SQL_DELETE_ARTIFACTS, args);
+        execute(SQL_DELETE_KEYWORDS, args);
+        execute(SQL_DELETE_TEST_RESULTS, args);
+        execute(SQL_DELETE_REPORTS_BY_RUN, args);
+        execute(SQL_DELETE_RUN, args);
     }
 
     /**
@@ -230,31 +264,25 @@ public class ReportLifecycleService {
         return reportMetaOf(id, findReportRow(projectId, id).orElse(row));
     }
 
-    /** 软删用户报告；冻结件拒绝删除，重复删幂等。 */
+    /**
+     * 物理删用户报告（v5.24.0 裁决）。冻结 / 归档件同样允许删除——
+     * 状态机只约束"改标题"，不约束删除。重复删幂等。
+     */
     public DeleteResult deleteTestReport(long projectId, long id) {
-        Map<String, Object> row = requireReportRow(projectId, id);
-        RunImpact impact = impact(projectId, str(row.get("run_id")));
-        if (isDeleted(row)) {
-            return new DeleteResult(false, impact);
+        var found = findReportRow(projectId, id);
+        if (found.isEmpty()) {
+            return new DeleteResult(false, new RunImpact(0, 0));
         }
-        if (isFrozen(row)) {
-            throw new BusinessException(ErrorCode.CONFLICT, "已冻结，请先解冻");
-        }
-        execute(SQL_SOFT_DELETE_REPORT, Arrays.asList(TenantContext.userId(), projectId, id));
+        RunImpact impact = impact(projectId, str(found.get().get("run_id")));
+        execute(SQL_DELETE_REPORT, Arrays.asList(projectId, id));
         audit.record("report.test.delete", "test_report", String.valueOf(id),
-                "softDeleted=true; impact=" + impact);
+                "hardDeleted=true; impact=" + impact + "; by=" + TenantContext.userId());
         return new DeleteResult(true, impact);
     }
 
-    /** 恢复用户报告；未删除时幂等直接返回当前元数据。 */
+    /** 物理删后不可恢复；保留方法只为让旧调用方拿到明确错误。 */
     public TestReportMeta restoreTestReport(long projectId, long id) {
-        Map<String, Object> row = requireReportRow(projectId, id);
-        if (!isDeleted(row)) {
-            return reportMetaOf(id, row);
-        }
-        execute(SQL_RESTORE_REPORT, Arrays.asList(projectId, id));
-        audit.record("report.test.restore", "test_report", String.valueOf(id), "restored=true");
-        return reportMetaOf(id, findReportRow(projectId, id).orElse(row));
+        throw new BusinessException(ErrorCode.CONFLICT, "报告已物理删除，无法恢复: " + id);
     }
 
     // ---------------------------------------------------------------- 影响面 / 默认过滤

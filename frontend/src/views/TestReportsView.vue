@@ -131,7 +131,6 @@ const editId = ref<number | null>(null)
 const editTitle = ref('')
 const editRemark = ref('')
 const editBusy = ref(false)
-const deletedIds = ref<Set<number>>(new Set())
 const deleting = ref(false)
 const confirmShow = ref(false)
 const confirmCount = ref(0)
@@ -196,9 +195,7 @@ async function doDelete(): Promise<void> {
       exports += result.impact.testReportExportCount
       artifacts += result.impact.runArtifactCount
     }
-    const next = new Set(deletedIds.value)
-    for (const id of ids) next.add(id)
-    deletedIds.value = next
+    // v5.24.0：物理删后后端不再返回该行，列表由后端事实驱动。
     clearSelection()
     confirmShow.value = false
     pendingDeleteIds.value = []
@@ -208,18 +205,6 @@ async function doDelete(): Promise<void> {
     notice.value = t('testReports.failed')
   } finally {
     deleting.value = false
-  }
-}
-async function restoreRow(row: TestReportItem): Promise<void> {
-  try {
-    await listCrudApi.restoreTestReport(projectId.value, row.id)
-    const next = new Set(deletedIds.value)
-    next.delete(row.id)
-    deletedIds.value = next
-    await load()
-    notice.value = t('w57.testReports.restored')
-  } catch {
-    notice.value = t('testReports.failed')
   }
 }
 
@@ -287,18 +272,7 @@ const columns = computed<DataTableColumns<TestReportItem>>(() => [
     fixed: 'right',
     width: 320,
     render: (row) => {
-      // v5.14.0 / W64-07：冻结件才是正式交付物，导出入口不能只给草稿。
-      if (isFrozen(row)) return h('span', { class: 'row-actions' }, [
-        h('span', { class: 'muted' }, t('w57.testReports.frozenHint')),
-        h(ReportExportBar, { reportId: row.id }),
-      ])
-      if (deletedIds.value.has(row.id)) {
-        return h(
-          NButton,
-          { text: true, size: 'small', onClick: () => void restoreRow(row) },
-          { default: () => t('w57.testReports.restore') },
-        )
-      }
+      // v5.24.0：冻结件也允许删除；冻结只影响"改标题"，不影响删除与导出。
       return h('span', { class: 'row-actions' }, [
         h(
           NButton,
@@ -308,7 +282,7 @@ const columns = computed<DataTableColumns<TestReportItem>>(() => [
         h(
           NButton,
           { text: true, type: 'error', size: 'small', onClick: () => askDelete([row.id]) },
-          { default: () => t('w57.testReports.softDelete') },
+          { default: () => t('w57.testReports.hardDelete') },
         ),
         h(ReportExportBar, { reportId: row.id }),
       ])

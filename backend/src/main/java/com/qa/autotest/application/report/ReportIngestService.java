@@ -53,13 +53,17 @@ public class ReportIngestService {
     /** v3.9.0 FR-v3.9-03：pytest 用例日志落盘；旧构造为 null → 不生成日志（RF 不受影响）。 */
     private final PytestLogPersister pytestLogs;
     private final com.qa.autotest.application.kernel.pytest.PytestResultNormalizer pytestNormalizer;
+    /** v5.24.0 / FR-v5.24-01：入库前把框架命令索引补进归一结果（老内核不读 json-report）。 */
+    private final PytestCommandEnricher commandEnricher;
+    private final com.qa.autotest.application.repository.ProjectSettingRepository settings;
 
     public ReportIngestService(RunRepository runs,
                                RunArtifactRepository artifacts,
                                ReportRepository reports,
                                AccessControlService access,
                                OutputXmlParser parser) {
-        this(runs, artifacts, reports, access, parser, null, null, null, null, null);
+        this(runs, artifacts, reports, access, parser, null, null, null, null, null,
+                null, null);
     }
 
     public ReportIngestService(RunRepository runs,
@@ -68,7 +72,8 @@ public class ReportIngestService {
                                AccessControlService access,
                                OutputXmlParser parser,
                                CiTriggerRepository ciTriggers) {
-        this(runs, artifacts, reports, access, parser, ciTriggers, null, null, null, null);
+        this(runs, artifacts, reports, access, parser, ciTriggers, null, null, null, null,
+                null, null);
     }
 
     /** v5.0.0 的 9 参形态：pytest 编号回填不启用（报告仍显示 nodeid，行为与旧版一致）。 */
@@ -82,7 +87,7 @@ public class ReportIngestService {
                                com.qa.autotest.application.kernel.PytestKernel pytestKernel,
                                PytestLogPersister pytestLogs) {
         this(runs, artifacts, reports, access, parser, ciTriggers, runMetadata, pytestKernel,
-                pytestLogs, null);
+                pytestLogs, null, null, null);
     }
 
     @Autowired
@@ -96,7 +101,10 @@ public class ReportIngestService {
                                com.qa.autotest.application.kernel.PytestKernel pytestKernel,
                                PytestLogPersister pytestLogs,
                                com.qa.autotest.application.kernel.pytest.PytestResultNormalizer
-                                       pytestNormalizer) {
+                                       pytestNormalizer,
+                               PytestCommandEnricher commandEnricher,
+                               com.qa.autotest.application.repository.ProjectSettingRepository
+                                       settings) {
         this.runs = runs;
         this.artifacts = artifacts;
         this.reports = reports;
@@ -107,6 +115,8 @@ public class ReportIngestService {
         this.pytestKernel = pytestKernel;
         this.pytestNormalizer = pytestNormalizer;
         this.pytestLogs = pytestLogs;
+        this.commandEnricher = commandEnricher;
+        this.settings = settings;
     }
 
     /**
@@ -181,6 +191,10 @@ public class ReportIngestService {
                 : pytestLogs.persist(artifactDir);
         com.qa.autotest.domain.kernel.NormalizedRun normalized =
                 pytestKernel.normalize(artifactDir, run.runId());
+        // v5.24.0 / FR-v5.24-01：老内核只从 json-report 取命令，而自研用例库不装该插件，
+        // 命令列会恒 NONE。执行侧虽然补录过，但结果只在内存用于计数；报告解析是独立调用，
+        // 所以用同一套 Enricher 在这里再补一次（见 docs/design/EHT-命令证据与删除契约.md）。
+        normalized = enrichCommands(projectId, run, normalized, artifactDir);
         // W57-50：判据原文（junit 的每用例 <system-out>）在归一阶段会被丢弃，这里先取出来。
         // 解析失败只返回已收集部分，不影响执行事实入库。
         com.qa.autotest.application.kernel.pytest.PytestCriteriaExtractor.Extraction criteriaText =
@@ -262,6 +276,57 @@ public class ReportIngestService {
                 com.qa.autotest.application.kernel.pytest.PytestResultNormalizer
                         .matchKey(prefix, func));
         return code == null || code.isBlank() ? fallback : code;
+    }
+
+    /**
+     * 入库前补录框架命令证据（v5.24.0 / FR-v5.24-01，方案 B）。
+     *
+     * <p>命令是"加分项"：任何一步失败都原样返回，绝不让报告生成因为读不到命令而中断。
+     * 二次归一只用来取 nodeid → 脚本路径映射；用例状态仍以老内核的结果为准。
+     */
+    private com.qa.autotest.domain.kernel.NormalizedRun enrichCommands(
+            long projectId, RunRecord run,
+            com.qa.autotest.domain.kernel.NormalizedRun normalized, Path artifactDir) {
+        if (commandEnricher == null || settings == null || pytestNormalizer == null
+                || normalized == null || artifactDir == null) {
+            return normalized;
+        }
+        try {
+            var config = com.qa.autotest.application.kernel.pytest.PytestProjectSettings
+                    .load(settings, projectId);
+            java.nio.file.Path repo = com.qa.autotest.application.kernel.pytest
+                    .PytestProjectSettings.repoPath(config);
+            if (repo == null) {
+                return normalized;
+            }
+            java.nio.file.Path commandRoot = com.qa.autotest.application.kernel.pytest
+                    .PytestNicKernelCommand.artifactRoot(repo, run.runId());
+            if (!java.nio.file.Files.isDirectory(commandRoot)) {
+                return normalized;
+            }
+            java.util.List<java.nio.file.Path> junits = new java.util.ArrayList<>();
+            try (var stream = java.nio.file.Files.list(artifactDir)) {
+                stream.filter(p -> {
+                    String n = p.getFileName().toString();
+                    return n.startsWith("junit") && n.endsWith(".xml");
+                }).sorted().forEach(junits::add);
+            }
+            if (junits.isEmpty()) {
+                return normalized;
+            }
+            java.util.Map<String, String> scriptByNode = new java.util.HashMap<>();
+            var nr = pytestNormalizer.normalize(projectId, run.runId(), junits,
+                    java.util.Map.of(), artifactDir);
+            for (var mapping : nr.mappings()) {
+                if (mapping.scriptPath() != null && !mapping.scriptPath().isBlank()) {
+                    scriptByNode.put(mapping.nodeId(), mapping.scriptPath());
+                }
+            }
+            return commandEnricher.enrich(commandRoot, normalized, scriptByNode);
+        } catch (RuntimeException | java.io.IOException ex) {
+            // 命令是加分项，读不到就保持 NONE，不阻断报告。
+            return normalized;
+        }
     }
 
     /** pytest 产物目录：run_artifact(kind=pytest_report_json) → artifactsDir/kernel-pytest-0。 */

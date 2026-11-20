@@ -227,21 +227,30 @@ public class TestCaseRepositoryJdbc implements TestCaseRepository {
 
     @Override
     public void delete(long projectId, long id, Long operatorId) {
-        // v5.21.0 / FR-v5.21-03 判据 8/9（大师 2026-11-16 拍板）：**软删除**，不物理删。
-        // 步骤（test_case_step）与内容全部保留——全局公共用例池还要能按编号查到它；
-        // 只从用例集成员关系里摘掉（test_set_item 是纯关联，留着会让用例集继续显示已删用例）。
-        String delItems = """
-                DELETE FROM test_set_item WHERE test_case_id = ?
-                  AND test_case_id IN (SELECT id FROM test_case WHERE project_id = ? AND id = ?)
+        // v5.24.0 口径变更（大师 2026-11-20 裁决）：推翻 2026-11-16 的"不得物理删除"决定，
+        // 改为物理删。V11_82 历史迁移不修改，只在此处与 PRD 记录口径变更。
+        // 六张子表按依赖顺序清理，避免留下孤儿行（尤其 case_script_binding 会影响执行白名单）。
+        String[][] children = {
+                {"test_set_item", "test_case_id"},
+                {"test_case_step", "test_case_id"},
+                {"case_requirement", "test_case_id"},
+                {"case_requirement_version", "test_case_id"},
+                {"case_script_binding", "case_id"},
+                {"manual_execution", "case_id"},
+        };
+        for (String[] child : children) {
+            String table = child[0];
+            String column = child[1];
+            String sql = "DELETE FROM " + table + " WHERE " + column + " = ? AND " + column
+                    + " IN (SELECT id FROM test_case WHERE project_id = ? AND id = ?)";
+            TenantGuard.requireProjectScope(sql, table);
+            jdbc.update(sql, id, projectId, id);
+        }
+        String hardDelete = """
+                DELETE FROM test_case WHERE project_id = ? AND id = ?
                 """;
-        TenantGuard.requireProjectScope(delItems, "test_set_item");
-        jdbc.update(delItems, id, projectId, id);
-        String softDelete = """
-                UPDATE test_case SET deleted_at = CURRENT_TIMESTAMP(3), deleted_by = ?
-                 WHERE project_id = ? AND id = ? AND deleted_at IS NULL
-                """;
-        TenantGuard.requireProjectScope(softDelete, "test_case");
-        jdbc.update(softDelete, operatorId, projectId, id);
+        TenantGuard.requireProjectScope(hardDelete, "test_case");
+        jdbc.update(hardDelete, projectId, id);
     }
 
     @Override

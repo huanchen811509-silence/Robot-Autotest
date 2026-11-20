@@ -72,6 +72,46 @@ public class PytestCommandEnricher {
     }
 
     /**
+     * 报告入库侧补录（v5.24.0 / FR-v5.24-01，方案 B）。
+     *
+     * <p>与上面的执行侧重载不同：报告入库拿到的是老内核的 {@link NormalizedRun}，
+     * 没有 {@code mappings}。调用方负责从新归一器取 nodeid → 脚本路径映射传进来。
+     *
+     * <p>为什么需要这条路径：执行侧补录结果只存在于内存（用于计数），报告解析是独立的
+     * HTTP 调用；若不在入库时补一次，{@code test_result.command_text} 会恒为 NONE
+     * （老内核从 json-report 取命令，而自研用例库不装该插件）。
+     *
+     * @return 补录后的 run；无命令可补时返回入参本身（引用相等）
+     */
+    public NormalizedRun enrich(Path commandRoot, NormalizedRun run,
+                                Map<String, String> scriptPathByNode) {
+        if (commandRoot == null || run == null) {
+            return run;
+        }
+        List<NormalizedCaseResult> enriched = new ArrayList<>();
+        boolean changed = false;
+        for (NormalizedCaseResult one : run.cases()) {
+            if (!NormalizedCaseResult.NO_COMMAND.equals(one.commandText())) {
+                enriched.add(one);
+                continue;
+            }
+            CaseCommandExtractor.Extracted command = lookup(commandRoot,
+                    scriptPathByNode.get(one.nodeId()), one.nodeId());
+            if (!command.hasCommand()) {
+                enriched.add(one);
+                continue;
+            }
+            changed = true;
+            enriched.add(new NormalizedCaseResult(one.nodeId(), one.name(), one.status(),
+                    one.durationSeconds(), one.message(), command.text(), command.source(),
+                    command.exitCode()));
+        }
+        return changed
+                ? new NormalizedRun(run.kernel(), run.runId(), enriched, run.metadata())
+                : run;
+    }
+
+    /**
      * 候选 nodeid 的顺序很关键：框架目录名是 **pytest nodeid**
      * （斜杠路径 + {@code .py} + {@code ::} 函数名），而 junit 的 {@code classname} 是**点分**的，
      * 直接拿 junit 名去拼目录一条都匹配不上。所以先用绑定脚本路径拼出真实 nodeid，

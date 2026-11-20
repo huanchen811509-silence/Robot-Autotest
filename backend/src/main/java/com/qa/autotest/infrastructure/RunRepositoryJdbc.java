@@ -357,7 +357,9 @@ public class RunRepositoryJdbc implements RunRepository {
 
     @Override
     public PageResult<RunRecord> page(long projectId, RunState state, PageQuery paging) {
-        StringBuilder where = new StringBuilder(" WHERE project_id = ?");
+        // v5.24.0：此前这里漏了 deleted_at 过滤，而 ReportRepositoryJdbc.page() 有——
+        // 结果是"另一个入口删掉的记录，执行记录列表里还在"。物理删后作为防御性保留。
+        StringBuilder where = new StringBuilder(" WHERE project_id = ? AND deleted_at IS NULL");
         List<Object> args = new ArrayList<>();
         args.add(projectId);
         if (state != null) {

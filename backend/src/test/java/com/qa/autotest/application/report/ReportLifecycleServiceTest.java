@@ -92,8 +92,8 @@ class ReportLifecycleServiceTest {
     }
 
     @Test
-    @DisplayName("软删 run：写 deleted_at/deleted_by，返回影响面并落审计")
-    void deleteRun_softDeletes() {
+    @DisplayName("物理删 run：按序清子表并 DELETE 主表，返回影响面并落审计")
+    void deleteRun_hardDeletes() {
         ReportLifecycleService service = stubbed(runRow(null), null, 2, 3, 0);
 
         ReportLifecycleService.DeleteResult result = service.deleteRun(7L, "RUN-1");
@@ -101,17 +101,33 @@ class ReportLifecycleServiceTest {
         assertTrue(result.deleted());
         assertEquals(2, result.impact().testReportExportCount());
         assertEquals(3, result.impact().runArtifactCount());
+        // 6 张子表 + 1 张主表，全部是物理 DELETE，不许再出现 UPDATE deleted_at。
+        verify(service, org.mockito.Mockito.times(7)).execute(anyString(), anyList());
         verify(service).execute(
                 org.mockito.ArgumentMatchers.argThat(
-                        sql -> sql.contains("deleted_at = NOW(3)") && sql.contains("deleted_by")),
+                        sql -> sql.contains("DELETE FROM run WHERE")),
+                anyList());
+        verify(service, never()).execute(
+                org.mockito.ArgumentMatchers.argThat(sql -> sql.contains("deleted_at = NOW")),
                 anyList());
         verify(audit).record(eq("report.run.delete"), eq("run"), eq("RUN-1"), anyString());
     }
 
     @Test
-    @DisplayName("重复删除幂等：不写库、不重复审计")
-    void deleteRun_idempotent() {
+    @DisplayName("历史软删行也物理清除（大师 2026-11-20 裁决：不再陈列）")
+    void deleteRun_purgesLegacySoftDeleted() {
         ReportLifecycleService service = stubbed(runRow("2026-11-14"), null, 0, 0, 0);
+
+        ReportLifecycleService.DeleteResult result = service.deleteRun(7L, "RUN-1");
+
+        assertTrue(result.deleted(), "软删行必须被物理清除，不能返回 false 让它继续陈列");
+        verify(service, org.mockito.Mockito.times(7)).execute(anyString(), anyList());
+    }
+
+    @Test
+    @DisplayName("run 不存在时幂等：不写库、不重复审计")
+    void deleteRun_idempotentWhenMissing() {
+        ReportLifecycleService service = stubbed(null, null, 0, 0, 0);
 
         ReportLifecycleService.DeleteResult result = service.deleteRun(7L, "RUN-1");
 
@@ -121,25 +137,14 @@ class ReportLifecycleServiceTest {
     }
 
     @Test
-    @DisplayName("恢复：清 deleted_at/deleted_by")
-    void restoreRun_restores() {
+    @DisplayName("物理删后恢复不可行：给出明确错误而不是静默成功")
+    void restoreRun_rejectedAfterHardDelete() {
         ReportLifecycleService service = stubbed(runRow("2026-11-14"), null, 0, 0, 0);
 
-        ReportLifecycleService.RunMeta meta = service.restoreRun(7L, "RUN-1");
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> service.restoreRun(7L, "RUN-1"));
 
-        assertEquals("RUN-1", meta.runId());
-        verify(service).execute(
-                org.mockito.ArgumentMatchers.argThat(sql -> sql.contains("deleted_at = NULL")),
-                anyList());
-    }
-
-    @Test
-    @DisplayName("恢复未删记录幂等：不写库")
-    void restoreRun_idempotentWhenVisible() {
-        ReportLifecycleService service = stubbed(runRow(null), null, 0, 0, 0);
-
-        service.restoreRun(7L, "RUN-1");
-
+        assertTrue(ex.getMessage().contains("无法恢复"));
         verify(service, never()).execute(anyString(), anyList());
     }
 
@@ -156,15 +161,25 @@ class ReportLifecycleServiceTest {
     }
 
     @Test
-    @DisplayName("冻结报告拒绝删除：提示已冻结请先解冻")
-    void deleteTestReport_frozenRejected() {
+    @DisplayName("冻结报告允许直接物理删（大师 2026-11-20 裁决）")
+    void deleteTestReport_frozenAllowed() {
         ReportLifecycleService service = stubbed(null, reportRow("FROZEN", null), 0, 0, 0);
 
-        BusinessException ex = assertThrows(BusinessException.class,
-                () -> service.deleteTestReport(7L, 9L));
+        ReportLifecycleService.DeleteResult result = service.deleteTestReport(7L, 9L);
 
-        assertEquals("已冻结，请先解冻", ex.getMessage());
-        verify(service, never()).execute(anyString(), anyList());
+        assertTrue(result.deleted());
+        verify(service).execute(
+                org.mockito.ArgumentMatchers.argThat(sql -> sql.contains("DELETE FROM test_report")),
+                anyList());
+        verify(audit).record(eq("report.test.delete"), eq("test_report"), eq("9"), anyString());
+    }
+
+    @Test
+    @DisplayName("归档报告允许直接物理删")
+    void deleteTestReport_archivedAllowed() {
+        ReportLifecycleService service = stubbed(null, reportRow("ARCHIVED", null), 0, 0, 0);
+
+        assertTrue(service.deleteTestReport(7L, 9L).deleted());
     }
 
     @Test
@@ -253,16 +268,15 @@ class ReportLifecycleServiceTest {
     }
 
     @Test
-    @DisplayName("批量软删：单条不存在只记失败，不中断其余条")
+    @DisplayName("批量物理删：单条不存在视为幂等，不中断其余条")
     void batchDeleteToleratesMissingRow() {
         ReportLifecycleService service = stubbed(null, null, 1, 1, 1);
 
         ReportLifecycleService.BatchDeleteResult result = service.deleteRuns(7L, List.of("RUN-9"));
 
         assertEquals(0, result.deleted());
-        assertEquals(1, result.failed());
-        assertEquals("RUN-9", result.failures().get(0).runId());
-        assertTrue(result.failures().get(0).reason().contains("RUN-9"));
+        assertEquals(0, result.failed(), "不存在的行是幂等成功，不是失败");
+        assertTrue(result.failures().isEmpty());
     }
 
     @Test

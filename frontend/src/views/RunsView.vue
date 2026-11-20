@@ -356,7 +356,6 @@ const runNoResultHint = computed<string>(() => {
  * ExecutionRun DTO 不带 deleted / remark 位，故软删态与编辑结果用本地状态承载（见降级说明）。
  */
 const runMetas = ref<Record<string, RunMeta>>({})
-const deletedRunIds = ref<Set<string>>(new Set())
 const editOpen = ref(false)
 const editRunId = ref<string | null>(null)
 const editRemark = ref('')
@@ -440,27 +439,15 @@ async function doDelete(): Promise<void> {
   deleting.value = true
   try {
     await listCrudApi.deleteRun(projectId.value, runId)
-    deletedRunIds.value = new Set([...deletedRunIds.value, runId])
     confirmShow.value = false
     pendingDeleteRunId.value = null
+    // v5.24.0：物理删后后端不再返回该行，列表完全由后端事实驱动（不再用本地 Set 隐藏）。
     await load()
-    message.value = t('w57.runs.softDeleted')
+    message.value = t('w57.runs.hardDeleted')
   } catch (e) {
     error.value = localizeError(e)
   } finally {
     deleting.value = false
-  }
-}
-async function restoreRow(row: ExecutionRun): Promise<void> {
-  try {
-    await listCrudApi.restoreRun(projectId.value, row.runId)
-    const next = new Set(deletedRunIds.value)
-    next.delete(row.runId)
-    deletedRunIds.value = next
-    await load()
-    message.value = t('w57.runs.restored')
-  } catch (e) {
-    error.value = localizeError(e)
   }
 }
 
@@ -593,17 +580,11 @@ const columns = computed<DataTableColumns<ExecutionRun>>(() => [
           },
           { default: () => t('w57.runs.editRemark') },
         ),
-        deletedRunIds.value.has(row.runId)
-          ? h(
-              NButton,
-              { text: true, size: 'small', onClick: () => void restoreRow(row) },
-              { default: () => t('w57.runs.restore') },
-            )
-          : h(
-              NButton,
-              { text: true, type: 'error', size: 'small', onClick: () => void askDelete(row) },
-              { default: () => t('w57.runs.softDelete') },
-            ),
+        h(
+          NButton,
+          { text: true, type: 'error', size: 'small', onClick: () => void askDelete(row) },
+          { default: () => t('w57.runs.hardDelete') },
+        ),
       ]),
   },
 ])
