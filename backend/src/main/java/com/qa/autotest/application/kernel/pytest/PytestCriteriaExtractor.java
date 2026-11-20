@@ -36,7 +36,13 @@ public final class PytestCriteriaExtractor {
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
-    /** json-report 的固定文件名，由 {@code PytestKernel} 的 {@code --json-report-file} 决定。 */
+    /**
+     * json-report 的固定文件名（可选通道）。
+     *
+     * <p>写这个文件的是 {@code PytestNicKernelCommand}，而且**只在契约探测通过时**才加
+     * {@code --json-report}——自研用例库不认这个参数（实测 {@code unrecognized arguments}）。
+     * 所以它在多数真实产物目录里根本不存在，junit 才是主通道。
+     */
     static final String JSON_REPORT = "pytest-report.json";
 
     /** pytest 的输出阶段。三个都要读：夹具里的打印落在 setup、用例体在 call。 */

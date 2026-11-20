@@ -2,6 +2,7 @@ package com.qa.autotest.infrastructure;
 
 import com.qa.autotest.application.report.CompareService;
 import com.qa.autotest.application.report.EhtSections;
+import com.qa.autotest.application.report.PytestPlanEvidenceService;
 import com.qa.autotest.application.report.ReportViewRenderer;
 import com.qa.autotest.application.repository.EhtSectionRepository;
 import com.qa.autotest.common.tenant.TenantGuard;
@@ -87,16 +88,20 @@ public class EhtSectionRepositoryJdbc implements EhtSectionRepository {
 
     private final JdbcTemplate jdbc;
     private final CompareService compare;
+    private final PytestPlanEvidenceService planEvidence;
 
-    public EhtSectionRepositoryJdbc(JdbcTemplate jdbc, CompareService compare) {
+    public EhtSectionRepositoryJdbc(JdbcTemplate jdbc, CompareService compare,
+                                    PytestPlanEvidenceService planEvidence) {
         this.jdbc = jdbc;
         this.compare = compare;
+        this.planEvidence = planEvidence;
     }
 
     @Override
     public EhtSections load(long projectId, String runId) {
         if (projectId <= 0 || runId == null || runId.isBlank()) {
-            return EhtSections.empty("robot");
+            // 参数非法是调用方问题，但它同样是"装配失败"，不能说成"没有用例"。
+            return EhtSections.failed("robot", "装配参数非法：projectId/runId 缺失");
         }
         String kernel = "robot";
         String commitSha = null;
@@ -110,39 +115,57 @@ public class EhtSectionRepositoryJdbc implements EhtSectionRepository {
                 commitSha = c == null ? null : clip(String.valueOf(c), 80);
             }
         } catch (RuntimeException ex) {
-            return EhtSections.empty("robot");
+            return EhtSections.failed("robot", reason(ex, "读取 run 环境"));
         }
 
-        TenantGuard.requireProjectScope(COUNTS_SQL, "run");
-        List<Map<String, Object>> rows = jdbc.queryForList(COUNTS_SQL, projectId, runId);
-        EhtSections.Counts counts = rows.isEmpty() ? new EhtSections.Counts(0, 0, 0, 0, 0)
-                : new EhtSections.Counts(num(rows.get(0).get("passed")), num(rows.get(0).get("failed")),
-                        num(rows.get(0).get("missing_evidence")), num(rows.get(0).get("undetermined")),
-                        num(rows.get(0).get("total")));
+        try {
+            TenantGuard.requireProjectScope(COUNTS_SQL, "run");
+            List<Map<String, Object>> rows = jdbc.queryForList(COUNTS_SQL, projectId, runId);
+            EhtSections.Counts counts = rows.isEmpty() ? new EhtSections.Counts(0, 0, 0, 0, 0)
+                    : new EhtSections.Counts(num(rows.get(0).get("passed")),
+                            num(rows.get(0).get("failed")),
+                            num(rows.get(0).get("missing_evidence")),
+                            num(rows.get(0).get("undetermined")),
+                            num(rows.get(0).get("total")));
 
-        TenantGuard.requireProjectScope(UNDETERMINED_SQL, "run");
-        List<EhtSections.Undetermined> undetermined = jdbc.query(UNDETERMINED_SQL,
-                (rs, n) -> new EhtSections.Undetermined(
-                        clip(rs.getString("node_ref"), 160),
-                        clip(rs.getString("reason"), 200)), projectId, runId);
-
-        TenantGuard.requireProjectScope(EVIDENCE_SQL, "run");
-        List<EhtSections.Evidence> evidence = jdbc.query(EVIDENCE_SQL,
-                (rs, n) -> {
-                    String path = EhtSections.relativePath(rs.getString("evidence_path"));
-                    if (path == null || path.isBlank()) {
-                        path = EhtSections.relativePath(rs.getString("fallback_path"));
-                    }
-                    return new EhtSections.Evidence(
+            TenantGuard.requireProjectScope(UNDETERMINED_SQL, "run");
+            List<EhtSections.Undetermined> undetermined = jdbc.query(UNDETERMINED_SQL,
+                    (rs, n) -> new EhtSections.Undetermined(
                             clip(rs.getString("node_ref"), 160),
-                            clip(rs.getString("criteria_json"), 200),
-                            clip(rs.getString("failure_msg"), 200),
-                            path == null ? null : clip(path, 512));
-                }, projectId, runId);
+                            clip(rs.getString("reason"), 200)), projectId, runId);
 
-        return new EhtSections(kernel, counts, undetermined, evidence, Map.of(),
-                com.qa.autotest.domain.report.MetadataGate.REQUIRED, commitSha,
-                diff(projectId, runId));
+            TenantGuard.requireProjectScope(EVIDENCE_SQL, "run");
+            List<EhtSections.Evidence> evidence = jdbc.query(EVIDENCE_SQL,
+                    (rs, n) -> {
+                        String path = EhtSections.relativePath(rs.getString("evidence_path"));
+                        if (path == null || path.isBlank()) {
+                            path = EhtSections.relativePath(rs.getString("fallback_path"));
+                        }
+                        return new EhtSections.Evidence(
+                                clip(rs.getString("node_ref"), 160),
+                                clip(rs.getString("criteria_json"), 600),
+                                clip(rs.getString("failure_msg"), 200),
+                                path == null ? null : clip(path, 512));
+                    }, projectId, runId);
+
+            // 有 run 但一条用例结果都没有：这是"跑了个空"，不是"装配失败"，必须分开说。
+            EhtSections.Assembly assembly = counts.total() == 0
+                    ? EhtSections.Assembly.noData() : EhtSections.Assembly.ok();
+
+            return new EhtSections(kernel, counts, undetermined, evidence, Map.of(),
+                    com.qa.autotest.domain.report.MetadataGate.REQUIRED, commitSha,
+                    diff(projectId, runId), assembly, planEvidence.read(projectId, runId));
+        } catch (RuntimeException ex) {
+            return EhtSections.failed(kernel, reason(ex, "装配三段式报告"));
+        }
+    }
+
+    /** 失败原因要能读、但不能泄漏：过 scrub 后截断，并带上异常类型便于定位。 */
+    private static String reason(RuntimeException ex, String stage) {
+        String msg = ex.getMessage() == null ? "" : ex.getMessage();
+        String safe = ReportViewRenderer.scrub(msg);
+        String tail = safe.isBlank() ? ex.getClass().getSimpleName() : safe;
+        return clip(stage + "失败：" + tail, 160);
     }
 
     /**

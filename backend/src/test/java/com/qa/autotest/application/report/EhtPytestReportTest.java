@@ -36,7 +36,8 @@ class EhtPytestReportTest {
                                         List<EhtSections.Evidence> evidence,
                                         EhtSections.Diff diff) {
         return new EhtSections(kernel, counts, undetermined, evidence,
-                Map.of("SW_BUILD", "build-9"), MetadataGate.REQUIRED, "abc123", diff);
+                Map.of("SW_BUILD", "build-9"), MetadataGate.REQUIRED, "abc123", diff,
+                EhtSections.Assembly.ok(), EhtSections.Plan.absent("本次为单元测试，无执行计划"));
     }
 
     private static EhtSections.Counts counts() {
@@ -184,7 +185,8 @@ class EhtPytestReportTest {
         assertTrue(safeExternal.containsKey("RUN_ID"), "对外视图缺 RUN_ID");
         assertFalse(safeExternal.containsKey("OPERATOR"), "OPERATOR 不该进对外视图");
         EhtSections s = new EhtSections("pytest", counts(), List.of(), List.of(), safe,
-                MetadataGate.REQUIRED, "abc123", EhtSections.Diff.none());
+                MetadataGate.REQUIRED, "abc123", EhtSections.Diff.none(),
+                EhtSections.Assembly.ok(), EhtSections.Plan.absent("无执行计划"));
         String html = html(s);
         for (String key : MetadataGate.REQUIRED) {
             assertTrue(html.contains("<dt>" + key + "</dt>"), "附录缺门禁键: " + key);
@@ -193,4 +195,73 @@ class EhtPytestReportTest {
         }
     }
 
+    /**
+     * W-EHT-06 判据 1：装配失败必须在报告最前面写明原因。
+     * 此前失败与"没跑"都返回空结构，报告只有一串 0，读者无法分辨——这就是"假大空"。
+     */
+    @Test
+    void assemblyFailureIsExplicitNotSilentZeros() {
+        String html = html(EhtSections.failed("pytest", "读取 run 环境失败：连接超时"));
+        assertTrue(html.contains("报告装配失败"), "装配失败没有显性横幅");
+        assertTrue(html.contains("读取 run 环境失败"), "失败原因没有带出来");
+        assertTrue(html.contains("不代表本次执行没有用例"), "没有纠正读者的误读");
+        // 失败说明要排在结论层之前，读者先看到原因再看到 0。
+        assertTrue(html.indexOf("报告装配失败") < html.indexOf("id=\"conclusion\""));
+    }
+
+    /** W-EHT-06 判据 2：跑空了（装配成功、0 用例结果）与装配失败必须说成两件事。 */
+    @Test
+    void noDataIsDistinguishedFromAssemblyFailure() {
+        String html = html(EhtSections.noData("pytest"));
+        assertTrue(html.contains("本次执行没有任何用例结果"));
+        assertFalse(html.contains("报告装配失败"), "空跑不该被说成装配失败");
+    }
+
+    /** W-EHT-06 判据 3：证据层空字段显性化，不许留下"判据行原文："后面一片空白。 */
+    @Test
+    void emptyEvidenceFieldsSaySoInsteadOfRenderingBlank() {
+        EhtSections s = sections("pytest", counts(), List.of(),
+                List.of(new EhtSections.Evidence("case#1", null, "  ", null)),
+                EhtSections.Diff.none());
+        String html = html(s);
+        assertTrue(html.contains("未采集到判据（缺证据）"));
+        assertTrue(html.contains("未采集到实测值"));
+        assertFalse(html.contains("判据行原文：<br>"), "空判据仍然渲染成了空白标签");
+    }
+
+    /**
+     * W-EHT-07 判据：fake 计划必须进报告。
+     * 「没连设备、没下发命令、没伪造 stdout」这三条是读者判断证据可信度的前提，
+     * 候选分支则是人工回放的依据，都不能只躺在 json 文件里。
+     */
+    @Test
+    void planIsRenderedWithConnectionFactAndBranches() {
+        EhtSections.Plan plan = new EhtSections.Plan(true, "fake-plan-only", false, false,
+                List.of(new EhtSections.Plan.PlanCommand("gpu01@10.202.54.101",
+                        "sudo -n lspci -Dnnvv -s 45:00.0", "读取 PCIe 能力",
+                        "Vendor/Device ID 与 LnkCap")),
+                List.of(new EhtSections.Plan.PlanBranch("IM-NET-002", "set_link_speed",
+                        "speed-32g", "设备支持 32GT/s", "链路协商到 32GT/s")),
+                null);
+        EhtSections s = new EhtSections("pytest", counts(), List.of(), List.of(),
+                Map.of("SW_BUILD", "build-9"), MetadataGate.REQUIRED, "abc123",
+                EhtSections.Diff.none(), EhtSections.Assembly.ok(), plan);
+
+        String html = html(s);
+        assertTrue(html.contains("执行计划（fake / Plan-only）"));
+        assertTrue(html.contains("否（未连接设备）"), "没连设备这个事实没有进报告");
+        assertTrue(html.contains("否（无伪造）"));
+        assertTrue(html.contains("lspci"));
+        assertTrue(html.contains("speed-32g"), "候选分支没有进报告");
+        assertTrue(html.contains("设备支持 32GT/s"));
+    }
+
+    /** 没有计划时也要给一句解释，不许留一个空的段标题。 */
+    @Test
+    void absentPlanExplainsItself() {
+        String html = html(sections("pytest", counts(), List.of(), List.of(),
+                EhtSections.Diff.none()));
+        assertTrue(html.contains("执行计划（fake / Plan-only）"));
+        assertTrue(html.contains("本次为单元测试，无执行计划"));
+    }
 }

@@ -119,8 +119,6 @@ public class PytestEnvRenderer {
      * {@link IllegalStateException}，由预检转成「环境不健康」拒绝，绝不产出半成品。
      */
     public RenderResult render(RenderRequest request) {
-        List<Device> selected = resolveDevices(request);
-        Map<Long, List<DevicePort>> portsByDevice = resolvePorts(request, selected);
         Map<String, String> config = PytestProjectSettings.load(settings, request.projectId());
         String keyRule = PytestProjectSettings.value(config, PytestProjectSettings.INVENTORY_KEY_RULE);
         String osDefault = defaultIfBlank(
@@ -131,6 +129,11 @@ public class PytestEnvRenderer {
                 ? request.mode().trim() : PytestProjectSettings.modeDefault(config);
 
         List<String> warnings = new ArrayList<>();
+        // W-EHT-08：fake 演练设备必须在选设备阶段就挡掉。设备按 id 排序，
+        // fake 设备（本库为 18/19）恰好排在真实 DUT（20/21）前面，
+        // 用例里的 case_target("first") 会稳定选中 127.0.0.1，real 执行必然 SSH 失败。
+        List<Device> selected = resolveDevices(request, mode, warnings);
+        Map<Long, List<DevicePort>> portsByDevice = resolvePorts(request, selected);
         // FR-v5.6-41：GPU/CPU/存储从已采集的主机清单派生。没有任何一次采集时保持为空并写警告——
         // 空对象会让框架报「资源池里没有可用 GPU」，警告让人知道该先去采，而不是以为机器没卡。
         Map<Long, PytestHostAssets> assets = loadAssets(request.projectId(), selected, warnings);
@@ -185,17 +188,29 @@ public class PytestEnvRenderer {
         return result;
     }
 
-    private List<Device> resolveDevices(RenderRequest request) {
+    private List<Device> resolveDevices(RenderRequest request, String mode, List<String> warnings) {
         Map<String, String> config = PytestProjectSettings.load(settings, request.projectId());
         String keyRule = PytestProjectSettings.value(config, PytestProjectSettings.INVENTORY_KEY_RULE);
         List<Device> all = devices.listAll(request.projectId());
         Set<String> wanted = request.hostKeys() == null ? Set.of()
                 : new LinkedHashSet<>(request.hostKeys());
+        boolean real = "real".equalsIgnoreCase(mode);
         List<Device> selected = new ArrayList<>();
+        List<String> fakeExcluded = new ArrayList<>();
         for (Device device : all) {
-            if (wanted.isEmpty() || wanted.contains(device.inventoryKey(keyRule))) {
-                selected.add(device);
+            if (!wanted.isEmpty() && !wanted.contains(device.inventoryKey(keyRule))) {
+                continue;
             }
+            if (real && isFakeDevice(device)) {
+                fakeExcluded.add(device.inventoryKey(keyRule));
+                continue;
+            }
+            selected.add(device);
+        }
+        if (!fakeExcluded.isEmpty()) {
+            warnings.add("real 模式已排除 " + fakeExcluded.size() + " 台 fake 演练设备（"
+                    + String.join(", ", fakeExcluded)
+                    + "）：它们只用于 fake/Plan-only 演练，连不到真实 DUT");
         }
         // 顺序有讲究：先核「点名要的主机是否都在」，再判「是否有设备」。
         // 反过来的话，点名一台不存在的主机会先命中「未选中任何设备」，
@@ -210,14 +225,43 @@ public class PytestEnvRenderer {
                 }
             }
             if (!missing.isEmpty()) {
+                // real 下点名 fake 设备是最容易犯的错（选到了 127.0.0.1），单独说清楚。
+                boolean allFake = real && fakeExcluded.containsAll(missing);
+                if (allFake) {
+                    throw new IllegalStateException("选中的主机是 fake 演练设备，real 模式不能使用: "
+                            + String.join(", ", missing)
+                            + "。请改选真实 DUT，或把运行模式切回 fake。");
+                }
                 throw new IllegalStateException("选中的主机在资产台账里不存在或不属于本项目: "
                         + String.join(", ", missing));
             }
         }
         if (selected.isEmpty()) {
+            if (real) {
+                throw new IllegalStateException(
+                        "real 模式没有可用的真实设备：选中的设备全部是 fake 演练设备。"
+                                + "请先在设备台账登记真实 DUT，或把运行模式切回 fake。");
+            }
             throw new IllegalStateException("未选中任何设备：pytest 工程至少要一台可 SSH 的主机");
         }
         return selected;
+    }
+
+    /**
+     * fake 演练设备判定（W-EHT-08）。
+     *
+     * <p>识别依据是设备台账的 {@code model}：本库演练设备型号统一登记为
+     * {@code fake-plan-only}，管理 IP 为 127.0.0.0/8。名称兜底再认一次
+     * {@code eht-fake-*}，避免有人新建演练设备时忘了填型号。
+     */
+    static boolean isFakeDevice(Device device) {
+        String model = device.model() == null
+                ? "" : device.model().trim().toLowerCase(java.util.Locale.ROOT);
+        String name = device.name() == null
+                ? "" : device.name().trim().toLowerCase(java.util.Locale.ROOT);
+        String ip = device.managementIp() == null ? "" : device.managementIp().trim();
+        return model.startsWith("fake") || name.startsWith("eht-fake")
+                || ip.startsWith("127.");
     }
 
     private Map<Long, List<DevicePort>> resolvePorts(RenderRequest request, List<Device> selected) {

@@ -105,6 +105,67 @@ class PytestEnvRendererTest {
         assertThat(result.nicKeys()).containsExactly("gpu01@10.0.0.1/ens17np0");
     }
 
+    /**
+     * W-EHT-08：real 模式必须排除 fake 演练设备。
+     *
+     * <p>这不是"洁癖"：设备按 id 排序，演练设备（id 18/19，IP 127.0.0.0/8）恰好排在
+     * 真实 DUT（20/21）前面；用例里的 {@code case_target("first")} 会稳定选中 127.0.0.1，
+     * real 执行必然 SSH 失败。实测就是这么失败的（run 17078）。
+     */
+    @Test
+    void real模式排除fake演练设备(@TempDir Path dir) throws Exception {
+        PytestEnvRenderer renderer = new PytestEnvRenderer(
+                new FakeDevices(List.of(fakeDevice(), realDevice()), Map.of()),
+                new FakeSettings(Map.of()));
+
+        PytestEnvRenderer.RenderResult result = renderer.render(
+                new PytestEnvRenderer.RenderRequest(PROJECT, "RUN-1", "real", dir));
+
+        assertThat(result.hostKeys()).containsExactly("gpu01@10.202.54.101");
+        String inventory = Files.readString(result.inventoryFile(), StandardCharsets.UTF_8);
+        assertThat(inventory).doesNotContain("127.0.0.1");
+        assertThat(String.join(" ", result.warnings()))
+                .contains("已排除").contains("fake");
+    }
+
+    /** real 模式下点名一台 fake 设备，必须直接说清原因，而不是笼统报"设备不存在"。 */
+    @Test
+    void real模式点名fake设备时明确拒绝(@TempDir Path dir) {
+        PytestEnvRenderer renderer = new PytestEnvRenderer(
+                new FakeDevices(List.of(fakeDevice(), realDevice()), Map.of()),
+                new FakeSettings(Map.of()));
+
+        assertThatThrownBy(() -> renderer.render(new PytestEnvRenderer.RenderRequest(
+                PROJECT, "RUN-1", List.of("eht-fake-host@127.0.0.1"), List.of(), "real", dir)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("fake 演练设备");
+    }
+
+    /** fake 模式保留演练设备：Plan-only 演练本来就不连真机，不能跟着 real 一起过滤。 */
+    @Test
+    void fake模式保留fake演练设备(@TempDir Path dir) throws Exception {
+        PytestEnvRenderer renderer = new PytestEnvRenderer(
+                new FakeDevices(List.of(fakeDevice(), realDevice()), Map.of()),
+                new FakeSettings(Map.of()));
+
+        PytestEnvRenderer.RenderResult result = renderer.render(
+                new PytestEnvRenderer.RenderRequest(PROJECT, "RUN-1", "fake", dir));
+        assertThat(result.hostKeys())
+                .contains("eht-fake-host@127.0.0.1", "gpu01@10.202.54.101");
+    }
+
+    private static Device fakeDevice() {
+        return new Device(1L, PROJECT, "eht-fake-host", "HOST", "fake-plan-only", "fake", "SN0",
+                "127.0.0.1", null, null, null, true, null, null,
+                null, null, null, null, null);
+    }
+
+    private static Device realDevice() {
+        return new Device(2L, PROJECT, "gpu01", "HOST", "GPU 服务器", "inspur", "SN1",
+                "10.202.54.101", null, null, null, true, null, null,
+                null, null, null, null, null);
+    }
+
     private static PytestEnvRenderer renderer(List<DevicePort> extra, Map<String, String> settings) {
         Device device = new Device(1L, PROJECT, "gpu01", "gpu", "NF5280", "inspur", "SN1",
                 "10.0.0.1", null, null, "rdma", true, null, null,

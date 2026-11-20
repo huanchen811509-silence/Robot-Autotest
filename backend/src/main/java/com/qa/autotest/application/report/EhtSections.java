@@ -23,7 +23,46 @@ public record EhtSections(String kernel,
                           Map<String, String> metadata,
                           List<String> metadataRequired,
                           String commitSha,
-                          Diff diff) {
+                          Diff diff,
+                          Assembly assembly,
+                          Plan plan) {
+
+    /**
+     * 装配状态（W-EHT-06）。
+     *
+     * <p>此前装配失败与「本次真的没有用例」都返回 {@link #empty}，报告顶部只有一串 0，
+     * 读者无法区分「没跑」和「查不到」——这正是"假大空"的一部分。现在三种状态可判定：
+     * <ul>
+     *   <li>{@code OK}：正常装配，计数可信；</li>
+     *   <li>{@code NO_DATA}：装配成功但该 run 没有任何用例结果；</li>
+     *   <li>{@code FAILED}：装配失败，{@code reason} 必须写明原因（已脱敏）。</li>
+     * </ul>
+     */
+    public record Assembly(String status, String reason) {
+        public static final String OK = "OK";
+        public static final String NO_DATA = "NO_DATA";
+        public static final String FAILED = "FAILED";
+
+        public static Assembly ok() {
+            return new Assembly(OK, null);
+        }
+
+        public static Assembly noData() {
+            return new Assembly(NO_DATA, null);
+        }
+
+        public static Assembly failed(String reason) {
+            return new Assembly(FAILED, reason == null || reason.isBlank() ? "未提供原因" : reason);
+        }
+
+        public boolean failedStatus() {
+            return FAILED.equals(status);
+        }
+
+        public boolean noDataStatus() {
+            return NO_DATA.equals(status);
+        }
+    }
 
     /** 四态计数；{@link #balanced()} 就是 FR-09 判据 2「四态之和 = 用例总数」。 */
     public record Counts(int passed, int failed, int missingEvidence, int undetermined, int total) {
@@ -33,6 +72,34 @@ public record EhtSections(String kernel,
 
         public boolean balanced() {
             return sum() == total;
+        }
+    }
+
+    /**
+     * 执行计划（W-EHT-07）。来源是用例库 {@code artifacts/<run_id>/fake_plan.json}。
+     *
+     * <p>{@code present=false} 时 {@code note} 说明为什么没有——real 模式本来就不生成计划，
+     * 这是正常事实而非缺陷，但必须写出来，否则报告这一段是空白，读者无从判断。
+     *
+     * @param connectionEstablished 用例库自报"是否真的连上了 DUT"；fake 下为 false
+     * @param stdoutSynthesized     用例库自报"是否伪造了 stdout"；fake 下为 false
+     */
+    public record Plan(boolean present, String mode, Boolean connectionEstablished,
+                       Boolean stdoutSynthesized, List<PlanCommand> commands,
+                       List<PlanBranch> branches, String note) {
+        public static Plan absent(String note) {
+            return new Plan(false, null, null, null, List.of(), List.of(),
+                    note == null || note.isBlank() ? "未生成执行计划" : note);
+        }
+
+        /** 计划下发的命令（未真正执行）：端点 / 命令原文 / 用途 / 期望观察。 */
+        public record PlanCommand(String endpointKey, String command, String purpose,
+                                  String expectedObservation) {
+        }
+
+        /** 用例静态声明的候选分支：不属已下发命令，仅供人工回放参考。 */
+        public record PlanBranch(String caseId, String action, String name, String condition,
+                                 String expectedResult) {
         }
     }
 
@@ -71,9 +138,23 @@ public record EhtSections(String kernel,
 
     /** 无任何明细时（run 不存在 / 装配异常）的可解释空值，绝不返回 null。 */
     public static EhtSections empty(String kernel) {
+        return failed(kernel, "未执行装配");
+    }
+
+    /** 装配失败：报告必须把原因带出去，不许用一串 0 假装"没有用例"。 */
+    public static EhtSections failed(String kernel, String reason) {
         return new EhtSections(kernel == null ? "robot" : kernel,
                 new Counts(0, 0, 0, 0, 0), List.of(), List.of(), Map.of(),
-                MetadataGate.REQUIRED, null, Diff.none());
+                MetadataGate.REQUIRED, null, Diff.none(), Assembly.failed(reason),
+                Plan.absent("装配失败，未读取执行计划"));
+    }
+
+    /** 装配成功但本次 run 没有任何用例结果（与装配失败区分开）。 */
+    public static EhtSections noData(String kernel) {
+        return new EhtSections(kernel == null ? "robot" : kernel,
+                new Counts(0, 0, 0, 0, 0), List.of(), List.of(), Map.of(),
+                MetadataGate.REQUIRED, null, Diff.none(), Assembly.noData(),
+                Plan.absent("未读取执行计划"));
     }
 
     /**
@@ -108,6 +189,6 @@ public record EhtSections(String kernel,
     /** metadata 由调用方从冻结快照同一份 ReportRecord 取，避免仓储再读一遍。 */
     public EhtSections withMetadata(Map<String, String> safe) {
         return new EhtSections(kernel, counts, undetermined, evidence,
-                safe == null ? Map.of() : safe, metadataRequired, commitSha, diff);
+                safe == null ? Map.of() : safe, metadataRequired, commitSha, diff, assembly, plan);
     }
 }

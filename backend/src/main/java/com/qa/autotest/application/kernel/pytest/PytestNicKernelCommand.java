@@ -161,7 +161,9 @@ public class PytestNicKernelCommand {
         // 原话是「需要恢复捕获时，在命令行末尾追加 --capture=fd 覆盖这里的 -s」——
         // addopts 排在命令行参数之前，所以末尾这一个 --capture=fd 就能覆盖掉 -s。
         // 没有它，junit 的 <system-out>/<system-err> 全是空的，步骤树只能靠 log 顺序猜。
-        // 代价：控制台不再实时输出。监视（W53）改为 tail framework.log，不依赖 stdout。
+        // 代价：控制台不再实时输出——这是刻意的置换，用"实时滚动"换"按用例切好的证据"。
+        // 注意：平台的进度/监视**不读 framework.log**（该文件是会话级单文件、没有用例边界，
+        // 见 PytestStepExtractor 类注释），实时监视仍靠进程 stdout 的逐行泵送。
         argv.add("--capture=fd");
         argv.add("-q");
         argv.addAll(nodeIds);

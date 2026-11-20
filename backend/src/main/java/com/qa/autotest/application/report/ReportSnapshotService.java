@@ -188,6 +188,20 @@ public class ReportSnapshotService {
                 + "<a href=\"#evidence\">二、证据层</a> · "
                 + "<a href=\"#appendix\">三、附录</a></nav>");
 
+        // 装配状态横幅（W-EHT-06）：装配失败 / 空跑必须在最前面说清楚，
+        // 否则读者只会看到一串 0，把"查不到"误读成"没有用例"。
+        EhtSections.Assembly asm = s.assembly() == null ? EhtSections.Assembly.ok() : s.assembly();
+        if (asm.failedStatus()) {
+            b.append("<section id=\"assembly-error\"><h2>报告装配失败</h2><p>原因：")
+                    .append(esc(asm.reason()))
+                    .append("</p><p>下方各层计数为占位 0，<strong>不代表本次执行没有用例</strong>；"
+                            + "请按上述原因排查后重新生成报告。</p></section>");
+        } else if (asm.noDataStatus()) {
+            b.append("<section id=\"assembly-empty\"><h2>本次执行没有任何用例结果</h2>"
+                    + "<p>执行记录存在，但没有写入任何用例结果行——可能是 0 个用例被执行、"
+                    + "全部用例在采集前被中断，或结果入库失败。请核对产物与执行日志。</p></section>");
+        }
+
         // 一、结论层
         EhtSections.Counts c = s.counts();
         b.append("<section id=\"conclusion\"><h2>一、结论层</h2><dl>")
@@ -235,9 +249,15 @@ public class ReportSnapshotService {
         } else {
             b.append("<dl>");
             for (EhtSections.Evidence row : s.evidence()) {
+                String criteriaText = row.criteriaText();
+                String measured = row.measuredValue();
                 b.append("<dt>").append(esc(row.nodeRef())).append("</dt><dd>")
-                        .append("判据行原文：").append(esc(row.criteriaText()))
-                        .append("<br>实测值：").append(esc(row.measuredValue()))
+                        .append("判据行原文：")
+                        .append(criteriaText == null || criteriaText.isBlank()
+                                ? "未采集到判据（缺证据）" : esc(criteriaText))
+                        .append("<br>实测值：")
+                        .append(measured == null || measured.isBlank()
+                                ? "未采集到实测值" : esc(measured))
                         .append("<br>证据文件：");
                 String path = row.evidencePath();
                 if (path == null || path.isBlank()) {
@@ -249,6 +269,61 @@ public class ReportSnapshotService {
                 b.append("</dd>");
             }
             b.append("</dl>");
+        }
+
+        // 执行计划（W-EHT-07）：fake 模式"没连设备、没下发命令"必须让读者看见，
+        // 否则 Plan-only 的 SKIP 会被误读成"执行过但没通过"。
+        EhtSections.Plan plan = s.plan() == null
+                ? EhtSections.Plan.absent("未读取执行计划") : s.plan();
+        b.append("<h3>执行计划（fake / Plan-only）</h3>");
+        if (!plan.present()) {
+            b.append("<p>").append(esc(plan.note())).append("</p>");
+        } else {
+            b.append("<dl>");
+            if (plan.mode() != null && !plan.mode().isBlank()) {
+                b.append("<dt>计划模式</dt><dd>").append(esc(plan.mode())).append("</dd>");
+            }
+            if (plan.connectionEstablished() != null) {
+                b.append("<dt>是否真实连接 DUT</dt><dd>")
+                        .append(plan.connectionEstablished() ? "是" : "否（未连接设备）")
+                        .append("</dd>");
+            }
+            if (plan.stdoutSynthesized() != null) {
+                b.append("<dt>是否伪造 stdout</dt><dd>")
+                        .append(plan.stdoutSynthesized() ? "是（不可作为实测证据）" : "否（无伪造）")
+                        .append("</dd>");
+            }
+            b.append("</dl>");
+            b.append("<h4>计划下发的命令（").append(plan.commands().size())
+                    .append(" 条，均未真正执行）</h4>");
+            if (plan.commands().isEmpty()) {
+                b.append("<p>无</p>");
+            } else {
+                b.append("<ul>");
+                for (EhtSections.Plan.PlanCommand cmd : plan.commands()) {
+                    b.append("<li>端点 ").append(esc(cmd.endpointKey()))
+                            .append("<br>用途：").append(esc(cmd.purpose()))
+                            .append("<br>命令：").append(esc(cmd.command()))
+                            .append("<br>期望观察：").append(esc(cmd.expectedObservation()))
+                            .append("</li>");
+                }
+                b.append("</ul>");
+            }
+            b.append("<h4>声明的条件分支（").append(plan.branches().size()).append(" 条）</h4>");
+            if (plan.branches().isEmpty()) {
+                b.append("<p>无</p>");
+            } else {
+                b.append("<ul>");
+                for (EhtSections.Plan.PlanBranch branch : plan.branches()) {
+                    b.append("<li>").append(esc(branch.name()))
+                            .append("（用例 ").append(esc(branch.caseId())).append("，动作 ")
+                            .append(esc(branch.action())).append("）")
+                            .append("<br>触发条件：").append(esc(branch.condition()))
+                            .append("<br>预期结果：").append(esc(branch.expectedResult()))
+                            .append("</li>");
+                }
+                b.append("</ul>");
+            }
         }
         b.append("</section>");
 
