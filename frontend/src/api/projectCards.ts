@@ -38,6 +38,8 @@ export interface ProjectCard {
   joined?: boolean
   /** 测试内核：robot（Robot Framework，默认）| pytest。缺省按 robot 显示。 */
   testKernel?: string | null
+  /** FR-ORIGIN-03：来源 USER=用户自建 / BUILTIN=程序自带；缺省按 BUILTIN（fail-safe）。 */
+  origin?: string | null
 }
 
 export const projectCardsApi = {

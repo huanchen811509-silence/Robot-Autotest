@@ -104,6 +104,17 @@ const deleteTarget = ref<ProjectCardData | null>(null)
 const deleteCode = ref('')
 const deleteBusy = ref(false)
 const deleteError = ref<ErrorLine | null>(null)
+/** FR-ORIGIN-04：项目来源切换弹层（与删除弹层隔离，独立 testid）。 */
+const originTarget = ref<ProjectCardData | null>(null)
+const originCode = ref('')
+const originBusy = ref(false)
+const originError = ref<ErrorLine | null>(null)
+const originCardRef = ref<HTMLElement | null>(null)
+const originOpen = computed(() => originTarget.value !== null)
+useFocusTrap(originCardRef, originOpen, { onEscape: () => closeOrigin() })
+const originMatched = computed(
+  () => originTarget.value !== null && originCode.value.trim() === originTarget.value.code,
+)
 
 /**
  * 删除确认弹层用自己的遮罩，不用 naive-ui `NModal`。
@@ -123,6 +134,8 @@ const canManage = computed(() => {
   return role === 'admin' || role === 'pm'
 })
 const canDelete = computed(() => auth.isAdmin)
+/** FR-ORIGIN-04：切换来源同删除，仅 ADMIN。 */
+const canChangeOrigin = computed(() => auth.isAdmin)
 const deleteMatched = computed(
   () => deleteTarget.value !== null && deleteCode.value.trim() === deleteTarget.value.code,
 )
@@ -174,13 +187,52 @@ async function confirmDelete(): Promise<void> {
   deleteBusy.value = true
   deleteError.value = null
   try {
-    await projectApi.remove(target.id)
+    // FR-ORIGIN-06：USER 项目走级联彻底删除；BUILTIN 空项目保留原删除端点。
+    if ((target.origin ?? 'BUILTIN').toUpperCase() === 'USER') {
+      await projectApi.purge(target.id)
+    } else {
+      await projectApi.remove(target.id)
+    }
     deleteTarget.value = null
+    // FR-ORIGIN-08：删的是当前项目时，切到现存项目，避免上下文指向已删项目。
+    const wasCurrent = isCurrent(target)
     await refreshProjects()
+    if (wasCurrent) {
+      const next = cards.value[0]
+      if (next) auth.setProject(next.id)
+    }
   } catch (e) {
     deleteError.value = localizeError(e)
   } finally {
     deleteBusy.value = false
+  }
+}
+
+function requestChangeOrigin(card: ProjectCardData): void {
+  originTarget.value = card
+  originCode.value = ''
+  originError.value = null
+}
+
+function closeOrigin(): void {
+  if (originBusy.value) return
+  originTarget.value = null
+}
+
+async function confirmChangeOrigin(): Promise<void> {
+  const target = originTarget.value
+  if (!target || !originMatched.value) return
+  const next = (target.origin ?? 'BUILTIN').toUpperCase() === 'USER' ? 'BUILTIN' : 'USER'
+  originBusy.value = true
+  originError.value = null
+  try {
+    await projectApi.changeOrigin(target.id, next, originCode.value.trim())
+    originTarget.value = null
+    await refreshProjects()
+  } catch (e) {
+    originError.value = localizeError(e)
+  } finally {
+    originBusy.value = false
   }
 }
 </script>
@@ -260,9 +312,11 @@ async function confirmDelete(): Promise<void> {
         :current="isCurrent(card)"
         :can-manage="canManage"
         :can-delete="canDelete"
+        :can-change-origin="canChangeOrigin"
         :busy="busyId === card.id"
         @toggle-enabled="toggleEnabled"
         @request-delete="requestDelete"
+        @request-change-origin="requestChangeOrigin"
       />
     </div>
 
@@ -314,6 +368,61 @@ async function confirmDelete(): Promise<void> {
               @click="confirmDelete"
             >
               {{ deleteBusy ? t('workbench.deleting') : t('workbench.deleteConfirm') }}
+            </button>
+          </footer>
+        </section>
+      </div>
+    </Teleport>
+
+    <!-- FR-ORIGIN-04：来源切换二次确认弹层（独立遮罩与 testid，不复用删除弹层）。 -->
+    <Teleport to="body">
+      <div
+        v-if="originTarget"
+        class="delete-mask"
+        data-testid="origin-mask"
+        @click.self="closeOrigin"
+      >
+        <section
+          ref="originCardRef"
+          class="delete-card"
+          role="dialog"
+          aria-modal="true"
+          tabindex="-1"
+          :aria-label="t('workbench.changeOriginTitle')"
+        >
+          <h2 class="delete-card__title">{{ t('workbench.changeOriginTitle') }}</h2>
+          <p class="delete-card__hint">
+            {{ t('workbench.changeOriginHintFull', { code: originTarget.code }) }}
+          </p>
+          <label class="delete-card__field" for="origin-code-input">
+            <span>{{ t('workbench.deleteCodeLabel') }}</span>
+            <input
+              id="origin-code-input"
+              v-model="originCode"
+              class="input"
+              type="text"
+              autocomplete="off"
+              spellcheck="false"
+              data-testid="origin-code"
+              :placeholder="originTarget.code"
+            />
+          </label>
+          <ErrorLineView v-if="originError" :error="originError" />
+          <p v-if="originCode.trim() && !originMatched" class="delete-card__warn">
+            {{ t('workbench.deleteMismatch') }}
+          </p>
+          <footer class="delete-card__actions">
+            <button type="button" class="btn btn-ghost" :disabled="originBusy" @click="closeOrigin">
+              {{ t('common.cancel') }}
+            </button>
+            <button
+              type="button"
+              class="btn"
+              data-testid="origin-confirm"
+              :disabled="!originMatched || originBusy"
+              @click="confirmChangeOrigin"
+            >
+              {{ originBusy ? t('workbench.processing') : t('workbench.changeOrigin') }}
             </button>
           </footer>
         </section>

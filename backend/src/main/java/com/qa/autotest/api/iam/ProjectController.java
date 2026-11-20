@@ -1,6 +1,7 @@
 package com.qa.autotest.api.iam;
 
 import com.qa.autotest.application.iam.CreateProjectFromTemplateRequest;
+import com.qa.autotest.application.iam.ProjectPurgeService;
 import com.qa.autotest.application.iam.ProjectService;
 import com.qa.autotest.application.iam.ProjectTemplateService;
 import com.qa.autotest.common.ApiResponse;
@@ -48,18 +49,30 @@ public class ProjectController {
     public record ChangeCodeRequest(String code, String reason) {
     }
 
+    /** FR-ORIGIN-04：切换来源入参；origin=USER/BUILTIN，confirmCode=项目代码二次确认。 */
+    public record ChangeOriginRequest(String origin, String confirmCode) {
+    }
+
     private final ProjectService projects;
     /** 可为 null：仅旧装配（单测 standaloneSetup）走一参构造，生产由 @Autowired 二参构造注入。 */
     private final ProjectTemplateService templates;
+    /** FR-ORIGIN-06：可为 null，仅旧单测装配不带；生产由 @Autowired 四参构造注入。 */
+    private final ProjectPurgeService purges;
 
     public ProjectController(ProjectService projects) {
-        this(projects, null);
+        this(projects, null, null);
+    }
+
+    public ProjectController(ProjectService projects, ProjectTemplateService templates) {
+        this(projects, templates, null);
     }
 
     @Autowired
-    public ProjectController(ProjectService projects, ProjectTemplateService templates) {
+    public ProjectController(ProjectService projects, ProjectTemplateService templates,
+                             ProjectPurgeService purges) {
         this.projects = projects;
         this.templates = templates;
+        this.purges = purges;
     }
 
     @GetMapping
@@ -119,10 +132,38 @@ public class ProjectController {
         return ApiResponse.ok(projects.changeCode(projectId, request.code(), request.reason()));
     }
 
+    /** FR-ORIGIN-04：切换项目来源（仅 ADMIN、需项目代码确认；只改标记不删除）。 */
+    @PutMapping("/{projectId}/origin")
+    public ApiResponse<Project> changeOrigin(@PathVariable long projectId,
+                                             @RequestBody ChangeOriginRequest request) {
+        return ApiResponse.ok(projects.changeOrigin(projectId, request.origin(),
+                request.confirmCode()));
+    }
+
     @DeleteMapping("/{projectId}")
     public ApiResponse<Void> delete(@PathVariable long projectId) {
         projects.delete(projectId);
         return ApiResponse.ok(null);
+    }
+
+    /** FR-ORIGIN-07：级联删除预览（只读，逐表条数清单）。 */
+    @PostMapping("/{projectId}/purge-preview")
+    public ApiResponse<Map<String, Long>> purgePreview(@PathVariable long projectId) {
+        return ApiResponse.ok(purgeService().preview(projectId));
+    }
+
+    /** FR-ORIGIN-06：USER 项目级联彻底删除（事务；BUILTIN/platform/非 ADMIN 拒绝）。 */
+    @DeleteMapping("/{projectId}/purge")
+    public ApiResponse<Void> purge(@PathVariable long projectId) {
+        purgeService().purge(projectId);
+        return ApiResponse.ok(null);
+    }
+
+    private ProjectPurgeService purgeService() {
+        if (purges == null) {
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR, "级联删除服务未装配");
+        }
+        return purges;
     }
 
     @GetMapping("/{projectId}/members")

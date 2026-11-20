@@ -105,7 +105,7 @@ public class ProjectCardService {
                     // 但一旦哪天有人把它改写成两个 Long 相比，就会退化成引用比较且静默通过编译。
                     project.ownerId() != null && project.ownerId().longValue() == userId,
                     memberRole != null && !memberRole.isBlank(),
-                    project.testKernel()));
+                    project.testKernel(), project.origin()));
         }
         return result;
     }

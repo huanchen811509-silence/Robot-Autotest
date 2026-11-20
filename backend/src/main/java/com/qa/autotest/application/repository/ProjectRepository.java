@@ -61,6 +61,21 @@ public interface ProjectRepository {
      */
     Map<String, Long> busyCounts(long projectId);
 
+    /** FR-ORIGIN-07：级联删除预览的逐表条数（只读，与 purgeProject 同源口径）。 */
+    default Map<String, Long> purgeTargets(long projectId) {
+        return busyCounts(projectId);
+    }
+
+    /** FR-ORIGIN-06：级联彻底删除项目及其全部业务数据（须在事务内调用）。 */
+    default void purgeProject(long projectId) {
+        throw new UnsupportedOperationException("purgeProject 未实现");
+    }
+
+    /** FR-ORIGIN-06：删后孤儿扫描，返回仍悬空引用该项目的表→行数；空表示干净。 */
+    default Map<String, Long> orphanReferences(long projectId) {
+        return Map.of();
+    }
+
     List<ProjectMember> members(long projectId);
 
     Optional<ProjectMember> findMember(long projectId, long userId);
@@ -96,6 +111,14 @@ public interface ProjectRepository {
      * 是为了让既有测试桩零改动 —— 生产实现见 {@code ProjectRepositoryJdbc}。
      */
     default void markDemo(long projectId) {
+        // 测试桩默认不实现
+    }
+
+    /**
+     * 切换项目来源（FR-ORIGIN-04）：default 空实现，保证既有测试桩零改动。
+     * 生产实现见 {@code ProjectRepositoryJdbc}；值由 service 层白名单校验。
+     */
+    default void setOrigin(long projectId, String origin) {
         // 测试桩默认不实现
     }
 }

@@ -25,8 +25,14 @@ vi.mock('@/api/projectCards', () => ({
  * 一并给空实现，避免 mock 模块缺导出。
  */
 const removeProject = vi.hoisted(() => vi.fn())
+const purgeProject = vi.hoisted(() => vi.fn())
+const changeOriginApi = vi.hoisted(() => vi.fn())
 vi.mock('@/api/iam', () => ({
-  projectApi: { list: vi.fn(async () => []), remove: removeProject, update: vi.fn() },
+  projectApi: {
+    list: vi.fn(async () => []), remove: removeProject, update: vi.fn(),
+    purge: purgeProject, purgePreview: vi.fn(async () => ({ counts: {} })),
+    changeOrigin: changeOriginApi,
+  },
   authApi: { renew: vi.fn(), logout: vi.fn() },
   userApi: { page: vi.fn(async () => ({ items: [], total: 0 })) },
 }))
@@ -206,6 +212,7 @@ describe('WorkbenchView 删除确认弹层', () => {
     caseCount: 0,
     runCount: 0,
     deviceCount: 0,
+    origin: 'USER',
   }
 
   async function openDeleteDialog(): Promise<HTMLInputElement> {
@@ -220,7 +227,10 @@ describe('WorkbenchView 删除确认弹层', () => {
 
   afterEach(() => {
     removeProject.mockReset()
+    purgeProject.mockReset()
+    changeOriginApi.mockReset()
     document.querySelector('[data-testid="delete-mask"]')?.remove()
+    document.querySelector('[data-testid="origin-mask"]')?.remove()
   })
 
   it('打开后输入框拿到焦点，可以逐字输入并匹配编码', async () => {
@@ -256,6 +266,8 @@ describe('WorkbenchView 删除确认弹层', () => {
     document.querySelector<HTMLButtonElement>('[data-testid="delete-confirm"]')!.click()
     await new Promise((resolve) => setTimeout(resolve, 0))
 
-    expect(removeProject).toHaveBeenCalledWith(9)
+    // USER 项目走级联彻底删除端点（FR-ORIGIN-06），不是旧的 remove。
+    expect(purgeProject).toHaveBeenCalledWith(9)
+    expect(removeProject).not.toHaveBeenCalled()
   })
 })

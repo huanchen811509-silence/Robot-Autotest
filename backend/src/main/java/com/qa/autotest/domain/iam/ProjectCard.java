@@ -18,6 +18,7 @@ import java.time.Instant;
  * @param myRole      当前用户在该项目的成员角色；全局 admin 无成员关系时为 {@code admin}
  * @param own         当前用户是否是该项目的所有者（{@code project.owner_id} 等于自己）
  * @param joined      当前用户是否是该项目的成员（存在 {@code project_member} 行）
+ * @param origin      项目来源（FR-ORIGIN-03）：USER / BUILTIN；缺省按 BUILTIN（fail-safe）
  */
 public record ProjectCard(
         Long id,
@@ -37,5 +38,17 @@ public record ProjectCard(
         String myRole,
         boolean own,
         boolean joined,
-        String testKernel) {
+        String testKernel,
+        String origin) {
+
+    /** 兼容旧构造（测试桩）：origin 缺省 BUILTIN（fail-safe，不误放开删除）。 */
+    public ProjectCard(Long id, String code, String name, String description,
+                       boolean enabled, String visibility, Long ownerId, boolean isCurrent,
+                       long caseCount, long runCount, Integer passRateBp, Instant lastRunAt,
+                       long deviceCount, long memberCount, String myRole, boolean own,
+                       boolean joined, String testKernel) {
+        this(id, code, name, description, enabled, visibility, ownerId, isCurrent,
+                caseCount, runCount, passRateBp, lastRunAt, deviceCount, memberCount,
+                myRole, own, joined, testKernel, "BUILTIN");
+    }
 }

@@ -28,13 +28,16 @@ const props = withDefaults(defineProps<{
   canManage?: boolean
   /** 是否显示「彻底删除」：对应后端 PROJECT/DELETE（仅 ADMIN）。 */
   canDelete?: boolean
+  /** 是否显示「切换来源」：同样仅 ADMIN（FR-ORIGIN-04）。 */
+  canChangeOrigin?: boolean
   /** 该卡片的动作请求是否在途，避免重复点击。 */
   busy?: boolean
-}>(), { canManage: false, canDelete: false, busy: false })
+}>(), { canManage: false, canDelete: false, canChangeOrigin: false, busy: false })
 
 const emit = defineEmits<{
   toggleEnabled: [card: ProjectCardData]
   requestDelete: [card: ProjectCardData]
+  requestChangeOrigin: [card: ProjectCardData]
 }>()
 
 const { t } = useI18n()
@@ -100,6 +103,23 @@ const hasData = computed(
   () => props.card.caseCount > 0 || props.card.runCount > 0 || props.card.deviceCount > 0,
 )
 
+/** FR-ORIGIN-03：来源徽标；缺省按 BUILTIN（fail-safe，不把未知项目误标成可删的自建）。 */
+const originLabel = computed(() =>
+  (props.card.origin ?? 'BUILTIN').toUpperCase() === 'USER'
+    ? t('workbench.originUser')
+    : t('workbench.originBuiltin'),
+)
+/** FR-ORIGIN-05：程序自带（含未标注）删除锁定；USER 项目才可能可删。 */
+const deleteLockedByOrigin = computed(
+  () => (props.card.origin ?? 'BUILTIN').toUpperCase() !== 'USER',
+)
+/** 删除按钮悬停提示三分支：来源锁 > 有数据 > 可删（FR-ORIGIN-05 / N6）。 */
+const deleteTitle = computed(() => {
+  if (deleteLockedByOrigin.value) return t('workbench.deleteOriginBlocked')
+  if (hasData.value) return t('workbench.deleteBlocked')
+  return t('workbench.delete')
+})
+
 const toggleLabel = computed(() => {
   if (props.busy) return t('workbench.processing')
   return props.card.enabled ? t('workbench.disable') : t('workbench.enable')
@@ -146,6 +166,10 @@ function setCurrent(): void {
         <!-- 测试内核：一眼看出这个项目跑的是 RF 还是 pytest -->
         <span class="badge badge--muted" :title="t('workbench.kernel')" data-testid="card-kernel">
           {{ kernelLabel }}
+        </span>
+        <!-- FR-ORIGIN-03：来源徽标，区分程序自带 / 用户自建 -->
+        <span class="badge badge--muted" :title="t('workbench.origin')" data-testid="card-origin">
+          {{ originLabel }}
         </span>
       </div>
     </header>
@@ -227,12 +251,23 @@ function setCurrent(): void {
         {{ toggleLabel }}
       </button>
       <button
+        v-if="canChangeOrigin"
+        type="button"
+        class="btn btn-ghost"
+        data-testid="card-change-origin"
+        :disabled="busy"
+        :title="t('workbench.changeOriginHint')"
+        @click="emit('requestChangeOrigin', card)"
+      >
+        {{ t('workbench.changeOrigin') }}
+      </button>
+      <button
         v-if="canDelete"
         type="button"
         class="btn btn-ghost danger"
         data-testid="card-delete"
-        :disabled="busy || hasData"
-        :title="hasData ? t('workbench.deleteBlocked') : t('workbench.delete')"
+        :disabled="busy || deleteLockedByOrigin || hasData"
+        :title="deleteTitle"
         @click="emit('requestDelete', card)"
       >
         {{ t('workbench.delete') }}

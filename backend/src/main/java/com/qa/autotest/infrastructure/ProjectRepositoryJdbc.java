@@ -30,11 +30,12 @@ public class ProjectRepositoryJdbc implements ProjectRepository {
             rs.getString("description"), rs.getInt("status") == 1,
             rs.getObject("owner_id") == null ? null : rs.getLong("owner_id"),
             rs.getString("visibility"), rs.getString("test_kernel"),
-            rs.getString("kind"), toLocalDateTime(rs.getTimestamp("code_changed_at")));
+            rs.getString("kind"), toLocalDateTime(rs.getTimestamp("code_changed_at")),
+            rs.getString("origin") == null ? "BUILTIN" : rs.getString("origin"));
 
     private static final String SELECT =
             "SELECT id, code, name, description, status, owner_id, visibility, test_kernel, "
-                    + "kind, code_changed_at FROM project";
+                    + "kind, code_changed_at, origin FROM project";
 
     /**
      * 彻底删除时**不阻塞**的 project_id 表：
@@ -156,8 +157,8 @@ public class ProjectRepositoryJdbc implements ProjectRepository {
         jdbc.update(connection -> {
             var ps = connection.prepareStatement("""
                     INSERT INTO project (code, name, description, status, owner_id, visibility,
-                                         test_kernel, kind, created_by)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                         test_kernel, kind, origin, created_by)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """, new String[]{"id"});
             ps.setString(1, project.code());
             ps.setString(2, project.name());
@@ -167,9 +168,11 @@ public class ProjectRepositoryJdbc implements ProjectRepository {
             ps.setString(6, project.visibility() == null ? "private" : project.visibility());
             ps.setString(7, project.testKernel() == null ? "robot" : project.testKernel());
             ps.setString(8, project.kind() == null ? "standard" : project.kind());
+            // FR-ORIGIN-01：新建即用户自建；显式写入，不依赖 DB 默认值（测试桩可能不带 origin）。
+            ps.setString(9, project.origin() == null ? "USER" : project.origin());
             // v5.9.0 / FR-v5.9-03：创建人取当前请求主体。非请求上下文（迁移脚本、单测直插）
             // 写 NULL——与存量行同义（「本列上线前/无主体创建」），不猜、不回填。
-            ps.setObject(9, TenantContext.userId(), java.sql.Types.BIGINT);
+            ps.setObject(10, TenantContext.userId(), java.sql.Types.BIGINT);
             return ps;
         }, keyHolder);
         return keyHolder.getKey() == null ? 0 : keyHolder.getKey().longValue();
@@ -225,6 +228,109 @@ public class ProjectRepositoryJdbc implements ProjectRepository {
             }
         }
         return counts;
+    }
+
+    /**
+     * FR-ORIGIN-07：级联删除预览——逐表列出将被删除的行数（只读）。
+     *
+     * <p>与 {@link #purgeProject(long)} 用同一张表清单和同一套间接子表口径，保证「清单即实际删除面」。
+     * 清单含两类：① 无 project_id、只能经 test_case/test_set 间接定位的子表；② 所有含 project_id
+     * 的业务表（排除 BUSY_IGNORED）。count 用对应口径的 COUNT(*) 子查询。
+     */
+    @Override
+    public Map<String, Long> purgeTargets(long projectId) {
+        Map<String, Long> targets = new LinkedHashMap<>();
+        // ① 间接子表：经 test_case / test_set 定位
+        String caseIds = "(SELECT id FROM test_case WHERE project_id = " + projectId + ")";
+        String setIds = "(SELECT id FROM test_set WHERE project_id = " + projectId + ")";
+        countInto(targets, "test_case_step", "test_case_id IN " + caseIds);
+        countInto(targets, "case_requirement", "test_case_id IN " + caseIds);
+        countInto(targets, "case_requirement_version", "test_case_id IN " + caseIds);
+        countInto(targets, "case_script_binding", "case_id IN " + caseIds);
+        countInto(targets, "manual_execution", "case_id IN " + caseIds);
+        countInto(targets, "test_set_item",
+                "test_set_id IN " + setIds + " OR test_case_id IN " + caseIds);
+        // ② 含 project_id 的业务表
+        for (String table : projectIdTables()) {
+            if (BUSY_IGNORED.contains(table)) {
+                continue;
+            }
+            countInto(targets, table, "project_id = " + projectId);
+        }
+        return targets;
+    }
+
+    /**
+     * FR-ORIGIN-06：级联彻底删除一个项目及其全部业务数据。
+     *
+     * <p>顺序复用已验证的 {@code purge-temp.sh}（v5.18，处理过 1451 半删）：
+     * ① 先清 6 张无 project_id 的间接子表（按 test_case/test_set 定位）；
+     * ② 再对所有含 project_id 的业务表做多轮删（解开 run ↔ test_set 相互引用）；
+     * ③ 最后删 project 本身及 4 张关系表。事务由上层 {@code ProjectPurgeService} 保证。
+     */
+    @Override
+    public void purgeProject(long projectId) {
+        String caseIds = "(SELECT id FROM test_case WHERE project_id = " + projectId + ")";
+        String setIds = "(SELECT id FROM test_set WHERE project_id = " + projectId + ")";
+        // ① 间接子表
+        jdbc.update("DELETE FROM test_case_step WHERE test_case_id IN " + caseIds);
+        jdbc.update("DELETE FROM case_requirement WHERE test_case_id IN " + caseIds);
+        jdbc.update("DELETE FROM case_requirement_version WHERE test_case_id IN " + caseIds);
+        jdbc.update("DELETE FROM case_script_binding WHERE case_id IN " + caseIds);
+        jdbc.update("DELETE FROM manual_execution WHERE case_id IN " + caseIds);
+        jdbc.update("DELETE FROM test_set_item WHERE test_set_id IN " + setIds
+                + " OR test_case_id IN " + caseIds);
+        // ② 含 project_id 的业务表，多轮解开相互引用（最多 5 轮，与 purge-temp.sh 一致）
+        List<String> tables = projectIdTables();
+        for (int round = 0; round < 5; round++) {
+            for (String table : tables) {
+                if (BUSY_IGNORED.contains(table)) {
+                    continue;
+                }
+                try {
+                    jdbc.update("DELETE FROM `" + table + "` WHERE project_id = ?", projectId);
+                } catch (org.springframework.dao.DataIntegrityViolationException e) {
+                    // 仍有更深层引用，下一轮再试；5 轮后由孤儿扫描兜底判失败
+                }
+            }
+        }
+        // ③ 关系表 + project（delete() 会清 4 张关系表再删 project）
+        delete(projectId);
+    }
+
+    /** 删后孤儿扫描：返回仍悬空引用该 project 的表→行数；为空表示级联干净。 */
+    @Override
+    public Map<String, Long> orphanReferences(long projectId) {
+        Map<String, Long> orphans = new LinkedHashMap<>();
+        for (String table : projectIdTables()) {
+            if (BUSY_IGNORED.contains(table) || "project".equals(table)) {
+                continue;
+            }
+            countInto(orphans, table, "project_id = " + projectId);
+        }
+        return orphans;
+    }
+
+    /** 动态发现所有含 project_id 的表名（与 busyCounts 同源口径）。 */
+    private List<String> projectIdTables() {
+        return jdbc.queryForList(
+                "SELECT table_name FROM information_schema.columns "
+                        + "WHERE table_schema = DATABASE() AND column_name = 'project_id' "
+                        + "ORDER BY table_name",
+                String.class);
+    }
+
+    /** 安全的 COUNT 填充：表名来自 information_schema 或固定清单，列名固定，无注入面。 */
+    private void countInto(Map<String, Long> target, String table, String where) {
+        try {
+            Long n = jdbc.queryForObject("SELECT COUNT(*) FROM `" + table + "` WHERE " + where,
+                    Long.class);
+            if (n != null && n > 0) {
+                target.put(table, n);
+            }
+        } catch (org.springframework.dao.DataAccessException e) {
+            // 表/列结构差异（如间接子表被删）时跳过，不影响其余清单
+        }
     }
 
     @Override
@@ -382,6 +488,12 @@ public class ProjectRepositoryJdbc implements ProjectRepository {
     public void markDemo(long projectId) {
         // 只动 is_demo 一位：不碰 status / owner / 可见性（FR-v5.9-09 口径）
         jdbc.update("UPDATE project SET is_demo = 1 WHERE id = ?", projectId);
+    }
+
+    @Override
+    public void setOrigin(long projectId, String origin) {
+        // FR-ORIGIN-04：只动 origin 一位。值由 service 层白名单校验（USER/BUILTIN），此处不猜。
+        jdbc.update("UPDATE project SET origin = ? WHERE id = ?", origin, projectId);
     }
 
     @Override

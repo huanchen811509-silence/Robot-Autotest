@@ -342,6 +342,39 @@ public class ProjectService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "项目不存在"));
     }
 
+    /**
+     * 切换项目来源（FR-ORIGIN-04）：USER ↔ BUILTIN。
+     *
+     * <p>两段式的第一段：本方法只改 origin 位、不触发任何删除；删除走独立的 purge 端点，
+     * 且要再次确认 + 备份（防止「切换即删」的权限自放大）。仅 ADMIN、需项目代码二次确认。
+     */
+    public Project changeOrigin(long projectId, String origin, String confirmCode) {
+        access.bindProject(projectId);
+        if (!access.isAdmin()) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "只有管理员可以切换项目来源");
+        }
+        Project existing = projects.findById(projectId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "项目不存在"));
+        if (existing.platform()) {
+            throw new BusinessException(ErrorCode.CONFLICT, "平台项目来源不可切换");
+        }
+        if (!"USER".equalsIgnoreCase(origin) && !"BUILTIN".equalsIgnoreCase(origin)) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "来源只能是 USER 或 BUILTIN");
+        }
+        if (confirmCode == null || !confirmCode.equals(existing.code())) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "项目代码不匹配，确认失败");
+        }
+        String normalized = origin.trim().toUpperCase(Locale.ROOT);
+        if (normalized.equals(existing.origin())) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "项目来源未变化");
+        }
+        projects.setOrigin(projectId, normalized);
+        audit.recordChange("project.origin.change", "project", String.valueOf(projectId),
+                "origin=" + existing.origin(), "origin=" + normalized);
+        return projects.findById(projectId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "项目不存在"));
+    }
+
     @Audited(action = "project:delete", resource = "project")
     public void delete(long projectId) {
         access.bindProject(projectId);

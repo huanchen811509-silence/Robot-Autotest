@@ -35,6 +35,7 @@ const base: ProjectCardData = {
   deviceCount: 0,
   memberCount: 2,
   myRole: 'admin',
+  origin: 'USER',
 }
 
 let app: App | null = null
@@ -56,7 +57,11 @@ async function mountCard(card: ProjectCardData, current = false): Promise<HTMLEl
 /** 带管理态挂载（v4.3.0 FR-v4.3-09：停用 / 彻底删除入口）。 */
 async function mountManaged(
   card: ProjectCardData,
-  handlers: { onToggleEnabled?: () => void; onRequestDelete?: () => void } = {},
+  handlers: {
+    onToggleEnabled?: () => void
+    onRequestDelete?: () => void
+    onRequestChangeOrigin?: () => void
+  } = {},
 ): Promise<HTMLElement> {
   const root = document.createElement('div')
   document.body.appendChild(root)
@@ -66,6 +71,7 @@ async function mountManaged(
     current: false,
     canManage: true,
     canDelete: true,
+    canChangeOrigin: true,
     ...handlers,
   })
   app.use(pinia!)
@@ -252,5 +258,26 @@ describe('ProjectCard 停用与彻底删除（FR-v4.3-09）', () => {
     remove.click()
     await nextTick()
     expect(onRequestDelete).toHaveBeenCalledTimes(1)
+  })
+
+  it('程序自带项目：删除置灰并给专门提示，且渲染来源徽标', async () => {
+    const root = await mountManaged({ ...base, origin: 'BUILTIN', caseCount: 0, runCount: 0, deviceCount: 0 })
+    const remove = pick(root, 'card-delete') as HTMLButtonElement
+    const badge = root.querySelector('[data-testid="card-origin"]')
+
+    expect(remove.disabled).toBe(true)
+    expect(remove.getAttribute('title')).toContain('程序自带')
+    expect(badge?.textContent).toContain('程序自带')
+  })
+
+  it('切换来源按钮：有管理态时渲染，点击只发事件', async () => {
+    const onRequestChangeOrigin = vi.fn()
+    const root = await mountManaged(base, { onRequestChangeOrigin })
+    const btn = pick(root, 'card-change-origin') as HTMLButtonElement
+
+    expect(btn).not.toBeNull()
+    btn.click()
+    await nextTick()
+    expect(onRequestChangeOrigin).toHaveBeenCalledTimes(1)
   })
 })

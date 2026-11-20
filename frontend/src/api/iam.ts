@@ -215,8 +215,25 @@ export const projectApi = {
       body: JSON.stringify({ code, reason }),
     })
   },
+  /** FR-ORIGIN-04：切换项目来源（仅 ADMIN、需项目代码确认；只改标记不删除）。 */
+  changeOrigin(id: number, origin: 'USER' | 'BUILTIN', confirmCode: string) {
+    return request<Project>(`/projects/${id}/origin`, {
+      method: 'PUT',
+      body: JSON.stringify({ origin, confirmCode }),
+    })
+  },
   remove(id: number) {
     return request<void>(`/projects/${id}`, { method: 'DELETE' })
+  },
+  /** FR-ORIGIN-06：USER 项目级联彻底删除（含全部业务子表）。 */
+  purge(id: number) {
+    return request<void>(`/projects/${id}/purge`, { method: 'DELETE' })
+  },
+  /** FR-ORIGIN-07：级联删除前只读预览（逐表条数清单）。 */
+  purgePreview(id: number) {
+    return request<{ counts: Record<string, number> }>(`/projects/${id}/purge-preview`, {
+      method: 'POST',
+    })
   },
   members(id: number) {
     return request<ProjectMember[]>(`/projects/${id}/members`)
