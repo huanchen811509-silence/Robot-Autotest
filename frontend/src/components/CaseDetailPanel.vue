@@ -397,10 +397,10 @@ watch([() => props.caseId, () => props.source, () => props.projectId], () => voi
   padding: 2px var(--space-3);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  background: var(--surface);
+  background: var(--panel);
   color: var(--text);
   font: inherit;
-  font-size: var(--font-sm);
+  font-size: var(--font-size-sm);
   cursor: pointer;
 }
 .case-detail-confirm:disabled {
@@ -409,6 +409,6 @@ watch([() => props.caseId, () => props.source, () => props.projectId], () => voi
 }
 .case-detail-confirm-msg {
   color: var(--text-muted);
-  font-size: var(--font-sm);
+  font-size: var(--font-size-sm);
 }
 </style>

@@ -35,6 +35,18 @@
 set -uo pipefail
 cd "$(dirname "$0")/.." || exit 1
 
+# APP_BASE 归一化（2026-11-20）：脚本直接拼 `${APP_BASE}/api/...` 交给 fetch，
+# 传裸端口 `8001` 会得到 ERR_INVALID_URL(input: '8001/api/auth/login')，
+# 看起来像「服务连不上」其实是拼串错。这里统一补协议与主机，三种写法都收。
+if [ -n "${APP_BASE:-}" ]; then
+  case "$APP_BASE" in
+    http://*|https://*) : ;;
+    *[!0-9]*) APP_BASE="http://$APP_BASE" ;;
+    *) APP_BASE="http://127.0.0.1:$APP_BASE" ;;
+  esac
+  export APP_BASE
+fi
+
 SELF="$0"
 L=docs/evidence/gates/logs
 mkdir -p "$L"

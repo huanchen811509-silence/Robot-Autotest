@@ -10,7 +10,9 @@
  * 启动参数为 `--headless=new --no-sandbox --remote-debugging-port=9222 about:blank`。
  */
 export const CDP = process.env.CDP_BASE ?? 'http://127.0.0.1:9222'
-export const APP = process.env.APP_BASE ?? 'http://localhost:8001'
+import { APP_BASE } from './base-url.mjs'
+
+export const APP = APP_BASE
 export const ADMIN_USER = process.env.QA_ADMIN ?? 'admin'
 export const ADMIN_PASS = process.env.QA_ADMIN_PASSWORD ?? 'Admin@2026'
 

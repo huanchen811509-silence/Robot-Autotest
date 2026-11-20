@@ -412,10 +412,21 @@ public class PytestEnvRenderer {
         nic.put("firmware", port.firmware());
         nic.put("rdma_device", port.rdmaDevice());
         nic.put("port", port.nicPort());
+        // v5.31.0：这三个键框架 inventory_lab.yaml 已在用（perftest 按 gid_index 取 GID，
+        // RDM-014 等用例读 roce_gid_index，文本用例 Rail 读 ip/peer_ip），缺键框架读到 None。
+        nic.put("gid_index", port.gidIndex());
+        nic.put("roce_gid_index", port.roceGidIndex());
         nic.put("numa_node", port.numaNode());
+        nic.put("ip", port.ipAddress());
+        nic.put("peer_ip", port.peerIp());
         nic.put("role", port.nicRole());
+        // 带外管理口（如 Tunic tunic0/tunicadm）与 SR-IOV 卸载配置：资产侧没登记时为 null，
+        // 键必须存在——框架按「键在不在」判断字段可用，缺键会退化成全表 None。
+        nic.put("mgmt_device_id", port.mgmtDeviceId());
+        nic.put("mgmt_tool", port.mgmtTool());
         nic.put("capabilities", jsonList(port.capabilitiesJson()));
         nic.put("counter_patterns", jsonMap(port.counterPatternsJson()));
+        nic.put("sriov_offload", jsonMap(port.sriovOffloadJson()));
         return nic;
     }
 

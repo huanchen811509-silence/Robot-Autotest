@@ -46,7 +46,9 @@ public class DeviceRepositoryJdbc implements DeviceRepository {
                    dp.nic_form_factor, dp.pci_bdf, dp.vendor_id,
                    dp.pci_device_id, dp.driver, dp.firmware, dp.rdma_device,
                    dp.nic_port, dp.numa_node, dp.nic_role, dp.capabilities_json,
-                   dp.counter_patterns_json
+                   dp.counter_patterns_json,
+                   dp.gid_index, dp.roce_gid_index, dp.peer_ip, dp.mgmt_device_id,
+                   dp.mgmt_tool, dp.sriov_offload_json
             """;
 
     private static final RowMapper<Device> MAPPER = (rs, rowNum) -> new Device(
@@ -78,7 +80,11 @@ public class DeviceRepositoryJdbc implements DeviceRepository {
             rs.getObject("nic_port") == null ? null : rs.getInt("nic_port"),
             rs.getObject("numa_node") == null ? null : rs.getInt("numa_node"),
             rs.getString("nic_role"), rs.getString("capabilities_json"),
-            rs.getString("counter_patterns_json"));
+            rs.getString("counter_patterns_json"),
+            rs.getObject("gid_index") == null ? null : rs.getInt("gid_index"),
+            rs.getObject("roce_gid_index") == null ? null : rs.getInt("roce_gid_index"),
+            rs.getString("peer_ip"), rs.getString("mgmt_device_id"),
+            rs.getString("mgmt_tool"), rs.getString("sriov_offload_json"));
 
     private final JdbcTemplate jdbc;
 
@@ -253,9 +259,12 @@ public class DeviceRepositoryJdbc implements DeviceRepository {
                        ip_address, port_status, nic_name, nic_index, created_by, updated_by,
                        nic_vendor, nic_manufacturer, nic_model, nic_form_factor, pci_bdf,
                        vendor_id, pci_device_id, driver, firmware, rdma_device, nic_port,
-                       numa_node, nic_role, capabilities_json, counter_patterns_json)
+                       numa_node, nic_role, capabilities_json, counter_patterns_json,
+                       gid_index, roce_gid_index, peer_ip, mgmt_device_id, mgmt_tool,
+                       sriov_offload_json)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                            ?, ?, ?, ?, ?, ?)
                     """, Statement.RETURN_GENERATED_KEYS);
             ps.setLong(1, port.deviceId());
             ps.setString(2, port.portName());
@@ -286,6 +295,12 @@ public class DeviceRepositoryJdbc implements DeviceRepository {
             ps.setString(26, port.nicRole());
             ps.setString(27, port.capabilitiesJson());
             ps.setString(28, port.counterPatternsJson());
+            ps.setObject(29, port.gidIndex(), java.sql.Types.INTEGER);
+            ps.setObject(30, port.roceGidIndex(), java.sql.Types.INTEGER);
+            ps.setString(31, port.peerIp());
+            ps.setString(32, port.mgmtDeviceId());
+            ps.setString(33, port.mgmtTool());
+            ps.setString(34, port.sriovOffloadJson());
             return ps;
         }, keyHolder);
         return keyHolder.getKey() == null ? 0 : keyHolder.getKey().longValue();
@@ -300,7 +315,8 @@ public class DeviceRepositoryJdbc implements DeviceRepository {
                        nic_model = ?, nic_form_factor = ?, pci_bdf = ?, vendor_id = ?,
                        pci_device_id = ?, driver = ?, firmware = ?, rdma_device = ?, nic_port = ?,
                        numa_node = ?, nic_role = ?, capabilities_json = ?,
-                       counter_patterns_json = ?
+                       counter_patterns_json = ?, gid_index = ?, roce_gid_index = ?,
+                       peer_ip = ?, mgmt_device_id = ?, mgmt_tool = ?, sriov_offload_json = ?
                  WHERE id = ? AND device_id IN (SELECT id FROM device WHERE project_id = ?)
                 """;
         TenantGuard.requireProjectScope(sql, "device_port");
@@ -310,7 +326,9 @@ public class DeviceRepositoryJdbc implements DeviceRepository {
                 port.nicModel(), port.nicFormFactor(), port.pciBdf(), port.vendorId(),
                 port.pciDeviceId(), port.driver(), port.firmware(), port.rdmaDevice(),
                 port.nicPort(), port.numaNode(), port.nicRole(), port.capabilitiesJson(),
-                port.counterPatternsJson(), port.id(), projectId);
+                port.counterPatternsJson(), port.gidIndex(), port.roceGidIndex(),
+                port.peerIp(), port.mgmtDeviceId(), port.mgmtTool(), port.sriovOffloadJson(),
+                port.id(), projectId);
     }
 
     @Override

@@ -609,7 +609,7 @@ onMounted(async () => {
 }
 
 .count-input {
-  width: 96px;
+  width: 100px;
   padding: var(--space-1) var(--space-2);
   border: 1px solid var(--warn-border);
   border-radius: var(--radius-sm);

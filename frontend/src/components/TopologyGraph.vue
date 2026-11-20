@@ -396,7 +396,7 @@ function onPointerUp(): void {
 .topo__zoom-value {
   font-variant-numeric: tabular-nums;
   color: var(--text-muted);
-  min-width: 42px;
+  min-width: 40px;
   text-align: center;
 }
 

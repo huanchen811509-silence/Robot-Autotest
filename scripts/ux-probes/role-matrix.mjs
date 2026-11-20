@@ -21,8 +21,9 @@
  *           QA_SEED_PROJECT（夹具工程号，显式指定）、QA_SEED_PROJECT_CODE（默认 demo）。
  */
 import { writeFileSync } from 'node:fs'
+import { APP_BASE } from './base-url.mjs'
 
-const BASE = process.env.APP_BASE ?? 'http://127.0.0.1:8001'
+const BASE = APP_BASE
 const FIXTURE_PASS = process.env.QA_E2E_PASSWORD
 const ADMIN_PASS = process.env.QA_ADMIN_PASSWORD ?? 'Admin@2026'
 const SELF_TEST = process.argv.includes('--self-test')

@@ -41,7 +41,15 @@ public record DevicePort(
         Integer numaNode,
         String nicRole,
         String capabilitiesJson,
-        String counterPatternsJson) {
+        String counterPatternsJson,
+        // v5.31.0（V11_93）：对齐框架 inventory_lab.yaml 的 23 个 NIC 字段，
+        // 缺一个键框架那侧就读到 None，perftest 在真机上才炸。
+        Integer gidIndex,
+        Integer roceGidIndex,
+        String peerIp,
+        String mgmtDeviceId,
+        String mgmtTool,
+        String sriovOffloadJson) {
 
     /** v5.0.0 及以前的 12 参形态（保持源码兼容）。 */
     public DevicePort(Long id, Long deviceId, String portName, String portType, String protocol,
@@ -49,7 +57,24 @@ public record DevicePort(
                       String portStatus, String nicName, Integer nicIndex) {
         this(id, deviceId, portName, portType, protocol, macAddress, speedGbps, mtu, ipAddress,
                 portStatus, nicName, nicIndex, null, null, null, null, null, null, null,
-                null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null,
+                null, null, null, null, null, null);
+    }
+
+    /** v5.30.0 及以前的 27 参形态（v5.5.0 那批字段，保持源码兼容）。 */
+    public DevicePort(Long id, Long deviceId, String portName, String portType, String protocol,
+                      String macAddress, Integer speedGbps, Integer mtu, String ipAddress,
+                      String portStatus, String nicName, Integer nicIndex,
+                      String nicVendor, String nicManufacturer, String nicModel,
+                      String nicFormFactor, String pciBdf, String vendorId,
+                      String pciDeviceId, String driver, String firmware,
+                      String rdmaDevice, Integer nicPort, Integer numaNode,
+                      String nicRole, String capabilitiesJson, String counterPatternsJson) {
+        this(id, deviceId, portName, portType, protocol, macAddress, speedGbps, mtu, ipAddress,
+                portStatus, nicName, nicIndex, nicVendor, nicManufacturer, nicModel,
+                nicFormFactor, pciBdf, vendorId, pciDeviceId, driver, firmware, rdmaDevice,
+                nicPort, numaNode, nicRole, capabilitiesJson, counterPatternsJson,
+                null, null, null, null, null, null);
     }
 
     /** inventory 里的 netdev 名：优先 nicName，退回 portName。 */

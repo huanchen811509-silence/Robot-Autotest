@@ -14,8 +14,9 @@
  *   node scripts/ux-probes/soft-delete-proof.mjs --project 29
  */
 import { mkdirSync, writeFileSync } from 'node:fs'
+import { APP_BASE } from './base-url.mjs'
 
-const BASE = process.env.APP_BASE ?? 'http://127.0.0.1:8001'
+const BASE = APP_BASE
 const PASS = process.env.QA_E2E_PASSWORD
 const PROJECT = (() => {
   const i = process.argv.indexOf('--project')

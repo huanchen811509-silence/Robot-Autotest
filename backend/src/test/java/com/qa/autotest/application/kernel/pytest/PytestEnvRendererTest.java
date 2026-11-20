@@ -57,11 +57,46 @@ class PytestEnvRendererTest {
         for (String field : List.of("netdev", "vendor", "manufacturer", "product_model",
                 "form_factor", "pci_bdf", "vendor_id", "device_id", "driver", "firmware",
                 "rdma_device", "port", "numa_node", "role", "capabilities",
-                "counter_patterns")) {
+                "counter_patterns",
+                // v5.31.0：框架 inventory_lab.yaml 已扩到 23 个 NIC 字段（门禁 37 判红发现），
+                // 缺键框架那侧读到 None，perftest 在真机上才炸。
+                "gid_index", "roce_gid_index", "ip", "peer_ip", "mgmt_device_id",
+                "mgmt_tool", "sriov_offload")) {
             assertThat(inventory).as("NIC 字段 %s", field).contains(field + ":");
         }
         assertThat(inventory).contains("0000:31:00.0");
         assertThat(inventory).contains("product_model: ConnectX-7");
+    }
+
+    /**
+     * v5.31.0（V11_93）：新增的 7 个字段不只是「键在」，值必须真的从资产透出来。
+     *
+     * <p>门禁 37 只判「键覆盖」，把渲染器写成 {@code nic.put("gid_index", null)} 也能过——
+     * 那样框架照样读到 None，等于把事故推到真机。这里钉住「值来自 DevicePort」，
+     * 并明确 {@code ip} 复用既有 {@code ip_address}（不新增一列同名数据）。
+     */
+    @Test
+    void 新增NIC字段的值来自资产(@TempDir Path dir) throws Exception {
+        Device device = new Device(1L, PROJECT, "gpu01", "gpu", "NF5280", "inspur", "SN1",
+                "10.0.0.1", null, null, "rdma", true, null, null,
+                null, null, null, null, null);
+        DevicePort port = new DevicePort(10L, 1L, "ens17np0", "eth", "ethernet", null, 400, 1500,
+                "172.30.1.1", "up", "ens17np0", 0, "nvidia", "NVIDIA", "ConnectX-7", "1x400G",
+                "0000:45:00.0", "0x15b3", null, "mlx5_core", null, "mlx5_0", 1, 0, "rx-data",
+                "[\"roce\"]", "{}",
+                3, 5, "172.30.1.2", "tunic0", "tunicadm", "{\"trust_mode\":\"on\"}");
+        PytestEnvRenderer renderer = new PytestEnvRenderer(
+                new FakeDevices(List.of(device), Map.of(1L, List.of(port))),
+                new FakeSettings(Map.of()));
+
+        String inventory = Files.readString(renderer
+                .render(new PytestEnvRenderer.RenderRequest(PROJECT, "RUN-1", "fake", dir))
+                .inventoryFile(), StandardCharsets.UTF_8);
+
+        assertThat(inventory).contains("gid_index: 3").contains("roce_gid_index: 5");
+        assertThat(inventory).contains("ip: 172.30.1.1").contains("peer_ip: 172.30.1.2");
+        assertThat(inventory).contains("mgmt_device_id: tunic0").contains("mgmt_tool: tunicadm");
+        assertThat(inventory).contains("sriov_offload:").contains("trust_mode");
     }
 
     @Test

@@ -20,9 +20,10 @@
  */
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
+import { APP_BASE } from './ux-probes/base-url.mjs'
 
 const CDP = process.env.CDP_BASE ?? 'http://127.0.0.1:9222'
-const APP = process.env.APP_BASE ?? 'http://localhost:8001'
+const APP = APP_BASE
 const USER = process.env.QA_USER ?? 'qa-e2e-admin'
 const ROUTES = (process.env.REGRESS_ROUTES ?? '/,/runs,/assets,/reports/templates,/nodes').split(',')
 const VIEWPORTS = [1440, 1280]

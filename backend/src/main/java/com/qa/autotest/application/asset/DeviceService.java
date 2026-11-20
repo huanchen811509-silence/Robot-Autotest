@@ -67,7 +67,10 @@ public class DeviceService {
                               String nicFormFactor, String pciBdf, String vendorId,
                               String pciDeviceId, String driver, String firmware,
                               String rdmaDevice, Integer nicPort, Integer numaNode,
-                              String nicRole, String capabilitiesJson, String counterPatternsJson) {
+                              String nicRole, String capabilitiesJson, String counterPatternsJson,
+                              // v5.31.0（V11_93）：框架 inventory 已用到的 6 个 NIC 字段
+                              Integer gidIndex, Integer roceGidIndex, String peerIp,
+                              String mgmtDeviceId, String mgmtTool, String sriovOffloadJson) {
 
         /** v5.5.0 以前的 10 参形态，保持源码兼容。 */
         public PortCommand(String portName, String portType, String protocol, String macAddress,
@@ -75,7 +78,24 @@ public class DeviceService {
                            String nicName, Integer nicIndex) {
             this(portName, portType, protocol, macAddress, speedGbps, mtu, ipAddress,
                     portStatus, nicName, nicIndex, null, null, null, null, null, null,
-                    null, null, null, null, null, null, null, null, null);
+                    null, null, null, null, null, null, null, null, null,
+                    null, null, null, null, null, null);
+        }
+
+        /** v5.30.0 及以前的 25 参形态，保持源码兼容。 */
+        public PortCommand(String portName, String portType, String protocol, String macAddress,
+                           Integer speedGbps, Integer mtu, String ipAddress, String portStatus,
+                           String nicName, Integer nicIndex,
+                           String nicVendor, String nicManufacturer, String nicModel,
+                           String nicFormFactor, String pciBdf, String vendorId,
+                           String pciDeviceId, String driver, String firmware,
+                           String rdmaDevice, Integer nicPort, Integer numaNode,
+                           String nicRole, String capabilitiesJson, String counterPatternsJson) {
+            this(portName, portType, protocol, macAddress, speedGbps, mtu, ipAddress,
+                    portStatus, nicName, nicIndex, nicVendor, nicManufacturer, nicModel,
+                    nicFormFactor, pciBdf, vendorId, pciDeviceId, driver, firmware, rdmaDevice,
+                    nicPort, numaNode, nicRole, capabilitiesJson, counterPatternsJson,
+                    null, null, null, null, null, null);
         }
     }
 
@@ -301,7 +321,9 @@ public class DeviceService {
                 c.nicName(), c.nicIndex(), c.nicVendor(), c.nicManufacturer(), c.nicModel(),
                 c.nicFormFactor(), c.pciBdf(), c.vendorId(), c.pciDeviceId(), c.driver(),
                 c.firmware(), c.rdmaDevice(), c.nicPort(), c.numaNode(), c.nicRole(),
-                c.capabilitiesJson(), c.counterPatternsJson());
+                c.capabilitiesJson(), c.counterPatternsJson(),
+                c.gidIndex(), c.roceGidIndex(), c.peerIp(), c.mgmtDeviceId(),
+                c.mgmtTool(), c.sriovOffloadJson());
     }
 
     private static void requireName(String name) {
