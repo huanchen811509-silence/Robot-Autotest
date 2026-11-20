@@ -116,3 +116,28 @@
 - FR：`FR-v5.24-01` ~ `10`，连续无缺口。
 - TC：`TC-v5.24-01` ~ `10`，连续无缺口。
 - DoD：`D1` ~ `D10`，连续无缺口。
+
+---
+
+## 5. 实测结果回写（2026-11-20）
+
+| TC | 结果 | 证据 |
+|---|---|---|
+| TC-v5.24-01 real 命令证据贯通 | 达成 | `command_text` NONE → `readlink -f /sys/class/net/ens17np0/device`；`source=COMMAND_INDEX` |
+| TC-v5.24-02 回显路径可见 | **未完成** | 需新增库列与报告字段链，转后续版本（见证据包 §7） |
+| TC-v5.24-03 run 物理删与子表清理 | 达成 | API `HTTP=200 deleted=true`；主表与 test_result/step/artifact 均归零 |
+| TC-v5.24-04 test_report 物理删 | 达成 | 冻结/归档件同样可删；单测固定 |
+| TC-v5.24-05 已删记录不复活 | 达成 | 列表 API 不再返回；前端本地 Set 已移除 |
+| TC-v5.24-06 冻结件允许直接删 | 达成 | `ReportLifecycleServiceTest` 16 项含 FROZEN/ARCHIVED 两例全绿 |
+| TC-v5.24-07 test_case 物理删 | 达成 | 6 子表清理；口径变更已记录（不改历史迁移） |
+| TC-v5.24-08 历史软删分批清除 | 达成 | 57+1 全清，6 批备份，活动 run 22 不变 |
+| TC-v5.24-09 机检与 self-test | 达成 | real 17083：7 断言 + 4 条注入检查全绿 |
+| TC-v5.24-10 全量门禁与证据包 | 进行中 | 首轮 3 FAIL（02/19/39）均已修复并定点验证；重跑结果待补 |
+
+### 首轮门禁失败与修复
+
+| 步骤 | 失败原因 | 修复 |
+|---|---|---|
+| 02-frontend_test | `reportSelection.spec.ts` 仍断言"剔除冻结件" | 改写为物理删口径（冻结件可删），前端全量 1259/1259 通过 |
+| 19-evidence_integrity | 02 失败导致前端日志无汇总行（连锁） | 随 02 修复自动消除 |
+| 39-kernel_decoupling | 批 2 新增 `PytestPlanEvidenceService` 未登记接入点 | 加入白名单并注明"只读 repo_path，不碰命令构造"；解耦检查 PASS |
