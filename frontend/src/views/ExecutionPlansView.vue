@@ -20,7 +20,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { caseApi, caseSetApi, type TestCase, type TestSet } from '@/api/cases'
 import { executionApi, type ExecutionRun, type SafetyPrecheck } from '@/api/execution'
-import { runLaunchApi, type RunConfirmPayload, type RunPreviewPayload } from '@/api/runLaunch'
+import { runLaunchApi, type RunConfirmPayload, type RunPreviewPayload, type ScriptPrecheck } from '@/api/runLaunch'
 import DataTable from '@/components/DataTable.vue'
 import RunSelectionPanel from '@/components/RunSelectionPanel.vue'
 import { useRunSelection, type RunMode, type SourceEntry } from '@/composables/useRunSelection'
@@ -172,12 +172,17 @@ const includeTag = ref('')
 
 const precheck = ref<SafetyPrecheck | null>(null)
 const precheckFailed = ref(false)
+/** FR-READY-07/08：脚本预检清单 + 用户确认跳过。 */
+const scriptPrecheck = ref<ScriptPrecheck | null>(null)
+const skipConfirmed = ref(false)
+const unboundCodes = computed(() => (scriptPrecheck.value?.unbound ?? []).map((u) => u.caseCode))
 const blockedCodes = computed(() => (precheck.value?.blocked ?? []).map((item) => item.caseCode))
 /** ALL 模式靠 allSelected 也能发起，其余模式靠逐条 selectedCount。 */
 const canStart = computed(
   () =>
     (selectedCount.value > 0 || (mode.value === 'ALL' && allSelected.value)) &&
     precheck.value?.allowed !== false &&
+    (unboundCodes.value.length === 0 || skipConfirmed.value) &&
     !starting.value,
 )
 const starting = ref(false)
@@ -194,6 +199,7 @@ const startDisabledWhy = computed<string>(() => {
     return t('executionPlans.whyNoCase')
   }
   if (precheck.value?.allowed === false) return t('executionPlans.whyBlocked')
+  if (unboundCodes.value.length > 0 && !skipConfirmed.value) return t('executionPlans.whySkipUnconfirmed')
   return ''
 })
 
@@ -210,6 +216,15 @@ async function runPrecheck(): Promise<void> {
     if (seq !== precheckSeq) return
     precheck.value = result
     precheckFailed.value = false
+    skipConfirmed.value = false
+    // FR-READY-07：同一选择并行取脚本预检清单；失败不阻塞（后端预检仍会兜底）
+    try {
+      scriptPrecheck.value = await runLaunchApi.precheckScripts(projectId.value, {
+        mode: mode.value, setIds: selectedSetIds.value, caseIds: [...selectedCaseIds.value],
+      })
+    } catch {
+      scriptPrecheck.value = null
+    }
   } catch {
     // 预检失败不阻塞：退回「无预检」状态，真正的拦截由后端 403 兜底
     if (seq === precheckSeq) {
@@ -333,6 +348,15 @@ onMounted(async () => {
     <p v-if="blockedCodes.length" class="error" data-testid="blocked-hint">
       {{ t('executionPlans.blocked', { codes: blockedCodes.join('、') }) }}
     </p>
+
+    <!-- FR-READY-08：脚本跳过清单 + 确认跳过（未确认不得发起） -->
+    <div v-if="unboundCodes.length" class="skip-hint" data-testid="script-skip-hint">
+      <p class="muted small">{{ t('executionPlans.skipHint', { count: unboundCodes.length, codes: unboundCodes.join('、') }) }}</p>
+      <label class="skip-confirm">
+        <input type="checkbox" v-model="skipConfirmed" data-testid="skip-confirm" />
+        {{ t('executionPlans.skipConfirm') }}
+      </label>
+    </div>
 
     <!-- W57-29/30：四模式选区（用例集 + 用例 + 来源下钻），props 进 / 事件出 -->
     <RunSelectionPanel

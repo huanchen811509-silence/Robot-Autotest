@@ -48,6 +48,12 @@ public class TestSetController {
                                         Long intersectWithSetId) {
     }
 
+    /** FR-READY-05：按用例筛选条件（含 bindingState）批量加入。 */
+    public record BindingFilterRequest(String keyword, String domain, String priority,
+                                       String reviewStatus, String safetyLevel,
+                                       String bindingState, List<Long> excludeIds) {
+    }
+
     /** FR-49-29：场景创建 / 编组（一层，复用 test_set.kind=scenario）。 */
     public record ScenarioGroupRequest(String setCode, String name, List<Long> caseSetIds) {
     }
@@ -182,6 +188,17 @@ public class TestSetController {
         return ApiResponse.ok(sets.addByCategoryFilter(projectId, id,
                 new GlobalCaseService.CategoryFilter(request.categoryL1(), request.categoryL2(),
                         request.intersectWithSetId())));
+    }
+
+    /** FR-READY-05：按筛选条件（含脚本状态）批量加入，item_source='binding_filter'，幂等去重。 */
+    @PostMapping("/{id}/items/binding-filter")
+    public ApiResponse<TestSetService.CategoryFilterResult> addByBindingFilter(
+            @PathVariable long projectId, @PathVariable long id,
+            @RequestBody BindingFilterRequest request) {
+        return ApiResponse.ok(sets.addByBindingFilter(projectId, id,
+                new TestSetService.BindingSelectionFilter(request.keyword(), request.domain(),
+                        request.priority(), request.reviewStatus(), request.safetyLevel(),
+                        request.bindingState(), request.excludeIds())));
     }
 
     /** FR-49-29：创建场景（复用 test_set.kind=scenario 三态，仍限一层）。 */

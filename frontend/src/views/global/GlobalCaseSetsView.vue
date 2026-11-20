@@ -390,6 +390,9 @@ onMounted(() => void load())
             <span class="mono">{{ item.caseCode }}</span>
             <span class="set-name" :title="item.title">{{ item.title }}</span>
             <span class="muted small">{{ item.categoryL1 || t('w57.globalCaseSets.uncategorized') }}</span>
+            <span class="muted small" data-testid="member-script-state">
+              {{ t('cases.scriptNotApplicable') }}
+            </span>
             <span v-if="canWrite" class="row-actions" @click.stop>
               <button type="button" class="btn small" :disabled="index === 0" :data-testid="`move-up-${item.id}`" @click="move(index, -1)">{{ t('w57.globalCaseSets.moveUp') }}</button>
               <button type="button" class="btn small" :disabled="index === items.length - 1" :data-testid="`move-down-${item.id}`" @click="move(index, 1)">{{ t('w57.globalCaseSets.moveDown') }}</button>

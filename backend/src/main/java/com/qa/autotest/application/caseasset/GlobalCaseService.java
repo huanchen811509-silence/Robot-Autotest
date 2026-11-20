@@ -186,6 +186,14 @@ public class GlobalCaseService {
     public PageResult<GlobalCaseRow> page(String keyword, String categoryL1, String categoryL2,
                                           String lifecycleStatus, boolean uncategorized,
                                           int page, int size) {
+        return page(keyword, categoryL1, categoryL2, lifecycleStatus, uncategorized,
+                page, size, null);
+    }
+
+    /** FR-READY-02：公共库列表，追加脚本绑定状态过滤（分页前）。 */
+    public PageResult<GlobalCaseRow> page(String keyword, String categoryL1, String categoryL2,
+                                          String lifecycleStatus, boolean uncategorized,
+                                          int page, int size, String bindingState) {
         access.requireGlobalEnter();
         long projectId = platform.id();
         StringBuilder where = new StringBuilder(" WHERE project_id = ?");
@@ -212,6 +220,15 @@ public class GlobalCaseService {
         if (notBlank(lifecycleStatus)) {
             where.append(" AND lifecycle_status = ?");
             args.add(lifecycleStatus.trim());
+        }
+        if (bindingState != null && !bindingState.isBlank()) {
+            if (!BindingStateFilter.isValid(bindingState)) {
+                throw new com.qa.autotest.common.BusinessException(
+                        com.qa.autotest.common.ErrorCode.INVALID_ARGUMENT,
+                        "非法 bindingState: " + bindingState);
+            }
+            // platform 内核恒 robot：BindingStateFilter 只产出 1=1/1=0，无 EXISTS、无歧义列。
+            BindingStateFilter.apply(where, args, projectId, "robot", bindingState, "id");
         }
         Long total = jdbc.queryForObject("SELECT COUNT(*) FROM test_case" + where,
                 Long.class, args.toArray());

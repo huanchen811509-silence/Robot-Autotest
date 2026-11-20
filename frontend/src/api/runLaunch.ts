@@ -45,6 +45,13 @@ export interface RunConfirmResult {
   state?: string
 }
 
+/** FR-READY-07：执行前脚本预检清单（三入口统一）。 */
+export interface ScriptPrecheck {
+  boundCount: number
+  unbound: Array<{ caseId: number; caseCode: string; reason: string }>
+  notApplicableCount: number
+}
+
 export const runLaunchApi = {
   preview(projectId: number, payload: RunPreviewPayload): Promise<RunPreview> {
     return request<RunPreview>(`/projects/${projectId}/runs/preview`, {
@@ -54,6 +61,13 @@ export const runLaunchApi = {
   },
   confirmAndStart(projectId: number, payload: RunConfirmPayload): Promise<RunConfirmResult> {
     return request<RunConfirmResult>(`/projects/${projectId}/runs/confirm-and-start`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
+  /** FR-READY-07：执行前脚本预检（只读，不创建 run）。 */
+  precheckScripts(projectId: number, payload: RunPreviewPayload): Promise<ScriptPrecheck> {
+    return request<ScriptPrecheck>(`/projects/${projectId}/runs/precheck-scripts`, {
       method: 'POST',
       body: JSON.stringify(payload),
     })

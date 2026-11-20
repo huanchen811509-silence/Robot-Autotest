@@ -31,6 +31,7 @@ export const DEFAULT_CASE_VIEW_PAYLOAD: CaseViewPayload = {
   priority: '',
   reviewStatus: '',
   safetyLevel: '',
+  bindingState: '',
   size: 10,
   columns: [...DEFAULT_CASE_COLUMNS],
   sort: null,
@@ -69,6 +70,7 @@ export function normalizeViewPayload(input: unknown): CaseViewPayload {
     priority: text(raw.priority),
     reviewStatus: text(raw.reviewStatus),
     safetyLevel: text(raw.safetyLevel),
+    bindingState: text(raw.bindingState),
     size,
     columns,
     sort,
@@ -81,6 +83,8 @@ export interface CaseViewState {
   priority: string
   reviewStatus: string
   safetyLevel: string
+  /** FR-READY-04：脚本绑定状态筛选条件 */
+  bindingState: string
   size: number
   columns: string[]
   /** 视图只描述筛选条件、不描述「第几页」，应用后一律回第 1 页。 */
@@ -100,6 +104,7 @@ export function applyViewState(payload: CaseViewPayload): CaseViewState {
     priority: payload.priority,
     reviewStatus: payload.reviewStatus,
     safetyLevel: payload.safetyLevel,
+    bindingState: payload.bindingState,
     size: payload.size,
     columns: [...payload.columns],
     page: 1,

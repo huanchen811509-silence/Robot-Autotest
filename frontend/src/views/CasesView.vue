@@ -16,6 +16,7 @@ import {
 } from 'naive-ui'
 import {
   caseApi,
+  caseSetApi,
   type BatchAction,
   type BatchResult,
   type CapabilityStat,
@@ -28,6 +29,7 @@ import { executionApi, type BlockedCase, type SafetyPrecheck } from '@/api/execu
 import DataTable from '@/components/DataTable.vue'
 import { useListPageSize, type PageSize } from '@/composables/useListPageSize'
 import CaseDetailPanel from '@/components/CaseDetailPanel.vue'
+import AddToSetButton from '@/components/AddToSetButton.vue'
 import CaseScriptLink from '@/components/CaseScriptLink.vue'
 import DetailDock from '@/components/DetailDock.vue'
 import { useDetailDock } from '@/composables/useDetailDock'
@@ -75,6 +77,8 @@ const priority = ref('')
 const reviewStatus = ref('')
 const domain = ref('')
 const safetyLevel = ref('')
+/** FR-READY-01：脚本绑定状态筛选（四态）。 */
+const bindingState = ref('')
 const page = ref(1)
 // 页大小进入视图 payload 后必须可回填，不能再是常量；
 // 同时要跨页记忆 + 按视口估算（FR-v3.9-04），统一走 useListPageSize。
@@ -100,6 +104,7 @@ const caseFilterParams = computed<Record<string, string | undefined>>(() => ({
   reviewStatus: reviewStatus.value || undefined,
   domain: domain.value.trim() || undefined,
   safetyLevel: safetyLevel.value || undefined,
+  bindingState: bindingState.value || undefined,
 }))
 const pageCaseIds = computed(() => cases.value.map((c) => c.id))
 const selection = useServerSelection(pageCaseIds)
@@ -325,6 +330,14 @@ const safetyOptions = computed(() => [
   { label: t('cases.allSafety'), value: '' },
   ...SAFETY_LEVELS.map((item) => ({ label: safetyLevelLabel(item), value: item })),
 ])
+/** FR-READY-01：脚本状态四态选项。 */
+const bindingStateOptions = computed(() => [
+  { label: t('cases.scriptStateAll'), value: '' },
+  { label: t('cases.scriptVerified'), value: 'BOUND_VERIFIED' },
+  { label: t('cases.scriptUnverified'), value: 'BOUND_UNVERIFIED' },
+  { label: t('cases.scriptUnbound'), value: 'UNBOUND' },
+  { label: t('cases.scriptNotApplicable'), value: 'NOT_APPLICABLE' },
+])
 const formPriorityOptions = computed(() =>
   PRIORITIES.map((item) => ({ label: priorityLabel(item), value: item })),
 )
@@ -426,7 +439,7 @@ const viewError = ref('')
 const filtersCollapsed = ref(false)
 
 const activeFilterCount = computed(
-  () => [keyword, priority, reviewStatus, domain, safetyLevel]
+  () => [keyword, priority, reviewStatus, domain, safetyLevel, bindingState]
     .filter((field) => field.value.trim() !== '').length,
 )
 
@@ -441,6 +454,7 @@ function currentPayload(): CaseViewPayload {
     priority: priority.value,
     reviewStatus: reviewStatus.value,
     safetyLevel: safetyLevel.value,
+    bindingState: bindingState.value,
     size: size.value,
     columns: columnOrder.value.filter((key) => !hiddenColumns.value.includes(key)),
     sort: null,
@@ -461,6 +475,7 @@ function applySavedView(view: SavedView): void {
   priority.value = state.priority
   reviewStatus.value = state.reviewStatus
   safetyLevel.value = state.safetyLevel
+  bindingState.value = state.bindingState
   size.value = state.size as PageSize
   applyColumnKeys(state.columns)
   page.value = state.page
@@ -496,6 +511,7 @@ function clearFilters(): void {
   priority.value = ''
   reviewStatus.value = ''
   safetyLevel.value = ''
+  bindingState.value = ''
   activeViewId.value = null
 }
 
@@ -512,6 +528,7 @@ const activeFilterParts = computed<string[]>(() => {
   if (priority.value) parts.push(`${t('cases.priority')}=${priority.value}`)
   if (safetyLevel.value) parts.push(`${t('cases.safetyLevel')}=${safetyLevel.value}`)
   if (reviewStatus.value) parts.push(`${t('cases.status')}=${reviewStatus.value}`)
+  if (bindingState.value) parts.push(`${t('cases.scriptState')}=${bindingState.value}`)
   return parts
 })
 
@@ -776,6 +793,7 @@ async function load(): Promise<void> {
         reviewStatus: reviewStatus.value,
         domain: domain.value,
         safetyLevel: safetyLevel.value,
+        bindingState: bindingState.value,
         page: page.value,
         size: size.value,
       }),
@@ -811,7 +829,7 @@ watch([projectId], () => {
   void load()
 }, { immediate: true })
 
-watch([keyword, priority, reviewStatus, domain, safetyLevel, size], () => {
+watch([keyword, priority, reviewStatus, domain, safetyLevel, bindingState, size], () => {
   if (skipFilterReload) return
   page.value = 1
   // 换了筛选条件，上一组的「按条件全选」必须作废（W57-16 契约，v5.8.0 真正下发后更要紧）
@@ -938,6 +956,51 @@ async function submitRun(): Promise<void> {
  * 换成 `useDialog` 要先在 App.vue 加 provider，属于另一处改动。此处保持既有行为，
  * 已登记为待办，不在本次视图迁移里顺手改。
  */
+/**
+ * FR-READY-04/05：把勾选（或跨页筛选）用例加入用例集。
+ * 精确模式用勾选用例 id 批量写入；跨页筛选模式按筛选条件（含脚本状态）服务端批量写入。
+ */
+async function onAddToSet(target: { mode: 'existing'; setId: number }
+  | { mode: 'new'; name: string; setCode: string }): Promise<void> {
+  error.value = null
+  message.value = ''
+  if (selectedCount.value === 0) return
+  try {
+    let setId: number
+    if (target.mode === 'new') {
+      const created = await caseSetApi.create(projectId.value, {
+        setCode: target.setCode, name: target.name,
+      })
+      setId = created.id
+    } else {
+      setId = target.setId
+    }
+    const descriptor = toDescriptor()
+    const filters = caseFilterParams.value
+    let result: { added: number; skipped?: number } | { added: number; matched: number }
+    if (descriptor.mode === 'filter') {
+      // 跨页全选：按筛选条件（含 bindingState）服务端批量入集
+      result = await caseSetApi.addByBindingFilter(projectId.value, setId, {
+        keyword: filters.keyword,
+        domain: filters.domain,
+        priority: filters.priority,
+        reviewStatus: filters.reviewStatus,
+        safetyLevel: filters.safetyLevel,
+        bindingState: filters.bindingState,
+        excludeIds: descriptor.excludeIds,
+      })
+    } else {
+      result = await caseSetApi.batchAddItems(projectId.value, setId, descriptor.ids)
+    }
+    const added = result.added
+    const matched = 'matched' in result ? result.matched : added
+    message.value = t('cases.addToSetResult', { added, matched })
+    clearSelection()
+  } catch (e) {
+    error.value = localizeError(e)
+  }
+}
+
 async function runBatch(action: BatchAction): Promise<void> {
   error.value = null
   message.value = ''
@@ -974,6 +1037,7 @@ async function runBatch(action: BatchAction): Promise<void> {
               reviewStatus: filters.reviewStatus,
               domain: filters.domain,
               safetyLevel: filters.safetyLevel,
+              bindingState: filters.bindingState,
               excludeIds: descriptor.excludeIds,
             },
           }
@@ -1196,6 +1260,12 @@ async function runCommit(): Promise<void> {
             style="width: 140px"
             :placeholder="t('cases.domain')"
             :aria-label="t('cases.domain')"
+          />
+          <NSelect
+            v-model:value="bindingState"
+            :options="bindingStateOptions"
+            style="width: 180px"
+            :aria-label="t('cases.scriptState')"
           />
         </FilterBar>
       </template>
@@ -1426,6 +1496,11 @@ async function runCommit(): Promise<void> {
       @clear="onSelectionClear"
       @undone="onUndone"
     >
+      <AddToSetButton
+        :project-id="projectId"
+        :disabled="batchLoading"
+        @commit="onAddToSet"
+      />
       <NButton
         type="primary"
         :disabled="batchLoading || blockedSelected.length > 0 || matchAll"

@@ -170,10 +170,23 @@ public class TestCaseService {
     public PageResult<TestCase> page(long projectId, String keyword, String domain, String priority,
                                      String reviewStatus, String capability, String safetyLevel,
                                      PageQuery paging) {
+        return page(projectId, keyword, domain, priority, reviewStatus, capability, safetyLevel,
+                paging, null);
+    }
+
+    /** FR-READY-01：分页前按脚本绑定状态过滤（四态白名单由仓储/BindingStateFilter 校验）。 */
+    public PageResult<TestCase> page(long projectId, String keyword, String domain, String priority,
+                                     String reviewStatus, String capability, String safetyLevel,
+                                     PageQuery paging, String bindingState) {
         access.bindProject(projectId);
         access.require(PermissionResource.CASE, PermissionAction.READ);
+        if (!BindingStateFilter.isValid(bindingState)) {
+            throw new com.qa.autotest.common.BusinessException(
+                    com.qa.autotest.common.ErrorCode.INVALID_ARGUMENT,
+                    "非法 bindingState: " + bindingState);
+        }
         return cases.page(projectId, keyword, domain, priority, reviewStatus, capability,
-                safetyLevel, paging);
+                safetyLevel, paging, bindingState);
     }
 
     /** 兼容入口：未指定排序时按 id DESC（FR-3.2-02）。 */

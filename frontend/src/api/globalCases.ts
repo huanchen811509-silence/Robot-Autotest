@@ -114,6 +114,8 @@ export const globalCaseApi = {
     lifecycleStatus?: string
     /** v5.11.0 / FR-v5.11-02：中栏「未分类」节点（与 categoryL1/L2 互斥）。 */
     uncategorized?: boolean
+    /** FR-READY-02：脚本绑定状态过滤（platform 内核恒 NOT_APPLICABLE）。 */
+    bindingState?: string
     page?: number
     size?: number
   }) {

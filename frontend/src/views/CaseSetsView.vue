@@ -118,7 +118,7 @@ const canSubmit = computed(
  */
 const memberFilters = useTableFilters({
   prefix: 'member_',
-  columns: ['caseCode', 'priority'],
+  columns: ['caseCode', 'priority', 'bindingState'],
 })
 const memberFacets = memberFilters.facets
 const memberTexts = memberFilters.texts
@@ -134,6 +134,17 @@ const memberFilterColumns: TableFilterColumn[] = [
       { label: t('w57.caseSets.priorityLow'), value: 'LOW' },
     ],
   },
+  {
+    key: 'bindingState',
+    title: t('cases.scriptState'),
+    mode: 'multi',
+    options: [
+      { label: t('cases.scriptVerified'), value: 'BOUND_VERIFIED' },
+      { label: t('cases.scriptUnverified'), value: 'BOUND_UNVERIFIED' },
+      { label: t('cases.scriptUnbound'), value: 'UNBOUND' },
+      { label: t('cases.scriptNotApplicable'), value: 'NOT_APPLICABLE' },
+    ],
+  },
 ]
 
 function onMemberSelected(key: string, values: string[]): void {
@@ -145,11 +156,21 @@ function onMemberText(key: string, value: string): void {
   memberFilters.setText(key, value)
 }
 
+/** FR-READY-03：集合脚本覆盖率（VERIFIED+UNVERIFIED 计入已绑定；NOT_APPLICABLE 不计分母）。 */
+const scriptCoverage = computed(() => {
+  const countable = items.value.filter((i) => i.bindingState !== 'NOT_APPLICABLE')
+  const bound = countable.filter((i) =>
+    i.bindingState === 'BOUND_VERIFIED' || i.bindingState === 'BOUND_UNVERIFIED').length
+  return { bound, total: countable.length }
+})
+
 const visibleItems = computed<TestCase[]>(() => {
   const q = memberFilters.q.value.trim().toLowerCase()
   const byCode = (memberTexts.value.caseCode ?? '').toLowerCase()
   const priorities = memberFacets.value.priority ?? []
+  const states = memberFacets.value.bindingState ?? []
   return items.value.filter((item) => {
+    if (states.length > 0 && !states.includes(item.bindingState ?? 'UNBOUND')) return false
     if (priorities.length > 0 && !priorities.includes(item.priority)) return false
     if (byCode && !item.caseCode.toLowerCase().includes(byCode)) return false
     if (q && !`${item.caseCode} ${item.title}`.toLowerCase().includes(q)) return false
@@ -946,6 +967,9 @@ void load()
       <div class="items-head">
         <h2 class="card-title">{{ t('caseSets.itemsTitle', { name: activeSet.name }) }}</h2>
         <span class="muted small">{{ t('caseSets.itemsCount', { count: items.length }) }}</span>
+        <span class="muted small" data-testid="set-script-coverage">
+          {{ t('cases.scriptCoverage', { bound: scriptCoverage.bound, total: scriptCoverage.total }) }}
+        </span>
       </div>
 
       <!-- W57-15/17：成员表筛选（URL 化，prefix member_），与集合表筛选隔离。 -->

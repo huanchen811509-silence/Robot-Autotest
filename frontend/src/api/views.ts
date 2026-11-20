@@ -22,6 +22,8 @@ export interface CaseViewPayload {
   priority: string
   reviewStatus: string
   safetyLevel: string
+  /** FR-READY-04：脚本绑定状态筛选条件 */
+  bindingState: string
   size: number
   /** 可见列的 key，顺序即展示顺序；未列出的列视为隐藏 */
   columns: string[]

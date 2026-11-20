@@ -20,6 +20,8 @@ export interface PlatformCaseSetItem {
   caseCode: string
   title: string
   categoryL1: string | null
+  /** FR-READY-02：platform 内核恒 NOT_APPLICABLE（后端未逐条返回时前端按此口径展示）。 */
+  bindingState?: string | null
 }
 
 /** 批量加成员的返回：`added` 真加进去的条数、`skipped` 已存在跳过数。 */

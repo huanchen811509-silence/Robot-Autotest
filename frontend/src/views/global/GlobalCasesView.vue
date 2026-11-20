@@ -76,6 +76,10 @@ const size = 20
 const keyword = ref(
   typeof route.query.keyword === 'string' ? route.query.keyword : '',
 )
+/** FR-READY-02：脚本状态筛选（platform 内核恒 NOT_APPLICABLE）。 */
+const bindingState = ref(
+  typeof route.query.bindingState === 'string' ? route.query.bindingState : '',
+)
 const lifecycleStatus = ref('')
 const categoryL1 = computed(() => (category.value.uncategorized ? '' : category.value.l1))
 const categoryL2 = computed(() => (category.value.uncategorized ? '' : category.value.l2))
@@ -95,6 +99,7 @@ async function load() {
       categoryL2: categoryL2.value,
       lifecycleStatus: lifecycleStatus.value,
       uncategorized: category.value.uncategorized || undefined,
+      bindingState: bindingState.value || undefined,
       page: page.value,
       size,
     })
@@ -130,6 +135,7 @@ function syncQuery(): void {
   put('uncategorized', category.value.uncategorized ? '1' : undefined)
   put('detail', detailId.value || undefined)
   put('keyword', keyword.value || undefined)
+  put('bindingState', bindingState.value || undefined)
   put('page', page.value > 1 ? String(page.value) : undefined)
   void router.replace({ query })
 }
@@ -435,6 +441,13 @@ onMounted(async () => {
             <option value="">{{ t('global.allLifecycle') }}</option>
             <option value="active">{{ t('global.lifecycleActive') }}</option>
             <option value="deprecated">{{ t('global.lifecycleDeprecated') }}</option>
+          </select>
+          <select v-model="bindingState" class="select" @change="onFilterChange">
+            <option value="">{{ t('cases.scriptStateAll') }}</option>
+            <option value="BOUND_VERIFIED">{{ t('cases.scriptVerified') }}</option>
+            <option value="BOUND_UNVERIFIED">{{ t('cases.scriptUnverified') }}</option>
+            <option value="UNBOUND">{{ t('cases.scriptUnbound') }}</option>
+            <option value="NOT_APPLICABLE">{{ t('cases.scriptNotApplicable') }}</option>
           </select>
         </div>
 

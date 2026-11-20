@@ -172,9 +172,11 @@ class TestSetMemberQueryTest {
         // W74-01 显式新增批量加入端点 /{id}/items/batch（v5.24.0）：
         //   交付物与判据见 docs/plan/UX体验评审与迭代规划-20261117/v5.24.0/DEV-PLAN.md 的 W74-01，
         //   实测证据 docs/evidence/v5.24.0/W74-01/（加 3 条含 1 重复 → added:2 / skipped:1）。
+        // FR-READY-05 / W-READY-06 显式新增按筛选批量入集端点 /{id}/items/binding-filter：
+        //   交付物与判据见 docs/plan/用例脚本绑定与快速组集-20261120/02-DEV-PLAN.md 的 W-READY-06。
         assertEquals(Set.of("", "/{id}", "/{id}/items", "/{id}/items/{caseId}",
                 "/{id}/items/batch", "/{id}/items/batch-remove", "/{id}/order",
-                "/{id}/items/category-filter",
+                "/{id}/items/category-filter", "/{id}/items/binding-filter",
                 "/scenario-groups", "/scenario-groups/{scenarioId}/case-sets",
                 "/scenario-groups/{scenarioId}"), paths,
                 "新增端点必须同版更新本集合并在 DEV-PLAN 说明，不能靠扩字段夹带");

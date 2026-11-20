@@ -46,6 +46,20 @@ public interface TestCaseRepository {
                 paging.page(), paging.size());
     }
 
+    /**
+     * FR-READY-01：按脚本绑定状态在分页前过滤。
+     *
+     * <p>default 委托给旧方法（忽略 bindingState），这样既有测试桩无需改动；
+     * 生产实现 {@code TestCaseRepositoryJdbc} 显式覆盖，做真实 EXISTS 过滤。
+     *
+     * @param bindingState {@link com.qa.autotest.application.caseasset.BindingStateFilter} 四态之一，null 不过滤
+     */
+    default PageResult<TestCase> page(long projectId, String keyword, String domain, String priority,
+                                      String reviewStatus, String capability, String safetyLevel,
+                                      PageQuery paging, String bindingState) {
+        return page(projectId, keyword, domain, priority, reviewStatus, capability, safetyLevel, paging);
+    }
+
     Optional<TestCase> find(long projectId, long id);
 
     Optional<TestCase> findByCode(long projectId, String caseCode);

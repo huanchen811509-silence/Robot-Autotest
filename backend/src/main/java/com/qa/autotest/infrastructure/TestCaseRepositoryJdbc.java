@@ -1,5 +1,6 @@
 package com.qa.autotest.infrastructure;
 
+import com.qa.autotest.application.caseasset.BindingStateFilter;
 import com.qa.autotest.application.repository.TestCaseRepository;
 import com.qa.autotest.common.db.SlowQuery;
 import com.qa.autotest.common.query.PageQuery;
@@ -42,6 +43,14 @@ public class TestCaseRepositoryJdbc implements TestCaseRepository {
      */
     private static final String SELECT_BY_ID_INDEX = SELECT + " FORCE INDEX (idx_case_project_id)";
 
+    /** FR-READY-01：bindingState 过滤分支使用，表别名 tc 让 EXISTS 子查询无歧义列。 */
+    private static final String SELECT_ALIASED = """
+            SELECT tc.id, tc.project_id, tc.case_code, tc.title, tc.case_kind, tc.priority,
+                   tc.precondition, tc.expected, tc.domain_tag, tc.review_status, tc.source,
+                   tc.capability, tc.description, tc.safety_level
+              FROM test_case tc
+            """;
+
     private static final RowMapper<TestCase> MAPPER = (rs, rowNum) -> new TestCase(
             rs.getLong("id"), rs.getLong("project_id"), rs.getString("case_code"),
             rs.getString("title"), rs.getString("case_kind"), rs.getString("priority"),
@@ -81,6 +90,78 @@ public class TestCaseRepositoryJdbc implements TestCaseRepository {
     public PageResult<TestCase> page(long projectId, String keyword, String domain, String priority,
                                      String reviewStatus, String capability, String safetyLevel,
                                      PageQuery paging) {
+        return page(projectId, keyword, domain, priority, reviewStatus, capability, safetyLevel,
+                paging, null);
+    }
+
+    @Override
+    public PageResult<TestCase> page(long projectId, String keyword, String domain, String priority,
+                                     String reviewStatus, String capability, String safetyLevel,
+                                     PageQuery paging, String bindingState) {
+        // FR-READY-01：bindingState 为空时逐字走旧 SQL（零回归）；非空时切换别名分支做 EXISTS 过滤。
+        if (bindingState == null || bindingState.isBlank()) {
+            return pageLegacy(projectId, keyword, domain, priority, reviewStatus, capability,
+                    safetyLevel, paging);
+        }
+        StringBuilder where = new StringBuilder(" WHERE tc.project_id = ? AND tc.deleted_at IS NULL");
+        List<Object> args = new ArrayList<>();
+        args.add(projectId);
+        if (keyword != null && !keyword.isBlank()) {
+            where.append(" AND (tc.case_code LIKE ? OR tc.title LIKE ?)");
+            String like = "%" + keyword.trim() + "%";
+            args.add(like);
+            args.add(like);
+        }
+        if (domain != null && !domain.isBlank()) {
+            where.append(" AND tc.domain_tag = ?");
+            args.add(domain);
+        }
+        if (priority != null && !priority.isBlank()) {
+            where.append(" AND tc.priority = ?");
+            args.add(priority);
+        }
+        if (reviewStatus != null && !reviewStatus.isBlank()) {
+            where.append(" AND tc.review_status = ?");
+            args.add(reviewStatus);
+        }
+        if (capability != null && !capability.isBlank()) {
+            where.append(" AND tc.capability = ?");
+            args.add(capability);
+        }
+        if (safetyLevel != null && !safetyLevel.isBlank()) {
+            where.append(" AND tc.safety_level = ?");
+            args.add(safetyLevel.trim().toUpperCase(java.util.Locale.ROOT));
+        }
+        String kernel = kernelOf(projectId);
+        BindingStateFilter.apply(where, args, projectId, kernel, bindingState, "tc.id");
+
+        String countSql = "SELECT COUNT(*) FROM test_case tc" + where;
+        TenantGuard.requireProjectScope(countSql, "test_case");
+        Long total = jdbc.queryForObject(countSql, Long.class, args.toArray());
+        String order = paging.explicitSort() ? paging.orderBy() : "id DESC";
+        List<Object> listArgs = new ArrayList<>(args);
+        String listWhere = where.toString();
+        if (paging.keysetMode()) {
+            order = "id DESC";
+            listWhere += " AND tc.id < ?";
+            listArgs.add(paging.beforeId());
+        }
+        listArgs.add(paging.size());
+        String listSql = SELECT_ALIASED + listWhere + " ORDER BY tc." + order
+                + " LIMIT ?" + (paging.keysetMode() ? "" : " OFFSET ?");
+        if (!paging.keysetMode()) {
+            listArgs.add(paging.offset());
+        }
+        TenantGuard.requireProjectScope(listSql, "test_case");
+        List<TestCase> rows = SlowQuery.measure("case.page.binding", listSql,
+                () -> jdbc.query(listSql, MAPPER, listArgs.toArray()));
+        return new PageResult<>(rows, total == null ? 0 : total, paging.page(), paging.size());
+    }
+
+    /** 原样保留的旧分页实现（bindingState 为空时走这里，逐字零回归）。 */
+    private PageResult<TestCase> pageLegacy(long projectId, String keyword, String domain,
+                                            String priority, String reviewStatus, String capability,
+                                            String safetyLevel, PageQuery paging) {
         StringBuilder where = new StringBuilder(" WHERE project_id = ? AND deleted_at IS NULL");
         List<Object> args = new ArrayList<>();
         args.add(projectId);
@@ -117,7 +198,6 @@ public class TestCaseRepositoryJdbc implements TestCaseRepository {
         List<Object> listArgs = new ArrayList<>(args);
         String listWhere = where.toString();
         if (paging.keysetMode()) {
-            // 键集：只扫 id < 游标 的一段，深翻耗时与页号无关（FR-3.2-02）。
             order = "id DESC";
             listWhere += " AND id < ?";
             listArgs.add(paging.beforeId());
@@ -133,6 +213,14 @@ public class TestCaseRepositoryJdbc implements TestCaseRepository {
         List<TestCase> rows = SlowQuery.measure("case.page", listSql,
                 () -> jdbc.query(listSql, MAPPER, listArgs.toArray()));
         return new PageResult<>(rows, total == null ? 0 : total, paging.page(), paging.size());
+    }
+
+    /** FR-READY-11：项目内核，查不到按 robot（与 CaseScriptLookup.kernelOf 同源）。 */
+    private String kernelOf(long projectId) {
+        List<String> rows = jdbc.queryForList(
+                "SELECT test_kernel FROM project WHERE id = ?", String.class, projectId);
+        String kernel = rows.isEmpty() ? null : rows.get(0);
+        return kernel == null || kernel.isBlank() ? "robot" : kernel.trim();
     }
 
     @Override

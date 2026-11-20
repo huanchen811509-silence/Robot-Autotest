@@ -142,6 +142,8 @@ export interface CaseSelectionSpec {
   reviewStatus?: string
   capability?: string
   safetyLevel?: string
+  /** FR-READY-05：按脚本绑定状态筛选（四态）。 */
+  bindingState?: string
   /** 「全选后手动取消勾选」的用例。 */
   excludeIds?: number[]
 }
@@ -198,6 +200,8 @@ export const caseApi = {
     reviewStatus?: string
     capability?: string
     safetyLevel?: string
+    /** FR-READY-01：脚本绑定状态四态过滤 */
+    bindingState?: string
     page?: number
     size?: number
   }) {
@@ -333,6 +337,20 @@ export const caseSetApi = {
   ) {
     return request<CategoryFilterResult>(
       `${base(projectId)}/case-sets/${id}/items/category-filter`,
+      { method: 'POST', body: JSON.stringify(body) },
+    )
+  },
+  /** FR-READY-05：按筛选条件（含 bindingState）批量入集，幂等去重。 */
+  addByBindingFilter(
+    projectId: number | string,
+    id: number | string,
+    body: {
+      keyword?: string; domain?: string; priority?: string; reviewStatus?: string;
+      safetyLevel?: string; bindingState?: string; excludeIds?: number[];
+    },
+  ) {
+    return request<CategoryFilterResult>(
+      `${base(projectId)}/case-sets/${id}/items/binding-filter`,
       { method: 'POST', body: JSON.stringify(body) },
     )
   },

@@ -7,9 +7,14 @@ import com.qa.autotest.application.kernel.pytest.PytestHealthService;
 import com.qa.autotest.application.kernel.pytest.PytestProjectSettings;
 import com.qa.autotest.application.kernel.pytest.PytestReadinessService;
 import com.qa.autotest.application.kernel.pytest.PytestSettingsService;
+import com.qa.autotest.application.repository.ProjectRepository;
 import com.qa.autotest.application.repository.ProjectSettingRepository;
 import com.qa.autotest.common.ApiResponse;
+import com.qa.autotest.common.BusinessException;
+import com.qa.autotest.common.ErrorCode;
 import com.qa.autotest.domain.caseasset.PytestCaseStep;
+import com.qa.autotest.domain.iam.Project;
+import com.qa.autotest.domain.project.ProjectKind;
 import java.util.List;
 import java.util.Map;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -41,12 +46,14 @@ public class PytestProjectController {
     private final ProjectSettingRepository settings;
     private final PytestReadinessService readiness;
     private final AccessControlService access;
+    private final ProjectRepository projects;
 
     public PytestProjectController(PytestHealthService health, PytestBindingSyncService sync,
                                    PytestEvidenceService evidence,
                                    PytestSettingsService settingsService,
                                    ProjectSettingRepository settings,
-                                   PytestReadinessService readiness, AccessControlService access) {
+                                   PytestReadinessService readiness, AccessControlService access,
+                                   ProjectRepository projects) {
         this.health = health;
         this.sync = sync;
         this.evidence = evidence;
@@ -54,6 +61,7 @@ public class PytestProjectController {
         this.settings = settings;
         this.readiness = readiness;
         this.access = access;
+        this.projects = projects;
     }
 
     /** 健康检查。{@code refresh=true} 时跳过 24h 缓存重新探测解释器。 */
@@ -88,6 +96,12 @@ public class PytestProjectController {
     @PostMapping("/bindings/sync")
     public ApiResponse<PytestBindingSyncService.SyncReport> sync(@PathVariable long projectId) {
         access.requireProjectAccess(projectId);
+        // FR-READY-01 / O-4：只允许 pytest-suite 工程同步绑定，堵住 platform 等误写入口。
+        Project project = projects.findById(projectId).orElse(null);
+        if (project == null || !ProjectKind.isPytestSuite(project.kind())) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                    "绑定同步仅允许 pytest-suite 工程，当前工程类型不支持");
+        }
         return ApiResponse.ok(sync.sync(projectId, null));
     }
 

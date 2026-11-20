@@ -63,9 +63,14 @@ public class GlobalCaseController {
             // v5.11.0 / FR-v5.11-02：中栏「未分类」节点
             @RequestParam(required = false) Boolean uncategorized,
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        return ApiResponse.ok(service.page(keyword, categoryL1, categoryL2, lifecycleStatus,
-                Boolean.TRUE.equals(uncategorized), page, size));
+            @RequestParam(defaultValue = "20") int size,
+            // FR-READY-02：脚本绑定状态过滤
+            @RequestParam(required = false) String bindingState) {
+        boolean unc = Boolean.TRUE.equals(uncategorized);
+        return ApiResponse.ok((bindingState == null || bindingState.isBlank())
+                ? service.page(keyword, categoryL1, categoryL2, lifecycleStatus, unc, page, size)
+                : service.page(keyword, categoryL1, categoryL2, lifecycleStatus, unc, page, size,
+                        bindingState));
     }
 
     @GetMapping("/categories")

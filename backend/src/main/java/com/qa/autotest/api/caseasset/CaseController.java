@@ -86,12 +86,17 @@ public class CaseController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String sort,
-            @RequestParam(required = false) Long beforeId) {
+            @RequestParam(required = false) Long beforeId,
+            @RequestParam(required = false) String bindingState) {
         PageQuery paging = beforeId == null
                 ? PageQuery.of(page, size, sort, SORTS, "id")
                 : PageQuery.keyset(size, beforeId);
-        PageResult<TestCase> result = cases.page(projectId, keyword, domain, priority,
-                reviewStatus, capability, safetyLevel, paging);
+        // bindingState 为空走旧 8 参入口，保证既有 mock/调用方逐字零回归
+        PageResult<TestCase> result = (bindingState == null || bindingState.isBlank())
+                ? cases.page(projectId, keyword, domain, priority, reviewStatus, capability,
+                        safetyLevel, paging)
+                : cases.page(projectId, keyword, domain, priority, reviewStatus, capability,
+                        safetyLevel, paging, bindingState);
         if (scripts == null || result.items().isEmpty()) {
             return ApiResponse.ok(new PageResult<>(
                     result.items().stream().map(CaseListView::of).toList(),

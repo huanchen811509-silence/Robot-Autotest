@@ -37,6 +37,15 @@ public class TestSetService {
     public record CategoryFilterResult(int matched, int added, String itemSource) {
     }
 
+    /**
+     * FR-READY-05：按用例筛选条件批量加入（含 bindingState）。
+     * 字段与前端 CaseSelectionSpec 对齐；bindingState 走 BindingStateFilter 四态白名单。
+     */
+    public record BindingSelectionFilter(String keyword, String domain, String priority,
+                                         String reviewStatus, String safetyLevel,
+                                         String bindingState, List<Long> excludeIds) {
+    }
+
     /** 批量加入通道；既有测试用 5 参构造器直接 new，未注入时报可读错误。 */
     private JdbcTemplate jdbc;
 
@@ -301,6 +310,107 @@ public class TestSetService {
                     "matched=" + ids.size() + " added=" + added + " item_source=category_filter");
         }
         return new CategoryFilterResult(ids.size(), added, "category_filter");
+    }
+
+    /**
+     * FR-READY-05：按「用例筛选条件（含脚本状态）」批量加入用例集。
+     *
+     * <p>分页前用同一 WHERE 真值选中（与用例库列表同源），seq 从 MAX+1 连续续排；
+     * 逐条 INSERT 前再按 (set, case) 去重，重复调用幂等。item_source='binding_filter'。
+     */
+    @Transactional
+    public CategoryFilterResult addByBindingFilter(long projectId, long setId,
+                                                   BindingSelectionFilter filter) {
+        access.bindProject(projectId);
+        access.require(PermissionResource.CASE, PermissionAction.UPDATE);
+        get(projectId, setId);
+        if (jdbc == null) {
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR, "按筛选批量加入未装配数据源");
+        }
+        BindingSelectionFilter f = filter == null
+                ? new BindingSelectionFilter(null, null, null, null, null, null, List.of())
+                : filter;
+        if (!BindingStateFilter.isValid(f.bindingState())) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT,
+                    "非法 bindingState: " + f.bindingState());
+        }
+        StringBuilder where = new StringBuilder(" WHERE tc.project_id = ? AND tc.deleted_at IS NULL");
+        List<Object> args = new ArrayList<>();
+        args.add(projectId);
+        if (f.keyword() != null && !f.keyword().isBlank()) {
+            where.append(" AND (tc.case_code LIKE ? OR tc.title LIKE ?)");
+            String like = "%" + f.keyword().trim() + "%";
+            args.add(like);
+            args.add(like);
+        }
+        if (f.domain() != null && !f.domain().isBlank()) {
+            where.append(" AND tc.domain_tag = ?");
+            args.add(f.domain());
+        }
+        if (f.priority() != null && !f.priority().isBlank()) {
+            where.append(" AND tc.priority = ?");
+            args.add(f.priority());
+        }
+        if (f.reviewStatus() != null && !f.reviewStatus().isBlank()) {
+            where.append(" AND tc.review_status = ?");
+            args.add(f.reviewStatus());
+        }
+        if (f.safetyLevel() != null && !f.safetyLevel().isBlank()) {
+            where.append(" AND tc.safety_level = ?");
+            args.add(f.safetyLevel().trim().toUpperCase(java.util.Locale.ROOT));
+        }
+        List<Long> exclude = f.excludeIds() == null ? List.of() : f.excludeIds();
+        if (!exclude.isEmpty()) {
+            String marks = String.join(",", java.util.Collections.nCopies(exclude.size(), "?"));
+            where.append(" AND tc.id NOT IN (").append(marks).append(")");
+            args.addAll(exclude);
+        }
+        String kernel = kernelOf(projectId);
+        BindingStateFilter.apply(where, args, projectId, kernel, f.bindingState(), "tc.id");
+        List<Long> ids = jdbc.queryForList(
+                "SELECT tc.id FROM test_case tc" + where + " ORDER BY tc.id",
+                Long.class, args.toArray());
+        if (ids == null) {
+            ids = List.of();
+        }
+
+        Integer maxSeq = jdbc.queryForObject(
+                "SELECT COALESCE(MAX(seq_no), 0) FROM test_set_item WHERE test_set_id = ?",
+                Integer.class, setId);
+        int seq = maxSeq == null ? 0 : maxSeq;
+        Long operator = TenantContext.userId();
+        int added = 0;
+        for (Long caseId : ids) {
+            Integer exists = jdbc.queryForObject(
+                    "SELECT COUNT(*) FROM test_set_item WHERE test_set_id = ? AND test_case_id = ?",
+                    Integer.class, setId, caseId);
+            if (exists != null && exists > 0) {
+                continue; // 幂等去重
+            }
+            seq++;
+            jdbc.update("""
+                    INSERT INTO test_set_item (test_set_id, test_case_id, seq_no, item_source,
+                                               created_by, updated_by)
+                    VALUES (?, ?, ?, 'binding_filter', ?, ?)
+                    """, setId, caseId, seq, operator, operator);
+            added++;
+        }
+        if (added > 0 && assetVersions != null) {
+            assetVersions.onChanged(projectId, setId);
+        }
+        if (audit != null) {
+            audit.record("set.add-by-binding-filter", "test_set_item", String.valueOf(setId),
+                    "matched=" + ids.size() + " added=" + added + " bindingState=" + f.bindingState());
+        }
+        return new CategoryFilterResult(ids.size(), added, "binding_filter");
+    }
+
+    /** FR-READY-11：项目内核，查不到按 robot（与 CaseScriptLookup.kernelOf 同源）。 */
+    private String kernelOf(long projectId) {
+        List<String> rows = jdbc.queryForList(
+                "SELECT test_kernel FROM project WHERE id = ?", String.class, projectId);
+        String kernel = rows.isEmpty() ? null : rows.get(0);
+        return kernel == null || kernel.isBlank() ? "robot" : kernel.trim();
     }
 
     // ---------------------------------------------------------------- N9 平台用例集库

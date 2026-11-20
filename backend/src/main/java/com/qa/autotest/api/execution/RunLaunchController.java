@@ -3,6 +3,7 @@ package com.qa.autotest.api.execution;
 import com.qa.autotest.application.execution.CaseConclusionResolver;
 import com.qa.autotest.application.execution.CaseRunService;
 import com.qa.autotest.application.execution.CommandPreviewService;
+import com.qa.autotest.application.execution.ExecutionScriptPrecheck;
 import com.qa.autotest.application.execution.CriteriaIngestService;
 import com.qa.autotest.application.execution.RunConfirmationService;
 import com.qa.autotest.application.execution.SelectionResolver;
@@ -59,6 +60,7 @@ public class RunLaunchController {
     private final CriteriaIngestService criteriaIngest;
     private final CaseRunService caseRuns;
     private final AuditService audit;
+    private final ExecutionScriptPrecheck scriptPrecheck;
 
     public RunLaunchController(CommandPreviewService commandPreview,
                                RunConfirmationService runConfirmation,
@@ -67,7 +69,8 @@ public class RunLaunchController {
                                SelectionResolver.CaseScopeQuery scope,
                                CriteriaIngestService criteriaIngest,
                                CaseRunService caseRuns,
-                               AuditService audit) {
+                               AuditService audit,
+                               ExecutionScriptPrecheck scriptPrecheck) {
         this.commandPreview = commandPreview;
         this.runConfirmation = runConfirmation;
         this.snapshots = snapshots;
@@ -76,6 +79,7 @@ public class RunLaunchController {
         this.criteriaIngest = criteriaIngest;
         this.caseRuns = caseRuns;
         this.audit = audit;
+        this.scriptPrecheck = scriptPrecheck;
     }
 
     /** 命令清单只读预览：条数、跳过原因、digest 前 12 位。不写 run / 不落确认 / 不启动进程。 */
@@ -85,6 +89,20 @@ public class RunLaunchController {
             @RequestBody PreviewCommandsRequest request) {
         return ApiResponse.ok(commandPreview.preview(projectId,
                 request.kernel(), request.caseIds()));
+    }
+
+    /**
+     * FR-READY-07：执行前脚本预检（只读）。三入口共用，产出「已绑定 N / 未绑定清单 / 不适用数」。
+     * 接受与选择快照相同的四模式请求；SET 模式先展开用例集成员，保证「按用例集执行」也走同一清单。
+     */
+    @PostMapping("/runs/precheck-scripts")
+    public ApiResponse<ExecutionScriptPrecheck.ScriptPrecheck> precheckScripts(
+            @PathVariable long projectId,
+            @RequestBody SelectionPreviewRequest request) {
+        SelectionResolver.SelectionMode mode = SelectionResolver.parseMode(request.mode());
+        SelectionResolver.Resolution resolution = resolver.resolve(projectId, mode,
+                request.setIds(), request.caseIds(), request.filter());
+        return ApiResponse.ok(scriptPrecheck.check(projectId, resolution.caseIds()));
     }
 
     /**
