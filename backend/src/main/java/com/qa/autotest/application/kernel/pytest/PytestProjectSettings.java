@@ -38,6 +38,15 @@ public final class PytestProjectSettings {
     public static final String EXTRA_ARGS = PREFIX + "extra_args";
     /** run 级硬超时秒数，空则用全局 execution.test-timeout-seconds。 */
     public static final String TIMEOUT_S = PREFIX + "timeout_s";
+    /**
+     * 绑定扫描时**额外**排除的目录名（逗号 / 分号 / 空格分隔，可留空）。
+     *
+     * <p>为什么需要它：用例库的目录组织归测试团队自己演进，平台若把目录语义写死在
+     * {@code PytestScriptScanner.SKIP_DIRS} 里，仓库侧每加一层目录就要改码重发 jar——
+     * 这与 N3「git 是用例真源」的解耦口径相悖。配置项把「扫描边界」从编译期常量挪到运行期，
+     * 以后仓库再调整目录只需要改这里。内置排除清单（含评审目录）始终生效，本项只能追加。
+     */
+    public static final String SCAN_EXCLUDE = PREFIX + "scan_exclude";
 
     /** 执行前必填：缺任一项，预检直接拒绝（不进入执行队列）。 */
     public static final java.util.List<String> REQUIRED_FOR_EXECUTE = java.util.List.of(
@@ -98,5 +107,27 @@ public final class PytestProjectSettings {
     /** 配置键的短名（去掉 `pytest.`），用于界面与错误消息。 */
     public static String shortName(String key) {
         return key.startsWith(PREFIX) ? key.substring(PREFIX.length()) : key;
+    }
+
+    /**
+     * 额外排除目录集（{@code scan_exclude} 解析结果）；未配置返回空集。
+     *
+     * <p>未配置**不等于**「不排除」：{@link PytestScriptScanner} 的内置清单（含
+     * {@code pending_review} / {@code awaiting_review} 两级评审目录）始终生效，
+     * 本项是在其之上的追加，只能加不能减——缩窄扫描范围是安全方向，放宽不是。
+     */
+    public static java.util.Set<String> scanExclude(Map<String, String> settings) {
+        String raw = value(settings, SCAN_EXCLUDE);
+        if (raw == null) {
+            return java.util.Set.of();
+        }
+        java.util.Set<String> out = new java.util.LinkedHashSet<>();
+        for (String part : raw.split("[,;\\s]+")) {
+            String name = part.trim();
+            if (!name.isEmpty()) {
+                out.add(name);
+            }
+        }
+        return java.util.Set.copyOf(out);
     }
 }

@@ -104,7 +104,7 @@ public class PytestBindingSyncService {
         }
         List<PytestScriptScanner.ScannedScript> scripts;
         try {
-            scripts = PytestScriptScanner.scan(repoRoot);
+            scripts = PytestScriptScanner.scan(repoRoot, PytestProjectSettings.scanExclude(config));
         } catch (IOException e) {
             throw new IllegalStateException("扫描仓库失败: " + repoRoot + " — " + e.getMessage(), e);
         }

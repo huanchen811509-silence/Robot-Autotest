@@ -45,9 +45,20 @@ public final class PytestScriptScanner {
     /** 模块级 test 函数（顶格 `def test_...`；类内方法有缩进，不属于一个用例一条绑定的口径）。 */
     private static final Pattern TEST_FUNC = Pattern.compile("^def\\s+(test_\\w+)\\s*\\(", Pattern.MULTILINE);
 
-    /** 扫描时整棵跳过的目录：产物、虚拟环境、缓存、git 元数据。 */
+    /**
+     * 扫描时整棵跳过的目录：产物、虚拟环境、缓存、git 元数据，以及**评审目录**。
+     *
+     * <p><b>{@code pending_review} / {@code awaiting_review} 为什么默认跳过</b>（2026-11-20）：
+     * 用例库把「等评审的脚本」放在这两级目录下（实测 2026-11-20 共 146 个文件），
+     * 审核通过才迁进特性目录。它们不能算正式用例——否则覆盖率虚高，执行时还会跑到
+     * 未过审的代码；其中同名编号（如 {@code IM-NET-007}）还会跟正式目录抢绑定。
+     *
+     * <p>这两条属于**约定**而不是「产物」：仓库侧再出现新的语义目录时，不必改这里，
+     * 用项目配置 {@code pytest.scan_exclude} 追加即可（见 {@link PytestProjectSettings#SCAN_EXCLUDE}）。
+     */
     private static final Set<String> SKIP_DIRS = Set.of(
-            ".git", ".venv", "venv", "__pycache__", "artifacts", "node_modules", ".pytest_cache");
+            ".git", ".venv", "venv", "__pycache__", "artifacts", "node_modules", ".pytest_cache",
+            "pending_review", "awaiting_review");
 
     /** 只读前 8KB 找编号声明——文件头声明不会出现在更后面的位置。 */
     private static final int HEAD_BYTES = 8192;
@@ -70,9 +81,21 @@ public final class PytestScriptScanner {
      * 由调用方转成「仓库不可达」的拒绝理由，不静默返回空列表。
      */
     public static List<ScannedScript> scan(Path repoRoot) throws IOException {
+        return scan(repoRoot, Set.of());
+    }
+
+    /**
+     * 同上，并追加调用方给的排除目录名（项目配置 {@code pytest.scan_exclude}）。
+     *
+     * <p>追加而不是覆盖：内置清单里的评审目录永不放宽，只有「再多跳过几个」这个方向。
+     * 目录名按路径段精确匹配（{@code foo} 命中任意层级的 {@code foo/}），与内置规则一致。
+     */
+    public static List<ScannedScript> scan(Path repoRoot, Set<String> extraSkipDirs)
+            throws IOException {
         if (repoRoot == null || !Files.isDirectory(repoRoot)) {
             throw new IOException("仓库根不存在或不是目录: " + repoRoot);
         }
+        Set<String> extra = extraSkipDirs == null ? Set.of() : extraSkipDirs;
         Path testsDir = repoRoot.resolve("tests");
         Path scanRoot = Files.isDirectory(testsDir) ? testsDir : repoRoot;
         List<ScannedScript> result = new ArrayList<>();
@@ -82,7 +105,7 @@ public final class PytestScriptScanner {
                 if (!name.startsWith("test_") || !name.endsWith(".py")) {
                     continue;
                 }
-                if (skipped(repoRoot, file)) {
+                if (skipped(repoRoot, file, extra)) {
                     continue;
                 }
                 ScannedScript scanned = scanOne(repoRoot, file);
@@ -136,10 +159,11 @@ public final class PytestScriptScanner {
                 requiresPeer);
     }
 
-    private static boolean skipped(Path root, Path file) {
+    private static boolean skipped(Path root, Path file, Set<String> extra) {
         Path rel = root.relativize(file);
         for (Path part : rel) {
-            if (SKIP_DIRS.contains(part.toString())) {
+            String name = part.toString();
+            if (SKIP_DIRS.contains(name) || extra.contains(name)) {
                 return true;
             }
         }

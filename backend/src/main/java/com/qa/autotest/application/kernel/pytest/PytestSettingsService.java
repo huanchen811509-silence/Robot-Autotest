@@ -37,7 +37,8 @@ public class PytestSettingsService {
             shortName(PytestProjectSettings.INVENTORY_PATH),
             shortName(PytestProjectSettings.INVENTORY_KEY_RULE),
             shortName(PytestProjectSettings.EXTRA_ARGS),
-            shortName(PytestProjectSettings.TIMEOUT_S));
+            shortName(PytestProjectSettings.TIMEOUT_S),
+            shortName(PytestProjectSettings.SCAN_EXCLUDE));
 
     /** 超时下限：低于 30 秒连框架的 setup 都跑不完，配了等于必然超时。 */
     private static final int TIMEOUT_MIN = 30;
@@ -205,6 +206,21 @@ public class PytestSettingsService {
                     if (value.contains("&&") || value.contains(";") || value.contains("|")) {
                         errors.add(new FieldError(name, "不允许 shell 连接符（参数按空格切分后"
                                 + "逐个传参，不经 shell）"));
+                    }
+                }
+                case "scan_exclude" -> {
+                    // 它是「目录名」清单而不是路径清单：写成 tests/nic/foo 不会报错，
+                    // 但永远匹配不上，表现为「配置了却没生效」——这类静默失效必须挡在保存前。
+                    for (String seg : value.split("[,;\\s]+")) {
+                        String dir = seg.trim();
+                        if (dir.isEmpty()) {
+                            continue;
+                        }
+                        if (dir.contains("/") || dir.contains("\\") || dir.contains("..")) {
+                            errors.add(new FieldError(name, "只写目录名，不带路径（按路径段精确"
+                                    + "匹配），例如 pending_review；当前含：" + dir));
+                            break;
+                        }
                     }
                 }
                 default -> {

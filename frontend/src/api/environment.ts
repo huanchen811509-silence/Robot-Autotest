@@ -264,6 +264,14 @@ export interface PlannedNode {
   parentId: number | null
 }
 
+/** 拓扑图的节点（v5.34.0 / FR-v5.34-03）：只有 id/名称/类型，其余字段由图外的详情面板补齐。 */
+export interface TopoNode {
+  id: number
+  name: string
+  /** 后端 device_type 原值（大小写与中文混用：switch / HOST / GPU服务器 …）。 */
+  deviceType: string | null
+}
+
 export interface TopologyEdges {
   edges: TopologyEdge[]
   /** 三类边的计数，三者之和恒等于 total。 */

@@ -14,11 +14,14 @@ import { NButton, type DataTableColumns } from 'naive-ui'
 import DataTable from '@/components/DataTable.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import EmptyGuide from '@/components/EmptyGuide.vue'
+import TopologyGraph from '@/components/TopologyGraph.vue'
+import DetailDock from '@/components/DetailDock.vue'
+import AssetDetailPanel from '@/components/AssetDetailPanel.vue'
 import { useAuthStore } from '@/stores/auth'
 import { deviceApi, linkApi } from '@/api/asset'
 import {
   deviceSnapshotApi, envApi, topologyTrustApi,
-  type PlannedNode, type TopologyEdge, type TopologyEdgeKind,
+  type PlannedNode, type TopologyEdge, type TopologyEdgeKind, type TopoNode,
   type DeviceSnapshot, type DeviceSnapshotItem, type EnvProfileSummary,
   type EnvSnapshot, type ItemDiff, type SnapshotDiff,
 } from '@/api/environment'
@@ -248,6 +251,56 @@ const measuredOnly = computed(() => route.query.topo === 'measured')
 const visibleEdges = computed(() =>
   measuredOnly.value ? edges.value.filter((edge) => edge.kind === 'MEASURED') : edges.value)
 
+/* ---------------------------------------------------- 拓扑图（v5.34.0 / FR-v5.34-03） */
+
+/** 设备清单：图上的节点需要 device_type 才能分层，边里只有 id 与名字。 */
+const topoDevices = ref<TopoNode[]>([])
+/** 点击节点后展示资产详情（复用既有面板，不另写一份字段表）。 */
+const selectedDeviceId = ref<number | null>(null)
+
+async function loadTopoDevices(): Promise<void> {
+  const projectId = auth.projectId
+  if (!projectId) {
+    topoDevices.value = []
+    return
+  }
+  try {
+    // 一次取够：本库设备是两位数，分页上限 200 足够，不做翻页
+    const page = await deviceApi.page(projectId, { page: 1, size: 200 })
+    topoDevices.value = page.items.map((d) => ({
+      id: d.id,
+      name: d.name,
+      deviceType: d.deviceType,
+    }))
+  } catch {
+    // 设备清单取不到不影响边表；图会退回「只有连过边的节点」的占位
+    topoDevices.value = []
+  }
+}
+
+/** 图上的节点集 = 设备清单 ∪ 边里出现但对端未登记的设备。 */
+const topoNodes = computed<TopoNode[]>(() => {
+  const seen = new Map<number, TopoNode>()
+  for (const device of topoDevices.value) seen.set(device.id, device)
+  for (const edge of visibleEdges.value) {
+    if (edge.aDeviceId !== null && !seen.has(edge.aDeviceId)) {
+      seen.set(edge.aDeviceId, {
+        id: edge.aDeviceId,
+        name: edge.aDeviceName ?? `#${edge.aDeviceId}`,
+        deviceType: null,
+      })
+    }
+    if (edge.bDeviceId !== null && !seen.has(edge.bDeviceId)) {
+      seen.set(edge.bDeviceId, {
+        id: edge.bDeviceId,
+        name: edge.bDeviceName ?? `#${edge.bDeviceId}`,
+        deviceType: null,
+      })
+    }
+  }
+  return [...seen.values()]
+})
+
 async function loadEdges(): Promise<void> {
   const projectId = auth.projectId
   if (!projectId) {
@@ -298,14 +351,15 @@ onMounted(async () => {
   await loadProfiles()
   await loadSnapshots()
   await loadDeviceSnapshots()
-  await loadEdges()
+  // 设备清单与边并行取：图要两者齐了才能画，但任一失败都不该挡住另一个
+  await Promise.all([loadEdges(), loadTopoDevices()])
 })
 watch(projectId, async () => {
   envName.value = ''
   await loadProfiles()
   await loadSnapshots()
   await loadDeviceSnapshots()
-  await loadEdges()
+  await Promise.all([loadEdges(), loadTopoDevices()])
 })
 watch(envName, loadSnapshots)
 watch(devAfterId, selectDeviceSnapshot)
@@ -374,17 +428,37 @@ watch(devAfterId, selectDeviceSnapshot)
       <p v-else-if="edgesFailed" class="banner error" data-testid="topology-edges-failed">
         {{ t('env.common.loadFailed') }}
       </p>
-      <DataTable
-        v-else
-        :columns="edgeColumns"
-        :data="visibleEdges"
-        :row-key="(row: TopologyEdge) => `${row.id}-${row.kind}`"
-        data-testid="topology-edges"
+      <template v-else>
+        <!-- v5.34.0 / FR-v5.34-03：真的有图了。之前这一页只有图例和边表，文案却写「图上 N 条」 -->
+        <TopologyGraph
+          v-if="topoNodes.length > 0 && visibleEdges.length > 0"
+          :edges="visibleEdges"
+          :nodes="topoNodes"
+          @select-node="(node) => (selectedDeviceId = node.id)"
+        />
+        <p v-else class="muted" data-testid="topology-graph-empty">
+          {{ t('env.topology.graphEmpty') }}
+        </p>
+        <DataTable
+          :columns="edgeColumns"
+          :data="visibleEdges"
+          :row-key="(row: TopologyEdge) => `${row.id}-${row.kind}`"
+          data-testid="topology-edges"
+        >
+          <template #empty>
+            <p class="muted" data-testid="topology-edges-empty">{{ t('env.topology.edgesEmpty') }}</p>
+          </template>
+        </DataTable>
+      </template>
+
+      <!-- 点节点看资产详情：复用既有面板，字段口径与资产页一致 -->
+      <DetailDock
+        :open="selectedDeviceId !== null"
+        :title="t('env.topology.deviceDetail')"
+        @close="selectedDeviceId = null"
       >
-        <template #empty>
-          <p class="muted" data-testid="topology-edges-empty">{{ t('env.topology.edgesEmpty') }}</p>
-        </template>
-      </DataTable>
+        <AssetDetailPanel v-if="selectedDeviceId" :device-id="selectedDeviceId" source="project" />
+      </DetailDock>
       <template v-if="plannedNodes.length > 0">
         <h3>{{ t('env.topology.plannedNodesTitle') }}</h3>
         <ul class="planned-nodes" data-testid="topology-planned-nodes">

@@ -105,6 +105,19 @@ class PytestSettingsServiceTest {
         assertTrue(service.check(Map.of("env_config", "config/run_env.yaml")).isEmpty());
     }
 
+    /**
+     * {@code scan_exclude} 存的是**目录名**清单，写成路径不会报错但永远匹配不上，
+     * 表现为「配了却没生效」——这类静默失效必须在保存前挡掉。
+     */
+    @Test
+    void scan_exclude只接受目录名不接受路径() {
+        assertTrue(service.check(Map.of("scan_exclude", "wip")).isEmpty());
+        assertTrue(service.check(Map.of("scan_exclude", "wip, draft ;tmp")).isEmpty());
+        assertTrue(service.check(Map.of("scan_exclude", "")).isEmpty());
+        assertFalse(service.check(Map.of("scan_exclude", "tests/nic/wip")).isEmpty());
+        assertFalse(service.check(Map.of("scan_exclude", "..")).isEmpty());
+    }
+
     @Test
     void extra_args不许重复装配平台自己拼的参数() {
         // 用户再写一遍 --mode，pytest 取最后一个，表现是「平台配的模式没生效」

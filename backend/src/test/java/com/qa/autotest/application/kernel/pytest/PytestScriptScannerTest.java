@@ -115,6 +115,39 @@ class PytestScriptScannerTest {
         assertThat(scanned.get(0).relativePath()).isEqualTo("tests/nic/test_im_net_131.py");
     }
 
+    /**
+     * 2026-11-20 实测：用例库把「等评审的脚本」放在 {@code pending_review/} 与
+     * {@code awaiting_review/} 下，共 146 个文件，其中还有与正式目录同编号的副本。
+     * 它们不是正式用例——放进来会让覆盖率虚高，并跟正式脚本抢绑定。
+     */
+    @Test
+    void 默认跳过两级评审目录(@TempDir Path repo) throws IOException {
+        write(repo, "tests/nic/ethernet/test_im_net_131.py", CASE_FILE);
+        write(repo, "tests/nic/pending_review/batch2_queue/test_im_net_131.py", CASE_FILE);
+        write(repo, "tests/nic/awaiting_review/batch_x/test_im_net_131.py", CASE_FILE);
+
+        List<PytestScriptScanner.ScannedScript> scanned = PytestScriptScanner.scan(repo);
+
+        assertThat(scanned).hasSize(1);
+        assertThat(scanned.get(0).relativePath()).isEqualTo("tests/nic/ethernet/test_im_net_131.py");
+    }
+
+    /**
+     * 仓库侧再出现新的语义目录时（如 {@code wip/}），项目配置 {@code pytest.scan_exclude}
+     * 追加即可，不必改代码重发 jar——这是 N3「git 是用例真源」在读取侧的落地。
+     */
+    @Test
+    void 配置的额外排除目录按目录名生效(@TempDir Path repo) throws IOException {
+        write(repo, "tests/nic/ethernet/test_im_net_131.py", CASE_FILE);
+        write(repo, "tests/nic/wip/test_im_net_131.py", CASE_FILE);
+
+        assertThat(PytestScriptScanner.scan(repo)).hasSize(2);
+
+        assertThat(PytestScriptScanner.scan(repo, java.util.Set.of("wip")))
+                .extracting(PytestScriptScanner.ScannedScript::relativePath)
+                .containsExactly("tests/nic/ethernet/test_im_net_131.py");
+    }
+
     @Test
     void 仓库不存在时抛异常而不是返回空(@TempDir Path repo) {
         assertThatThrownBy(() -> PytestScriptScanner.scan(repo.resolve("nope")))
