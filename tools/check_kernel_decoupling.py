@@ -107,6 +107,10 @@ def check_removable() -> list[str]:
         # 它只消费 NormalizeResult、不碰命令构造与预检 robot 分支——
         # 适配层不反向依赖 report 由本脚本第一条断言独立守住。
         "PytestCommandEnricher.java",
+        # v5.24.0 / FR-v5.24-08：fake 计划证据读取，报告层只取适配包的 repo_path
+        # 去定位 artifacts/<run_id>/fake_plan.json，不碰命令构造与结果归一——
+        # RF 分支零 pytest 字样由本脚本前两条断言独立守住。
+        "PytestPlanEvidenceService.java",
     }
     pattern = re.compile(r"application\.kernel\.pytest\.")
     problems = []
