@@ -3,8 +3,9 @@ name: delivery-bundle
 # AIDC AutoTest 交付包流水线（v3.11.0-delivery / FR-v3.11-D05）。
 #
 # 与既有 pr.yml 的关系：
-#   - pr.yml 依赖未注册的 self-hosted runner `rf-lab` + 真 MySQL，GitHub 侧一直排队/取消；
-#   - 本流水线用 GitHub-hosted ubuntu-latest，只做「构建 → 静态机检 → 打包 → 解包自检 → 上传」，
+#   - pr.yml 2026-11-21 前依赖未注册的 self-hosted runner `rf-lab`，GitHub 侧一直排队/取消；
+#     现已改为 GitHub-hosted + 一次性 MariaDB 容器（lint → test(含 IT) → build）；
+#   - 本流水线只做「构建 → 打包 → 交付契约机检 → 解包自检 → 上传」，
 #     不连数据库、不跑全量门禁、不判发版。全量门禁仍在 WSL 权威副本跑。
 # 产物：robot-autotest-<VERSION>-<SHA>-linux-x64.tar.gz（含 bin/ 运维脚本），
 #       Actions artifact 名 robot-autotest-linux-x64，可用 `gh run download` 取回。
