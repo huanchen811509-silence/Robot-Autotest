@@ -65,7 +65,9 @@ class GlobalCasePreviewForceIT {
         GlobalCaseService service = new GlobalCaseService(jdbc, new ObjectMapper(),
                 new PlatformProjectService(projects), access, audit);
 
-        long projectId = platformProjectId(jdbc);
+        // 生产里平台库项目是 PlatformProjectService 惰性创建的；空库直接查必然没有，
+        // 这里走同一条路径（而不是在测试里手写 INSERT），否则又在测一个生产不存在的状态。
+        long projectId = new PlatformProjectService(projects).id();
         String sha = sha256(ledger());
 
         String stamp = String.valueOf(System.currentTimeMillis());
@@ -167,14 +169,6 @@ class GlobalCasePreviewForceIT {
         Long count = jdbc.queryForObject("SELECT COUNT(*) FROM import_item WHERE batch_id = ?",
                 Long.class, batchId);
         return count == null ? 0 : count;
-    }
-
-    private static long platformProjectId(JdbcTemplate jdbc) {
-        Long id = jdbc.queryForObject("SELECT id FROM project WHERE code = ?", Long.class,
-                PlatformProjectService.CODE);
-        assertThat(id).as("平台库项目 %s 不存在，先跑 flyway + 平台初始化",
-                PlatformProjectService.CODE).isNotNull();
-        return id;
     }
 
     /**

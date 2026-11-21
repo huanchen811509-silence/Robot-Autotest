@@ -47,7 +47,7 @@ class WorkspaceRepositoryJdbcIT {
             jdbc.update("INSERT INTO project_member (project_id, user_id, member_role) VALUES (?, ?, 'admin')",
                     projectId, userId);
             seedCase(jdbc, projectId);
-            seedSet(jdbc, projectId);
+            seedSet(jdbc, projectId, stamp);
             seedAsset(jdbc, projectId);
             seedCredential(jdbc, projectId);
             seedEnvironment(jdbc, projectId);
@@ -149,8 +149,8 @@ class WorkspaceRepositoryJdbcIT {
     private static void seedCase(JdbcTemplate jdbc, Long projectId) {
         String stamp = String.valueOf(projectId);
         jdbc.update("INSERT INTO test_case (project_id, case_code, title, case_kind, source_type, "
-                + "priority, safety_level, domain_tag, status, description) "
-                + "VALUES (?, ?, '登录', 'ui', 'manual', 'P1', 'LX', 'auth', 1, '')",
+                + "priority, safety_level, domain_tag, description) "
+                + "VALUES (?, ?, '登录', 'ui', 'manual', 'P1', 'LX', 'auth', '')",
                 projectId, "TC-WS-" + stamp);
         Long caseId = jdbc.queryForObject(
                 "SELECT id FROM test_case WHERE project_id = ? AND case_code = ?", Long.class,
@@ -159,8 +159,8 @@ class WorkspaceRepositoryJdbcIT {
                 + "VALUES (?, 1, '打开首页', '看到登录框')", caseId);
     }
 
-    private static void seedSet(JdbcTemplate jdbc, Long projectId) {
-        String stamp = String.valueOf(projectId);
+    /** set_code 必须与断言用同一个 stamp（此前这里用 projectId，断言用 millis，永远对不上）。 */
+    private static void seedSet(JdbcTemplate jdbc, Long projectId, String stamp) {
         jdbc.update("INSERT INTO test_set (project_id, set_code, name, description) "
                 + "VALUES (?, ?, '冒烟', '')", projectId, "TS-WS-" + stamp);
         Long setId = jdbc.queryForObject(

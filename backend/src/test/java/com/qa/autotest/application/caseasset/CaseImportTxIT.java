@@ -83,6 +83,7 @@ class CaseImportTxIT {
         try {
             for (Long projectId : projectIds) {
                 jdbc.update("DELETE FROM test_case WHERE project_id = ?", projectId);
+                jdbc.update("DELETE FROM project_member_role WHERE project_id = ?", projectId);
                 jdbc.update("DELETE FROM project_member WHERE project_id = ?", projectId);
                 jdbc.update("DELETE FROM audit_log WHERE project_id = ?", projectId);
                 jdbc.update("DELETE FROM project WHERE id = ?", projectId);
@@ -123,7 +124,7 @@ class CaseImportTxIT {
     @Test
     @DisplayName("项目内 viewer 角色导入：服务层 403，一行不落库")
     void 访客角色拒绝() {
-        long[] seed = seed("viewer");
+        long[] seed = seed("viewer", false);
         long projectId = seed[1];
         TenantContext.set(seed[0], "it-tx-" + seed[0], null);
 
@@ -273,18 +274,39 @@ class CaseImportTxIT {
 
     /** 建用户 + 项目 + 成员关系；memberRole 为 null 表示「不是项目成员」。返回 [userId, projectId]。 */
     private long[] seed(String memberRole) {
+        return seed(memberRole, true);
+    }
+
+    /**
+     * @param selfOwner 被测用户是否即项目负责人。负责人隐含 PM（ProjectVisibilitySql），
+     *                  所以「viewer 只读」这类判据必须传 false —— 否则测的是负责人。
+     */
+    private long[] seed(String memberRole, boolean selfOwner) {
         String stamp = UUID.randomUUID().toString().substring(0, 8);
         String username = "it-cas03-tx-" + stamp;
         String projectCode = "IT-CAS03TX-" + stamp;
         jdbc.update("INSERT INTO app_user (username, password_hash, display_name, status) "
                 + "VALUES (?, ?, ?, 1)", username, "$2a$10$it-not-a-real-hash", "CAS-03 事务 IT");
         Long userId = jdbc.queryForObject("SELECT id FROM app_user WHERE username = ?", Long.class, username);
+        Long ownerId = userId;
+        if (!selfOwner) {
+            String ownerName = username + "-owner";
+            jdbc.update("INSERT INTO app_user (username, password_hash, display_name, status) "
+                    + "VALUES (?, ?, ?, 1)", ownerName, "$2a$10$it-not-a-real-hash", "CAS-03 负责人");
+            ownerId = jdbc.queryForObject("SELECT id FROM app_user WHERE username = ?",
+                    Long.class, ownerName);
+            userIds.add(ownerId);
+        }
         jdbc.update("INSERT INTO project (code, name, owner_id, status) VALUES (?, ?, ?, 1)",
-                projectCode, "CAS-03 事务集成测试", userId);
+                projectCode, "CAS-03 事务集成测试", ownerId);
         Long projectId = jdbc.queryForObject("SELECT id FROM project WHERE code = ?", Long.class, projectCode);
         if (memberRole != null) {
             jdbc.update("INSERT INTO project_member (project_id, user_id, member_role) VALUES (?, ?, ?)",
                     projectId, userId, memberRole);
+            // 判权读的是 project_member_role（v4.4 多角色表），只写 project_member.member_role
+            // 等于没授权 —— 之前这几条用例靠「自己就是 owner」蒙对，owner 一换就全 403。
+            jdbc.update("INSERT INTO project_member_role (project_id, user_id, role_code) "
+                    + "VALUES (?, ?, ?)", projectId, userId, memberRole);
         }
         userIds.add(userId);
         projectIds.add(projectId);

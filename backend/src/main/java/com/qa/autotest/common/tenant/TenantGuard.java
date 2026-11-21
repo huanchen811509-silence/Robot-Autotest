@@ -68,7 +68,18 @@ public final class TenantGuard {
             // v5.15.0：探针包两表带 project_id（0=平台预置），查询按项目条件收口。
             "probe_pack", "probe_pack_command",
             // v5.16.0：运维任务表带 project_id，按项目隔离。
-            "ops_task");
+            "ops_task",
+            // 2026-11-21 补登记（CI 首次用空库跑 IT 时暴露）：三张表一直被 requireProjectScope
+            // 调用，却从未进名单，调用点必定抛 500「未配置租户策略」。
+            // 它们的租户条件都由 JOIN run / 子查询带上（见 ArchiveRepositoryJdbc、
+            // TestCaseRepositoryJdbc.delete），不是"不需要租户"。
+            "test_result", "keyword_result", "case_script_binding",
+            // v5.35.0 / 2026-11-21：用例判据不可变版本表（V11_2）以 test_case_id 关联用例，
+            // 本身没有 project_id。删除用例要先清它，清理 SQL 用
+            // `test_case_id IN (SELECT id FROM test_case WHERE project_id = ?)` 携带租户条件。
+            // 漏登记时 TenantGuard 直接抛 500「未配置租户策略」——用户点删除一律失败，
+            // 而开发库停在旧 schema 时表里没数据、看起来"只是删不掉"，问题被掩盖了三个月。
+            "case_requirement_version");
 
     private TenantGuard() {
     }

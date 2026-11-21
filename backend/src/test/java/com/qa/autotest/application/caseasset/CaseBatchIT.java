@@ -121,7 +121,8 @@ class CaseBatchIT {
             TestCaseService.BatchResult del = service.batch(projectId,
                     new TestCaseService.BatchRequest("delete",
                             List.of(approvedC, draftA, draftE), null, null, null, null));
-            assertThat(del.succeeded()).as("approvedC 冲突，draftA/draftE 删除").isEqualTo(2);
+            assertThat(del.succeeded()).as("approvedC 冲突，draftA/draftE 删除；items=%s", del.items())
+                    .isEqualTo(2);
             TestCaseService.BatchItemResult delFail = del.items().stream()
                     .filter(i -> !i.ok()).findFirst().orElseThrow();
             assertThat(delFail.id()).isEqualTo(approvedC);

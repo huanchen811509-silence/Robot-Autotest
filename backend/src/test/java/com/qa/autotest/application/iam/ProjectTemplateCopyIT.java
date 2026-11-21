@@ -94,10 +94,10 @@ class ProjectTemplateCopyIT {
 
         jdbc.update("""
                 INSERT INTO test_case (project_id, case_code, external_id, title, case_kind,
-                    source_type, priority, lifecycle_status, version_no, status, safety_level,
+                    source_type, priority, lifecycle_status, version_no, safety_level,
                     a_side_command, b_side_command, switch_config, test_result, test_resource,
                     category_l1, category_l2, created_by, updated_by)
-                VALUES (?, ?, 'IT-EXT-1', 'IT 复制用例', '功能', 'ledger', 'P2', 'active', 1, 1, 'LX',
+                VALUES (?, ?, 'IT-EXT-1', 'IT 复制用例', '功能', 'ledger', 'P2', 'active', 1, 'LX',
                     'ssh node "ethtool -i eth0"', 'ssh peer "ping -c1 10.0.0.1"',
                     'interface Ethernet1/1', 'PASS', 'gpu-node-01 + 800G 交换机', '以太网功能测试',
                     '链路', ?, ?)

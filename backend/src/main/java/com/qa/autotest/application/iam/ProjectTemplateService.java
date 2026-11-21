@@ -794,14 +794,14 @@ public class ProjectTemplateService {
         jdbc.update(con -> {
             var ps = con.prepareStatement("""
                     INSERT INTO test_case (project_id, case_code, external_id, title, case_kind,
-                        source_type, priority, domain_tag, status, description, precondition, expected,
+                        source_type, priority, domain_tag, description, precondition, expected,
                         review_status, source, capability, category_l1, category_l2, source_priority,
                         case_class, test_category, ed202_coverage, content_sha, lifecycle_status,
                         version_no, safety_level, a_side_command, b_side_command, switch_config,
                         test_result, test_resource, category_l1_id, category_l2_id,
                         category_match_review, created_by, updated_by)
                     SELECT ?, case_code, external_id, title, case_kind,
-                        source_type, priority, domain_tag, status, description, precondition, expected,
+                        source_type, priority, domain_tag, description, precondition, expected,
                         'draft', 'import', capability, category_l1, category_l2, source_priority,
                         case_class, test_category, ed202_coverage, content_sha, 'active',
                         1, safety_level, a_side_command, b_side_command, switch_config,

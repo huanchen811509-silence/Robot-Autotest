@@ -73,9 +73,8 @@ class OverviewRepositoryIT {
             seedCase(jdbc, projectId, "OVW-003", "P1", "draft", "iperf");
             seedCase(jdbc, projectId, "OVW-004", "P1", "approved", "iperf");
             seedCase(jdbc, projectId, "OVW-005", "P1", "draft", "iperf");
-            // 停用用例不该计入（口径：status = 1）
-            jdbc.update("INSERT INTO test_case (project_id, case_code, title, priority, status) "
-                    + "VALUES (?, ?, ?, 'P1', 0)", projectId, "OVW-OFF", "停用用例");
+            // v5.35.0：V11_87 已删除 test_case.status（死字段，只在 INSERT 写死 1），
+            // 「停用用例不计入」的前提不存在了，这里不再造那条数据。
 
             // ---- 资产：3 设备（1 台停用）、2 端口、2 链路（1 条停用）、2 凭据、1 环境、1 用例集 ----
             Long dev1 = seedDevice(jdbc, projectId, "GPU-01", 1);
@@ -114,7 +113,7 @@ class OverviewRepositoryIT {
             ProjectOverview view = service.load(projectId, 8, WINDOW_DAYS);
 
             // 用例
-            assertThat(view.cases().total()).as("在用用例数（停用的 OVW-OFF 不计）").isEqualTo(5);
+            assertThat(view.cases().total()).as("用例总数（5 条）").isEqualTo(5);
             assertThat(pairs(view.cases().byPriority()))
                     .as("优先级分布")
                     .containsExactlyInAnyOrder("P0=2", "P1=3");
@@ -160,7 +159,8 @@ class OverviewRepositoryIT {
 
             // ---- 与「直接 SQL」对照，证明接口不是自己编的数 ----
             Integer dbCases = jdbc.queryForObject(
-                    "SELECT COUNT(*) FROM test_case WHERE project_id = ? AND status = 1",
+                    // V11_87 已删除 test_case.status；生产的用例计数本来也不按它过滤
+                    "SELECT COUNT(*) FROM test_case WHERE project_id = ?",
                     Integer.class, projectId);
             Integer dbPorts = jdbc.queryForObject(
                     "SELECT COUNT(*) FROM device_port p JOIN device d ON d.id = p.device_id WHERE d.project_id = ?",
@@ -304,7 +304,7 @@ class OverviewRepositoryIT {
     private static void seedCase(JdbcTemplate jdbc, Long projectId, String code, String priority,
                                  String review, String domain) {
         jdbc.update("INSERT INTO test_case (project_id, case_code, title, priority, review_status, "
-                + "domain_tag, status) VALUES (?, ?, ?, ?, ?, ?, 1)",
+                + "domain_tag) VALUES (?, ?, ?, ?, ?, ?)",
                 projectId, code, "用例 " + code, priority, review, domain);
     }
 
