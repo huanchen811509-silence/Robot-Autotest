@@ -2,6 +2,10 @@ name: delivery-bundle
 
 # AIDC AutoTest 交付包流水线（v3.11.0-delivery / FR-v3.11-D05）。
 #
+# Action 版本口径（2026-11-21 升级）：checkout@v5 / setup-java@v5 / setup-node@v5 /
+#   upload-artifact@v6 —— 取「第一个上 node24 且输入面不变」的大版本，清掉 Node 20 弃用告警。
+#   未跟到 latest：upload-artifact@v7 新增 archive 输入、改变打包语义，本项目用不到。
+#
 # 与既有 pr.yml 的关系：
 #   - pr.yml 2026-11-21 前依赖未注册的 self-hosted runner `rf-lab`，GitHub 侧一直排队/取消；
 #     现已改为 GitHub-hosted + 一次性 MariaDB 容器（lint → test(含 IT) → build）；
@@ -45,19 +49,19 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Checkout (full history for VERSION / commit)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
       - name: Setup JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
           cache: maven
 
       - name: Setup Node 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '22'
           cache: npm
@@ -127,7 +131,7 @@ jobs:
           echo "[ci] unpacked bundle verified: $bundle"
 
       - name: Upload delivery artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: robot-autotest-linux-x64
           path: |
