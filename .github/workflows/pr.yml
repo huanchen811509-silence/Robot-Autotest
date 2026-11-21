@@ -78,6 +78,13 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
+      # 上下文级 E2E（如 RunLogWebSocketE2ETest）会拉起完整 ApplicationContext，
+      # 其中 SecretCipher 强校验 CRED_MASTER_KEY（32 字节 base64）。开发机写在
+      # ~/.config/robot-autotest/env 里；CI 每次随机生成——只用于本进程内加解密，
+      # 不落盘、不外传，也不进仓库（2026-11-21 首跑即因缺它 4 条 E2E 报错）。
+      - name: 生成一次性凭据主密钥
+        run: echo "CRED_MASTER_KEY=$(openssl rand -base64 32)" >> "$GITHUB_ENV"
+
       # 一次性库：容器随 job 销毁，口令随机生成只写进 $GITHUB_ENV。
       # 不用 services: 是因为服务容器在 secrets.DB_PASSWORD 为空时会以空口令启动失败，
       # 而本仓库该 secret 是否配置不保证；docker run 能把两种情形都收敛成"有库"。
