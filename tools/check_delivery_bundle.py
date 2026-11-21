@@ -135,14 +135,30 @@ def check_static(root: pathlib.Path) -> list[str]:
     return fails
 
 
-def validate_manifest(data: object, root: pathlib.Path) -> list[str]:
+def current_version(root: pathlib.Path) -> str:
+    version = read(root / "VERSION").strip().splitlines()
+    return version[0].strip() if version else ""
+
+
+def archived_version() -> str:
+    """从证据目录名取版本：docs/evidence/v3.11.0-delivery/ → 3.11.0。
+
+    归档证据是**历史**交付的实物记录。拿它跟当前 VERSION 比版本号必然红（每次发版都会红一次），
+    那是判据本身写错了，不是包坏了。所以归档分支改成「证明它属于某个真实发布过的版本」：
+    版本取自目录名，且必须在 CHANGELOG 里有对应小节（见 check_artifact）。
+    """
+    m = re.match(r"^v(\d+\.\d+\.\d+)", EVIDENCE_MANIFEST.parent.name)
+    return m.group(1) if m else ""
+
+
+def validate_manifest(data: object, root: pathlib.Path,
+                      expected_version: str | None = None) -> list[str]:
     fails: list[str] = []
     if not isinstance(data, dict):
         return ["MANIFEST 不是 JSON 对象"]
-    version = read(root / "VERSION").strip().splitlines()
-    expected = version[0].strip() if version else ""
+    expected = current_version(root) if expected_version is None else expected_version
     if data.get("version") != expected:
-        fails.append(f"MANIFEST version={data.get('version')} 与 VERSION={expected} 不一致")
+        fails.append(f"MANIFEST version={data.get('version')} 与期望版本={expected} 不一致")
     if data.get("secrets") != "none":
         fails.append("MANIFEST 未声明 secrets=none")
     files = data.get("files")
@@ -213,11 +229,17 @@ def check_artifact(root: pathlib.Path) -> tuple[list[str], str]:
     evidence = root / EVIDENCE_MANIFEST
     if not evidence.is_file():
         return ["既无 releases/*.tar.gz，也无入库证据 bundle-manifest.json（证据缺失判红）"], "mode=none"
+    ver = archived_version()
+    if not ver:
+        fails.append(f"证据目录名 {EVIDENCE_MANIFEST.parent.name} 不含版本号，无法判定归属版本")
+    elif f"## v{ver}" not in read(root / "CHANGELOG.md"):
+        # 归档证据若不是一次真实发布，就只是一个人手写的 JSON —— 不能当交付实证。
+        fails.append(f"证据版本 {ver} 在 CHANGELOG.md 里没有对应小节（不是已发布版本）")
     try:
-        fails.extend(validate_manifest(json.loads(read(evidence)), root))
+        fails.extend(validate_manifest(json.loads(read(evidence)), root, expected_version=ver or None))
     except json.JSONDecodeError as exc:
         fails.append(f"证据 MANIFEST 不是合法 JSON：{exc}")
-    return fails, f"mode=archived evidence={EVIDENCE_MANIFEST.as_posix()}"
+    return fails, f"mode=archived evidence={EVIDENCE_MANIFEST.as_posix()} version={ver or '?'}"
 
 
 def build_skeleton(dst: pathlib.Path, src: pathlib.Path) -> None:
@@ -233,10 +255,15 @@ def build_skeleton(dst: pathlib.Path, src: pathlib.Path) -> None:
     ev = dst / EVIDENCE_MANIFEST
     ev.parent.mkdir(parents=True, exist_ok=True)
     # 自检只跑静态契约；给一份占位证据，最后一个 case 会把它删掉验证「证据缺失必红」。
+    # 版本按目录名（v3.11.0-delivery）写，与真实归档证据同构；自检因此在任意 VERSION 下都稳定。
+    skel_version = archived_version() or current_version(src)
+    # 清单要盖住 REQUIRED_BUNDLE_PATHS，否则「归档证据结构正常」这条自检根本走不到版本判据
+    # （会先被「交付包缺必需路径」拦下，用例永远红，等于没验）。
+    files = [{"path": path, "bytes": 1, "sha256": "0" * 64} for path in REQUIRED_BUNDLE_PATHS]
     ev.write_text(json.dumps({
-        "version": read(src / "VERSION").strip().splitlines()[0],
-        "secrets": "none", "fileCount": 1,
-        "files": [{"path": "VERSION", "bytes": 1, "sha256": "0" * 64}],
+        "version": skel_version,
+        "secrets": "none", "fileCount": len(files),
+        "files": files,
         "entrypoints": {"install": "x", "doctor": "x", "start": "x", "backup": "x", "uninstall": "x"},
     }), encoding="utf-8")
 
@@ -303,6 +330,20 @@ def self_check(root: pathlib.Path) -> int:
         (d / EVIDENCE_MANIFEST).unlink()
         af, _ = check_artifact(d)
         cases.append(("产物与证据都缺失", "期望 FAIL", bool(af)))
+
+        # 归档证据结构正常 → 期望 PASS（历史证据不该因为当前 VERSION 变了就红）
+        d = skeleton("archive_ok")
+        af, _ = check_artifact(d)
+        cases.append(("归档证据结构正常", "期望 PASS", not af))
+
+        # 归档证据把版本改成 CHANGELOG 里没有的号 → 期望 FAIL（不能手写一份就冒充实证）
+        d = skeleton("archive_fake_version")
+        ev = d / EVIDENCE_MANIFEST
+        data = json.loads(read(ev))
+        data["version"] = "9.9.9"
+        ev.write_text(json.dumps(data), encoding="utf-8")
+        af, _ = check_artifact(d)
+        cases.append(("归档证据版本无出处", "期望 FAIL", bool(af)))
 
     bad = 0
     for name, expect, actual_ok in cases:

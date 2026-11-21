@@ -86,14 +86,19 @@ jobs:
       - name: Build (editor -> frontend -> backend)
         run: bash scripts/build.sh
 
-      - name: Delivery contract check (static)
-        run: python3 tools/check_delivery_bundle.py
-
       - name: Preflight (build artifacts present)
         run: bash scripts/package-release.sh --check
 
       - name: Package tarball + MANIFEST + sha256
         run: bash scripts/package-release.sh
+
+      # 顺序有讲究：必须先打包再检查。
+      # 检查器优先验 releases/*.tar.gz（真包 + 真 MANIFEST），本地门禁就是这么绿的；
+      # 反过来先检查时仓库里没有 tar.gz，只能退回验 docs/evidence/v3.11.0-delivery 的归档证据，
+      # 于是每次发版都会因为「归档版本 3.11.0 ≠ 当前 VERSION」判红（2026-11-20/21 两连红即此因）。
+      # 挪到打包之后，CI 验的是本次提交的真实产物，比归档证据严格。
+      - name: Delivery contract check (static + built artifact)
+        run: python3 tools/check_delivery_bundle.py
 
       - name: Verify unpacked bundle (dry-run install + doctor)
         run: |
