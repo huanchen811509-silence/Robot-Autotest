@@ -1,0 +1,236 @@
+{
+  "setId": 107,
+  "setCode": "EVAL10-20261121021112",
+  "runId": "EVAL10-20261121021112",
+  "picked": [
+    {
+      "id": 802,
+      "projectId": 95,
+      "caseId": 1915,
+      "kernel": "pytest",
+      "scriptPath": "tests/nic/base/test_im_fun_014.py",
+      "nodeId": "tests/nic/base/test_im_fun_014.py::test_im_fun_014_nic_info",
+      "scriptSha256": "d06db4448ec8acef4bc4780153abbfa2c6b785c124972d526b12de129f02ca46",
+      "resolveSource": "DOCSTRING",
+      "verified": false
+    },
+    {
+      "id": 803,
+      "projectId": 95,
+      "caseId": 1919,
+      "kernel": "pytest",
+      "scriptPath": "tests/nic/base/test_im_fun_018.py",
+      "nodeId": "tests/nic/base/test_im_fun_018.py::test_im_fun_018_iommu_state",
+      "scriptSha256": "6381bafe474d6e0b8e405d9b43ea535cc64a5c1ef253d12fdd21640d9479d2f3",
+      "resolveSource": "DOCSTRING",
+      "verified": false
+    },
+    {
+      "id": 804,
+      "projectId": 95,
+      "caseId": 1921,
+      "kernel": "pytest",
+      "scriptPath": "tests/nic/base/test_im_fun_020.py",
+      "nodeId": "tests/nic/base/test_im_fun_020.py::test_im_fun_020_pci_device_info",
+      "scriptSha256": "4c8e22bfbd51ff6678677940fe68b25c9b7d045603b87e2e5ca220d68eec6218",
+      "resolveSource": "DOCSTRING",
+      "verified": false
+    },
+    {
+      "id": 827,
+      "projectId": 95,
+      "caseId": 1981,
+      "kernel": "pytest",
+      "scriptPath": "tests/nic/ethernet/test_im_net_002.py",
+      "nodeId": "tests/nic/ethernet/test_im_net_002.py::test_im_net_002_module_ddm",
+      "scriptSha256": "d0c79ba0c5d5f0d802c57544e57b58b6b0693bad7f98dcfc51d1e50cc69628cb",
+      "resolveSource": "DOCSTRING",
+      "verified": false
+    },
+    {
+      "id": 828,
+      "projectId": 95,
+      "caseId": 1983,
+      "kernel": "pytest",
+      "scriptPath": "tests/nic/ethernet/test_im_net_004.py",
+      "nodeId": "tests/nic/ethernet/test_im_net_004.py::test_im_net_004_optics_identity",
+      "scriptSha256": "501a5cf472dacf2c95511797977cb8bea6a914c2991690703c2fc3003216451f",
+      "resolveSource": "DOCSTRING",
+      "verified": false
+    },
+    {
+      "id": 851,
+      "projectId": 95,
+      "caseId": 32648,
+      "kernel": "pytest",
+      "scriptPath": "tests/nic/nic_data_integrity/test_im_nic_002.py",
+      "nodeId": "tests/nic/nic_data_integrity/test_im_nic_002.py::test_im_nic_002_tx_cache_consistency",
+      "scriptSha256": "fc82fb2a26429357985a17dc7595527e85231cc058db3c3dbc60a18079b87ee0",
+      "resolveSource": "DOCSTRING",
+      "verified": false
+    },
+    {
+      "id": 852,
+      "projectId": 95,
+      "caseId": 32655,
+      "kernel": "pytest",
+      "scriptPath": "tests/nic/nic_data_integrity/test_im_nic_004.py",
+      "nodeId": "tests/nic/nic_data_integrity/test_im_nic_004.py::test_im_nic_004_jumbo_sg_integrity",
+      "scriptSha256": "f11c62a286cc1e9348fd54f28ce844f10204319e4f889962c923d62e416797a9",
+      "resolveSource": "DOCSTRING",
+      "verified": false
+    },
+    {
+      "id": 865,
+      "projectId": 95,
+      "caseId": 2153,
+      "kernel": "pytest",
+      "scriptPath": "tests/nic/rdma/test_im_rdm_001.py",
+      "nodeId": "tests/nic/rdma/test_im_rdm_001.py::test_im_rdm_001_rocev2_deploy",
+      "scriptSha256": "7b24dae906cbb42e2a29d41bb45162e4be512db8037800ef810a9902a1b06277",
+      "resolveSource": "DOCSTRING",
+      "verified": false
+    },
+    {
+      "id": 861,
+      "projectId": 95,
+      "caseId": 2182,
+      "kernel": "pytest",
+      "scriptPath": "tests/nic/performance/test_im_per_002.py",
+      "nodeId": "tests/nic/performance/test_im_per_002.py::test_im_per_002_tcp_single_port_throughput",
+      "scriptSha256": "2f0cfb1df41b853ff47dd0fb5570f76691277b78f64a41213261eb1b529effea",
+      "resolveSource": "DOCSTRING",
+      "verified": false
+    },
+    {
+      "id": 870,
+      "projectId": 95,
+      "caseId": 2118,
+      "kernel": "pytest",
+      "scriptPath": "tests/nic/virtualization/test_im_vir_001.py",
+      "nodeId": "tests/nic/virtualization/test_im_vir_001.py::test_im_vir_001_sriov_vf_create",
+      "scriptSha256": "415793568e504394127956b4c1ed60fad19d235c43c17476b681900296e9815c",
+      "resolveSource": "DOCSTRING",
+      "verified": false
+    }
+  ],
+  "progress": {
+    "runId": "EVAL10-20261121021112",
+    "stage": "FAILED",
+    "total": 10,
+    "finished": 0,
+    "passed": 0,
+    "failed": 0,
+    "elapsedMs": 1100,
+    "cancelRequested": false,
+    "terminal": true,
+    "source": "live"
+  },
+  "setRun": {
+    "status": 400,
+    "body": {
+      "code": 40001,
+      "codeName": "INVALID_ARGUMENT",
+      "message": "缺少参数：projectId",
+      "data": null,
+      "success": false
+    }
+  },
+  "launch": {
+    "status": 202,
+    "body": {
+      "code": 0,
+      "codeName": "OK",
+      "message": "OK",
+      "data": {
+        "runId": "EVAL10-20261121021112",
+        "mode": "fake",
+        "total": 10,
+        "accepted": true,
+        "progressUrl": "/api/projects/95/pytest/runs/EVAL10-20261121021112/progress"
+      },
+      "success": true
+    }
+  },
+  "report": {
+    "status": 200,
+    "body": {
+      "code": 0,
+      "codeName": "OK",
+      "message": "OK",
+      "data": {
+        "runId": "EVAL10-20261121021112",
+        "projectId": 95,
+        "state": "failed",
+        "exportable": false,
+        "metadataMissing": [
+          "SW_BUILD",
+          "BASELINE",
+          "OPERATOR",
+          "STARTED_AT",
+          "CASE_KIND"
+        ],
+        "metadata": {
+          "LINK": "nic",
+          "QA_PROJECT": "EHT",
+          "DUT": "fake-lab",
+          "CASE_ID": "EVAL10",
+          "RUN_ID": "EVAL10-20261121021112"
+        },
+        "counts": {
+          "pass": 0,
+          "fail": 0,
+          "skip": 0
+        },
+        "startedAt": "2026-11-21T02:11:13.791Z",
+        "finishedAt": "2026-11-21T02:11:14.780Z",
+        "criteriaConclusion": "UNDETERMINED",
+        "criteriaEvaluated": 0,
+        "criteriaMissingCount": 0,
+        "suiteCount": null
+      },
+      "success": true
+    }
+  },
+  "summary": {
+    "status": 200,
+    "body": {
+      "code": 0,
+      "codeName": "OK",
+      "message": "OK",
+      "data": {
+        "conclusion": "NO_DATA",
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "passRate": 0,
+        "durationMs": 989,
+        "topFailures": [],
+        "risks": [
+          "报告元数据缺失：SW_BUILD、BASELINE、OPERATOR、STARTED_AT、CASE_KIND",
+          "报告当前不可对外交付",
+          "没有可统计的用例结果"
+        ],
+        "generatedAt": "2026-11-21T02:11:17.074932855Z",
+        "flaky": 0
+      },
+      "success": true
+    }
+  },
+  "tree": {
+    "status": 200,
+    "body": {
+      "code": 0,
+      "codeName": "OK",
+      "message": "OK",
+      "data": {
+        "name": "EVAL10-20261121021112",
+        "status": "UNKNOWN",
+        "suites": [],
+        "cases": []
+      },
+      "success": true
+    }
+  }
+}

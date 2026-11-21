@@ -1,0 +1,336 @@
+{
+  "setId": 107,
+  "runId": "EVAL10B-20261121021611",
+  "nodeIds": [
+    "tests/nic/base/test_im_fun_014.py::test_im_fun_014_nic_info",
+    "tests/nic/base/test_im_fun_018.py::test_im_fun_018_iommu_state",
+    "tests/nic/base/test_im_fun_020.py::test_im_fun_020_pci_device_info",
+    "tests/nic/ethernet/test_im_net_002.py::test_im_net_002_module_ddm",
+    "tests/nic/ethernet/test_im_net_004.py::test_im_net_004_optics_identity",
+    "tests/nic/nic_data_integrity/test_im_nic_002.py::test_im_nic_002_tx_cache_consistency",
+    "tests/nic/nic_data_integrity/test_im_nic_004.py::test_im_nic_004_jumbo_sg_integrity",
+    "tests/nic/rdma/test_im_rdm_001.py::test_im_rdm_001_rocev2_deploy",
+    "tests/nic/performance/test_im_per_002.py::test_im_per_002_tcp_single_port_throughput",
+    "tests/nic/virtualization/test_im_vir_001.py::test_im_vir_001_sriov_vf_create"
+  ],
+  "progress": {
+    "runId": "EVAL10B-20261121021611",
+    "stage": "FINISHED",
+    "total": 10,
+    "finished": 10,
+    "passed": 10,
+    "failed": 0,
+    "elapsedMs": 26010,
+    "cancelRequested": false,
+    "terminal": true,
+    "source": "live"
+  },
+  "setRun": {
+    "status": 403,
+    "body": {
+      "code": 40301,
+      "codeName": "SAFETY_LEVEL_BLOCKED",
+      "message": "用例集 EVAL10-20261121021112 含禁止自动执行的用例（L2 高危 / LX 未判定按 L2 对待）：IM-NIC-002(LX), IM-NIC-004(LX), IM-VIR-001(LX)",
+      "data": null,
+      "success": false
+    }
+  },
+  "launch": {
+    "status": 202,
+    "body": {
+      "code": 0,
+      "codeName": "OK",
+      "message": "OK",
+      "data": {
+        "runId": "EVAL10B-20261121021611",
+        "mode": "fake",
+        "total": 10,
+        "accepted": true,
+        "progressUrl": "/api/projects/95/pytest/runs/EVAL10B-20261121021611/progress"
+      },
+      "success": true
+    }
+  },
+  "report": {
+    "status": 200,
+    "body": {
+      "code": 0,
+      "codeName": "OK",
+      "message": "OK",
+      "data": {
+        "runId": "EVAL10B-20261121021611",
+        "projectId": 95,
+        "state": "finished",
+        "exportable": false,
+        "metadataMissing": [
+          "SW_BUILD",
+          "BASELINE",
+          "OPERATOR",
+          "STARTED_AT",
+          "CASE_KIND"
+        ],
+        "metadata": {
+          "LINK": "nic",
+          "QA_PROJECT": "EHT",
+          "DUT": "fake-lab",
+          "CASE_ID": "EVAL10",
+          "RUN_ID": "EVAL10B-20261121021611"
+        },
+        "counts": {
+          "pass": 0,
+          "fail": 0,
+          "skip": 10
+        },
+        "startedAt": "2026-11-21T02:16:11.244Z",
+        "finishedAt": "2026-11-21T02:16:36.325Z",
+        "criteriaConclusion": "UNDETERMINED",
+        "criteriaEvaluated": 10,
+        "criteriaMissingCount": 10,
+        "suiteCount": 10
+      },
+      "success": true
+    }
+  },
+  "summary": {
+    "status": 200,
+    "body": {
+      "code": 0,
+      "codeName": "OK",
+      "message": "OK",
+      "data": {
+        "conclusion": "PASSED",
+        "total": 10,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 10,
+        "passRate": 0,
+        "durationMs": 25081,
+        "topFailures": [],
+        "risks": [
+          "报告元数据缺失：SW_BUILD、BASELINE、OPERATOR、STARTED_AT、CASE_KIND",
+          "报告当前不可对外交付",
+          "跳过 10 条：本次未采集逐条跳过原因，无法归因；如需按原因分类，需在执行采集阶段补充字段"
+        ],
+        "generatedAt": "2026-11-21T02:16:38.408415676Z",
+        "flaky": 0
+      },
+      "success": true
+    }
+  },
+  "tree": {
+    "status": 200,
+    "body": {
+      "code": 0,
+      "codeName": "OK",
+      "message": "OK",
+      "data": {
+        "name": "EVAL10B-20261121021611",
+        "status": "SKIP",
+        "suites": [
+          {
+            "name": "IM-FUN-014",
+            "status": "SKIP",
+            "suites": [],
+            "cases": [
+              {
+                "caseKey": "IM-FUN-014",
+                "name": "IM-FUN-014",
+                "verdict": "SKIP",
+                "durationMs": 409,
+                "failureMsg": null,
+                "commandText": "NONE",
+                "commandSource": "NONE",
+                "commandExitCode": null,
+                "keywords": [],
+                "retryCount": 0,
+                "flaky": false
+              }
+            ]
+          },
+          {
+            "name": "IM-FUN-018",
+            "status": "SKIP",
+            "suites": [],
+            "cases": [
+              {
+                "caseKey": "IM-FUN-018",
+                "name": "IM-FUN-018",
+                "verdict": "SKIP",
+                "durationMs": 26,
+                "failureMsg": null,
+                "commandText": "NONE",
+                "commandSource": "NONE",
+                "commandExitCode": null,
+                "keywords": [],
+                "retryCount": 0,
+                "flaky": false
+              }
+            ]
+          },
+          {
+            "name": "IM-FUN-020",
+            "status": "SKIP",
+            "suites": [],
+            "cases": [
+              {
+                "caseKey": "IM-FUN-020",
+                "name": "IM-FUN-020",
+                "verdict": "SKIP",
+                "durationMs": 26,
+                "failureMsg": null,
+                "commandText": "NONE",
+                "commandSource": "NONE",
+                "commandExitCode": null,
+                "keywords": [],
+                "retryCount": 0,
+                "flaky": false
+              }
+            ]
+          },
+          {
+            "name": "IM-NET-002",
+            "status": "SKIP",
+            "suites": [],
+            "cases": [
+              {
+                "caseKey": "IM-NET-002",
+                "name": "IM-NET-002",
+                "verdict": "SKIP",
+                "durationMs": 84,
+                "failureMsg": null,
+                "commandText": "NONE",
+                "commandSource": "NONE",
+                "commandExitCode": null,
+                "keywords": [],
+                "retryCount": 0,
+                "flaky": false
+              }
+            ]
+          },
+          {
+            "name": "IM-NET-004",
+            "status": "SKIP",
+            "suites": [],
+            "cases": [
+              {
+                "caseKey": "IM-NET-004",
+                "name": "IM-NET-004",
+                "verdict": "SKIP",
+                "durationMs": 21,
+                "failureMsg": null,
+                "commandText": "NONE",
+                "commandSource": "NONE",
+                "commandExitCode": null,
+                "keywords": [],
+                "retryCount": 0,
+                "flaky": false
+              }
+            ]
+          },
+          {
+            "name": "IM-NIC-002",
+            "status": "SKIP",
+            "suites": [],
+            "cases": [
+              {
+                "caseKey": "IM-NIC-002",
+                "name": "IM-NIC-002",
+                "verdict": "SKIP",
+                "durationMs": 123,
+                "failureMsg": null,
+                "commandText": "NONE",
+                "commandSource": "NONE",
+                "commandExitCode": null,
+                "keywords": [],
+                "retryCount": 0,
+                "flaky": false
+              }
+            ]
+          },
+          {
+            "name": "IM-NIC-004",
+            "status": "SKIP",
+            "suites": [],
+            "cases": [
+              {
+                "caseKey": "IM-NIC-004",
+                "name": "IM-NIC-004",
+                "verdict": "SKIP",
+                "durationMs": 50,
+                "failureMsg": null,
+                "commandText": "NONE",
+                "commandSource": "NONE",
+                "commandExitCode": null,
+                "keywords": [],
+                "retryCount": 0,
+                "flaky": false
+              }
+            ]
+          },
+          {
+            "name": "IM-PER-002",
+            "status": "SKIP",
+            "suites": [],
+            "cases": [
+              {
+                "caseKey": "IM-PER-002",
+                "name": "IM-PER-002",
+                "verdict": "SKIP",
+                "durationMs": 120,
+                "failureMsg": null,
+                "commandText": "NONE",
+                "commandSource": "NONE",
+                "commandExitCode": null,
+                "keywords": [],
+                "retryCount": 0,
+                "flaky": false
+              }
+            ]
+          },
+          {
+            "name": "IM-RDM-001",
+            "status": "SKIP",
+            "suites": [],
+            "cases": [
+              {
+                "caseKey": "IM-RDM-001",
+                "name": "IM-RDM-001",
+                "verdict": "SKIP",
+                "durationMs": 95,
+                "failureMsg": null,
+                "commandText": "NONE",
+                "commandSource": "NONE",
+                "commandExitCode": null,
+                "keywords": [],
+                "retryCount": 0,
+                "flaky": false
+              }
+            ]
+          },
+          {
+            "name": "IM-VIR-001",
+            "status": "SKIP",
+            "suites": [],
+            "cases": [
+              {
+                "caseKey": "IM-VIR-001",
+                "name": "IM-VIR-001",
+                "verdict": "SKIP",
+                "durationMs": 144,
+                "failureMsg": null,
+                "commandText": "NONE",
+                "commandSource": "NONE",
+                "commandExitCode": null,
+                "keywords": [],
+                "retryCount": 0,
+                "flaky": false
+              }
+            ]
+          }
+        ],
+        "cases": []
+      },
+      "success": true
+    }
+  }
+}
