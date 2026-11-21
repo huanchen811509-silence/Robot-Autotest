@@ -1454,3 +1454,12 @@ select option:disabled {
     --n-scrollbar-border-radius: 4px !important;
   }
 }
+
+/* 分页「上一页 / 下一页」禁用态用的是 naive 默认浅色底 rgb(250,250,252)，
+   暗色主题下页面底部会露出两个白方块（v5.35 用例集页实拍发现）。
+   只收底色、不动图标色：图标仍走 --n-item-text-color-disabled。 */
+.n-pagination .n-pagination-item {
+  /* !important 是必要的：naive-ui 的组件样式在运行时注入到 <head> 末尾，
+     同特异性的普通规则会被它盖回去（实测加了普通规则仍是 rgb(250,250,252)）。 */
+  background-color: transparent !important;
+}

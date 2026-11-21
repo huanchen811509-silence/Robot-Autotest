@@ -121,7 +121,7 @@ public class RunController {
                                               @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
                                               @RequestBody(required = false) TestSetRunRequest request) {
         TestSetRunRequest body = request == null
-                ? new TestSetRunRequest(null, null, null, null, null, null, null)
+                ? new TestSetRunRequest(null, null, null, null, null, null, null, null, null)
                 : request;
         String requestId = RunIdempotency.resolve(idempotencyKey, body.runRequestId(),
                 "test-sets/run", Instant.now(), props.isIdempotencyFingerprintEnabled(),
@@ -132,7 +132,7 @@ public class RunController {
         return ApiResponse.ok(testSetRuns.run(new TestSetRunService.TestSetRunCommand(
                 projectId, testSetId, body.environmentId(), body.deviceKeys(),
                 body.concurrency(), body.timeoutSeconds(), body.testTimeoutSeconds(),
-                body.includeTag(), requestId)));
+                body.includeTag(), requestId, body.mode(), body.confirmReal())));
     }
 
     /** 勾选台账用例直接执行（EXEC-02，v0.4 候选提前实现）：后端解析绑定，前端只传用例 id。 */
@@ -414,7 +414,11 @@ public class RunController {
                                     Integer timeoutSeconds,
                                     Integer testTimeoutSeconds,
                                     String includeTag,
-                                    String runRequestId) {
+                                    String runRequestId,
+                                    /** FR-UIE-09：pytest 工程的用例集执行需要模式；不传按 fake。 */
+                                    String mode,
+                                    /** FR-UIE-09：real 模式的显式授权位，与 pytest 工作台同一口径。 */
+                                    Boolean confirmReal) {
     }
 
     public record CaseRunRequest(List<Long> caseIds,

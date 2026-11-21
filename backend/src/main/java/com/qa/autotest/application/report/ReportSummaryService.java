@@ -95,8 +95,9 @@ public class ReportSummaryService {
         int total = report.passCount() + report.failCount() + report.skipCount();
         double passRate = total == 0 ? 0.0
                 : Math.round((double) report.passCount() * 1000 / total) / 10.0;
-        String conclusion = total == 0 ? "NO_DATA"
-                : report.failCount() == 0 ? "PASSED" : "FAILED";
+        // FR-UIE-12：判定收敛到 RunConclusion，全跳过不再被算成 PASSED。
+        String conclusion = com.qa.autotest.domain.report.RunConclusion.of(
+                report.passCount(), report.failCount(), report.skipCount());
 
         List<TopFailure> topFailures = new ArrayList<>();
         if (clusterView != null) {
@@ -272,12 +273,13 @@ public class ReportSummaryService {
         if (total == 0) {
             risks.add("没有可统计的用例结果");
         }
-        // v5.23.0 / W73-06+07（降级交付）：跳过用例在当前数据模型里没有逐条原因载体
-        // （test_result 的 SKIP 行 failure_msg/criteria_json 为空、pytest_case_step 无对应记录）。
-        // 如实告知数据边界，不编造五类原因与样例（那样会误导排障）。
+        // v5.35 / FR-UIE-13：跳过原因已随 test_result.failure_msg 入库（前缀「跳过：」），
+        // 这里不再声明「未采集」。执行器确实没给 <skipped message> 时列表为空，措辞保持诚实。
         if (report.skipCount() > 0) {
-            risks.add("跳过 " + report.skipCount()
-                    + " 条：本次未采集逐条跳过原因，无法归因；如需按原因分类，需在执行采集阶段补充字段");
+            risks.add("跳过 " + report.skipCount() + " 条：逐条原因见结果列表（执行器未提供时为空）");
+        }
+        if (report.passCount() == 0 && report.failCount() == 0 && report.skipCount() > 0) {
+            risks.add("本次全部跳过，没有任何一条给出可判定的执行结论");
         }
         return risks;
     }

@@ -309,6 +309,7 @@ public class PytestNicRunController {
             out.put("finished", snapshot.finished());
             out.put("passed", snapshot.passed());
             out.put("failed", snapshot.failed());
+            out.put("skipped", snapshot.skipped());
             out.put("elapsedMs", snapshot.elapsedMs());
             out.put("cancelRequested", snapshot.cancelRequested());
             out.put("terminal", snapshot.terminal());
@@ -327,6 +328,10 @@ public class PytestNicRunController {
         out.put("finished", row.totalTests());
         out.put("passed", row.passedTests());
         out.put("failed", row.failedTests());
+        // RunRecord 没有 skipped 字段（run 表有列、领域对象没建模），用总数反推：
+        // total = passed + failed + skipped 是本平台唯一的计数恒等式。
+        out.put("skipped", Math.max(0, row.totalTests()
+                - row.passedTests() - row.failedTests()));
         out.put("elapsedMs", row.startedAt() == null || row.finishedAt() == null
                 ? 0 : Duration.between(row.startedAt(), row.finishedAt()).toMillis());
         out.put("cancelRequested", row.state() == RunState.CANCELED);
@@ -697,6 +702,14 @@ public class PytestNicRunController {
         public void batchDone(int passed, int failed, int total) {
             if (runId != null) {
                 progress.batchDone(runId, passed, failed, total);
+            }
+        }
+
+        /** FR-UIE-11：跳过单列记账，别混进通过数。 */
+        @Override
+        public void batchDone(int passed, int failed, int skipped, int total) {
+            if (runId != null) {
+                progress.batchDone(runId, passed, failed, skipped, total);
             }
         }
 

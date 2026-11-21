@@ -144,7 +144,7 @@ public class CaseController {
                                 step.expectation()))
                         .toList(),
                 null, null, null,
-                tc.domainTag(), tc.reviewStatus(), tc.capability(), "UNBOUND"));
+                tc.domainTag(), tc.reviewStatus(), tc.capability(), "UNBOUND", null, null, null));
     }
 
     @PostMapping("/cases")

@@ -133,7 +133,23 @@ async function mountView(): Promise<HTMLElement> {
 }
 
 function rows(root: HTMLElement): HTMLElement[] {
-  return [...root.querySelectorAll<HTMLElement>('.n-data-table-tbody .n-data-table-tr')]
+  // v5.35 / FR-UIE-01：集合列表从 DataTable 换成全宽表格（table.set-table）。
+  return [...root.querySelectorAll<HTMLElement>('table.set-table tbody tr')]
+}
+
+/** 打开某一行的「更多」菜单（编辑 / 立即执行 / 删除都收在这里）。 */
+async function openRowMenu(root: HTMLElement, rowIndex: number): Promise<void> {
+  rowButton(root, rowIndex, i18n.global.t('w57.globalCaseSets.more')).click()
+  await nextTick()
+}
+
+/** 取当前展开的菜单项。 */
+function menuItem(root: HTMLElement, text: string): HTMLButtonElement {
+  const button = [...root.querySelectorAll<HTMLButtonElement>('.menu button')].find(
+    (item) => item.textContent?.trim() === text,
+  )
+  if (!button) throw new Error(`menu item not found: ${text}`)
+  return button
 }
 
 function rowButton(root: HTMLElement, rowIndex: number, text: string): HTMLButtonElement {
@@ -273,7 +289,8 @@ describe('CaseSetsView 列表', () => {
 
   it('点「编辑」预填原值，且集合编号不可改', async () => {
     const root = await mountView()
-    rowButton(root, 1, i18n.global.t('caseSets.edit')).click()
+    await openRowMenu(root, 1)
+    menuItem(root, i18n.global.t('caseSets.edit')).click()
     await nextTick()
 
     const card = root.querySelector<HTMLElement>('.form-card')
@@ -701,7 +718,8 @@ describe('CaseSetsView 成员批量动作与二次确认（W62-05/06）', () => 
 
   it('删除集合的确认文案含集合名与成员数', async () => {
     const root = await mountView()
-    const remove = rowButton(root, 0, i18n.global.t('common.delete'))
+    await openRowMenu(root, 0)
+    const remove = menuItem(root, i18n.global.t('common.delete'))
     remove.click()
     // 文案由 confirmAction 的第一个参数给出；这里断言 hook 收到了弹窗请求
     await new Promise((resolve) => setTimeout(resolve, 0))

@@ -214,9 +214,17 @@ public class ReportIngestService {
                 case "FAIL" -> fail++;
                 default -> skip++;
             }
-            String message = "FAIL".equals(status)
-                    ? item.message() == null ? "pytest: " + item.status() : item.message()
-                    : null;
+            // FR-UIE-13：SKIP 也要留原因。junit 的 <skipped message="Plan-only…"> 一直在产物里，
+            // 但此前只有 FAIL 才写 failure_msg，报告只能如实说「未采集跳过原因」。
+            // 加前缀是为了在同一个文本列里区分「失败原因」与「跳过原因」，不必新增列。
+            String message;
+            if ("FAIL".equals(status)) {
+                message = item.message() == null ? "pytest: " + item.status() : item.message();
+            } else if ("SKIP".equals(status)) {
+                message = item.message() == null ? null : "跳过：" + item.message();
+            } else {
+                message = null;
+            }
             // v3.9.0 / FR-v3.9-02：命令三列随用例一起入库，报告页才有「下发了什么」可看。
             // v5.6.0 / FR-v5.6-24：重试两列同样入库——报告的失败数、抖动统计都从
             // test_result 读，不落库就只能在执行页看到「复测过了」，报告里看不到。

@@ -251,3 +251,32 @@
 | pytest 分派绕过安全闸 | 复用同一 `SafetyLevel` 判定，real 仍需 `confirmReal`；专项 TC |
 | 报告结论改动影响历史 | 只对新入库 run 生效，历史快照不重算 |
 | 门禁期间改工作树造成假红 | 跑门禁前 `git status` 干净；收口前还原四份已跟踪副产物 |
+
+---
+
+## 9. 实施状态（2026-11-21）
+
+| WBS | 状态 | 实际改动 |
+|---|---|---|
+| W-UIE-01 | 达成 | 未新造壳组件，改为给 `CaseSetWorkspace` 加 `drawer` 开关（两页恒真），列表铺满、抽屉浮层 |
+| W-UIE-02 | 达成 | `CaseSetsView` 列表换 5 列静态表；编辑/立即执行/删除进「更多」；筛选改工具栏折叠区（保留 URL 直达） |
+| W-UIE-03 | 达成 | `GlobalCaseSetsView` 重写版式；成员详情改浮层（`CaseDetailPanel source=global`） |
+| W-UIE-04 | 达成 | 新增 `member-picker` 选择器；复用 `POST /{id}/items` 批量端点 |
+| W-UIE-05 | 降级 | 项目页真实渲染；全局页去列改说明（理由见评估报告 §9.4） |
+| W-UIE-06 | 达成 | 空态唯一；平台库 `<details>` 折叠 |
+| W-UIE-07 | 达成 | `TestSetRunService` 分流 + `PytestSetRunLauncher`（同步执行 + 产物登记 + 入库 + 证据） |
+| W-UIE-08 | 达成 | 复用 `SafetyLevel` 与 real 闸；单测 8 条通过 |
+| W-UIE-09 | 部分 | 403 结构化清单达成；集行 LX 角标未做（进遗留） |
+| W-UIE-10 | 达成 | `countJunit` 四元组 + 进度快照 `skipped` |
+| W-UIE-11 | 达成 | 新增 `RunConclusion`；详情/摘要/列表同源 |
+| W-UIE-12 | 达成 | `PytestKernel` 取 `<skipped message>`；入库加「跳过：」前缀 |
+| W-UIE-13 | 达成 | 表单 9 项 + RUN_ID 自动；缺项提示 |
+| W-UIE-14 | 达成 | `V11_94`（表+列）+ `V11_95`（审计列）+ 两份 down |
+| W-UIE-15 | 达成 | `CaseBackfillService`：只填空字段、无内容可填即跳过、幂等 |
+| W-UIE-16 | 达成 | preview/apply 两个端点，写操作要 `CASE:UPDATE` |
+| W-UIE-17 | 达成 | 来源行 + 三态文案 + 本地覆盖徽章 |
+| W-UIE-18 | 达成 | 门禁 `FAILS=0`；前端 1272 单测通过；探针三档全绿 |
+| W-UIE-19 | 达成 | 本节与四份文档回写 |
+
+**偏差**：19.5 人日估算未按日历执行（当日连续完成）；实际新增 1 个应用服务、1 个控制器、
+2 条迁移、4 个工具白名单/判据调整，未改 `test_set` / `test_case` 之外的既有列。

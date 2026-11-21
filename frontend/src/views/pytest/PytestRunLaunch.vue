@@ -40,8 +40,20 @@ const onlySelected = ref(false)
 const selected = ref<string[]>([])
 const runIdInput = ref('')
 // W73-02：本次执行携带的报告元数据（7 项手填；RUN_ID/STARTED_AT/CASE_KIND 由执行上下文自动补）
-const META_FIELDS = ['CASE_ID', 'QA_PROJECT', 'DUT', 'LINK', 'SW_BUILD', 'BASELINE', 'OPERATOR'] as const
+/**
+ * FR-UIE-13：字段集必须与后端 MetadataGate.REQUIRED 十项一致。
+ *
+ * 此前只有 7 项（缺 STARTED_AT / CASE_KIND），而导出门禁要 10 项 —— 用户把能填的都填满，
+ * 报告依然「不可对外交付」，且要到点导出时才知道。表单在这里补齐，并在提交前提示。
+ */
+const META_FIELDS = ['CASE_ID', 'QA_PROJECT', 'DUT', 'LINK', 'SW_BUILD', 'BASELINE',
+  'OPERATOR', 'STARTED_AT', 'CASE_KIND'] as const
+/** RUN_ID 由后端按 runId 自动落库，前端不填，但门禁把它算进十项。 */
+const META_AUTO = ['RUN_ID'] as const
 const meta = ref<Record<string, string>>(Object.fromEntries(META_FIELDS.map((k) => [k, ''])))
+const missingMeta = computed(() =>
+  [...META_AUTO, ...META_FIELDS].filter((key) => !String(meta.value[key] ?? '').trim()),
+)
 const metaOpen = ref(false)
 const submitting = ref(false)
 const errorText = ref('')
@@ -299,6 +311,13 @@ onBeforeUnmount(stopPolling)
           {{ t('pytestLaunch.metaFilled', { count: Object.values(meta).filter((v) => v.trim()).length }) }}
         </span>
       </button>
+      <p
+        v-if="missingMeta.length"
+        class="muted small meta-hint"
+        data-test="meta-missing"
+      >
+        {{ t('pytestLaunch.metaMissingHint', { count: missingMeta.length, keys: missingMeta.join('、') }) }}
+      </p>
       <div v-if="metaOpen" class="meta-grid">
         <label v-for="key in META_FIELDS" :key="key" class="field">
           <span>{{ key }}</span>

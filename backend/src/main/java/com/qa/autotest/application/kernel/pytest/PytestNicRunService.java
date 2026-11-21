@@ -86,6 +86,11 @@ public class PytestNicRunService {
             }
 
             @Override
+            public void batchDone(int passed, int failed, int skipped, int total) {
+                // 同步执行不记账
+            }
+
+            @Override
             public boolean cancelRequested() {
                 return false;
             }
@@ -96,6 +101,16 @@ public class PytestNicRunService {
 
         /** 一批结束：本批通过 / 失败 / 总数。 */
         void batchDone(int passed, int failed, int total);
+
+        /**
+         * 一批结束（含跳过数，FR-UIE-11）。
+         *
+         * <p>默认退化成三参版本：仍只看通过/失败的实现（含既有测试桩）不用改；
+         * 但进度登记表必须覆盖它，否则「跳过」会被记成「通过」。
+         */
+        default void batchDone(int passed, int failed, int skipped, int total) {
+            batchDone(passed, failed, total);
+        }
 
         /** 调用方是否已请求取消。每批之间检查一次，返回 true 时尽快停下。 */
         boolean cancelRequested();
@@ -212,7 +227,7 @@ public class PytestNicRunService {
             lastExit = runOne(request, plan, firstRound);
             batches++;
             int[] counts = countJunit(plan.junitFile());
-            progress.batchDone(counts[0], counts[1], counts[2]);
+            progress.batchDone(counts[0], counts[1], counts[2], counts[3]);
             if (lastExit != 0) {
                 break;
             }
@@ -292,9 +307,15 @@ public class PytestNicRunService {
         }
         if (retriesRun > 0) {
             // 进度条分母是「计划条数」，复测不该把它翻倍：只把最终真实结论推一次。
+            int retrySkipped = (int) normalized.run().cases().stream()
+                    .filter(one -> !one.status().isFailure()
+                            && one.status() != com.qa.autotest.domain.kernel.CaseStatus.PASS)
+                    .count();
             progress.batchDone((int) normalized.run().cases().stream()
-                            .filter(one -> !one.status().isFailure()).count(),
-                    failures(normalized.run()).size(), normalized.run().total());
+                            .filter(one -> !one.status().isFailure()).count()
+                            - retrySkipped,
+                    failures(normalized.run()).size(), retrySkipped,
+                    normalized.run().total());
         }
 
         // 计划 vs 实际（W54-07）：参数化用例缺参数时不会报错、只会少几条结果，
@@ -449,15 +470,21 @@ public class PytestNicRunService {
     }
 
     /**
-     * 数一份 junit 的通过 / 失败 / 总数，用于进度记账。
+     * 数一份 junit 的通过 / 失败 / 跳过 / 总数，用于进度记账。
      *
      * <p>失败含 {@code failure} 与 {@code error}：对使用者来说「挂了」是同一件事，
      * 进度条没必要区分它们；真实分类由归一器负责，它读的是完整产物。
-     * 文件还没写出来时返回全 0——进度不该因为「文件暂时不存在」而报错。
+     *
+     * <p><b>{@code skipped} 必须单列</b>（FR-UIE-11）：此前 {@code passed = total - failed}
+     * 会把 skip 算成 pass。fake 演练 10 条全 skip 时，页面显示「通过 10」，
+     * 报告页却是「通过 0 / 跳过 10」，同一份执行两种结论。返回四元组后
+     * {@code passed + failed + skipped == total} 恒成立。
+     *
+     * <p>文件还没写出来时返回全 0——进度不该因为「文件暂时不存在」而报错。
      */
     private static int[] countJunit(Path file) {
         if (file == null || !Files.isRegularFile(file)) {
-            return new int[] {0, 0, 0};
+            return new int[] {0, 0, 0, 0};
         }
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -466,16 +493,19 @@ public class PytestNicRunService {
             org.w3c.dom.NodeList cases = doc.getElementsByTagName("testcase");
             int total = cases.getLength();
             int failed = 0;
+            int skipped = 0;
             for (int i = 0; i < total; i++) {
                 org.w3c.dom.Element one = (org.w3c.dom.Element) cases.item(i);
                 if (one.getElementsByTagName("failure").getLength() > 0
                         || one.getElementsByTagName("error").getLength() > 0) {
                     failed++;
+                } else if (one.getElementsByTagName("skipped").getLength() > 0) {
+                    skipped++;
                 }
             }
-            return new int[] {total - failed, failed, total};
+            return new int[] {total - failed - skipped, failed, skipped, total};
         } catch (Exception ex) {
-            return new int[] {0, 0, 0};
+            return new int[] {0, 0, 0, 0};
         }
     }
 

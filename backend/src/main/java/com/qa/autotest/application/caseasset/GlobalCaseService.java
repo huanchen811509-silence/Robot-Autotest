@@ -130,7 +130,11 @@ public class GlobalCaseService {
             String scriptPath, String scriptName, String scriptNodeId, String bindingState,
             // v5.11.0 / FR-v5.11-04：项目用例表的这三列在库里一直都在（V2_3__case_fields.sql），
             // 详情 DTO 一直没带它们，导致「表格列 ⊆ 详情字段」这条不变量事实上是假的。
-            String domainTag, String reviewStatus, String capability) {
+            String domainTag, String reviewStatus, String capability,
+            // FR-UIE-08：内容来源与「能不能继承」。三态文案靠它们区分：
+            // 已回填（inheritedFrom 非空）/ 未回填但公共库有值（sourceHasContent=true）/
+            // 公共库也没有（sourceHasContent=false）。公共库本体这三项恒为 null。
+            Long inheritedFrom, String inheritedFromCode, Boolean sourceHasContent) {
     }
 
     /** OPT-07 / FR-49-28：全选一级 / 全选二级 / 跨表交集三种筛选共用条件。 */
@@ -302,7 +306,7 @@ public class GlobalCaseService {
                 SELECT id, case_code, external_id, title, category_l1, category_l2, priority,
                        safety_level, lifecycle_status, version_no, source_sheet, content_sha,
                        a_side_command, b_side_command, switch_config, test_result, test_resource,
-                       case_kind, precondition, expected, source,
+                       case_kind, precondition, expected, source, inherited_from,
                        domain_tag, review_status, capability
                   FROM test_case WHERE id = ? AND project_id = ?
                 """, caseId, projectId);
@@ -326,6 +330,34 @@ public class GlobalCaseService {
                 rs.getString("expectation")), caseId);
         CaseScriptView script = scriptLookup == null
                 ? CaseScriptView.empty(null) : scriptLookup.one(projectId, caseId);
+        // FR-UIE-08：项目用例才需要「已从哪继承 / 能不能继承」；公共库本体不查自己。
+        Object inheritedRaw = r.get("inherited_from");
+        Long inheritedFrom = inheritedRaw == null ? null
+                : ((Number) inheritedRaw).longValue();
+        String inheritedCode = null;
+        Boolean sourceHasContent = null;
+        if (projectId != platform.id() && notBlank(text(r.get("case_code")))) {
+            List<Map<String, Object>> source = jdbc.queryForList("""
+                    SELECT id, case_code, precondition, expected, case_kind,
+                           (SELECT COUNT(*) FROM test_case_step s2
+                             WHERE s2.test_case_id = t2.id) AS steps
+                      FROM test_case t2
+                     WHERE project_id = ? AND case_code = ? AND deleted_at IS NULL
+                     ORDER BY id LIMIT 1
+                    """, platform.id(), text(r.get("case_code")));
+            if (!source.isEmpty()) {
+                Map<String, Object> one = source.get(0);
+                inheritedCode = text(one.get("case_code"));
+                sourceHasContent = notBlank(text(one.get("precondition")))
+                        || notBlank(text(one.get("expected")))
+                        || notBlank(text(one.get("case_kind")))
+                        || ((Number) one.get("steps")).intValue() > 0;
+            } else {
+                // 公共库连同编号用例都没有：显式 false，页面才能说「公共库也没有」，
+                // 而不是留空让人以为是没查。
+                sourceHasContent = false;
+            }
+        }
         // 凭据类字段只允许 keyMasked 前缀，且只放掩码；绝不把任何凭据原文放进响应。
         return new CaseDetailView(
                 ((Number) r.get("id")).longValue(), text(r.get("case_code")),
@@ -341,7 +373,8 @@ public class GlobalCaseService {
                 text(r.get("case_kind")), text(r.get("precondition")), text(r.get("expected")),
                 steps, script.scriptPath(), script.scriptName(), script.nodeId(),
                 script.bindingState(),
-                text(r.get("domain_tag")), text(r.get("review_status")), text(r.get("capability")));
+                text(r.get("domain_tag")), text(r.get("review_status")), text(r.get("capability")),
+                inheritedFrom, inheritedCode, sourceHasContent);
     }
 
     // ---------------------------------------------------------------- 分类

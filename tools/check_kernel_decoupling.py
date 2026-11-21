@@ -103,6 +103,10 @@ def check_removable() -> list[str]:
         # EHT-14：Fake 执行入口也在接口层，只做「请求校验 → 调编排 → 落 RunRecord」，
         # 不碰 RF 命令构造与预检 robot 分支；那两条红线由本脚本前三条断言独立守。
         "PytestNicRunController.java",
+        # v5.35 / FR-UIE-09：用例集 → pytest 的执行编排。它只在「项目内核=pytest」分支里
+        # 调用适配包的执行/归一/证据服务，等价于控制器那条链路的应用层收口；
+        # 不碰 RF 命令构造，也不改预检 robot 分支（两条红线由本脚本前三条断言独立守）。
+        "PytestSetRunLauncher.java",
         # v5.6.0 / FR-v5.6-21：命令索引由报告层补录（框架证据在 report 侧读），
         # 它只消费 NormalizeResult、不碰命令构造与预检 robot 分支——
         # 适配层不反向依赖 report 由本脚本第一条断言独立守住。

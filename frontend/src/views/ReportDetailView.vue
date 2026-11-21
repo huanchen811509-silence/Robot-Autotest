@@ -67,16 +67,33 @@ const error = ref<ErrorLine | null>(null)
  * 这里刻意**不**根据 passCount / failCount 推结论：v5.7.0 之前正是这么干的，
  * 结果是「失败数 0 就显示通过」，而判据可能一条都没声明。
  */
-const conclusion = computed(() => (detail.value?.criteriaConclusion ?? 'UNDETERMINED').toUpperCase())
+/**
+ * 结论（FR-UIE-12）：读**运行级** conclusion，与 /summary 同源。
+ *
+ * <p>此前这里读的是判据汇总（criteriaConclusion），于是同一份 run 会出现
+ * 「摘要说 PASSED、详情说未判定、通过率 0%」三种说法。运行级结论只有一处真源
+ * （后端 RunConclusion），判据汇总降为下面那行补充说明——它回答的是
+ * 「证据够不够」，不是「这次算不算通过」。
+ */
+const conclusion = computed(() => (detail.value?.conclusion ?? 'NO_DATA').toUpperCase())
 const conclusionTone = computed<StatusTone>(() => {
-  if (conclusion.value === 'PASS') return 'ok'
-  if (conclusion.value === 'FAIL') return 'fail'
+  if (conclusion.value === 'PASSED') return 'ok'
+  if (conclusion.value === 'FAILED') return 'fail'
+  if (conclusion.value === 'INCONCLUSIVE') return 'warn'
   return 'neutral'
 })
 const conclusionLabel = computed(() => t(`reports.conclusion.${conclusion.value}`))
+const criteriaLabel = computed(() =>
+  t(`reports.conclusion.${(detail.value?.criteriaConclusion ?? 'UNDETERMINED').toUpperCase()}`),
+)
 const conclusionNote = computed(() => {
-  if (conclusion.value === 'UNDETERMINED') return t('reports.conclusion.undeterminedNote')
-  return t('reports.conclusion.counts', {
+  if (conclusion.value === 'INCONCLUSIVE') {
+    return t('reports.conclusion.inconclusiveNote', {
+      skipped: detail.value?.counts?.skip ?? 0,
+    })
+  }
+  return t('reports.conclusion.criteriaLine', {
+    label: criteriaLabel.value,
     evaluated: detail.value?.criteriaEvaluated ?? 0,
     missing: detail.value?.criteriaMissingCount ?? 0,
   })
@@ -775,6 +792,7 @@ watch(granularity, () => {
         :loading="summaryLoading"
         :error="summaryError?.summary ?? ''"
         :criteria-conclusion="detail.criteriaConclusion"
+        :run-conclusion="detail.conclusion ?? ''"
         @retry="loadSummary"
         @show-failures="scrollToFailures"
       />

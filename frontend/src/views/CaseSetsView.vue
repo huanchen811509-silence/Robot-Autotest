@@ -6,7 +6,7 @@
  * 但一直没有页面入口，用户只能通过执行计划间接触达。本页把这条链路补全：
  * 左侧维护集合本身，右侧「管理用例」维护成员与顺序，可一键按集合发起运行。
  */
-import { computed, h, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter, type LocationQueryRaw } from 'vue-router'
 import CaseSetWorkspace from '@/components/CaseSetWorkspace.vue'
 import DetailDock from '@/components/DetailDock.vue'
@@ -14,17 +14,15 @@ import CaseScriptLink from '@/components/CaseScriptLink.vue'
 import CaseSetMemberDetail from '@/components/CaseSetMemberDetail.vue'
 import { useDetailDock } from '@/composables/useDetailDock'
 import { useI18n } from 'vue-i18n'
-import { NButton, NCheckbox, NInput, NPagination, NSelect, type DataTableColumns } from 'naive-ui'
-import ColumnFilter from '@/components/ColumnFilter.vue'
+import { NButton, NInput, NPagination, NSelect } from 'naive-ui'
 import { useTableFilters, type TableFilterColumn } from '@/composables/useTableFilters'
-import { useServerSelection } from '@/composables/useServerSelection'
+import ColumnFilter from '@/components/ColumnFilter.vue'
 import { useListPageSize, type PageSize } from '@/composables/useListPageSize'
 import { caseApi, caseSetApi, assetVersionApi, platformCaseSetApi,
          type TestCase, type TestSet, type AssetVersionView, type AssetDiffRow,
          type PlatformCaseSetRow, type SyncStrategy } from '@/api/cases'
 import { executionApi } from '@/api/execution'
 import { useAuthStore } from '@/stores/auth'
-import DataTable from '@/components/DataTable.vue'
 import ErrorLineView from '@/components/ErrorLine.vue'
 import FormField from '@/components/FormField.vue'
 import { localizeError, type ErrorLine } from '@/utils/errors'
@@ -120,6 +118,7 @@ const memberFilters = useTableFilters({
   prefix: 'member_',
   columns: ['caseCode', 'priority', 'bindingState'],
 })
+const memberIsFiltered = memberFilters.isFiltered
 const memberFacets = memberFilters.facets
 const memberTexts = memberFilters.texts
 const memberFilterColumns: TableFilterColumn[] = [
@@ -178,116 +177,45 @@ const visibleItems = computed<TestCase[]>(() => {
   })
 })
 
-/** 集合表筛选：走 DataTable 的可选 filterable 弹层，状态仍落在 URL（prefix `sets_`）。 */
-const setsFilters = useTableFilters({ prefix: 'sets_', columns: ['setCode', 'name'] })
-const setsFilterColumns: TableFilterColumn[] = [
-  { key: 'setCode', title: t('w57.caseSets.colSetCode'), mode: 'text' },
-  { key: 'name', title: t('w57.caseSets.colName'), mode: 'text' },
-]
-const setsFilterValues = computed<Record<string, string[]>>(() => {
-  const out: Record<string, string[]> = {}
-  for (const [key, value] of Object.entries(setsFilters.texts.value)) out[key] = [value]
-  return out
-})
-const memberIsFiltered = memberFilters.isFiltered
-function onSetsFilterChange(next: Record<string, string[]>): void {
-  for (const column of setsFilterColumns) {
-    setsFilters.setText(column.key, next[column.key]?.[0] ?? '')
-  }
-  // 筛选条件交给服务端：回到第 1 页重新查询。本地再筛一遍会把「第 2 页无结果」变成假空。
-  page.value = 1
-  void load()
-}
+/**
+ * 服务端查询参数（v5.35 / FR-UIE-01）。
+ *
+ * 列筛选弹层与「按条件全选」在改版中取消：它们在 320px 中栏里既占宽度又无从使用，
+ * 而且「选集合」这个动作本身没有批量语义（批量动作在成员表里）。列表只按关键词查。
+ */
+// URL 直达要能重现筛选：优先 route.query，浏览器直接粘贴链接时再读 location.search
+// （单测里用 history.replaceState 改地址，router 未必已同步）。
+const initialQuery = new URLSearchParams(window.location.search)
+const filterCode = ref(String(route.query.sets_t_setCode ?? initialQuery.get('sets_t_setCode') ?? ''))
+const filterName = ref(String(route.query.sets_t_name ?? initialQuery.get('sets_t_name') ?? ''))
 
-/** 服务端筛选参数：与 `caseSetApi.page` 同形，条件选择也复用它。 */
 const setsQueryParams = computed<Record<string, string | undefined>>(() => ({
   keyword: keyword.value.trim() || undefined,
-  setCode: (setsFilters.texts.value.setCode ?? '').trim() || undefined,
-  name: (setsFilters.texts.value.name ?? '').trim() || undefined,
+  setCode: filterCode.value.trim() || undefined,
+  name: filterName.value.trim() || undefined,
 }))
 
-/** 服务端选择：全选用筛选条件表达，跨页生效；>10000 需二次确认。 */
-const pageIds = computed<number[]>(() => sets.value.map((set) => set.id))
-const selection = useServerSelection(pageIds)
-const selectionCount = selection.count
-const awaitingSelectAllConfirm = selection.awaitingConfirm
-
-function selectAllMatching(): void {
-  selection.requestSelectAllMatching(setsQueryParams.value, total.value)
-}
-function clearSelection(): void {
-  selection.clear()
-}
-
-watch(setsFilters.revision, () => {
-  // 筛选条件一变，旧的「按条件全选」必须作废（W57-16）
-  selection.resetForFilters(setsQueryParams.value)
+/** 精确筛选改到工具栏（原先是 DataTable 的列筛选弹层，320px 中栏里点不开）。 */
+function applyFilters(): void {
   page.value = 1
   void load()
-})
+}
 
-/** 写操作判定（v5.21.0 / W71-05）：行内按钮走 h()，用不了 v-can，与模板共用同一 composable。 */
+function clearFilters(): void {
+  filterCode.value = ''
+  filterName.value = ''
+  page.value = 1
+  void load()
+}
+
+/** 写操作判定（v5.21.0 / W71-05）：行内按钮与模板共用同一 composable。 */
 const { can } = useCan()
 
-const columns = computed<DataTableColumns<TestSet>>(() => [
-  {
-    title: t('w57.caseSets.colSelect'),    key: '__select',
-    width: 64,
-    render: (row) =>
-      h(NCheckbox, {
-        checked: selection.isSelected(row.id),
-        'onUpdate:checked': () => selection.toggle(row.id),
-        'aria-label': t('w57.caseSets.selectRow', { name: row.name }),
-      }),
-  },
-  { title: t('caseSets.setCode'), key: 'setCode', width: 160 },
-  { title: t('caseSets.name'), key: 'name', minWidth: 200 },
-  {
-    title: t('caseSets.description'),
-    key: 'description',
-    minWidth: 240,
-    render: (row) => row.description || EMPTY,
-  },
-  {
-    title: t('common.actions'),
-    key: 'actions',
-    // W69-04/W69-05：三栏版式下表宽 964 而容器只有 764，操作列原被右栏盖住
-    fixed: 'right',
-    width: 300,
-    render: (row) =>
-      // v5.21.0 / FR-v5.21-03 / W71-05：viewer 一个写按钮都不渲染。
-      // 四个按钮各自判码：管理/编辑/删除属 case:write，立即执行属 execution:write
-      // （后端分别是 CASE:UPDATE/DELETE 与 EXECUTION:CREATE，不共用一把钥匙）。
-      can('case:write') || can('execution:write')
-        ? h('div', { class: 'row-actions' }, [
-            can('case:write') &&
-              h(
-                NButton,
-                { text: true, type: 'primary', size: 'small', onClick: () => void openItems(row) },
-                { default: () => t('caseSets.manage') },
-              ),
-            can('case:write') &&
-              h(
-                NButton,
-                { text: true, size: 'small', onClick: () => openEdit(row) },
-                { default: () => t('caseSets.edit') },
-              ),
-            can('execution:write') &&
-              h(
-                NButton,
-                { text: true, size: 'small', onClick: () => void runNow(row) },
-                { default: () => t('caseSets.runNow') },
-              ),
-            can('case:write') &&
-              h(
-                NButton,
-                { text: true, type: 'error', size: 'small', onClick: () => void removeSet(row) },
-                { default: () => t('common.delete') },
-              ),
-          ])
-        : h('span', { class: 'row-actions row-actions--readonly' }, '—'),
-  },
-])
+/** 行内「更多」菜单：同一时刻只开一个。 */
+const setMenuId = ref<number | null>(null)
+function toggleSetMenu(id: number): void {
+  setMenuId.value = setMenuId.value === id ? null : id
+}
 
 async function load(): Promise<void> {
   error.value = null
@@ -443,6 +371,7 @@ async function loadItems(): Promise<void> {
 }
 
 async function openItems(row: TestSet): Promise<void> {
+  setMenuId.value = null
   activeSet.value = row
   selectedCaseId.value = null
   message.value = ''
@@ -879,6 +808,16 @@ void load()
 
     <p class="muted">{{ t('caseSets.subtitle') }}</p>
 
+    <details class="list-filters">
+      <summary>{{ t('common.filter') }}</summary>
+      <div class="toolbar">
+        <NInput v-model:value="filterCode" clearable style="width: 180px" :placeholder="t('caseSets.setCode')" />
+        <NInput v-model:value="filterName" clearable style="width: 200px" :placeholder="t('caseSets.name')" />
+        <NButton size="small" @click="applyFilters">{{ t('common.search') }}</NButton>
+        <NButton size="small" quaternary @click="clearFilters">{{ t('common.clearFilters') }}</NButton>
+      </div>
+    </details>
+
     <ErrorLineView v-if="error" :error="error" />
     <p v-if="message" class="text-ok">{{ message }}</p>
 
@@ -914,86 +853,90 @@ void load()
 
     <!-- v5.12 / W62-02：中栏集合列表 + 右工作区成员；壳只管形态，不碰数据。 -->
     <!-- W69-05：窄屏下右栏是抽屉，收起抽屉等价于收起当前集合（单一关闭语义）。 -->
-    <CaseSetWorkspace :active="activeSet !== null" @close="closeItems">
+    <CaseSetWorkspace :active="activeSet !== null" :drawer="true" @close="closeItems">
       <template #nav>
-    <!-- W57-16：全选用筛选条件表达；>10000 命中先二次确认，不静默选中上万条。 -->
-    <div class="batch-bar" data-testid="case-sets-batch">
-      <template v-if="awaitingSelectAllConfirm">
-        <span class="muted">
-          {{ t('w57.caseSets.confirmAllHint', { count: selection.confirmThreshold }) }}
-        </span>
-        <NButton size="small" type="primary" @click="selection.confirmSelectAllMatching()">
-          {{ t('w57.caseSets.confirmAll') }}
-        </NButton>
-        <NButton size="small" quaternary @click="selection.cancelSelectAllMatching()">{{ t('w57.caseSets.cancel') }}</NButton>
-      </template>
-      <template v-else>
-        <span v-if="selectionCount > 0" class="muted">{{ t('w57.caseSets.selectedCount', { count: selectionCount }) }}</span>
-        <NButton size="small" quaternary @click="selectAllMatching">{{ t('w57.caseSets.selectAllMatching') }}</NButton>
-        <NButton v-if="selectionCount > 0" size="small" quaternary @click="clearSelection">
-          {{ t('w57.caseSets.clear') }}
-        </NButton>
-      </template>
-    </div>
-
     <p class="muted list-total" data-testid="case-sets-total">
       {{ t('caseSets.totalCount', { count: total }) }}
     </p>
 
-    <DataTable
-      :columns="columns"
-      :data="sets"
-      :loading="loading"
-      :row-key="(row: TestSet) => row.id"
-      :empty-title="t('caseSets.empty')"
-      :empty-description="projectId ? t('caseSets.emptyHint') : t('overview.noProject')"
-      empty-icon="cases"
-      :error="Boolean(error)"
-      :forbidden="Boolean(error?.forbidden)"
-      :empty-illustration="setsFilters.isFiltered.value ? 'no-result' : 'no-data'"
-      filterable
-      :filter-columns="setsFilterColumns"
-      :filters="setsFilterValues"
-      @update:filters="onSetsFilterChange"
-    >
-      <!-- v5.20.0 / FR-v5.20-01：无结果 → 清筛选；加载失败 → 重试 -->
-      <!-- v5.22.0 / FR-v5.22-06 判据 06-2：真·空列表 → 三个动作（新建 / 导入 / 查看样例） -->
-      <template #emptyAction>
-        <NButton v-if="setsFilters.isFiltered.value" size="small" @click="setsFilters.clearAll()">
-          {{ t('common.clearFilters') }}
-        </NButton>
-        <NButton
-          v-else-if="error && !error.forbidden"
-          size="small"
-          data-testid="case-sets-empty-retry"
-          @click="load"
+    <table v-if="sets.length" class="set-table" data-testid="case-set-list">
+      <thead>
+        <tr>
+          <th class="col-code">{{ t('caseSets.setCode') }}</th>
+          <th>{{ t('caseSets.name') }}</th>
+          <th class="col-desc">{{ t('caseSets.description') }}</th>
+          <th class="col-count">{{ t('caseSets.memberCount') }}</th>
+          <th class="col-actions">{{ t('common.actions') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr
+          v-for="row in sets"
+          :key="row.id"
+          class="set-row"
+          :class="{ active: activeSet?.id === row.id }"
+          :data-testid="`case-set-row-${row.id}`"
+          @click="openItems(row)"
         >
-          {{ t('common.retry') }}
+          <td class="col-code mono" :title="row.setCode">{{ row.setCode }}</td>
+          <td class="cell-ellipsis" :title="row.name">{{ row.name }}</td>
+          <td class="col-desc cell-ellipsis muted" :title="row.description ?? ''">{{ row.description || '—' }}</td>
+          <td class="col-count muted">{{ t('caseSets.itemsCount', { count: row.itemCount ?? 0 }) }}</td>
+          <td class="col-actions row-actions" @click.stop>
+            <NButton size="small" type="primary" text :data-testid="`manage-${row.id}`" @click="openItems(row)">
+              {{ t('caseSets.manage') }}
+            </NButton>
+            <NButton
+              v-if="can('case:write') || can('execution:write')"
+              size="small"
+              text
+              class="more-btn"
+              :data-testid="`more-${row.id}`"
+              @click="toggleSetMenu(row.id)"
+            >
+              {{ t('w57.globalCaseSets.more') }}
+            </NButton>
+            <span v-if="setMenuId === row.id" class="menu">
+              <button v-if="can('case:write')" type="button" class="menu-item" @click="openEdit(row)">
+                {{ t('caseSets.edit') }}
+              </button>
+              <button
+                v-if="can('execution:write')"
+                type="button"
+                class="menu-item"
+                @click="runNow(row)"
+              >
+                {{ t('caseSets.runNow') }}
+              </button>
+              <button
+                v-if="can('case:write')"
+                type="button"
+                class="menu-item danger"
+                @click="removeSet(row)"
+              >
+                {{ t('common.delete') }}
+              </button>
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div v-else class="empty-actions empty-state" data-testid="case-sets-empty-actions">
+      <p class="muted">{{ t('caseSets.empty') }}</p>
+      <p class="muted small">{{ t('caseSets.emptyHint') }}</p>
+      <div class="empty-buttons">
+        <NButton v-if="can('case:write')" size="small" type="primary" data-testid="case-sets-empty-create" @click="openCreate">
+          {{ t('caseSets.create') }}
         </NButton>
-        <div v-else class="empty-actions" data-testid="case-sets-empty-actions">
-          <NButton
-            v-if="can('case:write')"
-            size="small"
-            type="primary"
-            data-testid="case-sets-empty-create"
-            @click="openCreate"
-          >
-            {{ t('caseSets.create') }}
-          </NButton>
-          <NButton
-            v-if="can('case:write')"
-            size="small"
-            data-testid="case-sets-empty-import"
-            @click="goImport"
-          >
-            {{ t('caseSets.emptyActionImport') }}
-          </NButton>
-          <NButton quaternary size="small" data-testid="case-sets-empty-sample" @click="goSamples">
-            {{ t('caseSets.emptyActionSample') }}
-          </NButton>
-        </div>
-      </template>
-    </DataTable>
+        <NButton v-if="can('case:write')" size="small" data-testid="case-sets-empty-import" @click="goImport">
+          {{ t('caseSets.emptyActionImport') }}
+        </NButton>
+        <NButton quaternary size="small" data-testid="case-sets-empty-sample" @click="goSamples">
+          {{ t('caseSets.emptyActionSample') }}
+        </NButton>
+      </div>
+    </div>
 
     <NPagination
       v-if="total > 0"
@@ -1229,11 +1172,12 @@ void load()
       </template>
     </CaseSetWorkspace>
 
-    <div v-if="isAdmin" class="card platform-card" data-testid="platform-case-sets">
-      <div class="items-head">
-        <h2 class="card-title">{{ t('caseSets.platformTitle') }}</h2>
+    <!-- v5.35 / FR-UIE-06：平台库改为折叠区，默认收起，不与主列表争版面 -->
+    <details v-if="isAdmin" class="card platform-card" data-testid="platform-case-sets">
+      <summary class="platform-summary">
+        <span class="card-title">{{ t('caseSets.platformTitle') }}</span>
         <span class="muted small">{{ t('caseSets.platformHint') }}</span>
-      </div>
+      </summary>
 
       <div class="toolbar">
         <NInput
@@ -1296,11 +1240,113 @@ void load()
           </li>
         </ul>
       </div>
-    </div>
+    </details>
   </div>
 </template>
 
 <style scoped>
+/* v5.35 / FR-UIE-01：全宽集合列表。原先整张 DataTable 塞在 320px 中栏，
+   1920 下集代号与名称被裁光、一行只剩四个按钮。 */
+.set-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.set-table th {
+  text-align: left;
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.set-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--border);
+  font-size: var(--font-size-sm);
+  vertical-align: middle;
+}
+
+.set-row {
+  cursor: pointer;
+}
+
+.set-row:hover {
+  background: var(--surface-2);
+}
+
+.set-row.active {
+  background: var(--surface-2);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.set-table .col-code {
+  width: 9.5rem;
+  /* 集代号是标识符，折行会让行高不齐；超长省略，完整值在 title 里 */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.set-table .col-desc { width: 30%; }
+.set-table .col-count { width: 7rem; }
+.set-table .col-actions { width: 12rem; white-space: nowrap; }
+
+.cell-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mono {
+  font-family: var(--font-mono, monospace);
+}
+
+.more-btn {
+  margin-left: 0.5rem;
+}
+
+.menu {
+  position: absolute;
+  z-index: 30;
+  margin-top: 0.25rem;
+  min-width: 7rem;
+  display: flex;
+  flex-direction: column;
+  padding: 4px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 24%);
+}
+
+.menu-item {
+  text-align: left;
+  padding: 6px 8px;
+  border: none;
+  background: none;
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--font-size-sm);
+  border-radius: var(--radius-sm);
+}
+
+.menu-item:hover {
+  background: var(--surface-2);
+}
+
+.menu-item.danger {
+  color: var(--fail);
+}
+
+.empty-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
 /* v5.22.0 / FR-v5.22-06 判据 06-2：空态三个动作一行排开；窄屏允许换行，
    但按钮本身不拉伸（拉伸后三个动作看起来像一个分段控件，反而分不清是三个入口）。 */
 .empty-actions {
@@ -1366,14 +1412,41 @@ void load()
    v5.19 W69-05 一并修正。 */
 .set-item {
   display: grid;
-  grid-template-columns: 1.25rem 2.25rem 8.5rem minmax(0, 1fr) 6rem 3.5rem 8rem auto;
+  /* v5.35 / FR-UIE-03：脚本列从 8rem 放宽到 10rem，操作列给固定 11rem。
+     原先是 auto —— 在 1080px 抽屉里被压到 40px，三个按钮竖排成一字一行，
+     单行高 100px（实测截图）。 */
+  grid-template-columns: 1.25rem 2.25rem 8.5rem minmax(0, 1fr) 6rem 3.5rem 10rem 11rem;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--space-2);
   padding: var(--space-2) var(--space-3);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--panel);
   transition: background-color 0.15s ease;
+}
+
+/* 单元格一律允许收缩，长文本省略而不是换行把行撑高 */
+.set-item > * {
+  min-width: 0;
+}
+
+.set-item-code,
+.set-item-title,
+.set-item-category,
+.set-item-script {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.set-item-script :deep(a),
+.set-item-script :deep(span) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+  max-width: 100%;
+  vertical-align: bottom;
 }
 
 /* 平台用例集只读行只有 4 个字段，单独声明，避免被上面 8 列撑错位 */
@@ -1384,8 +1457,9 @@ void load()
 /* 表格单元格里的按钮是 h() 渲染的，拿不到 scoped 属性，用 :deep 兜布局 */
 :deep(.row-actions) {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
+  flex-wrap: nowrap;
+  gap: var(--space-1);
+  justify-content: flex-end;
 }
 
 .set-item:hover {
@@ -1504,6 +1578,18 @@ void load()
 /* ---- 平台用例集库（N9，只读） ---- */
 .platform-card {
   margin-top: var(--space-5);
+}
+
+.platform-summary {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  cursor: pointer;
+  list-style: none;
+}
+
+.platform-summary::-webkit-details-marker {
+  display: none;
 }
 
 .platform-sets {

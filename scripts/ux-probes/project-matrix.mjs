@@ -39,7 +39,7 @@ const PAGES = [
 ]
 
 const MEASURE = `(() => {
-  const dt = document.querySelector('.n-data-table, .data-table');
+  const dt = document.querySelector('.n-data-table, .data-table, table.set-table, table.list');
   const rows = [...document.querySelectorAll('tbody tr')];
   const emptySel = document.querySelector('.n-empty, .empty-state, [data-testid="empty"], .empty-illustration');
   // 自绘表格（如环境采集的 .data-table）没有标准空态组件，但会写 "0 条"；

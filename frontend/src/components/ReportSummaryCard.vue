@@ -36,8 +36,13 @@ const props = withDefaults(
      * 传了就以它为准，**不再**用 `failed === 0` 推「通过」；空串表示调用方没有判据上下文。
      */
     criteriaConclusion?: string
+    /**
+     * 运行级结论（FR-UIE-12）：PASSED / FAILED / INCONCLUSIVE / NO_DATA。
+     * 有它就以它为准 —— 判据结论回答的是「证据够不够」，不是「这轮算不算通过」。
+     */
+    runConclusion?: string
   }>(),
-  { summary: null, loading: false, error: '', criteriaConclusion: '' },
+  { summary: null, loading: false, error: '', criteriaConclusion: '', runConclusion: '' },
 )
 
 const emit = defineEmits<{ retry: []; showFailures: [] }>()
@@ -46,17 +51,22 @@ const { t } = useI18n()
 
 const hasFailures = computed(() => (props.summary?.failed ?? 0) > 0)
 
-/** 归一后的判据结论；空串表示「没有判据上下文」，此时才回退计数口径。 */
-const verdict = computed(() => (props.criteriaConclusion || '').trim().toUpperCase())
+/** 归一后的结论：优先运行级，其次判据结论；空串表示没有上下文，才回退计数口径。 */
+const verdict = computed(() =>
+  ((props.runConclusion || props.criteriaConclusion) || '').trim().toUpperCase(),
+)
+const RUN_LEVEL = ['PASSED', 'FAILED', 'INCONCLUSIVE', 'NO_DATA']
 const hasVerdict = computed(
-  () => verdict.value === 'PASS' || verdict.value === 'FAIL' || verdict.value === 'UNDETERMINED',
+  () => RUN_LEVEL.includes(verdict.value)
+    || verdict.value === 'PASS' || verdict.value === 'FAIL' || verdict.value === 'UNDETERMINED',
 )
 
 const tone = computed<StatusTone>(() => {
   if (!props.summary || props.summary.conclusion === 'NO_DATA') return 'neutral'
   if (hasVerdict.value) {
-    if (verdict.value === 'PASS') return 'ok'
-    if (verdict.value === 'FAIL') return 'fail'
+    if (verdict.value === 'PASS' || verdict.value === 'PASSED') return 'ok'
+    if (verdict.value === 'FAIL' || verdict.value === 'FAILED') return 'fail'
+    if (verdict.value === 'INCONCLUSIVE') return 'warn'
     return 'neutral'
   }
   return hasFailures.value ? 'fail' : 'ok'
@@ -74,6 +84,9 @@ const conclusion = computed(() => {
   if (!summary) return ''
   if (summary.conclusion === 'NO_DATA' || summary.total === 0) {
     return t('reportSummary.conclusionNoData')
+  }
+  if (verdict.value === 'INCONCLUSIVE') {
+    return t('reports.conclusion.inconclusiveNote', { skipped: summary.skipped })
   }
   if (verdict.value === 'UNDETERMINED') {
     return t('reports.conclusion.undeterminedNote')

@@ -275,10 +275,15 @@ public class PytestKernel implements ExecutionKernel {
      * 缺属性时退回正文首个非空行，并截断到 600 字符避免整段 traceback 进报告。
      */
     private static String failureMessage(Element testCase, CaseStatus status) {
-        if (status != CaseStatus.FAIL && status != CaseStatus.ERROR) {
+        // v5.35 / FR-UIE-13：SKIP 也要取 <skipped message="…">。
+        // 之前只认 FAIL/ERROR，报告里的跳过行没有任何原因，只能写「未采集跳过原因」。
+        // 跳过原因与失败原因同列存放，由入库侧加「跳过：」前缀区分，不新增列。
+        if (status != CaseStatus.FAIL && status != CaseStatus.ERROR
+                && status != CaseStatus.SKIP) {
             return null;
         }
-        String tag = status == CaseStatus.FAIL ? "failure" : "error";
+        String tag = status == CaseStatus.FAIL ? "failure"
+                : status == CaseStatus.SKIP ? "skipped" : "error";
         NodeList hits = testCase.getElementsByTagName(tag);
         if (hits.getLength() == 0) {
             return status.name();
@@ -297,7 +302,8 @@ public class PytestKernel implements ExecutionKernel {
             }
         }
         if (message == null || message.isBlank()) {
-            return status.name();
+            // 跳过没有原因时不要塞一个 "SKIP" 当文本，那会被当成真实原因展示。
+            return status == CaseStatus.SKIP ? null : status.name();
         }
         return message.length() > 600 ? message.substring(0, 600) : message;
     }

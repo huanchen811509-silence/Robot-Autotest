@@ -56,6 +56,12 @@ NATIVE_TABLE_ALLOW = {
     "ReportDetailView.vue": "十项 metadata 是定义表，不是数据网格",
     "TestReportDetailView.vue": "客户视图预览是 22 字段 key→value 定义表，无分页/排序/选行",
     "StyleguideView.vue": "设计系统展示页，演示原生表格样式",
+    # v5.35 / FR-UIE-01：两个用例集页的「集合列表」是 5 列静态清单——无排序、无选行、
+    # 无表格内分页（分页在列表外由 NPagination 承担），且必须铺满内容区并与右侧抽屉共存。
+    # 走 DataTable 壳会重新引入「壳最小宽度 > 容器」的老问题（正是本次要修的病根）。
+    # 密度与命中由两个真实浏览器探针守：row-hit（抽屉开合/列表铺满）、project-matrix（行高/首行命中）。
+    "CaseSetsView.vue": "集合列表为 5 列静态清单，无排序/选行/表内分页；密度由 row-hit + project-matrix 探针守",
+    "GlobalCaseSetsView.vue": "公共集合与成员均为静态清单（成员表在抽屉内），无排序/选行；由探针守密度",
 }
 
 # 壳的实现探针：(说明, 必须在壳里出现的片段)

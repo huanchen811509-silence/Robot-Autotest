@@ -13832,6 +13832,98 @@
         ]
       }
     },
+    "/api/projects/{projectId}/case-backfill/apply": {
+      "post": {
+        "operationId": "CaseBackfillController.apply",
+        "tags": [
+          "caseasset"
+        ],
+        "responses": {
+          "200": {
+            "description": "统一信封；业务错误码见 ErrorCode",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        },
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ]
+      }
+    },
+    "/api/projects/{projectId}/case-backfill/preview": {
+      "get": {
+        "operationId": "CaseBackfillController.preview",
+        "tags": [
+          "caseasset"
+        ],
+        "responses": {
+          "200": {
+            "description": "统一信封；业务错误码见 ErrorCode",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        },
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ]
+      }
+    },
     "/api/projects/{projectId}/case-sets": {
       "get": {
         "operationId": "TestSetController.page",

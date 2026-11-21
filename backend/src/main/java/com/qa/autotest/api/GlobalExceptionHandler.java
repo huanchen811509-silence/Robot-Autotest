@@ -4,6 +4,7 @@ import com.qa.autotest.application.report.ExportRejectedException;
 import com.qa.autotest.common.ApiResponse;
 import com.qa.autotest.common.BusinessException;
 import com.qa.autotest.common.ErrorCode;
+import com.qa.autotest.common.SafetyBlockedException;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -119,6 +120,21 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleUploadTooLarge(MaxUploadSizeExceededException ex) {
         return ResponseEntity.badRequest()
                 .body(ApiResponse.fail(ErrorCode.INVALID_ARGUMENT, "上传文件超过 21 MB 上限"));
+    }
+
+    /**
+     * 安全级拦截：除中文说明外，把受阻清单放进 {@code data.blocked}（FR-UIE-10）。
+     *
+     * <p>放在 {@link BusinessException} 之前不是必需（Spring 取最具体的类型），
+     * 但显式声明能让读代码的人知道「403 有两种体」——有清单的和没清单的。
+     */
+    @ExceptionHandler(SafetyBlockedException.class)
+    public ResponseEntity<ApiResponse<Map<String, Object>>> handleSafetyBlocked(
+            SafetyBlockedException ex) {
+        ApiResponse<Map<String, Object>> body = new ApiResponse<>(
+                ex.errorCode().code(), ex.errorCode().codeName(), ex.getMessage(),
+                Map.of("blocked", ex.blocked()));
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
     }
 
     @ExceptionHandler(BusinessException.class)

@@ -47,7 +47,9 @@ function parseArgs(argv) {
  */
 async function probeDrawer(s, viewport, pageKey, selfTest = false) {
   const vw = Number(viewport.split('x')[0])
-  const out = { page: pageKey, viewport, vw, expectNarrow: vw <= 1400, steps: {}, fails: [] }
+  // v5.35 / FR-UIE-01：两个用例集页固定抽屉形态（320px 中栏塞整表在 1440/1920 都不可用），
+  // 因此 data-narrow 恒为 true，与视口无关。判据随之改为「抽屉可开合 + 收起后列表铺满」。
+  const out = { page: pageKey, viewport, vw, expectNarrow: true, steps: {}, fails: [] }
   await goto(s, `${APP}${PAGES[pageKey]}`, 2600)
   await waitFor(s, `document.querySelectorAll('tbody tr').length > 0 || Boolean(document.querySelector('.case-set-empty, .n-empty'))`, 12000)
   await sleep(700)

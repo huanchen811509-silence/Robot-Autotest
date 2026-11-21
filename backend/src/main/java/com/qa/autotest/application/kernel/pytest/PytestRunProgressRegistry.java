@@ -47,8 +47,15 @@ public class PytestRunProgressRegistry {
     }
 
     /** 进度快照。字段与 FR-v5.6-12 的判据一一对应，少一个前端就要自己算。 */
+    /**
+     * 进度快照。
+     *
+     * <p>{@code skipped} 是 v5.35 / FR-UIE-11 补的：此前 {@code passed = total - failed}
+     * 把「跳过」算成「通过」，一份 10 条全 skip 的 junit 会让页面显示「通过 10」，
+     * 与报告页的「通过 0 / 跳过 10」正面冲突。三数之和恒等于 {@code finished}。
+     */
     public record Snapshot(String runId, String stage, int total, int finished,
-                           int passed, int failed, long elapsedMs,
+                           int passed, int failed, int skipped, long elapsedMs,
                            boolean cancelRequested, boolean terminal) {
     }
 
@@ -60,6 +67,7 @@ public class PytestRunProgressRegistry {
         private int finished;
         private int passed;
         private int failed;
+        private int skipped;
         private volatile Stage stage = Stage.PREPARING;
         private volatile boolean cancelRequested;
 
@@ -112,6 +120,12 @@ public class PytestRunProgressRegistry {
      * @param batchFinished 本批总条数
      */
     public void batchDone(String runId, int batchPassed, int batchFailed, int batchFinished) {
+        batchDone(runId, batchPassed, batchFailed, 0, batchFinished);
+    }
+
+    /** 记一批结果（含跳过数）。{@code passed + failed + skipped == finished} 由此处保证。 */
+    public void batchDone(String runId, int batchPassed, int batchFailed, int batchSkipped,
+                          int batchFinished) {
         Progress progress = active.get(runId);
         if (progress == null) {
             return;
@@ -119,6 +133,7 @@ public class PytestRunProgressRegistry {
         synchronized (progress) {
             progress.passed += Math.max(batchPassed, 0);
             progress.failed += Math.max(batchFailed, 0);
+            progress.skipped += Math.max(batchSkipped, 0);
             progress.finished += Math.max(batchFinished, 0);
             // 总数可能来自计划、完成数来自实际产物：实际比计划多时以实际为准，
             // 否则页面会出现「完成 61 / 总数 59」这种自相矛盾的显示。
@@ -170,7 +185,7 @@ public class PytestRunProgressRegistry {
         long elapsed = Duration.between(progress.startedAt, clock.instant()).toMillis();
         synchronized (progress) {
             return new Snapshot(runId, progress.stage.name(), progress.total,
-                    progress.finished, progress.passed, progress.failed,
+                    progress.finished, progress.passed, progress.failed, progress.skipped,
                     Math.max(elapsed, 0), progress.cancelRequested, progress.stage.terminal());
         }
     }

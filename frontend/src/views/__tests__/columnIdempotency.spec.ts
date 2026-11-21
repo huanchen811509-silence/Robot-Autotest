@@ -71,6 +71,10 @@ const DETAIL_FIELDS = [
   'domainTag',
   'reviewStatus',
   'capability',
+  // FR-UIE-08：内容来源三件套（接口加字段必须在这里登记，否则列/详情会悄悄脱节）
+  'inheritedFrom',
+  'inheritedFromCode',
+  'sourceHasContent',
 ] as const
 
 type DetailField = (typeof DETAIL_FIELDS)[number]

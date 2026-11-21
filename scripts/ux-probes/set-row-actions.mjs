@@ -111,9 +111,10 @@ async function main() {
           await sleep(600)
         }
         const m = await s.evaluate(MEASURE)
-        // 判据：按钮全命中；或（窄屏 + 抽屉已展开）列表被遮罩有意覆盖。
-        // 后者必须同时满足「有遮罩」与「有收起入口」，否则就是关不掉的覆盖层。
-        const coveredByDesign = m.drawer === true && width <= 1400
+        // 判据：按钮全命中；或（抽屉已展开）列表被遮罩有意覆盖。
+        // v5.35 / FR-UIE-01 起两个用例集页恒为抽屉形态（与视口无关），
+        // 所以这里不再按宽度判断；覆盖必须同时满足「有遮罩」与「有收起入口」。
+        const coveredByDesign = m.drawer === true
         const ok = m.allHit === true || coveredByDesign
         const verdict = m.allHit === true ? '' : coveredByDesign ? '（窄屏抽屉：列表被遮罩有意覆盖）' : ''
         if (!ok) fails += 1

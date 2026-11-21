@@ -163,14 +163,18 @@ public class ReportController {
                                    String criteriaConclusion,
                                    int criteriaEvaluated,
                                    int criteriaMissingCount,
-                                   Integer suiteCount) {
+                                   Integer suiteCount,
+                                   /** FR-UIE-12：运行级结论（与 /summary 的 conclusion 同源）。 */
+                                   String conclusion) {
 
         static ReportDetailView from(ReportRecord record) {
             return new ReportDetailView(record.runId(), record.projectId(), record.state(),
                     record.exportable(), record.metadataMissing(), record.metadata(),
                     ReportCounts.from(record), record.startedAt(), record.finishedAt(),
                     record.effectiveConclusion(), record.criteriaEvaluated(),
-                    record.criteriaMissingCount(), record.suiteCount());
+                    record.criteriaMissingCount(), record.suiteCount(),
+                    com.qa.autotest.domain.report.RunConclusion.of(
+                            record.passCount(), record.failCount(), record.skipCount()));
         }
     }
 
@@ -182,12 +186,15 @@ public class ReportController {
                                  ReportCounts counts,
                                  Instant startedAt,
                                  Instant finishedAt,
-                                 Integer suiteCount) {
+                                 Integer suiteCount,
+                                 String conclusion) {
 
         static ReportListItem from(ReportRecord record) {
             return new ReportListItem(record.runId(), record.state(), record.exportable(),
                     record.metadataMissing(), ReportCounts.from(record),
-                    record.startedAt(), record.finishedAt(), record.suiteCount());
+                    record.startedAt(), record.finishedAt(), record.suiteCount(),
+                    com.qa.autotest.domain.report.RunConclusion.of(
+                            record.passCount(), record.failCount(), record.skipCount()));
         }
     }
 }

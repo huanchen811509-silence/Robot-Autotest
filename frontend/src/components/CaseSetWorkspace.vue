@@ -24,7 +24,15 @@ const props = withDefaults(defineProps<{
   active: boolean
   /** 窄屏断点（px）。默认 1400：恰好把常见 1366 笔记本与 1440 显示器分开。 */
   narrowAt?: number
-}>(), { active: false, narrowAt: 1400 })
+  /**
+   * 强制抽屉形态（v5.35 / FR-UIE-01）。
+   *
+   * <p>两个用例集页固定用它：320px 中栏塞整张表格的做法在 1440/1920 下都把
+   * 集名与行内容裁光（实测只剩按钮）。抽屉形态下列表铺满内容区，
+   * 点行才把成员区推到右侧 —— 与窄屏本来是同一套代码，不再有两套版式。
+   */
+  drawer?: boolean
+}>(), { active: false, narrowAt: 1400, drawer: false })
 
 const emit = defineEmits<{ close: [] }>()
 
@@ -34,10 +42,14 @@ const narrow = ref(false)
 let mq: MediaQueryList | null = null
 
 function sync(e: MediaQueryList | MediaQueryListEvent): void {
-  narrow.value = e.matches
+  narrow.value = e.matches || props.drawer
 }
 
 onMounted(() => {
+  if (props.drawer) {
+    narrow.value = true
+    return
+  }
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return
   mq = window.matchMedia(`(max-width: ${props.narrowAt}px)`)
   sync(mq)
@@ -85,7 +97,9 @@ const drawerOpen = computed(() => narrow.value && props.active)
             {{ t('common.close') }}
           </button>
         </header>
-        <div v-if="!active" class="case-set-empty" data-testid="case-set-empty">
+        <!-- 强制抽屉形态（两个用例集页）下列表就是页面主体，再放一个大空态只会把它推下去；
+             视口自适应窄屏保持原行为（列表 + 空态并排），不动既有回归点。 -->
+        <div v-if="!active && !drawer" class="case-set-empty" data-testid="case-set-empty">
           <p class="case-set-empty-title">{{ t('w62.empty') }}</p>
           <p class="muted">{{ t('w62.emptyHint') }}</p>
         </div>

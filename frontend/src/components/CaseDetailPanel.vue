@@ -63,6 +63,36 @@ const ownershipText = computed(() =>
 )
 
 /** 步骤：有就逐条列，没有就明说「无步骤记录」——与「源表无值」是两件事。 */
+/**
+ * 内容来源（FR-UIE-08）。
+ *
+ * 三种状态必须在文案上分开，否则用户没法判断「空」是数据缺失、还是没继承：
+ * 已回填 → 来源行；未回填但公共库有值 → 标「可继承」；公共库也没有 → 就是源表无值。
+ */
+const inheritAwareEmpty = computed(() =>
+  props.source !== 'global'
+  && detail.value?.sourceHasContent === true
+  && !detail.value?.inheritedFrom,
+)
+const sourceNote = computed(() => {
+  const d = detail.value
+  if (!d || props.source === 'global') return ''
+  if (d.inheritedFrom && d.inheritedFromCode) {
+    return t('caseDetail.inheritedFrom', { code: d.inheritedFromCode })
+  }
+  if (d.sourceHasContent === true) return t('caseDetail.inheritableHint')
+  if (d.sourceHasContent === false) return t('caseDetail.noSourceHint')
+  return ''
+})
+
+/** 内容三列的空值：能继承却还没继承时，说「未继承」，不说「源表无值」。 */
+function contentText(value: string | null | undefined): string {
+  if (value === null || value === undefined || value === '') {
+    return inheritAwareEmpty.value ? t('caseDetail.notInheritedValue') : emptyValue()
+  }
+  return String(value)
+}
+
 const stepLines = computed<string[]>(() =>
   (detail.value?.steps ?? []).map(
     (step) =>
@@ -101,14 +131,14 @@ const groups = computed<FieldGroup[]>(() => {
       // 而 test_case.precondition / expected 与 test_case_step 一直都在库里。
       // 现在一律取真值，缺值显示「源表无值」，绝不谎报缺列。
       key: "caseDetail.group.content", testId: 'content', rows: [
-        { labelKey: "caseDetail.field.precondition", display: text(d.precondition), testId: 'precondition' },
+        { labelKey: "caseDetail.field.precondition", display: contentText(d.precondition), testId: 'precondition' },
         {
           labelKey: "caseDetail.field.steps",
           display: stepsDisplay.value,
           testId: 'steps',
           lines: stepLines.value,
         },
-        { labelKey: "caseDetail.field.expected", display: text(d.expected), testId: 'expected' },
+        { labelKey: "caseDetail.field.expected", display: contentText(d.expected), testId: 'expected' },
         { labelKey: "caseDetail.field.testResource", display: text(d.testResource), testId: 'testResource' },
       ],
     },
@@ -255,6 +285,16 @@ watch([() => props.caseId, () => props.source, () => props.projectId], () => voi
         </span>
       </div>
 
+      <!-- FR-UIE-08：内容来源一行，放在内容组正下方 -->
+      <p
+        v-if="sourceNote"
+        class="case-detail-source"
+        :class="{ 'is-inheritable': inheritAwareEmpty }"
+        data-testid="case-detail-source"
+      >
+        {{ sourceNote }}
+      </p>
+
       <section
         v-for="group in groups"
         :key="group.key"
@@ -339,6 +379,19 @@ watch([() => props.caseId, () => props.source, () => props.projectId], () => voi
 .case-detail-steps-count {
   color: var(--text-muted);
   font-size: var(--font-size-xs);
+}
+.case-detail-source {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-left: 3px solid var(--border);
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+.case-detail-source.is-inheritable {
+  border-left-color: var(--warn);
+  color: var(--warn);
 }
 .case-detail-copy {
   display: flex;

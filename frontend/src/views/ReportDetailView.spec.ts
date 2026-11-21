@@ -27,6 +27,8 @@ const apiState = vi.hoisted(() => ({
   metadataMissing: [] as string[],
   // 判据结论（FR-v5.8-01）：默认 PASS，测里按需改
   conclusion: 'PASS',
+  // v5.35 / FR-UIE-12：运行级结论（PASSED / FAILED / INCONCLUSIVE / NO_DATA）
+  runConclusion: 'PASSED',
   evaluated: 4,
   missing: 0,
   // 失败数也接出来：用来证明「结论与 failCount 解耦」
@@ -62,6 +64,7 @@ vi.mock('@/api/reports', async (importOriginal) => {
           ? { pass: apiState.passCount, fail: apiState.failCount, skip: apiState.skipCount }
           : undefined,
         criteriaConclusion: apiState.conclusion,
+        conclusion: apiState.runConclusion,
         criteriaEvaluated: apiState.evaluated,
         criteriaMissingCount: apiState.missing,
         startedAt: '2026-11-05T07:00:00+08:00',
@@ -334,16 +337,34 @@ describe('ReportDetailView 结论', () => {
     expect(root.textContent).toContain('FAIL 2')
   })
 
-  it('未声明判据：显示「未判定」并说明不按失败数推断', async () => {
+  /**
+   * v5.35 / FR-UIE-12：顶部结论改为运行级 conclusion（与 /summary 同源）。
+   * 判据结论降为补充说明——它回答「证据够不够」，不回答「这轮算不算通过」。
+   * 全跳过的运行必须是「无有效结论」，既不能说通过，也不能说未判定。
+   */
+  it('全跳过：顶部结论是「无有效结论」，并说明跳过不等于通过', async () => {
     apiState.conclusion = 'UNDETERMINED'
+    apiState.runConclusion = 'INCONCLUSIVE'
     apiState.evaluated = 0
     apiState.missing = 4
     const root = await mountView()
 
     const box = root.querySelector('[data-testid="report-conclusion"]')!
-    expect(box.textContent).toContain('未判定')
-    expect(box.textContent).toContain('不按失败数推断')
-    expect(box.textContent).not.toContain('不通过')
+    expect(box.textContent).toContain('无有效结论')
+    expect(box.textContent).toContain('跳过')
+    expect(box.textContent).not.toContain('通过率 100')
+  })
+
+  it('未声明判据且有通过：运行结论照常 PASSED，判据另作说明', async () => {
+    apiState.conclusion = 'UNDETERMINED'
+    apiState.runConclusion = 'PASSED'
+    apiState.evaluated = 0
+    apiState.missing = 4
+    const root = await mountView()
+
+    const box = root.querySelector('[data-testid="report-conclusion"]')!
+    expect(box.textContent).toContain('通过')
+    expect(box.textContent).not.toContain('无有效结论')
   })
 })
 

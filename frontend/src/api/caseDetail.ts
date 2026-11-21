@@ -54,6 +54,15 @@ export interface CaseDetailView {
   domainTag?: string | null
   reviewStatus?: string | null
   capability?: string | null
+  /**
+   * FR-UIE-08：内容来源。
+   * - inheritedFrom 非空 = 已从公共库同编号用例回填过；
+   * - inheritedFromCode 是公共库那边的编号（与 caseCode 通常相同）；
+   * - sourceHasContent 表示公共库是否有内容可继承（false 时「源表无值」属实）。
+   */
+  inheritedFrom?: number | null
+  inheritedFromCode?: string | null
+  sourceHasContent?: boolean | null
 }
 
 export interface CaseStepView {

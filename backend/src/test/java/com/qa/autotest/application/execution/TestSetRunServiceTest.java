@@ -109,7 +109,8 @@ class TestSetRunServiceTest {
 
         TestSetRunService missing = new TestSetRunService(
                 testSetRepository(List.of(), null), ExecutionTestSupport.access(),
-                new CaseScriptResolver(robotFilesRepos(Map.of())), quick);
+                new CaseScriptResolver(robotFilesRepos(Map.of())), quick,
+                projectId -> "robot", null, null);
         BusinessException missingEx = assertThrows(BusinessException.class, () -> missing.run(command()));
         assertEquals(ErrorCode.NOT_FOUND, missingEx.errorCode());
     }
@@ -213,12 +214,13 @@ class TestSetRunServiceTest {
                                           RecordingQuickRun quick) {
         return new TestSetRunService(testSetRepository(cases, set(cases)),
                 ExecutionTestSupport.access(),
-                new CaseScriptResolver(robotFilesRepos(files)), quick);
+                new CaseScriptResolver(robotFilesRepos(files)), quick,
+                projectId -> "robot", null, null);
     }
 
     private static TestSetRunService.TestSetRunCommand command() {
         return new TestSetRunService.TestSetRunCommand(PROJECT, SET_ID, null, List.of(),
-                null, null, null, null, null);
+                null, null, null, null, null, null, null);
     }
 
     private static TestSet set(List<TestCase> cases) {

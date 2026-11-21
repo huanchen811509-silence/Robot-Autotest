@@ -71,6 +71,17 @@ DERIVED = {
     ),
     "otherScriptCount": ("case_script_binding", "同一用例除首选内核外的绑定条数"),
     "scriptAbsoluteSource": ("计算", "原始 script_path 是否为绝对路径（历史脏数据）"),
+    # FR-UIE-08：内容回填的来源标识
+    "inheritedFrom": ("test_case.inherited_from", "回填后写入的公共库来源用例 id"),
+    "inheritedFromCode": (
+        "计算",
+        "按 (platform.id, case_code) 查公共库同编号用例的 case_code；无对应行时为空",
+    ),
+    "sourceHasContent": (
+        "计算",
+        "公共库同编号用例的 precondition/expected/case_kind 非空或步骤数>0 → true；"
+        "查无此编号 → false；公共库本体（platform）→ null",
+    ),
 }
 
 CREATE_HEAD = re.compile(r"^\s*CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?`?(\w+)`?", re.I)

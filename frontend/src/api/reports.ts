@@ -35,6 +35,11 @@ export interface ReportListItem {
   finishedAt: string | null
   /** v5.14.0 / W64-03：null 或字段缺省 = 历史 run 未采集，界面显示「—」而不是 0。 */
   suiteCount?: number | null
+  /**
+   * 运行级结论（FR-UIE-12）：PASSED / FAILED / INCONCLUSIVE / NO_DATA。
+   * 与 /summary 的 conclusion 同源；全跳过时是 INCONCLUSIVE，不再冒充 PASSED。
+   */
+  conclusion?: string | null
 }
 
 export interface ReportDetail extends ReportListItem {
@@ -48,7 +53,10 @@ export interface ReportDetail extends ReportListItem {
    */
   counts?: { pass?: number; fail?: number; skip?: number } | null
   metadata: Record<string, string>
-  /** 判据汇总结论（FR-v5.8-01）：PASS / FAIL / UNDETERMINED。未声明判据时恒为 UNDETERMINED。 */
+  /**
+   * 判据汇总结论（FR-v5.8-01）：PASS / FAIL / UNDETERMINED。未声明判据时恒为 UNDETERMINED。
+   * 它是「证据够不够」的判据检查，不再是页面顶部的运行结论。
+   */
   criteriaConclusion: string
   /** 参与判据评估的用例数。 */
   criteriaEvaluated: number

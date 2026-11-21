@@ -10,7 +10,12 @@ import { useAuthStore } from '@/stores/auth'
 import { useMenuCapabilitiesStore } from '@/stores/menuCapabilities'
 import GlobalCaseSetsView from '@/views/global/GlobalCaseSetsView.vue'
 import { platformCaseSetApi } from '@/api/platformCaseSets'
+import { globalCaseApi } from '@/api/globalCases'
 import { confirmAction } from '@/composables/useConfirm'
+
+vi.mock('@/api/globalCases', () => ({
+  globalCaseApi: { page: vi.fn() },
+}))
 
 vi.mock('@/api/platformCaseSets', () => ({
   platformCaseSetApi: {
@@ -20,6 +25,7 @@ vi.mock('@/api/platformCaseSets', () => ({
     remove: vi.fn(),
     items: vi.fn(),
     addItem: vi.fn(),
+    addItems: vi.fn(),
     removeItem: vi.fn(),
     reorder: vi.fn(),
     seedSamples: vi.fn(),
@@ -71,6 +77,12 @@ async function mountView(): Promise<HTMLElement> {
   return root
 }
 
+/** v5.35：编辑/删除收进行内「更多」。 */
+async function openRowMenu(root: HTMLElement, id = 1): Promise<void> {
+  root.querySelector<HTMLButtonElement>(`[data-testid="more-${id}"]`)!.click()
+  await settle()
+}
+
 async function settle(): Promise<void> {
   await nextTick()
   await new Promise((resolve) => setTimeout(resolve, 0))
@@ -88,7 +100,16 @@ beforeEach(() => {
   api.items.mockReset()
   api.items.mockResolvedValue(itemRows as never)
   api.addItem.mockReset()
-  api.addItem.mockResolvedValue(undefined as never)
+  api.addItem.mockResolvedValue({ added: 1, skipped: 0 } as never)
+  api.addItems.mockReset()
+  api.addItems.mockResolvedValue({ added: 1, skipped: 0 } as never)
+  vi.mocked(globalCaseApi.page).mockReset()
+  vi.mocked(globalCaseApi.page).mockResolvedValue({
+    items: [
+      { id: 99, caseCode: 'CLI-099', title: '待加入用例', categoryL1: '以太网' },
+    ],
+    total: 1,
+  } as never)
   api.removeItem.mockReset()
   api.removeItem.mockResolvedValue(undefined as never)
   api.reorder.mockReset()
@@ -130,6 +151,8 @@ describe('GlobalCaseSetsView 列表与权限', () => {
     const root = await mountView()
     expect(root.querySelector('[data-testid="create-btn"]')).not.toBeNull()
     expect(root.querySelector('[data-testid="seed-btn"]')).not.toBeNull()
+    expect(root.querySelector('[data-testid="more-1"]')).not.toBeNull()
+    await openRowMenu(root, 1)
     expect(root.querySelector('[data-testid="edit-1"]')).not.toBeNull()
     expect(root.querySelector('[data-testid="delete-1"]')).not.toBeNull()
   })
@@ -141,8 +164,7 @@ describe('GlobalCaseSetsView 列表与权限', () => {
     const root = await mountView()
     expect(root.querySelector('[data-testid="create-btn"]')).toBeNull()
     expect(root.querySelector('[data-testid="seed-btn"]')).toBeNull()
-    expect(root.querySelector('[data-testid="edit-1"]')).toBeNull()
-    expect(root.querySelector('[data-testid="delete-1"]')).toBeNull()
+    expect(root.querySelector('[data-testid="more-1"]')).toBeNull()
     expect(root.querySelector('[data-testid="case-set-row-1"]')).not.toBeNull()
     expect(root.querySelector('[data-testid="manage-1"]')).not.toBeNull()
   })
@@ -153,6 +175,7 @@ describe('GlobalCaseSetsView 列表与权限', () => {
     useMenuCapabilitiesStore().capabilities = ['public', 'case:read', 'case:write']
     const root = await mountView()
     expect(root.querySelector('[data-testid="create-btn"]')).not.toBeNull()
+    await openRowMenu(root, 1)
     expect(root.querySelector('[data-testid="edit-1"]')).not.toBeNull()
   })
 
@@ -206,6 +229,7 @@ describe('GlobalCaseSetsView 搜索与 CRUD', () => {
 
   it('改名：编辑表单提交调 update', async () => {
     const root = await mountView()
+    await openRowMenu(root, 1)
     root.querySelector<HTMLButtonElement>('[data-testid="edit-1"]')!.click()
     await nextTick()
     const name = root.querySelector<HTMLInputElement>('[data-testid="input-set-name"]')!
@@ -219,6 +243,7 @@ describe('GlobalCaseSetsView 搜索与 CRUD', () => {
 
   it('删除：先二次确认，确认后调 remove(id)', async () => {
     const root = await mountView()
+    await openRowMenu(root, 1)
     root.querySelector<HTMLButtonElement>('[data-testid="delete-1"]')!.click()
     await settle()
     expect(confirmAction).toHaveBeenCalledTimes(1)
@@ -230,6 +255,7 @@ describe('GlobalCaseSetsView 搜索与 CRUD', () => {
   it('删除：取消确认时一个请求都不发', async () => {
     vi.mocked(confirmAction).mockResolvedValueOnce(false)
     const root = await mountView()
+    await openRowMenu(root, 1)
     root.querySelector<HTMLButtonElement>('[data-testid="delete-1"]')!.click()
     await settle()
     expect(api.remove).not.toHaveBeenCalled()
@@ -246,22 +272,29 @@ describe('GlobalCaseSetsView 成员管理', () => {
     expect(root.querySelector('[data-testid="member-row-11"]')).not.toBeNull()
   })
 
-  it('添加成员：输入用例 ID 后调 addItem', async () => {
+  it('添加成员：从公共库选择后批量加入（不再手填用例 ID）', async () => {
     const root = await mountView()
     root.querySelector<HTMLButtonElement>('[data-testid="manage-1"]')!.click()
     await settle()
-    const input = root.querySelector<HTMLInputElement>('[data-testid="add-case-input"]')!
-    input.value = '99'
-    input.dispatchEvent(new Event('input'))
-    await nextTick()
+    // 旧版是「用例 ID」数字输入框；新版必须没有它
+    expect(root.querySelector('[data-testid="add-case-input"]')).toBeNull()
     root.querySelector<HTMLButtonElement>('[data-testid="add-case-btn"]')!.click()
     await settle()
-    expect(api.addItem).toHaveBeenCalledWith(1, 99)
+    expect(globalCaseApi.page).toHaveBeenCalled()
+    const pick = root.querySelector<HTMLInputElement>('[data-testid="member-picker"] input[type="checkbox"]')!
+    pick.checked = true
+    pick.dispatchEvent(new Event('change'))
+    await nextTick()
+    root.querySelector<HTMLButtonElement>('[data-testid="picker-confirm"]')!.click()
+    await settle()
+    expect(api.addItems).toHaveBeenCalledWith(1, [99])
   })
 
   it('移除成员：调 removeItem(setId, caseId)', async () => {
     const root = await mountView()
     root.querySelector<HTMLButtonElement>('[data-testid="manage-1"]')!.click()
+    await settle()
+    root.querySelector<HTMLButtonElement>('[data-testid="member-more-11"]')!.click()
     await settle()
     root.querySelector<HTMLButtonElement>('[data-testid="remove-item-11"]')!.click()
     await settle()
